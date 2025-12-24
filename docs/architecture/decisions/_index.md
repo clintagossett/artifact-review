@@ -8,6 +8,8 @@ Record of significant architectural decisions made for this project.
 |----|-------|--------|------|
 | [0001](./0001-authentication-provider.md) | Authentication Provider | Accepted | 2024-12-24 |
 | [0002](./0002-html-artifact-storage.md) | HTML Artifact Storage Strategy | Accepted | 2024-12-24 |
+| [0003](./0003-deployment-hosting-strategy.md) | Deployment & Hosting Strategy | Accepted | 2024-12-24 |
+| [0004](./0004-email-strategy.md) | Email Strategy | Accepted | 2024-12-24 |
 
 ---
 

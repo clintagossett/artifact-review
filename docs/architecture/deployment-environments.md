@@ -33,36 +33,25 @@ Local Dev → Hosted Dev (Integration) → Staging (Validation) → Production
 
 ---
 
-### Frontend: Vercel
+### Frontend: Vercel (with Direct Convex Account)
 
-**Decision:** Use Vercel for frontend hosting across all environments.
+**Decision:** Use Vercel for frontend hosting with direct Convex account (not Vercel Marketplace).
 
-**Rationale:**
-- **Official Convex integration** — First-class support with [integration guide](https://docs.convex.dev/production/hosting/vercel)
+**Why Vercel:**
+- **Deployment orchestration** — Coordinates backend deploy before frontend build
 - **Preview deployments** — Automatic preview deploys per PR with separate Convex backends
 - **Next.js optimized** — Best-in-class for React/Next.js with SSR, App Router, Server Components
 - **Git-based workflow** — Auto-deploy on push to branches
-- **Edge network** — Fast global CDN
-- **Developer experience** — Simple setup, great tooling
 
-**Platform comparison:**
+**Why Direct Convex Account (not Marketplace):**
+- **Billing transparency** — Direct to Convex, no unclear markup
+- **Existing account** — Use existing Convex account, no new team created
+- **Same orchestration** — Build command provides same coordination benefits
+- **Full control** — Direct access to Convex project settings
 
-| Platform | Convex Support | Free Tier | Commercial Use | Best For |
-|----------|----------------|-----------|----------------|----------|
-| **Vercel** | Official guide | 100GB bandwidth, 6K build min/mo | ❌ Requires Pro ($20/mo) | Next.js, SSR, modern React |
-| **Netlify** | Official guide | 100GB bandwidth, 300 build min/mo | ✅ Allowed | JAMstack, static sites |
-| **Cloudflare Pages** | Custom setup | Unlimited bandwidth, 500 builds/mo | ✅ Allowed | Static sites, edge performance |
+**Cost:** Vercel Pro ($20/mo) + Convex Professional ($25/mo) = $45/mo
 
-**Cost consideration:**
-- This is a commercial SaaS product → Must use Vercel Pro ($20/user/month)
-- Alternative: Could use Netlify free tier during MVP (allows commercial use) then upgrade
-- Cloudflare Pages has best free tier but requires custom Convex setup
-
-**Recommendation:** Start with Vercel Pro ($20/mo) for best DX and Next.js support.
-
-**See also:**
-- [Vercel + Convex Guide](https://docs.convex.dev/production/hosting/vercel)
-- [Netlify + Convex Guide](https://docs.convex.dev/production/hosting/netlify)
+**See also:** [ADR 0003: Deployment & Hosting Strategy](./decisions/0003-deployment-hosting-strategy.md)
 
 ---
 
@@ -77,9 +66,7 @@ This matrix ensures all components are compatible across environments.
 | **Convex Backend** | Hosted cloud (local deployment mode) | Hosted cloud (`dev` project) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
 | **Convex URL** | Auto-generated (e.g., `local-animal-123.convex.cloud`) | Auto-generated (e.g., `happy-horse-456.convex.cloud`) | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
 | **Database** | Convex managed (isolated dev data) | Convex managed (shared dev data) | Convex managed (staging data) | Convex managed (production data) |
-| **HTML Storage** | Convex DB (simple) + R2 (complex) | Convex DB (simple) + R2 (complex) | Convex DB (simple) + R2 (complex) | Convex DB (simple) + R2 (complex) |
-| **R2 Bucket** | `html-review-dev` | `html-review-dev` | `html-review-staging` | `html-review-prod` |
-| **R2 Public URL** | Dev custom domain or R2 URL | Dev custom domain or R2 URL | Staging custom domain or R2 URL | Production custom domain |
+| **HTML Storage** | Convex File Storage | Convex File Storage | Convex File Storage | Convex File Storage |
 | **Mail Send** | Mailpit SMTP (localhost:1025) | Resend test mode | Resend live (restricted) | Resend live (all users) |
 | **Mail Receive** | Not configured (not needed for MVP) | Not configured | Not configured | Not configured* |
 | **Email Domain** | N/A (Mailpit captures all) | `dev.yourdomain.com` (test mode, no delivery) | `staging.yourdomain.com` | `yourdomain.com` |
@@ -117,80 +104,63 @@ vercel link
 # NEXT_PUBLIC_CONVEX_URL = <convex deployment url per environment>
 ```
 
-#### Cloudflare R2 Setup
-
-```bash
-# 1. Create R2 buckets (one-time setup)
-# - Go to Cloudflare Dashboard > R2
-# - Create buckets: html-review-dev, html-review-staging, html-review-prod
-# - Generate API tokens with read/write permissions
-
-# 2. Configure R2 public access (optional, for direct URLs)
-# - Enable public access on buckets
-# - Set up custom domains (e.g., artifacts-dev.yourdomain.com)
-
-# 3. Get credentials
-# R2_ACCOUNT_ID=your-account-id
-# R2_ACCESS_KEY_ID=your-access-key
-# R2_SECRET_ACCESS_KEY=your-secret-key
-```
-
 #### Convex Setup
 
 ```bash
 # Local Dev (uses local deployment mode)
 npx convex dev
 # No RESEND_API_KEY needed (uses Mailpit)
-# Set R2 credentials
-npx convex env set R2_ACCOUNT_ID=xxx
-npx convex env set R2_ACCESS_KEY_ID=xxx
-npx convex env set R2_SECRET_ACCESS_KEY=xxx
-npx convex env set R2_BUCKET=html-review-dev
-npx convex env set R2_PUBLIC_URL=https://artifacts-dev.yourdomain.com # optional
+# HTML files stored in Convex File Storage (included in plan)
 
 # Hosted Dev
 npx convex deploy --project dev
 npx convex env set RESEND_API_KEY=re_test_xxx --project dev
 npx convex env set RESEND_TEST_MODE=true --project dev
-npx convex env set R2_ACCOUNT_ID=xxx --project dev
-npx convex env set R2_ACCESS_KEY_ID=xxx --project dev
-npx convex env set R2_SECRET_ACCESS_KEY=xxx --project dev
-npx convex env set R2_BUCKET=html-review-dev --project dev
 
 # Staging
 npx convex deploy --project staging
 npx convex env set RESEND_API_KEY=re_staging_xxx --project staging
 npx convex env set RESEND_TEST_MODE=false --project staging
 npx convex env set RESEND_ALLOWED_RECIPIENTS=test@example.com,qa@example.com --project staging
-npx convex env set R2_ACCOUNT_ID=xxx --project staging
-npx convex env set R2_ACCESS_KEY_ID=xxx --project staging
-npx convex env set R2_SECRET_ACCESS_KEY=xxx --project staging
-npx convex env set R2_BUCKET=html-review-staging --project staging
 
 # Production
 npx convex deploy --project prod
 npx convex env set RESEND_API_KEY=re_prod_xxx --project prod
 npx convex env set RESEND_TEST_MODE=false --project prod
-npx convex env set R2_ACCOUNT_ID=xxx --project prod
-npx convex env set R2_ACCESS_KEY_ID=xxx --project prod
-npx convex env set R2_SECRET_ACCESS_KEY=xxx --project prod
-npx convex env set R2_BUCKET=html-review-prod --project prod
 ```
 
-#### Vercel + Convex Integration
+**Note:** HTML artifacts are stored in Convex File Storage (included in Professional plan: 100GB storage, 50GB bandwidth/month). See [ADR 0002](./decisions/0002-html-artifact-storage.md) for migration path to Cloudflare R2 when bandwidth exceeds 40GB/month.
 
-Vercel automatically deploys frontend + Convex backend together:
+#### Vercel + Convex Integration (Direct Account)
 
-1. **Connect Vercel to Convex:**
-   - Install Convex integration from Vercel Marketplace
-   - Grant access to Convex projects (dev, staging, prod)
+Vercel orchestrates frontend + Convex backend deploys via the build command:
 
-2. **Automatic deployment flow:**
-   - Push to branch → Vercel builds frontend → `npx convex deploy` runs → Frontend env vars updated
+**Setup (one-time):**
+1. Get `CONVEX_DEPLOY_KEY` from Convex dashboard (Settings → Deploy Key)
+2. Add to Vercel environment variables (per environment: dev, staging, prod)
+3. Override build command: `npx convex deploy --cmd 'npm run build'`
 
-3. **Preview deployments:**
-   - Each PR gets a Vercel preview URL + separate Convex preview backend
-   - Isolated testing without affecting dev/staging/prod
+**Deployment flow:**
+```
+git push
+    ↓
+Vercel triggers build
+    ↓
+npx convex deploy (backend first)
+    ↓
+Convex validates schema against data
+    ↓
+npm run build (frontend with CONVEX_URL)
+    ↓
+Vercel deploys frontend
+```
+
+**Preview deployments:**
+- Each PR gets a Vercel preview URL + isolated Convex preview backend
+- Auto-cleanup after 5-14 days
+- Test breaking changes without affecting production
+
+**See also:** [ADR 0003](./decisions/0003-deployment-hosting-strategy.md) for full deployment strategy
 
 ---
 
@@ -634,10 +604,10 @@ steps:
 
 | Environment | Resources | Monthly Cost Estimate |
 |-------------|-----------|----------------------|
-| **Local** | Developer machine + Mailpit + R2 | Free (R2 free tier) |
-| **Hosted Dev** | Vercel Pro + Convex + Resend + R2 | ~$20 (Vercel Pro) + Convex free tier + Resend free tier + R2 $0 |
-| **Staging** | Vercel Pro + Convex + Resend + R2 | Shared with production Vercel plan + R2 $0 |
-| **Production** | Vercel Pro + Convex + Resend + R2 | ~$20 (Vercel Pro) + Convex (usage-based) + Resend (may need paid) + R2 $0-1 |
+| **Local** | Developer machine + Mailpit | Free |
+| **Hosted Dev** | Vercel Pro + Convex + Resend | ~$20 (Vercel Pro) + Convex free tier + Resend free tier |
+| **Staging** | Vercel Pro + Convex + Resend | Shared with production Vercel plan |
+| **Production** | Vercel Pro + Convex + Resend | ~$20 (Vercel Pro) + Convex $25/mo (Professional) + Resend (may need paid) |
 
 ### Pricing Breakdown
 
@@ -656,32 +626,26 @@ steps:
 - **Covers:** Dev (test mode) + Staging (limited recipients) + light production usage
 - **Paid tier:** $20/month for 50K emails if needed
 
-**Cloudflare R2:**
-- **Free tier:** 10GB storage, 1M Class A ops, 10M Class B ops per month
-- **Paid tier:** $0.015/GB storage, zero egress fees
-- **Cost:** Essentially free for MVP (<$1/month even at scale)
-- **Why R2:** 35% cheaper storage + zero egress vs Vercel Blob ($0.05/GB egress)
+**Convex File Storage (MVP):**
+- **Included in Professional plan:** 100GB storage, 50GB bandwidth/month
+- **Cost:** $25/month fixed (no overages within limits)
+- **Migration trigger:** Bandwidth consistently >40GB/month → migrate to Cloudflare R2
+- **See:** [ADR 0002](./decisions/0002-html-artifact-storage.md) for full storage strategy
 
 ### Total MVP Cost Estimate
 
 | Component | Monthly Cost |
 |-----------|-------------|
 | Vercel Pro | $20 |
-| Convex (MVP usage) | $0-25 |
+| Convex Professional | $25 |
 | Resend (free tier) | $0 |
-| R2 (HTML storage) | $0-1 |
-| **Total** | **~$20-46/month** |
+| **Total** | **~$45/month** |
 
 **As you scale:**
-- Convex: Increases with database size, function calls, bandwidth
+- Convex: Fixed $25/month until you exceed Professional plan limits
 - Resend: May need $20/month paid tier (50K emails)
-- R2: Stays minimal (~$1-5/month even with 10K projects)
+- Storage migration: Move to Cloudflare R2 when bandwidth >40GB/month (saves ~$40/month at scale)
 - Vercel: $20/month stays flat (bandwidth overages rare)
-
-**Cost comparison (1,000 HTML projects, 10GB storage, 100GB views/month):**
-- **With R2:** $0.15 storage + $0 egress = $0.15/month
-- **With Vercel Blob:** $0.23 storage + $5 egress = $5.23/month
-- **R2 saves $60/year** even at moderate scale
 
 ---
 
@@ -704,12 +668,12 @@ steps:
 - [Resend Inbound Email](https://resend.com/docs/dashboard/emails/inbound-emails) (future reference)
 - [Mailpit](https://mailpit.axllent.org/) (local email testing)
 
-### File Storage (R2)
-- [Cloudflare R2 Docs](https://developers.cloudflare.com/r2/)
+### File Storage
+- [Convex File Storage](https://docs.convex.dev/file-storage) (MVP storage solution)
+- [Cloudflare R2 Docs](https://developers.cloudflare.com/r2/) (future migration option)
 - [Cloudflare R2 Pricing](https://developers.cloudflare.com/r2/pricing/)
-- [Convex R2 Component](https://github.com/get-convex/r2)
-- [R2 vs Vercel Blob Comparison](https://www.wmtips.com/technologies/compare/cloudflare-r2-vs-vercel-blob/)
 
 ### Project Architecture
 - [ADR 0001: Authentication Provider](./decisions/0001-authentication-provider.md) (auth + email + testing strategy)
-- [ADR 0002: HTML Artifact Storage](./decisions/0002-html-artifact-storage.md) (hybrid storage strategy with R2)
+- [ADR 0002: HTML Artifact Storage](./decisions/0002-html-artifact-storage.md) (Convex File Storage → R2 migration strategy)
+- [ADR 0003: Deployment & Hosting Strategy](./decisions/0003-deployment-hosting-strategy.md) (Vercel + direct Convex account)

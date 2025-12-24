@@ -26,21 +26,12 @@ We need an authentication solution for the HTML Review Platform that supports:
 - **OAuth providers** — Google, GitHub for document creators
 - **Account linking by email** — same email = same user across auth methods
 
-### Email Provider: Resend
+### Email Provider
 
-| Aspect | Decision |
-|--------|----------|
-| Provider | Resend |
-| Free tier | 3,000 emails/month (covers MVP easily) |
-| Integration | Official Auth.js/Convex Auth support |
-| Cost at scale | $20/mo for 50K emails |
-| Estimated usage | ~500 emails/month (magic links + notifications) |
-
-**Why Resend:**
-- Official Convex Auth integration
-- Generous free tier (3K vs Postmark's $15/mo)
-- Modern API, excellent DX
-- Easy domain verification
+Magic links are sent via **Resend**. See [ADR 0004: Email Strategy](./0004-email-strategy.md) for full email provider decision, including:
+- Provider comparison and rationale
+- Environment-specific configuration (Mailpit for local, Resend for hosted)
+- Cost projections
 
 ### Auth Providers Considered
 
