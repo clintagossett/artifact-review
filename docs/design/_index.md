@@ -6,6 +6,7 @@ Design system, UI/UX decisions, and visual guidelines.
 
 | Document | Description |
 |----------|-------------|
+| [Landing Page Figma Prompt](./landing-page-figma-prompt.md) | Comprehensive design brief for landing page with sections, components, and styling |
 | [Notification Patterns](./notification-patterns.md) | Toast vs modal vs banner vs email decision matrix |
 | [Pricing & Packaging](./pricing-and-packaging.md) | Pricing tiers and packaging strategy |
 | [Privacy Policy Outline](./privacy-policy-outline.md) | Comprehensive privacy policy structure for GDPR/CCPA compliance |
