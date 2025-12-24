@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a proof-of-concept project for HTML review functionality. The project is in early development.
+A SaaS platform for teams to upload, share, and collaboratively review HTML output from AI agents (Claude Code, Cursor, etc.). Solves the format mismatch between AI-native output (HTML) and traditional collaboration tools.
+
+**Core Value Proposition:** "From AI output to stakeholder feedback in one click"
+
+See `PRODUCT-DISCOVERY.md` for full product research and strategy.
 
 ## Environment
 
@@ -113,6 +117,22 @@ docs/
 
 - **Backend:** Convex
 - **Reference Designs:** `figma-designs/` (git submodule, read-only)
+
+## Development Commands
+
+When Convex is set up:
+```bash
+npx convex dev          # Start Convex dev server
+npx convex deploy       # Deploy to production
+```
+
+## Figma Designs Reference
+
+The `figma-designs/` directory is a git submodule containing Figma Make exports. This is **read-only reference material**.
+
+- Original Figma: https://www.figma.com/design/8Roikp7VBTQaxiWbQKRtZ2/Collaborative-HTML-Review-Platform
+- To update: `git submodule update --remote figma-designs`
+- Do NOT modify files in this directory
 
 ## Convex Backend Rules
 
