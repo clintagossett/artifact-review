@@ -10,6 +10,8 @@ Record of significant architectural decisions made for this project.
 | [0002](./0002-html-artifact-storage.md) | HTML Artifact Storage Strategy | Accepted | 2024-12-24 |
 | [0003](./0003-deployment-hosting-strategy.md) | Deployment & Hosting Strategy | Accepted | 2024-12-24 |
 | [0004](./0004-email-strategy.md) | Email Strategy | Accepted | 2024-12-24 |
+| [0005](./0005-domain-registrar.md) | Domain Registrar | Accepted | 2024-12-24 |
+| [0006](./0006-frontend-stack.md) | Frontend Stack | Accepted | 2024-12-25 |
 
 ---
 

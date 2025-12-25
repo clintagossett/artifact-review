@@ -14,3 +14,8 @@ Icon?
 # macOS resource forks
 .fseventsd
 .envrc
+
+# Python
+.venv/
+__pycache__/
+*.pyc

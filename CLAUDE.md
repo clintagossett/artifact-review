@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A SaaS platform for teams to upload, share, and collaboratively review HTML output from AI agents (Claude Code, Cursor, etc.). Solves the format mismatch between AI-native output (HTML) and traditional collaboration tools.
+**Artifact Review** - A SaaS platform for teams to upload, share, and collaboratively review AI-generated artifacts (HTML, and future formats) from AI agents (Claude Code, Cursor, etc.). Solves the format mismatch between AI-native output and traditional collaboration tools.
 
 **Core Value Proposition:** "From AI output to stakeholder feedback in one click"
 

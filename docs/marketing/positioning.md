@@ -2,9 +2,9 @@
 
 **Status:** Draft
 **Last Updated:** December 24, 2024
-**Version:** 1.0
+**Version:** 1.1
 
-This document defines the strategic positioning and Unique Value Proposition (UVP) for the Collaborative HTML Review Platform.
+This document defines the strategic positioning and Unique Value Proposition (UVP) for **Artifact Review**.
 
 ---
 

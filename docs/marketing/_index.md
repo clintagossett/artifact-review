@@ -10,7 +10,7 @@ Marketing strategy, positioning, messaging, and go-to-market materials.
 
 ## Overview
 
-Marketing strategy for the Collaborative HTML Review Platform, targeting AI-first teams outside Google Workspace and Adobe Creative Cloud ecosystems.
+Marketing strategy for **Artifact Review**, targeting AI-first teams outside Google Workspace and Adobe Creative Cloud ecosystems.
 
 **Core Positioning:** "From AI output to stakeholder feedback in one click"
 

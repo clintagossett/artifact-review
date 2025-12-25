@@ -1,0 +1,15 @@
+{
+  "include": ["**/*.ts", "**/*.tsx", "./*.js", "./*.ts"],
+  "compilerOptions": {
+    "lib": ["ES2021"],
+    "module": "CommonJS",
+    "target": "ES2021",
+    "strict": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  }
+}

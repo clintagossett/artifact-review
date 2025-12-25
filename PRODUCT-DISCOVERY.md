@@ -1,8 +1,8 @@
-# Product Discovery: AI Agent HTML Collaboration Tool
+# Product Discovery: Artifact Review
 
 ## Executive Summary
 
-A SaaS platform that allows teams to upload, share, and collaboratively review HTML output from AI agents (Claude Code, Cursor, etc.). Solves the format mismatch between AI-native output (HTML) and traditional collaboration tools (Google Docs, PowerPoint, etc.).
+**Artifact Review** - A SaaS platform that allows teams to upload, share, and collaboratively review AI-generated artifacts (HTML, and future formats) from AI agents (Claude Code, Cursor, etc.). Solves the format mismatch between AI-native output and traditional collaboration tools (Google Docs, PowerPoint, etc.).
 
 **Core Value Proposition:** "From AI output to stakeholder feedback in one click"
 
