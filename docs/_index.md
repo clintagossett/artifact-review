@@ -8,6 +8,7 @@ Project documentation for **Artifact Review**.
 
 | Section | Description |
 |---------|-------------|
+| [development/](./development/_index.md) | **TDD workflow, testing, and logging guides** |
 | [setup/](./setup/) | Account setup, environment configuration, agent access |
 | [market-intelligence/](./market-intelligence/_index.md) | Market analysis, competitive landscape, TAM/SAM/SOM |
 | [marketing/](./marketing/_index.md) | Positioning, messaging, UVP, and go-to-market strategy |

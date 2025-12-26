@@ -23,10 +23,10 @@ describe("users", () => {
         });
       });
 
-      // Mock auth to return this user ID
-      t.withIdentity({ subject: userId });
+      // withIdentity returns a new context - must use it!
+      const asUser = t.withIdentity({ subject: userId });
 
-      const user = await t.query(api.users.getCurrentUser);
+      const user = await asUser.query(api.users.getCurrentUser);
 
       expect(user).not.toBeNull();
       expect(user?.isAnonymous).toBe(true);
@@ -44,9 +44,9 @@ describe("users", () => {
         });
       });
 
-      t.withIdentity({ subject: userId });
+      const asUser = t.withIdentity({ subject: userId });
 
-      const user = await t.query(api.users.getCurrentUser);
+      const user = await asUser.query(api.users.getCurrentUser);
 
       expect(user).not.toBeNull();
       expect(user?.email).toBe("test@example.com");

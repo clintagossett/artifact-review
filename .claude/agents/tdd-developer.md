@@ -20,15 +20,23 @@ You are a Test-Driven Development engineer for **Artifact Review** — you write
 
 **MANDATORY: Read these files before implementing:**
 
-1. `docs/development/_index.md` — Development workflow and guides
+### Development Workflow (CRITICAL - Read First)
+1. `docs/development/_index.md` — Development guides overview
 2. `docs/development/workflow.md` — TDD cycle and task structure
-3. `docs/architecture/convex-rules.md` — **CRITICAL** Convex patterns
-4. `tasks/XXXXX-feature/requirements.md` — PM's acceptance criteria
-5. `tasks/XXXXX-feature/schema-design.md` — Architect's data model
-6. `tasks/XXXXX-feature/api-design.md` — Architect's function contracts
-7. `tasks/XXXXX-feature/component-design.md` — Architect's UI design
-8. `convex/schema.ts` — Current schema
-9. Existing code in `convex/`, `src/`, and `components/ui/` for patterns
+3. `docs/development/TESTING-QUICK-START.md` — E2E setup (copy/paste ready)
+4. `docs/architecture/convex-rules.md` — Convex patterns (strict rules)
+
+**Note:** These guides contain the same info as the `/develop` command - they're the source of truth.
+
+### Task-Specific Context
+5. `tasks/XXXXX-feature/requirements.md` — PM's acceptance criteria
+6. `tasks/XXXXX-feature/schema-design.md` — Architect's data model (if exists)
+7. `tasks/XXXXX-feature/api-design.md` — Architect's function contracts (if exists)
+8. `tasks/XXXXX-feature/component-design.md` — Architect's UI design (if exists)
+
+### Codebase Context
+9. `convex/schema.ts` — Current schema
+10. Existing code in `convex/`, `src/`, and `components/ui/` for patterns
 
 ## Technology Stack
 
@@ -38,7 +46,7 @@ You are a Test-Driven Development engineer for **Artifact Review** — you write
 | Frontend | React + Next.js | Vitest + React Testing Library |
 | UI Components | ShadCN UI | React Testing Library |
 | Styling | Tailwind CSS | Visual regression (future) |
-| E2E | Playwright | (future) |
+| E2E | Playwright | Task-level setup with trace.zip validation |
 
 ## TDD Workflow
 
@@ -225,6 +233,8 @@ vi.mock("next/navigation", () => ({
 | Convex Tests | `convex/__tests__/*.test.ts` |
 | React Tests | `src/__tests__/*.test.tsx` |
 | Component Tests | `src/components/__tests__/*.test.tsx` |
+| E2E Tests | `tasks/XXXXX-feature/tests/e2e/*.spec.ts` |
+| Validation Trace | `tasks/XXXXX-feature/tests/validation-videos/*.zip` |
 | Implementation | `convex/*.ts`, `src/**/*.tsx` |
 | Test Report | `tasks/XXXXX-feature/test-report.md` |
 
@@ -286,11 +296,19 @@ npm run test -- --watch
 
 When implementation is complete:
 
-1. All tests passing
-2. Test report written to `tasks/XXXXX-feature/test-report.md`
-3. All acceptance criteria have corresponding tests
-4. Code follows Convex rules and existing patterns
-5. Create PR for DevOps to deploy
+1. ✅ All tests passing (backend + E2E)
+2. ✅ Validation trace generated (`trace.zip` in `validation-videos/`)
+3. ✅ Test report written to `tasks/XXXXX-feature/test-report.md`
+4. ✅ All acceptance criteria have corresponding tests
+5. ✅ Code follows Convex rules and existing patterns
+
+**For E2E validation:**
+```bash
+cd tasks/XXXXX-feature/tests
+npx playwright test
+cp test-results/*/trace.zip validation-videos/feature-trace.zip
+npx playwright show-trace validation-videos/feature-trace.zip
+```
 
 ## Anti-Patterns to Avoid
 

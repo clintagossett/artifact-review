@@ -15,6 +15,14 @@ Icon?
 .fseventsd
 .envrc
 
+# Node.js (including task-level node_modules)
+node_modules/
+package-lock.json
+
+# Test artifacts
+test-results/
+playwright-report/
+
 # Python
 .venv/
 __pycache__/

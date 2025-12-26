@@ -129,10 +129,12 @@ Per existing ADRs:
 ### Validation Points
 
 **Local Development:**
-- [ ] Anonymous auth works at `http://localhost:3000`
-- [ ] No Convex connection errors in console
-- [ ] Session persists across page refreshes
-- [ ] Sign out creates new anonymous session
+- [ ] Anonymous auth works at `http://localhost:3000` - **BLOCKED** (see bug report)
+- [x] No Convex connection errors in console
+- [ ] Session persists across page refreshes - **BLOCKED**
+- [ ] Sign out creates new anonymous session - **BLOCKED**
+
+**VALIDATION STATUS:** Blocked by client-side auth integration bug. See `/tasks/00006-local-dev-environment/tests/BUG-REPORT.md` for details.
 
 **Hosted Dev (Vercel):**
 - [ ] Deploy to Vercel

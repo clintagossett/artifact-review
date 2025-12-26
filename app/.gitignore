@@ -39,3 +39,14 @@ next-env.d.ts
 # convex
 .convex/
 convex/_generated/
+
+# Dev logs
+logs/
+
+# Validation videos (E2E test recordings)
+**/validation-videos/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/

@@ -1,0 +1,9 @@
+{
+  "name": "task-00006-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Task-level E2E tests for anonymous authentication",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

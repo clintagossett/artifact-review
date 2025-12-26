@@ -149,3 +149,53 @@ The `figma-designs/` directory is a git submodule containing Figma Make exports.
    - Actions cannot access `ctx.db`
 
 Failure to follow these rules will result in broken or insecure code.
+
+## Agent Delegation
+
+Always prefer handing tasks off to specialized agents (Task tool) when the task matches an agent's capabilities. Use parallel agents when tasks are independent. This maximizes efficiency and keeps context focused.
+
+## Development Standards
+
+**MANDATORY:** When implementing features, follow these development guides:
+
+1. **Read the guides first:** `docs/development/_index.md`
+2. **Follow TDD workflow:** Write tests first, in `tasks/XXXXX/tests/`
+3. **Use structured logging:** Never raw `console.log`
+
+### Quick Reference
+
+| Guide | Purpose |
+|-------|---------|
+| [workflow.md](docs/development/workflow.md) | TDD workflow, task structure |
+| [testing-guide.md](docs/development/testing-guide.md) | How to write tests |
+| [logging-guide.md](docs/development/logging-guide.md) | How to log |
+
+### TDD Cycle
+
+```
+RED    → Write failing test in tasks/XXXXX/tests/
+GREEN  → Minimal code to pass
+REFACTOR → Clean up
+REPEAT → Next test
+```
+
+### Logging
+
+```typescript
+// Frontend
+import { logger, LOG_TOPICS } from '@/lib/logger';
+logger.info(LOG_TOPICS.Auth, 'LoginForm', 'User signed in', { userId });
+
+// Backend (Convex)
+import { createLogger, Topics } from './lib/logger';
+const log = createLogger('auth.signIn');
+log.info(Topics.Auth, 'User signed in', { userId });
+```
+
+### Feature Handoff
+
+After implementation, deliver:
+- Working feature
+- Passing tests in `tasks/XXXXX/tests/`
+- Validation video in `tasks/XXXXX/tests/validation-videos/`
+- `test-report.md` documenting coverage

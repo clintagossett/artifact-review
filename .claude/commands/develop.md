@@ -33,7 +33,7 @@ Before implementing any feature, read and follow these development guides:
 4. IMPLEMENT minimal code (GREEN)
 5. REFACTOR if needed
 6. REPEAT until complete
-7. RECORD validation video
+7. GENERATE validation trace (Playwright trace.zip)
 8. CREATE test-report.md
 ```
 
@@ -42,11 +42,17 @@ Before implementing any feature, read and follow these development guides:
 ```
 tasks/XXXXX-feature/
 ├── tests/
-│   ├── convex/           # Convex function tests
-│   ├── e2e/              # Playwright tests
-│   └── validation-videos/ # Feature demo recordings
-└── test-report.md        # Coverage documentation
+│   ├── package.json           # E2E dependencies (Playwright)
+│   ├── playwright.config.ts   # E2E test configuration
+│   ├── node_modules/          # Gitignored
+│   ├── convex/                # Convex function tests
+│   ├── e2e/                   # Playwright E2E tests
+│   └── validation-videos/
+│       └── feature-trace.zip  # Playwright trace (PRIMARY)
+└── test-report.md             # Coverage documentation
 ```
+
+**Quick E2E Setup:** See `docs/development/TESTING-QUICK-START.md`
 
 ## Logging Pattern
 
@@ -69,4 +75,7 @@ After reading the guides, you should:
 2. Know where to put tests (`tasks/XXXXX/tests/`)
 3. Follow TDD strictly (test first, always)
 4. Use structured logging throughout
-5. Deliver with validation video and test report
+5. Deliver with:
+   - Passing tests (backend + E2E)
+   - Validation trace (`trace.zip`)
+   - Test report (`test-report.md`)

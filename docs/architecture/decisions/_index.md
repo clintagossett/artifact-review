@@ -12,6 +12,7 @@ Record of significant architectural decisions made for this project.
 | [0004](./0004-email-strategy.md) | Email Strategy | Accepted | 2024-12-24 |
 | [0005](./0005-domain-registrar.md) | Domain Registrar | Accepted | 2024-12-24 |
 | [0006](./0006-frontend-stack.md) | Frontend Stack | Accepted | 2024-12-25 |
+| [0007](./0007-logging-strategy.md) | Logging Strategy | Accepted | 2024-12-26 |
 
 ---
 
