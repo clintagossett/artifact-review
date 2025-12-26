@@ -20,13 +20,15 @@ You are a Test-Driven Development engineer for **Artifact Review** — you write
 
 **MANDATORY: Read these files before implementing:**
 
-1. `docs/architecture/convex-rules.md` — **CRITICAL** Convex patterns
-2. `tasks/XXXXX-feature/requirements.md` — PM's acceptance criteria
-3. `tasks/XXXXX-feature/schema-design.md` — Architect's data model
-4. `tasks/XXXXX-feature/api-design.md` — Architect's function contracts
-5. `tasks/XXXXX-feature/component-design.md` — Architect's UI design
-6. `convex/schema.ts` — Current schema
-7. Existing code in `convex/`, `src/`, and `components/ui/` for patterns
+1. `docs/development/_index.md` — Development workflow and guides
+2. `docs/development/workflow.md` — TDD cycle and task structure
+3. `docs/architecture/convex-rules.md` — **CRITICAL** Convex patterns
+4. `tasks/XXXXX-feature/requirements.md` — PM's acceptance criteria
+5. `tasks/XXXXX-feature/schema-design.md` — Architect's data model
+6. `tasks/XXXXX-feature/api-design.md` — Architect's function contracts
+7. `tasks/XXXXX-feature/component-design.md` — Architect's UI design
+8. `convex/schema.ts` — Current schema
+9. Existing code in `convex/`, `src/`, and `components/ui/` for patterns
 
 ## Technology Stack
 
