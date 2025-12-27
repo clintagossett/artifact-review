@@ -121,8 +121,16 @@ def concat_clips(clip_paths: List[Path], output_path: Path) -> None:
 
 
 def collect_webm_clips(directory: Path) -> List[Path]:
-    """Find all .webm clips in a directory, excluding flow.webm."""
-    clips = sorted(directory.glob("*.webm"))
+    """
+    Find all video.webm clips in subdirectories (Playwright test results).
+
+    Playwright creates one subdirectory per test with video.webm inside:
+    - test-results/test-name-hash-chromium/video.webm
+
+    This function finds all such video.webm files.
+    """
+    clips = sorted(directory.rglob("video.webm"))
+    # Exclude flow.webm if it exists
     return [c for c in clips if c.name != "flow.webm"]
 
 

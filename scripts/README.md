@@ -78,26 +78,48 @@ Normalize video to consistent format.
 # Args: input, output, width, height, fps
 ```
 
+## Understanding Playwright Test Results
+
+**IMPORTANT:** Playwright creates **one subdirectory per test** with hash-based names:
+
+```
+test-results/
+├── magic-link-Auth-abc123-chromium/
+│   ├── video.webm          # Video for test 1
+│   ├── trace.zip
+│   └── test-finished-1.png
+├── magic-link-Auth-def456-chromium/
+│   └── video.webm          # Video for test 2
+└── magic-link-Auth-ghi789-chromium/
+    └── video.webm          # Video for test 3
+```
+
+The scripts find all `video.webm` files in subdirectories and combine them.
+
 ## Typical Workflow
 
 ### From Task Tests Directory
 
 ```bash
-cd tasks/00006-magic-link-auth/tests
+cd tasks/00008-magic-link-auth/tests
 
 # 1. Run E2E tests (generates videos)
 npx playwright test
 
-# 2. Assemble validation video
+# 2. Simple approach: Combine all tests into one video
+../../../../scripts/concat_journey.sh test-results
+../../../../scripts/normalize_video.sh test-results/flow.webm validation-videos/validation.mp4
+
+# OR: Advanced approach with title slides
 ../../../../scripts/assemble-validation-video.sh \
-  --title "Login Flow" test-results/login-flow \
-  --title "Signup Flow" test-results/signup-flow \
-  --title "Password Reset" test-results/password-reset \
+  --title "Magic Link Authentication" test-results \
   --output validation-videos/master-validation.mp4
 
 # 3. View result
 open validation-videos/master-validation.mp4
 ```
+
+**Note:** Since Playwright already separates tests into subdirectories, you typically pass the entire `test-results` directory to the scripts. If you have logically separate flows (e.g., different features), run them as separate Playwright test sessions and assemble with different titles.
 
 ## Output Format
 

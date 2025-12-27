@@ -1,18 +1,23 @@
 #!/bin/bash
-# concat_journey.sh - Combine all .webm clips in a journey folder
+# concat_journey.sh - Combine all video.webm clips from Playwright test results
 #
-# Usage: ./concat_journey.sh <journey_dir>
-# Example: ./concat_journey.sh test-results/login-flow
+# Playwright creates one subdirectory per test with video.webm inside.
+# This script finds all video.webm files in subdirectories and concatenates them.
+#
+# Usage: ./concat_journey.sh <test_results_dir>
+# Example: ./concat_journey.sh test-results
 
 set -e
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <journey_dir>"
-    echo "Example: $0 test-results/login-flow"
+    echo "Usage: $0 <test_results_dir>"
+    echo "Example: $0 test-results"
+    echo ""
+    echo "Finds all video.webm files in subdirectories and concatenates them."
     exit 1
 fi
 
-JOURNEY_DIR="$1"
+JOURNEY_DIR="$(cd "$1" && pwd)"  # Convert to absolute path
 OUTPUT="$JOURNEY_DIR/flow.webm"
 FILE_LIST="$JOURNEY_DIR/filelist.txt"
 
@@ -22,14 +27,17 @@ if [ ! -d "$JOURNEY_DIR" ]; then
     exit 1
 fi
 
-# Find all .webm files except flow.webm
+# Find all video.webm files in subdirectories (Playwright test results)
+# Playwright creates directories like: test-name-hash-chromium/video.webm
 webm_files=()
 while IFS= read -r -d '' file; do
-    filename=$(basename "$file")
-    if [ "$filename" != "flow.webm" ]; then
-        webm_files+=("$file")
+    # Get absolute path
+    abs_file="$(cd "$(dirname "$file")" && pwd)/$(basename "$file")"
+    # Skip the output file if it already exists
+    if [ "$abs_file" != "$OUTPUT" ]; then
+        webm_files+=("$abs_file")
     fi
-done < <(find "$JOURNEY_DIR" -maxdepth 1 -name "*.webm" -print0 | sort -z)
+done < <(find "$JOURNEY_DIR" -type f -name "video.webm" -print0 | sort -z)
 
 # Check if we have files to concatenate
 if [ ${#webm_files[@]} -eq 0 ]; then
@@ -45,16 +53,16 @@ if [ ${#webm_files[@]} -eq 1 ]; then
     exit 0
 fi
 
-# Create file list for ffmpeg
+# Create file list for ffmpeg with absolute paths
 > "$FILE_LIST"
 for f in "${webm_files[@]}"; do
-    echo "file '$(basename "$f")'" >> "$FILE_LIST"
+    # Use absolute paths for files in subdirectories
+    echo "file '$f'" >> "$FILE_LIST"
 done
 
 # Concatenate all clips
 echo "Concatenating ${#webm_files[@]} clips..."
-cd "$JOURNEY_DIR"
-ffmpeg -y -f concat -safe 0 -i "$(basename "$FILE_LIST")" -c copy flow.webm 2>&1 | grep -v "^frame=" || true
+ffmpeg -y -f concat -safe 0 -i "$FILE_LIST" -c copy "$OUTPUT" 2>&1 | grep -v "^frame=" || true
 
 # Cleanup
 rm "$FILE_LIST"
