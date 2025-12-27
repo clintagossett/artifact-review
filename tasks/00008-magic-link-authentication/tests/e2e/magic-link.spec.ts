@@ -8,7 +8,7 @@ test.describe('Magic Link Authentication', () => {
     await expect(page.getByLabel(/password/i)).toBeVisible();
 
     // Click to switch to magic link
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
 
     // Verify magic link form is shown
     await expect(page.getByRole('button', { name: /send magic link/i })).toBeVisible();
@@ -19,7 +19,7 @@ test.describe('Magic Link Authentication', () => {
     await page.goto('/login');
 
     // Switch to magic link form
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
 
     // Fill email with Resend test domain
     const testEmail = `test-${Date.now()}@tolauante.resend.app`;
@@ -40,18 +40,18 @@ test.describe('Magic Link Authentication', () => {
     await expect(page.getByLabel(/password/i)).toBeVisible();
 
     // Switch to magic link
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
     await expect(page.getByLabel(/password/i)).not.toBeVisible();
     await expect(page.getByRole('button', { name: /send magic link/i })).toBeVisible();
 
     // Switch back to password
-    await page.click('button:has-text("Sign in with Password")');
+    await page.getByRole('button', { name: /^password$/i }).click();
     await expect(page.getByLabel(/password/i)).toBeVisible();
   });
 
   test('should show error for invalid email format', async ({ page }) => {
     await page.goto('/login');
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
 
     // The email input should have required attribute
     const emailInput = page.locator('input[type="email"]');

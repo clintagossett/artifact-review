@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, Authenticated, Unauthenticated } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -25,12 +27,23 @@ import {
 } from "@/components/landing";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { signOut } = useAuthActions();
   const currentUser = useQuery(api.auth.getCurrentUser);
 
   const handleSignOut = async () => {
     await signOut();
   };
+
+  // Redirect authenticated users to dashboard
+  // This handles magic link callbacks (/?code=...) and any other case
+  // where an authenticated user lands on the home page
+  useEffect(() => {
+    if (currentUser !== undefined && currentUser !== null) {
+      router.push("/dashboard");
+    }
+  }, [currentUser, router]);
 
   // Loading state
   if (currentUser === undefined) {

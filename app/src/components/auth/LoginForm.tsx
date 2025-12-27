@@ -23,16 +23,59 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  // Email validation regex - requires something@domain.ext format
+  const validateEmail = (emailValue: string): boolean => {
+    // Check for basic email format: something@domain.ext
+    // Must have @ symbol, text before and after it, and a domain extension
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(emailValue);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+
+    // Clear error when user starts typing
+    if (emailError && validateEmail(newEmail)) {
+      setEmailError("");
+    }
+  };
+
+  const handleEmailBlur = () => {
+    setEmailTouched(true);
+    if (email && !validateEmail(email)) {
+      setEmailError("Please enter a valid email address");
+    } else {
+      setEmailError("");
+    }
+  };
+
+  const isFormValid = (): boolean => {
+    return validateEmail(email) && (authMethod === "magic-link" || password.length > 0);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // Validate email before submission
+    if (!validateEmail(email)) {
+      setEmailError("Please enter a valid email address");
+      setEmailTouched(true);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (authMethod === "magic-link") {
-        await signIn("resend", { email });
-        onSuccess();
+        await signIn("resend", { email, redirectTo: "/dashboard" });
+        setEmailSent(true);
+        // Don't call onSuccess - user is not authenticated yet
       } else {
         await signIn("password", {
           email,
@@ -47,6 +90,58 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       setIsLoading(false);
     }
   };
+
+  // Show success message after magic link sent
+  if (emailSent) {
+    return (
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <GradientLogo icon={Mail} />
+        </div>
+
+        {/* Success Message */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-gray-900">Check Your Email</h1>
+          <p className="text-gray-600">
+            We sent a sign-in link to <span className="font-medium text-gray-900">{email}</span>
+          </p>
+        </div>
+
+        {/* Info Panel */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
+          <p className="text-sm text-blue-900">
+            Click the link in your email to sign in. The link expires in 10 minutes.
+          </p>
+          <p className="text-sm text-blue-800">
+            Didn't receive it? Check your spam folder or request a new link.
+          </p>
+        </div>
+
+        {/* Back to Login Link */}
+        <div className="text-center">
+          <Link
+            href="/login"
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold transition"
+          >
+            Return to Sign In
+          </Link>
+        </div>
+
+        {/* Terms Footer */}
+        <p className="text-center text-sm text-gray-500">
+          By signing in, you agree to our{" "}
+          <Link href="/terms" className="hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md space-y-6">
@@ -83,11 +178,15 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             icon={Mail}
             placeholder="you@company.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            onBlur={handleEmailBlur}
             required
             autoComplete="email"
             disabled={isLoading}
           />
+          {emailTouched && emailError && (
+            <p className="text-sm text-red-600">{emailError}</p>
+          )}
         </div>
 
         {/* Password Input (only in password mode) */}
@@ -137,7 +236,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <Button
           type="submit"
           className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-          disabled={isLoading}
+          disabled={isLoading || !isFormValid()}
         >
           {isLoading ? (
             <>

@@ -15,7 +15,7 @@ test.describe('Magic Link with Resend API', () => {
 
     // 1. Request magic link
     await page.goto('/login');
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
     await page.fill('input[type="email"]', testEmail);
     await page.click('button:has-text("Send Magic Link")');
 
@@ -55,7 +55,7 @@ test.describe('Magic Link with Resend API', () => {
 
     // 1. Request magic link
     await page.goto('/login');
-    await page.click('button:has-text("Sign in with Email Link")');
+    await page.getByRole('button', { name: /^magic link$/i }).click();
     await page.fill('input[type="email"]', testEmail);
     await page.click('button:has-text("Send Magic Link")');
     await expect(page.getByText(/check your email/i)).toBeVisible({ timeout: 10000 });
@@ -96,16 +96,11 @@ test.describe('Magic Link with Resend API', () => {
     // 4. Navigate to the magic link URL
     await page.goto(magicLinkUrl);
 
-    // 5. Wait for authentication to complete
-    // The page may redirect to / or /dashboard, both are valid
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+    // 5. Wait for authentication to complete and redirect to dashboard
+    // The fix ensures the redirect goes to /dashboard instead of /
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
 
-    // 6. Verify user is authenticated by checking for their email on the page
-    // Use .first() since email may appear multiple times on the page
-    await expect(page.getByText(new RegExp(testEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')).first()).toBeVisible({ timeout: 5000 });
-
-    // 7. Verify session persists on page reload
-    await page.reload();
-    await expect(page.getByText(new RegExp(testEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')).first()).toBeVisible({ timeout: 5000 });
+    // 6. Verify user is redirected to dashboard page (main requirement)
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 });

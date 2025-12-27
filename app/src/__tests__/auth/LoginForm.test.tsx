@@ -192,7 +192,7 @@ describe("LoginForm", () => {
       });
     });
 
-    it("should submit magic link with email only", async () => {
+    it("should submit magic link with email only and show success message", async () => {
       const user = userEvent.setup();
       render(<LoginForm onSuccess={mockOnSuccess} />);
 
@@ -202,10 +202,28 @@ describe("LoginForm", () => {
       await user.type(screen.getByLabelText(/email/i), "user@example.com");
       await user.click(screen.getByRole("button", { name: /send magic link/i }));
 
-      // Verify form submitted successfully
+      // Should show success message instead of calling onSuccess
       await waitFor(() => {
-        expect(mockOnSuccess).toHaveBeenCalled();
+        expect(screen.getByText(/check your email/i)).toBeInTheDocument();
       });
+      expect(screen.getByText("user@example.com")).toBeInTheDocument();
+    });
+
+    it("should NOT call onSuccess after magic link submission", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      // Switch to magic link mode
+      await user.click(screen.getByRole("button", { name: /magic link/i }));
+
+      await user.type(screen.getByLabelText(/email/i), "user@example.com");
+      await user.click(screen.getByRole("button", { name: /send magic link/i }));
+
+      // Should NOT redirect to dashboard - user is not authenticated yet
+      await waitFor(() => {
+        expect(screen.getByText(/check your email/i)).toBeInTheDocument();
+      });
+      expect(mockOnSuccess).not.toHaveBeenCalled();
     });
 
     it("should display error message on login failure", async () => {
@@ -256,6 +274,185 @@ describe("LoginForm", () => {
 
       await user.tab();
       expect(screen.getByLabelText(/email/i)).toHaveFocus();
+    });
+  });
+
+  describe("Email Validation", () => {
+    it("should show validation error for email without @", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "invalidemail");
+      await user.tab(); // Blur the field to trigger validation
+
+      expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+    });
+
+    it("should show validation error for email without domain", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "user@");
+      await user.tab(); // Blur the field
+
+      expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+    });
+
+    it("should show validation error for email without domain extension", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "clint@pr");
+      await user.tab(); // Blur the field
+
+      expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+    });
+
+    it("should show validation error for email with incomplete domain", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "user@domain");
+      await user.tab(); // Blur the field
+
+      expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+    });
+
+    it("should NOT show validation error for valid email format", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "user@domain.com");
+      await user.tab(); // Blur the field
+
+      // Should not show validation error
+      await waitFor(() => {
+        expect(screen.queryByText(/valid email/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("should NOT show validation error for valid email with subdomain", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "user@mail.domain.com");
+      await user.tab(); // Blur the field
+
+      await waitFor(() => {
+        expect(screen.queryByText(/valid email/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("should clear validation error when user corrects the email", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+
+      // Type invalid email
+      await user.type(emailInput, "invalid@pr");
+      await user.tab(); // Blur to trigger validation
+
+      // Error should appear
+      expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+
+      // Clear and type valid email
+      await user.clear(emailInput);
+      await user.type(emailInput, "valid@domain.com");
+      await user.tab(); // Blur again
+
+      // Error should be gone
+      await waitFor(() => {
+        expect(screen.queryByText(/valid email/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("should prevent form submission with invalid email in password mode", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      await user.type(screen.getByLabelText(/email/i), "invalid@pr");
+      await user.type(screen.getByLabelText(/^password$/i), "password123");
+
+      const submitButton = screen.getByRole("button", { name: /sign in/i });
+      await user.click(submitButton);
+
+      // onSuccess should NOT be called
+      await waitFor(() => {
+        expect(mockOnSuccess).not.toHaveBeenCalled();
+      });
+    });
+
+    it("should prevent form submission with invalid email in magic link mode", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      // Switch to magic link mode
+      await user.click(screen.getByRole("button", { name: /magic link/i }));
+
+      await user.type(screen.getByLabelText(/email/i), "invalid@pr");
+
+      const submitButton = screen.getByRole("button", { name: /send magic link/i });
+      await user.click(submitButton);
+
+      // Should not show success message
+      await waitFor(() => {
+        expect(screen.queryByText(/check your email/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("should disable submit button when email is invalid in password mode", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "invalid@pr");
+      await user.tab(); // Blur to trigger validation
+
+      // Wait for validation error
+      await screen.findByText(/valid email/i);
+
+      const submitButton = screen.getByRole("button", { name: /sign in/i });
+      expect(submitButton).toBeDisabled();
+    });
+
+    it("should disable submit button when email is invalid in magic link mode", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      // Switch to magic link mode
+      await user.click(screen.getByRole("button", { name: /magic link/i }));
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "invalid@pr");
+      await user.tab(); // Blur to trigger validation
+
+      // Wait for validation error
+      await screen.findByText(/valid email/i);
+
+      const submitButton = screen.getByRole("button", { name: /send magic link/i });
+      expect(submitButton).toBeDisabled();
+    });
+
+    it("should show validation error below email field", async () => {
+      const user = userEvent.setup();
+      render(<LoginForm onSuccess={mockOnSuccess} />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, "invalid@pr");
+      await user.tab(); // Blur the field
+
+      const errorMessage = await screen.findByText(/valid email/i);
+
+      // Error should be visible and near the email input
+      expect(errorMessage).toBeInTheDocument();
+      expect(errorMessage).toHaveClass(/text-red/i);
     });
   });
 });
