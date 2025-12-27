@@ -50,8 +50,8 @@ describe("IconInput", () => {
   });
 
   it("should forward ref", () => {
-    const ref = { current: null };
-    render(<IconInput icon={Mail} ref={ref as any} placeholder="test" />);
+    const ref = { current: null as HTMLInputElement | null };
+    render(<IconInput icon={Mail} ref={ref} placeholder="test" />);
 
     expect(ref.current).toBeTruthy();
   });

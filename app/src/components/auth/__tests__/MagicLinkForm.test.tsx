@@ -22,14 +22,14 @@ describe("MagicLinkForm", () => {
   });
 
   it("should render email input", () => {
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn() } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn(), signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 
   it("should render send link button", () => {
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn() } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn(), signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
     expect(
@@ -38,7 +38,7 @@ describe("MagicLinkForm", () => {
   });
 
   it("should not render password field", () => {
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn() } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn(), signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
     expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
@@ -47,7 +47,7 @@ describe("MagicLinkForm", () => {
   it("should show success message after sending email", async () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
 
@@ -62,7 +62,7 @@ describe("MagicLinkForm", () => {
   it("should call signIn with resend provider and email", async () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
 
@@ -77,7 +77,7 @@ describe("MagicLinkForm", () => {
   it("should show error message on failure", async () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn().mockRejectedValue(new Error("Network error"));
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
 
@@ -92,7 +92,7 @@ describe("MagicLinkForm", () => {
   it("should disable button while sending", async () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn(() => new Promise((r) => setTimeout(r, 100)));
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={vi.fn()} />);
 
@@ -112,7 +112,7 @@ describe("MagicLinkForm", () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
     const mockSignIn = vi.fn().mockResolvedValue(undefined);
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<MagicLinkForm onSuccess={onSuccess} />);
 

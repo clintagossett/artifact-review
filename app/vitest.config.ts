@@ -8,6 +8,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     // Use edge-runtime for Convex tests, jsdom for React component tests
+    // @ts-expect-error - environmentMatchGlobs is supported but not in type definitions
     environmentMatchGlobs: [
       ["convex/**/*.test.ts", "edge-runtime"],
       ["../tasks/**/tests/convex/**/*.test.ts", "edge-runtime"],

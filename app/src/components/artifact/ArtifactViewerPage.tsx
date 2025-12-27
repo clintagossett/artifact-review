@@ -26,18 +26,21 @@ export function ArtifactViewerPage({
     artifact ? { artifactId: artifact._id } : "skip"
   );
 
-  // Determine which version to show
-  const targetVersion = versionNumber
-    ? useQuery(
-        api.artifacts.getVersionByNumber,
-        artifact
-          ? { artifactId: artifact._id, versionNumber }
-          : "skip"
-      )
-    : useQuery(
-        api.artifacts.getLatestVersion,
-        artifact ? { artifactId: artifact._id } : "skip"
-      );
+  // Fetch both version types unconditionally to avoid conditional hooks
+  const specificVersion = useQuery(
+    api.artifacts.getVersionByNumber,
+    artifact && versionNumber
+      ? { artifactId: artifact._id, versionNumber }
+      : "skip"
+  );
+
+  const latestVersion = useQuery(
+    api.artifacts.getLatestVersion,
+    artifact && !versionNumber ? { artifactId: artifact._id } : "skip"
+  );
+
+  // Determine which version to show based on whether versionNumber was provided
+  const targetVersion = versionNumber ? specificVersion : latestVersion;
 
   // Handle loading states
   if (artifact === undefined || versions === undefined || targetVersion === undefined) {
@@ -72,7 +75,7 @@ export function ArtifactViewerPage({
         <div className="text-center">
           <h1 className="text-gray-900 mb-4">Artifact Not Found</h1>
           <p className="text-gray-600">
-            The artifact you're looking for doesn't exist or has been deleted.
+            The artifact you&apos;re looking for doesn&apos;t exist or has been deleted.
           </p>
         </div>
       </div>

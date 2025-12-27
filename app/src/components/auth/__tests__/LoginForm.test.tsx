@@ -18,7 +18,7 @@ describe("LoginForm", () => {
   });
 
   it("should render email and password inputs", () => {
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn() } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn(), signOut: vi.fn() });
 
     render(<LoginForm onSuccess={vi.fn()} />);
 
@@ -27,7 +27,7 @@ describe("LoginForm", () => {
   });
 
   it("should render sign in button", () => {
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn() } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: vi.fn(), signOut: vi.fn() });
 
     render(<LoginForm onSuccess={vi.fn()} />);
 
@@ -40,7 +40,7 @@ describe("LoginForm", () => {
     const mockSignIn = vi.fn().mockResolvedValue(undefined);
     const mockOnSuccess = vi.fn();
 
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<LoginForm onSuccess={mockOnSuccess} />);
 
@@ -65,7 +65,7 @@ describe("LoginForm", () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn().mockRejectedValue(new Error("Invalid credentials"));
 
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<LoginForm onSuccess={vi.fn()} />);
 
@@ -73,14 +73,14 @@ describe("LoginForm", () => {
     await user.type(screen.getByLabelText(/password/i), "wrongpassword");
     await user.click(screen.getAllByRole("button", { name: /sign in/i })[0]);
 
-    expect(await screen.findByText(/invalid.*credentials/i)).toBeInTheDocument();
+    expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
   });
 
   it("should disable button while loading", async () => {
     const user = userEvent.setup();
     const mockSignIn = vi.fn(() => new Promise((r) => setTimeout(r, 100)));
 
-    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn } as any);
+    vi.mocked(useAuthActions).mockReturnValue({ signIn: mockSignIn, signOut: vi.fn() });
 
     render(<LoginForm onSuccess={vi.fn()} />);
 

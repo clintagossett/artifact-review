@@ -54,7 +54,7 @@ describe("AuthMethodToggle", () => {
   });
 
   it("should display Lock icon for Password option", () => {
-    const { container } = render(<AuthMethodToggle value="password" onChange={vi.fn()} />);
+    render(<AuthMethodToggle value="password" onChange={vi.fn()} />);
 
     // Check that Lock icon is present (Lucide icons have data-lucide attribute)
     const passwordButton = screen.getByRole("button", { name: /password/i });
@@ -63,7 +63,7 @@ describe("AuthMethodToggle", () => {
   });
 
   it("should display Sparkles icon for Magic Link option", () => {
-    const { container } = render(<AuthMethodToggle value="password" onChange={vi.fn()} />);
+    render(<AuthMethodToggle value="password" onChange={vi.fn()} />);
 
     // Check that Sparkles icon is present
     const magicLinkButton = screen.getByRole("button", { name: /magic link/i });

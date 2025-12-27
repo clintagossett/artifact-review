@@ -11,8 +11,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LandingHeader } from "@/components/landing/LandingHeader";
-import { HeroSection } from "@/components/landing/HeroSection";
+import {
+  LandingHeader,
+  HeroSection,
+  ProblemSection,
+  HowItWorksSection,
+  FeaturesSection,
+  TestimonialsSection,
+  PricingSection,
+  FAQSection,
+  CTASection,
+  LandingFooter,
+} from "@/components/landing";
 
 export default function Home() {
   const { signOut } = useAuthActions();
@@ -37,10 +47,14 @@ export default function Home() {
         <div className="min-h-screen bg-white">
           <LandingHeader />
           <HeroSection />
-          {/* Placeholder for future sections (Subtasks 04-06) */}
-          <div className="bg-gray-50 py-16 text-center text-gray-500">
-            <p>Additional landing page sections coming soon...</p>
-          </div>
+          <ProblemSection />
+          <HowItWorksSection />
+          <FeaturesSection />
+          <TestimonialsSection />
+          <PricingSection />
+          <FAQSection />
+          <CTASection />
+          <LandingFooter />
         </div>
       </Unauthenticated>
 

@@ -79,7 +79,7 @@ export function MagicLinkForm({ onSuccess }: MagicLinkFormProps) {
       <CardHeader>
         <CardTitle>Sign in with Email</CardTitle>
         <CardDescription>
-          We'll send you a magic link to sign in
+          We&apos;ll send you a magic link to sign in
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -41,7 +41,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         });
         onSuccess();
       }
-    } catch (err) {
+    } catch {
       setError("Invalid email or password");
     } finally {
       setIsLoading(false);
@@ -126,7 +126,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   Passwordless sign in
                 </p>
                 <p className="text-xs text-purple-700">
-                  We'll email you a secure link to sign in instantly—no password needed.
+                  We&apos;ll email you a secure link to sign in instantly—no password needed.
                 </p>
               </div>
             </div>
@@ -165,7 +165,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/register"
               className="text-blue-600 hover:text-blue-700 font-semibold transition"
