@@ -4,6 +4,8 @@ import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
+import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
+import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ArtifactViewerPageProps {
@@ -19,6 +21,13 @@ export function ArtifactViewerPage({
 
   // Fetch artifact by share token
   const artifact = useQuery(api.artifacts.getByShareToken, { shareToken });
+
+  // Check user authentication and permission
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const userPermission = useQuery(
+    api.sharing.getUserPermission,
+    artifact ? { artifactId: artifact._id } : "skip"
+  );
 
   // Fetch all versions
   const versions = useQuery(
@@ -43,7 +52,7 @@ export function ArtifactViewerPage({
   const targetVersion = versionNumber ? specificVersion : latestVersion;
 
   // Handle loading states
-  if (artifact === undefined || versions === undefined || targetVersion === undefined) {
+  if (artifact === undefined || versions === undefined || targetVersion === undefined || userPermission === undefined) {
     return (
       <div className="flex flex-col h-screen">
         <div className="border-b border-gray-200 bg-white px-6 py-4">
@@ -82,6 +91,28 @@ export function ArtifactViewerPage({
     );
   }
 
+  // Permission checks
+  const isAuthenticated = currentUser !== null && currentUser !== undefined;
+  const hasPermission = userPermission === "owner" || userPermission === "can-comment";
+
+  // Show UnauthenticatedBanner for logged-out users
+  if (!isAuthenticated && !hasPermission) {
+    return (
+      <div className="flex flex-col h-screen">
+        <div className="flex-1 bg-gray-100 p-6 flex items-center justify-center">
+          <div className="max-w-2xl w-full">
+            <UnauthenticatedBanner shareToken={shareToken} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show AccessDeniedMessage for logged-in users without permission
+  if (isAuthenticated && !hasPermission) {
+    return <AccessDeniedMessage artifactTitle={artifact.title} />;
+  }
+
   // Determine if this is the latest version
   const latestVersionNumber = Math.max(...versions.map((v) => v.versionNumber));
   const isLatestVersion = targetVersion.versionNumber === latestVersionNumber;
@@ -97,6 +128,7 @@ export function ArtifactViewerPage({
     }
   };
 
+  // Show artifact viewer for users with permission
   return (
     <ArtifactViewer
       artifact={artifact}
@@ -104,6 +136,8 @@ export function ArtifactViewerPage({
       versions={versions}
       isLatestVersion={isLatestVersion}
       onVersionChange={handleVersionChange}
+      currentUser={currentUser}
+      userPermission={userPermission}
     />
   );
 }

@@ -1,8 +1,16 @@
+"use client";
+
+import { useState } from "react";
+import { Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { VersionSwitcher } from "./VersionSwitcher";
+import { ShareModal } from "./ShareModal";
+import { Id } from "../../../convex/_generated/dataModel";
 
 interface ArtifactHeaderProps {
   artifact: {
+    _id?: Id<"artifacts">;
     title: string;
     shareToken: string;
   };
@@ -17,6 +25,8 @@ interface ArtifactHeaderProps {
   }>;
   isLatestVersion: boolean;
   onVersionChange: (versionNumber: number) => void;
+  currentUser?: any;
+  userPermission?: "owner" | "can-comment" | null;
 }
 
 export function ArtifactHeader({
@@ -25,7 +35,12 @@ export function ArtifactHeader({
   versions,
   isLatestVersion,
   onVersionChange,
+  currentUser,
+  userPermission,
 }: ArtifactHeaderProps) {
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  const isOwner = userPermission === "owner";
   const formatFileSize = (bytes: number): string => {
     const kb = bytes / 1024;
     return `${kb.toFixed(1)} KB`;
@@ -64,14 +79,42 @@ export function ArtifactHeader({
             </div>
           </div>
 
-          {/* Version switcher */}
-          <VersionSwitcher
-            currentVersion={version.versionNumber}
-            versions={versions}
-            onVersionChange={onVersionChange}
-          />
+          {/* Right side: Share button and Version switcher */}
+          <div className="flex items-center gap-3">
+            {/* Share button (owner only) */}
+            {isOwner && artifact._id && (
+              <Button
+                variant="outline"
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+            )}
+
+            {/* Version switcher */}
+            <VersionSwitcher
+              currentVersion={version.versionNumber}
+              versions={versions}
+              onVersionChange={onVersionChange}
+            />
+          </div>
         </div>
       </div>
+
+      {/* ShareModal */}
+      {isOwner && artifact._id && (
+        <ShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          artifact={{
+            _id: artifact._id,
+            title: artifact.title,
+            shareToken: artifact.shareToken,
+          }}
+        />
+      )}
     </div>
   );
 }

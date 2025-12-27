@@ -129,9 +129,30 @@ docs/
 
 ## Development Commands
 
-When Convex is set up:
+**IMPORTANT - Start dev servers:**
+```bash
+./scripts/start-dev-servers.sh           # Start servers (skips if already running)
+./scripts/start-dev-servers.sh --restart # Kill existing servers and restart fresh
+```
+
+Always use this script to start dev servers. It:
+- Checks if ports are already in use before starting
+- Skips servers that are already running (safe to run multiple times)
+- Logs output to `app/logs/` for debugging
+- Only stops processes it started on Ctrl+C
+
+**When to use `--restart`:**
+- Server crashed or is unresponsive
+- Environment variables changed (`.env.local`)
+- Dependencies changed (`package.json`)
+- Config files changed (`convex.json`, `next.config.js`)
+
+**Note:** For normal code changes, restart is NOT needed - both Convex and Next.js have hot reloading.
+
+**Manual commands (from app/ directory) - use only if script fails:**
 ```bash
 npx convex dev          # Start Convex dev server
+npm run dev             # Start Next.js dev server
 npx convex deploy       # Deploy to production
 ```
 

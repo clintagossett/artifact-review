@@ -26,6 +26,8 @@ interface ArtifactViewerProps {
   }>;
   isLatestVersion: boolean;
   onVersionChange: (versionNumber: number) => void;
+  currentUser?: any;
+  userPermission?: "owner" | "can-comment" | null;
 }
 
 export function ArtifactViewer({
@@ -34,6 +36,8 @@ export function ArtifactViewer({
   versions,
   isLatestVersion,
   onVersionChange,
+  currentUser,
+  userPermission,
 }: ArtifactViewerProps) {
   // Multi-page navigation state (for ZIP artifacts)
   const [currentPage, setCurrentPage] = useState<string>(
@@ -76,6 +80,8 @@ export function ArtifactViewer({
         versions={versions}
         isLatestVersion={isLatestVersion}
         onVersionChange={onVersionChange}
+        currentUser={currentUser}
+        userPermission={userPermission}
       />
 
       {/* Multi-page navigation (only for ZIP artifacts) */}

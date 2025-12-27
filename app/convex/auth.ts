@@ -3,6 +3,7 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 import { Email } from "@convex-dev/auth/providers/Email";
 import { query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 // Configure Email provider with Resend for magic links
 const MagicLinkEmail = Email({
@@ -50,6 +51,35 @@ const MagicLinkEmail = Email({
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [Password, Anonymous, MagicLinkEmail],
+  callbacks: {
+    async createOrUpdateUser(ctx, args) {
+      // Check if user already exists (for account linking)
+      const existingUser = args.existingUserId
+        ? await ctx.db.get(args.existingUserId)
+        : await ctx.db
+            .query("users")
+            .withIndex("email", (q) => q.eq("email", args.profile.email))
+            .first();
+
+      // Create or update user
+      const userId = existingUser?._id ?? await ctx.db.insert("users", {
+        email: args.profile.email,
+        name: args.profile.name,
+        image: args.profile.image,
+        emailVerificationTime: args.profile.emailVerified ? Date.now() : undefined,
+      });
+
+      // Link pending reviewer invitations for new users
+      if (args.profile.email && !existingUser) {
+        await ctx.scheduler.runAfter(0, internal.sharing.linkPendingInvitations, {
+          userId,
+          email: args.profile.email,
+        });
+      }
+
+      return userId;
+    },
+  },
 });
 
 export const getCurrentUser = query({

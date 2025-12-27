@@ -1,16 +1,26 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PublicOnlyPage } from "@/components/auth/PublicOnlyPage";
+import { validateReturnTo } from "@/lib/validateReturnTo";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSuccess = () => {
-    router.push("/dashboard");
+    // Check for returnTo parameter and validate it
+    const returnTo = searchParams.get("returnTo");
+    const validatedReturnTo = validateReturnTo(returnTo);
+
+    if (validatedReturnTo) {
+      router.push(validatedReturnTo);
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (

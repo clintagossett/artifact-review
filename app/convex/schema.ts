@@ -73,6 +73,23 @@ const schema = defineSchema({
     .index("by_version", ["versionId"])
     .index("by_version_path", ["versionId", "filePath"])  // O(1) lookups
     .index("by_version_active", ["versionId", "isDeleted"]),
+
+  // Artifact Reviewers - Email invitations for artifact collaboration
+  artifactReviewers: defineTable({
+    artifactId: v.id("artifacts"),
+    email: v.string(),                   // Normalized to lowercase
+    userId: v.union(v.id("users"), v.null()),  // null until user signs up
+    invitedBy: v.id("users"),
+    invitedAt: v.number(),
+    status: v.union(v.literal("pending"), v.literal("accepted")),
+    isDeleted: v.boolean(),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_artifact", ["artifactId"])
+    .index("by_artifact_active", ["artifactId", "isDeleted"])
+    .index("by_artifact_email", ["artifactId", "email"])
+    .index("by_email", ["email"])
+    .index("by_user", ["userId"]),
 });
 
 export default schema;
