@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/button";
@@ -6,7 +9,46 @@ interface LandingHeaderProps {
   className?: string;
 }
 
+function scrollToSection(sectionId: string) {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 export function LandingHeader({ className = "" }: LandingHeaderProps) {
+  // Handle browser back/forward button clicks
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const sectionId = hash.substring(1); // Remove the #
+        scrollToSection(sectionId);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Also handle initial page load with hash
+    if (window.location.hash) {
+      const sectionId = window.location.hash.substring(1);
+      // Use setTimeout to ensure DOM is ready
+      setTimeout(() => scrollToSection(sectionId), 100);
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
+    e.preventDefault();
+    // Update URL without navigation
+    window.history.pushState({}, "", `/#${sectionId}`);
+    // Scroll to section
+    scrollToSection(sectionId);
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 bg-white border-b border-gray-200 ${className}`}
@@ -22,18 +64,21 @@ export function LandingHeader({ className = "" }: LandingHeaderProps) {
         <nav className="hidden md:flex items-center gap-8">
           <a
             href="#features"
+            onClick={(e) => handleAnchorClick(e, "features")}
             className="text-gray-600 hover:text-gray-900 transition"
           >
             Features
           </a>
           <a
             href="#pricing"
+            onClick={(e) => handleAnchorClick(e, "pricing")}
             className="text-gray-600 hover:text-gray-900 transition"
           >
             Pricing
           </a>
           <a
             href="#faq"
+            onClick={(e) => handleAnchorClick(e, "faq")}
             className="text-gray-600 hover:text-gray-900 transition"
           >
             FAQ
