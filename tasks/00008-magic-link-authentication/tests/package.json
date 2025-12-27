@@ -3,6 +3,6 @@
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "resend": "^3.0.0"
+    "resend": "^6.6.0"
   }
 }

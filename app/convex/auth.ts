@@ -14,7 +14,7 @@ const MagicLinkEmail = Email({
     const resend = new Resend(process.env.AUTH_RESEND_KEY);
 
     await resend.emails.send({
-      from: "Artifact Review <onboarding@resend.dev>",
+      from: "Artifact Review <hello@artifactreview-early.xyz>",
       to: identifier,
       subject: "Sign in to Artifact Review",
       html: `
