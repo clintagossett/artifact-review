@@ -19,8 +19,9 @@ Domains secured:
 
 | # | Subtask | Status |
 |---|---------|--------|
-| 01 | [Research](./01-research/README.md) | In Progress (90% complete) |
-| 02 | [Registration](./02-registration/README.md) | Not Started |
+| 01 | [Research](./01-research/README.md) | Complete (see also Task 3 for international) |
+| 02 | [Registration](./02-registration/README.md) | Not Started (DIY USPTO filing planned) |
+| 03 | [Filing Service Research](./03-filing-service-research/README.md) | Complete |
 
 ## Outcome
 

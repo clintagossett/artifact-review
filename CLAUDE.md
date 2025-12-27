@@ -52,9 +52,12 @@ tasks/
 
 Each task folder may contain:
 - `README.md` - Task description, decisions, outcomes
+- `scripts/` - Utility/setup/debugging scripts created during task work
+- `tests/` - Tests specific to this task
 - `output/` - Generated artifacts (code, data, docs)
 - Subtask directories (see below)
-- Any other relevant files
+
+**Important:** Keep task work contained. Any utility scripts, tests, or temporary files created during task work must live within the task folder structure, NOT in the main app/ directory.
 
 ### Subtasks
 
@@ -63,17 +66,23 @@ Subtasks are smaller units of work within a task. They live inside the task fold
 ```
 tasks/00001-first-task/
 ├── README.md
+├── scripts/                      # Task-level utility scripts
+├── tests/                        # Task-level tests
+├── output/                       # Task-level output
 ├── 01-subtask-descriptive-name/
-│   └── README.md
-├── 02-subtask-another-name/
-│   └── README.md
-└── output/
+│   ├── README.md
+│   ├── scripts/                  # Subtask-specific scripts
+│   └── output/                   # Subtask-specific output
+└── 02-subtask-another-name/
+    ├── README.md
+    └── output/
 ```
 
 - Use 2-digit numbering (01, 02, etc.)
 - Format: `##-subtask-descriptive-name`
 - Each subtask has its own `README.md`
 - Subtasks are ordered/stacked numerically
+- Subtasks can have their own `scripts/`, `tests/`, and `output/` folders
 
 ## Documentation System
 

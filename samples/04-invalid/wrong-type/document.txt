@@ -1,0 +1,5 @@
+This is a plain text file.
+
+It should be rejected during upload because only .html, .zip, and .md files are accepted.
+
+Expected error: "Invalid file type. Please upload HTML, ZIP, or Markdown files only."

@@ -14,6 +14,7 @@ Record of significant architectural decisions made for this project.
 | [0006](./0006-frontend-stack.md) | Frontend Stack | Accepted | 2024-12-25 |
 | [0007](./0007-logging-strategy.md) | Logging Strategy | Accepted | 2024-12-26 |
 | [0008](./0008-nextjs-app-router-for-routing.md) | Next.js App Router for Routing | Accepted | 2024-12-26 |
+| [0009](./0009-artifact-file-storage-structure.md) | Artifact File Storage Structure | Accepted | 2025-12-26 |
 
 ---
 

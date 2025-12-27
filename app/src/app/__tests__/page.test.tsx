@@ -23,7 +23,11 @@ vi.mock("@convex-dev/auth/react", () => ({
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
   }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/",
 }));
 
 describe("Landing Page", () => {

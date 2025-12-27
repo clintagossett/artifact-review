@@ -44,16 +44,24 @@ For complex tasks, break work into numbered subtasks. Each subtask gets its own 
 ```
 tasks/XXXXX-task-name/
 ├── README.md                           # Main task file (this template)
+├── scripts/                            # Task-level utility/setup/debugging scripts
+├── tests/                              # Task-level tests
+├── output/                             # Task-level generated artifacts
 ├── 01_subtask_descriptive-name/
 │   ├── README.md                       # Subtask requirements & status
-│   ├── SQL_query_name.sql              # Self-contained SQL (if applicable)
-│   └── output_file.csv                 # Deliverable
+│   ├── scripts/                        # Subtask-specific utility scripts
+│   ├── output/                         # Subtask deliverables
+│   └── *.sql                           # Self-contained SQL (if applicable)
 ├── 02_subtask_another-name/
 │   ├── README.md
-│   └── ...
+│   ├── scripts/
+│   └── output/
 └── 03_subtask_third-name/
-    └── ...
+    ├── README.md
+    └── output/
 ```
+
+**Important:** Keep all task-related work contained within the task folder. Any utility scripts, debugging tools, or temporary files created during the task must live in the appropriate `scripts/` folder, NOT in the main app/ directory.
 
 ### Subtask README Template
 
