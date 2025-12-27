@@ -58,6 +58,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         ? await ctx.db.get(args.existingUserId)
         : await ctx.db
             .query("users")
+            // @ts-expect-error - email index exists in schema override but not in authTables types
             .withIndex("email", (q) => q.eq("email", args.profile.email))
             .first();
 

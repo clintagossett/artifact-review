@@ -189,16 +189,18 @@ Always prefer handing tasks off to specialized agents (Task tool) when the task 
 **MANDATORY:** When implementing features, follow these development guides:
 
 1. **Read the guides first:** `docs/development/_index.md`
-2. **Follow TDD workflow:** Write tests first, in `tasks/XXXXX/tests/`
-3. **Use structured logging:** Never raw `console.log`
+2. **Use central test samples:** Load test files from `/samples/`, never create your own
+3. **Follow TDD workflow:** Write tests first, in `tasks/XXXXX/tests/`
+4. **Use structured logging:** Never raw `console.log`
 
 ### Quick Reference
 
 | Guide | Purpose |
 |-------|---------|
 | [workflow.md](docs/development/workflow.md) | TDD workflow, task structure |
-| [testing-guide.md](docs/development/testing-guide.md) | How to write tests |
+| [testing-guide.md](docs/development/testing-guide.md) | How to write tests, **use /samples/** |
 | [logging-guide.md](docs/development/logging-guide.md) | How to log |
+| [/samples/README.md](samples/README.md) | **Central test data** - 15+ sample files |
 
 ### TDD Cycle
 
@@ -222,10 +224,21 @@ const log = createLogger('auth.signIn');
 log.info(Topics.Auth, 'User signed in', { userId });
 ```
 
+### Test Data
+
+**CRITICAL:** Use centralized test samples from `/samples/` directory:
+- **15 versioned artifacts** - ZIP, HTML, Markdown (5 versions each)
+- **Invalid test cases** - Oversized files, forbidden types (real videos)
+- **Well documented** - Each sample has expected behavior defined
+
+**Never create your own test files** - use the central repository to ensure consistency across all tests.
+
+See: `/samples/README.md` and `docs/development/testing-guide.md#sample-test-files`
+
 ### Feature Handoff
 
 After implementation, deliver:
 - Working feature
-- Passing tests in `tasks/XXXXX/tests/`
+- Passing tests in `tasks/XXXXX/tests/` **using central /samples/**
 - Validation video in `tasks/XXXXX/tests/validation-videos/`
 - `test-report.md` documenting coverage

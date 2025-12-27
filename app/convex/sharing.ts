@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation, internalQuery, action } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery, internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
@@ -465,7 +465,7 @@ function renderInvitationEmail(params: {
  * - Called by scheduler after inviteReviewer mutation
  * - Sends HTML email with artifact link
  */
-export const sendInvitationEmail = action({
+export const sendInvitationEmail = internalAction({
   args: {
     reviewerId: v.id("artifactReviewers"),
   },

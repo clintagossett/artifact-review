@@ -36,6 +36,8 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
   const [error, setError] = useState<string | null>(null);
 
   const createArtifact = useMutation(api.artifacts.create);
+  const createArtifactWithZip = useMutation(api.zipUpload.createArtifactWithZip);
+  const triggerZipProcessing = useMutation(api.zipUpload.triggerZipProcessing);
 
   const reset = useCallback(() => {
     setUploadProgress(0);

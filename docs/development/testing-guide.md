@@ -10,6 +10,109 @@ How to write and organize tests in Artifact Review.
 | **Project-level** | `convex/__tests__/`, `e2e/` | Prevent regressions | Permanent |
 | **Validation** | `tasks/XXXXX/tests/validation-videos/` | Human review proof | Archived |
 
+## Sample Test Files
+
+**IMPORTANT:** Use the centralized test samples in `/samples/` for all artifact upload/processing tests.
+
+### Available Sample Files
+
+The project maintains comprehensive test samples at `/samples/`:
+
+| Category | Location | Purpose |
+|----------|----------|---------|
+| **Valid ZIP** | `samples/01-valid/zip/charting/v1.zip` → `v5.zip` | Multi-file artifacts (5 versions) |
+| **Valid HTML** | `samples/01-valid/html/simple-html/v1/` → `v5/` | Single-file artifacts (5 versions) |
+| **Valid Markdown** | `samples/01-valid/markdown/product-spec/v1.md` → `v5.md` | Markdown docs (5 versions) |
+| **Invalid - Too Large** | `samples/04-invalid/too-large/huge.zip` | 155MB ZIP (generated) |
+| **Invalid - Forbidden Types** | `samples/04-invalid/wrong-type/presentation-with-video.zip` | ZIP with real videos (generated) |
+
+**See:** `/samples/README.md` for complete documentation of all test files.
+
+### Why Use Central Samples
+
+✅ **Consistent test data** - All tests use the same files
+✅ **Version testing** - 5 versions of each artifact type for version comparison tests
+✅ **Realistic data** - Real video files (not mocks) for forbidden type validation
+✅ **Well documented** - Each sample has clear expected behavior
+✅ **Maintained centrally** - Updates apply to all tests
+
+### Usage in Tests
+
+**Backend Integration Tests:**
+```typescript
+import path from 'path';
+import fs from 'fs/promises';
+
+test("upload ZIP artifact", async () => {
+  const t = convexTest(schema);
+
+  // ✅ Load from central samples
+  const zipPath = path.join(__dirname, '../../../samples/01-valid/zip/charting/v1.zip');
+  const zipContent = await fs.readFile(zipPath);
+  const zipBlob = new Blob([zipContent], { type: "application/zip" });
+
+  // Test upload and processing...
+});
+```
+
+**E2E Tests:**
+```typescript
+import path from 'path';
+
+test('user uploads HTML artifact', async ({ page }) => {
+  await page.goto('/upload');
+
+  // ✅ Use sample HTML file
+  const samplePath = path.join(__dirname, '../../../samples/01-valid/html/simple-html/v1/index.html');
+  await page.setInputFiles('input[type="file"]', samplePath);
+
+  await expect(page.getByText('Upload successful')).toBeVisible();
+});
+```
+
+**Testing Version Comparison:**
+```typescript
+test("compare two artifact versions", async () => {
+  // Upload v1
+  const v1Path = path.join(__dirname, '../../../samples/01-valid/zip/charting/v1.zip');
+  const v1Id = await uploadArtifact(v1Path);
+
+  // Upload v2
+  const v2Path = path.join(__dirname, '../../../samples/01-valid/zip/charting/v2.zip');
+  const v2Id = await uploadArtifact(v2Path);
+
+  // Both versions have "Monthly Sales Dashboard" with different version numbers in H1
+  // Perfect for testing version comparison UI
+});
+```
+
+**Testing Forbidden File Types:**
+```typescript
+test("reject ZIP with video files", async () => {
+  // ⚠️ Must generate first: cd samples/04-invalid/wrong-type && ./generate.sh
+
+  const forbiddenZip = path.join(__dirname, '../../../samples/04-invalid/wrong-type/presentation-with-video.zip');
+
+  await expect(async () => {
+    await uploadArtifact(forbiddenZip);
+  }).rejects.toThrow(/unsupported file types.*\.mov.*\.mp4.*\.avi/i);
+});
+```
+
+### Generating Test Files
+
+Some test files must be generated (too large to commit):
+
+```bash
+# Generate oversized ZIP (155MB)
+cd samples/04-invalid/too-large
+./generate.sh
+
+# Generate ZIP with real video files (requires ffmpeg)
+cd samples/04-invalid/wrong-type
+./generate.sh  # Requires: brew install ffmpeg
+```
+
 ## Test Types
 
 | Type | Speed | When to Use |
@@ -18,6 +121,98 @@ How to write and organize tests in Artifact Review.
 | **Integration** | Medium | Convex functions with DB operations |
 | **E2E** | Slow | Critical user flows |
 | **Validation** | Variable | Feature completion, handoff |
+
+### Integration Test Requirements by Feature Type
+
+**CRITICAL:** Integration tests must validate the COMPLETE flow, not just database operations.
+
+#### File Upload/Storage Features
+
+When testing features that upload, store, or process files, integration tests MUST:
+
+✅ **REQUIRED:**
+- Load actual files from `tasks/XXXXX/samples/` or create test files
+- Upload files to Convex storage (use actual storage APIs)
+- Verify `storageId` is returned and valid
+- Trigger any processing actions (extraction, parsing, etc.)
+- Verify processed data appears in database tables
+- Verify files can be retrieved from storage
+- Test with realistic file sizes and types
+
+❌ **NOT SUFFICIENT:**
+- Only testing metadata creation
+- Mocking storage operations
+- Skipping file processing
+- Only verifying database records exist
+
+**Example: ZIP File Upload**
+```typescript
+test("upload and process ZIP file", async () => {
+  const t = convexTest(schema);
+  const userId = await t.run(async (ctx) =>
+    await ctx.db.insert("users", { email: "test@example.com" })
+  );
+
+  // ✅ Load actual ZIP file from central samples
+  const zipPath = path.join(__dirname, "../../../samples/01-valid/zip/charting/v1.zip");
+  const zipContent = await fs.readFile(zipPath);
+  const zipBlob = new Blob([zipContent], { type: "application/zip" });
+
+  // ✅ Create artifact and get upload URL
+  const { uploadUrl, versionId } = await t
+    .withIdentity({ subject: userId })
+    .mutation(api.zipUpload.createArtifactWithZip, {
+      title: "Test ZIP",
+      fileSize: zipBlob.size,
+    });
+
+  // ✅ Actually upload to storage
+  const uploadResponse = await fetch(uploadUrl, {
+    method: "POST",
+    body: zipBlob,
+  });
+  const { storageId } = await uploadResponse.json();
+
+  // ✅ Trigger processing
+  await t.action(api.zipUpload.triggerZipProcessing, { versionId, storageId });
+
+  // ✅ Verify files were extracted and stored
+  const files = await t.run(async (ctx) =>
+    await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version", (q) => q.eq("versionId", versionId))
+      .collect()
+  );
+
+  expect(files.length).toBeGreaterThan(0);
+  expect(files.some(f => f.filePath === "index.html")).toBe(true);
+
+  // ✅ Verify we can retrieve files from storage
+  const indexFile = files.find(f => f.filePath === "index.html")!;
+  const fileUrl = await t.run(async (ctx) =>
+    await ctx.storage.getUrl(indexFile.storageId)
+  );
+  expect(fileUrl).toBeDefined();
+});
+```
+
+#### Authentication Features
+
+When testing auth features, integration tests MUST:
+- Generate real tokens (not mocks)
+- Test token verification
+- Test token expiry
+- Test complete signup/signin flows
+- Verify session state
+
+#### API/HTTP Endpoints
+
+When testing HTTP routes, integration tests MUST:
+- Make actual HTTP requests
+- Verify response status codes
+- Verify response headers
+- Verify response body structure
+- Test error cases (404, 400, 500)
 
 ## Convex Testing with convex-test
 

@@ -8,6 +8,15 @@ import { internal, api } from "./_generated/api";
 const log = createLogger("settings");
 
 /**
+ * Type for grace period status return value
+ */
+type GracePeriodStatus = {
+  isWithinGracePeriod: boolean;
+  expiresAt: number | null;
+  sessionCreatedAt: number | null;
+};
+
+/**
  * Get the grace period duration in milliseconds.
  * 5 seconds in tests, 15 minutes in production.
  * Dynamic function to allow tests to modify NODE_ENV at runtime.
@@ -103,7 +112,7 @@ export const getGracePeriodStatus = query({
     }
 
     // Use internal query to calculate grace period
-    const result: typeof import("./settings").calculateGracePeriodForSession._returnType =
+    const result: GracePeriodStatus =
       await ctx.runQuery(internal.settings.calculateGracePeriodForSession, {
         sessionId,
       });
@@ -161,7 +170,7 @@ export const changePassword = mutation({
     let isWithinGracePeriod = false;
 
     if (sessionId) {
-      const gracePeriodStatus: typeof import("./settings").calculateGracePeriodForSession._returnType =
+      const gracePeriodStatus: GracePeriodStatus =
         await ctx.runQuery(internal.settings.calculateGracePeriodForSession, {
           sessionId,
         });

@@ -1,0 +1,9 @@
+# Generated test files (too large to commit)
+too-large/huge.zip
+wrong-type/presentation-with-video.zip
+
+# Keep the generation scripts
+!too-large/generate.sh
+!wrong-type/generate.sh
+!too-large/README.md
+!wrong-type/README.md

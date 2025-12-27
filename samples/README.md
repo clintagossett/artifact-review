@@ -28,77 +28,113 @@ samples/
 ### ZIP Archives (`01-valid/zip/`)
 
 #### `charting/`
-**Description:** Multi-file HTML dashboard with charts
+**Description:** Multi-file HTML dashboard with charts - 5 versions for testing version comparison
+
+**Purpose:** Tests artifact versioning workflow where the same artifact is iterated over multiple versions
 
 **Structure:**
 ```
 charting/
-├── v1.zip                 # Version 1 as ZIP (3.8KB compressed)
-├── v1/                    # Version 1 extracted
-│   ├── index.html         # Entry point (auto-detected)
-│   ├── app.js
-│   └── assets/
-│       ├── chart-data.json
-│       └── logo.png
-├── v2.zip                 # Version 2 as ZIP
-└── v2/                    # Version 2 extracted
-    └── (same structure)
+├── index.html             # Navigation page for local viewing
+├── v1.zip → v5.zip        # ZIP files ready for upload (3.4-3.9KB each)
+└── v1/ → v5/              # Source folders (extracted)
+    ├── index.html         # Entry point with version in H1 (auto-detected)
+    ├── app.js
+    └── assets/
+        ├── chart-data.json
+        └── logo.png
 ```
+
+**All versions share:**
+- Same document title: "Monthly Sales Dashboard"
+- Version number in H1: "Monthly Sales Dashboard v1" through "v5"
+- Identical file structure (4 files each)
+- Same dependencies (Chart.js from CDN)
 
 **Expected Behavior:**
 - ✅ Extract successfully
 - ✅ Auto-detect `index.html` as entry point
-- ✅ Store 4 files in `artifactFiles` table
+- ✅ Store 4 files per version in `artifactFiles` table
 - ✅ Serve via HTTP proxy at `/a/{token}/v1/app.js`, etc.
+- ✅ Version comparison UI shows "v1" → "v5" clearly in rendered output
 
-**File Count:** 4 files
-**Total Size:** ~4.5KB (extracted)
+**File Count:** 4 files per version
+**Total Size:** ~3.5-4KB per version (compressed)
 **Entry Point:** `index.html` (auto-detected)
+**Versions:** 5 (v1-v5)
 
 ---
 
 ### Standalone HTML (`01-valid/html/`)
 
 #### `simple-html/`
-**Description:** Simple self-contained HTML pages
+**Description:** Self-contained HTML pages - 5 versions for testing version comparison
+
+**Purpose:** Tests artifact versioning workflow with single-file HTML uploads (most common AI agent output format)
 
 **Structure:**
 ```
 simple-html/
-├── index.html             # Latest version
-├── v1/index.html          # Version 1
-└── v2/index.html          # Version 2
+├── index.html             # Navigation page for local viewing
+└── v1/ → v5/              # 5 versions of the same document
+    └── index.html         # Self-contained HTML with version in H1
 ```
 
-**Expected Behavior:**
-- ✅ Store directly in `htmlContent` field
-- ✅ No external dependencies
-- ✅ No warnings
+**All versions share:**
+- Same document title: "Welcome Page"
+- Version number in H1: "Welcome Page v1" through "v5"
+- Identical structure and styling
+- Same external image (from placeholder CDN)
 
-**File Size:** ~1-2KB each
-**Dependencies:** None (fully self-contained)
+**Expected Behavior:**
+- ✅ Upload directly as single HTML file (no ZIP needed)
+- ✅ Store directly in `htmlContent` field
+- ✅ No external dependencies (except CDN image)
+- ✅ No warnings
+- ✅ Version comparison UI shows "v1" → "v5" clearly in rendered output
+
+**File Size:** ~1.2KB each
+**Dependencies:** Picsum placeholder image (external CDN, allowed)
+**Versions:** 5 (v1-v5)
 
 ---
 
 ### Markdown (`01-valid/markdown/`)
 
-#### `product-spec.md`
-**Description:** Product specification document with GitHub-flavored markdown
+#### `product-spec/`
+**Description:** Product specification documents - 5 versions for testing version comparison
+
+**Purpose:** Tests artifact versioning workflow with markdown documents (common for AI-generated documentation)
+
+**Structure:**
+```
+product-spec/
+└── v1.md → v5.md          # 5 versions of the same document
+```
+
+**All versions share:**
+- Same document title: "Product Specification: Dashboard Component"
+- Version number in H1: "Product Specification: Dashboard Component v1" through "v5"
+- Version metadata: "Version: 1.0" through "5.0"
+- Identical content structure
 
 **Features:**
-- Code blocks with syntax highlighting
+- Code blocks with syntax highlighting (TypeScript, JavaScript)
 - Tables
 - Task lists
 - External links (allowed)
 - NO local file references
 
 **Expected Behavior:**
+- ✅ Upload directly as markdown file
 - ✅ Store in `markdownContent` field
 - ✅ Render with GitHub-flavored markdown
 - ✅ Syntax highlighting for code blocks
 - ✅ No warnings (all links are external)
+- ✅ Version comparison UI shows "v1" → "v5" clearly in rendered output
 
-**File Size:** ~1.8KB
+**File Size:** ~1.9KB each
+**Versions:** 5 (v1-v5)
 
 ---
 
@@ -199,21 +235,74 @@ multi-page-site/
 - ❌ Reject: "Invalid file type. Please upload HTML, ZIP, or Markdown files only."
 - HTTP 400 error
 
+#### `presentation-with-video.zip` (generated)
+**Description:** ZIP containing forbidden file types (REAL video files)
+
+**Note:** This file is **generated** by running `./generate.sh` in the `wrong-type/` directory. Requires `ffmpeg`.
+
+**Structure:**
+```
+presentation-with-video.zip (~110KB)
+├── index.html          # Valid
+├── styles.css          # Valid
+└── media/
+    ├── demo.mov        # FORBIDDEN - REAL video (67KB, 3s, H.264)
+    ├── intro.mp4       # FORBIDDEN - REAL video (42KB, 2s, H.264)
+    └── outro.avi       # FORBIDDEN - REAL video (28KB, 1s, MPEG-4)
+```
+
+**Video Details:**
+- All videos are **REAL, playable** files generated with ffmpeg
+- Proper MIME types: `video/quicktime`, `video/mp4`, `video/x-msvideo`
+- Valid codecs, metadata, and file headers
+- Tests both extension AND MIME type validation
+
+**Expected Behavior:**
+- ❌ Detect forbidden file extensions during ZIP extraction
+- ❌ Detect forbidden MIME types (`video/*`)
+- ❌ Reject: "ZIP contains unsupported file types: .mov, .mp4, .avi"
+- ❌ HTTP 400 error with helpful message
+- Note: File size is UNDER limit - rejection is based on TYPE, not size
+
+**How to Generate:**
+```bash
+cd samples/04-invalid/wrong-type
+./generate.sh  # Requires: brew install ffmpeg
+```
+
 ---
 
 ### Too Large (`04-invalid/too-large/`)
 
-**Note:** These files need to be generated programmatically for testing.
+**Note:** This file is **generated** by running `./generate.sh` in the `too-large/` directory.
 
-**Test Cases:**
-- `huge.html` - 6MB HTML (exceeds 5MB limit)
-- `huge.md` - 2MB Markdown (exceeds 1MB limit)
-- `huge.zip` - 150MB ZIP (exceeds 100MB limit)
+#### `huge.zip` (generated)
+**Description:** ZIP exceeding 100MB size limit (simulates PowerPoint export with video)
+
+**Structure:**
+```
+huge.zip (~155MB)
+└── presentation-export/
+    ├── index.html
+    ├── styles.css
+    └── media/
+        ├── demo-video.mov    # 155MB
+        ├── slide1.png        # 50KB
+        ├── slide2.png        # 50KB
+        └── slide3.png        # 50KB
+```
 
 **Expected Behavior:**
 - ❌ Frontend validation blocks upload
 - ❌ Backend validation rejects if frontend bypassed
-- Error: "File exceeds size limit"
+- ❌ Error: "File exceeds maximum size of 100MB"
+- HTTP 400 error
+
+**How to Generate:**
+```bash
+cd samples/04-invalid/too-large
+./generate.sh
+```
 
 ---
 
@@ -322,16 +411,32 @@ When adding new sample files:
 
 | Sample | Type | Size | Limit | Status |
 |--------|------|------|-------|--------|
-| charting v1.zip | ZIP | 3.8KB | 100MB | ✅ Valid |
-| simple-html/v1 | HTML | 1.2KB | 5MB | ✅ Valid |
-| product-spec.md | Markdown | 1.8KB | 1MB | ✅ Valid |
+| charting v1.zip | ZIP | 3.9KB | 100MB | ✅ Valid |
+| charting v2.zip | ZIP | 3.4KB | 100MB | ✅ Valid |
+| charting v3.zip | ZIP | 3.9KB | 100MB | ✅ Valid |
+| charting v4.zip | ZIP | 3.9KB | 100MB | ✅ Valid |
+| charting v5.zip | ZIP | 3.9KB | 100MB | ✅ Valid |
+| simple-html v1 | HTML | 1.2KB | 5MB | ✅ Valid |
+| simple-html v2 | HTML | 1.2KB | 5MB | ✅ Valid |
+| simple-html v3 | HTML | 1.2KB | 5MB | ✅ Valid |
+| simple-html v4 | HTML | 1.2KB | 5MB | ✅ Valid |
+| simple-html v5 | HTML | 1.2KB | 5MB | ✅ Valid |
+| product-spec v1 | Markdown | 1.9KB | 1MB | ✅ Valid |
+| product-spec v2 | Markdown | 1.9KB | 1MB | ✅ Valid |
+| product-spec v3 | Markdown | 1.9KB | 1MB | ✅ Valid |
+| product-spec v4 | Markdown | 1.9KB | 1MB | ✅ Valid |
+| product-spec v5 | Markdown | 1.9KB | 1MB | ✅ Valid |
 | landing-with-deps.html | HTML | 2.1KB | 5MB | ⚠️ Warnings |
 | documentation-with-refs.md | Markdown | 1.5KB | 1MB | ⚠️ Warnings |
 | multi-page-site.zip | ZIP | 2.1KB | 100MB | ✅ Edge case |
 | empty.html | HTML | 0B | - | ❌ Invalid |
 | document.txt | TXT | 0.1KB | - | ❌ Invalid |
+| huge.zip (generated) | ZIP | 155MB | 100MB | ❌ Too large |
+| presentation-with-video.zip (generated) | ZIP | 110KB | 100MB | ❌ Forbidden types (real videos) |
+
+**Note:** Files marked "(generated)" must be created by running `./generate.sh` in their respective directories.
 
 ---
 
-**Last Updated:** 2025-12-26
-**Task:** 10 - Artifact Upload & Creation
+**Last Updated:** 2025-12-27
+**Tasks:** #10 (Artifact Upload & Creation), #15 (Fix ZIP Artifact Viewing)
