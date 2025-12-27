@@ -1,6 +1,7 @@
 import { mutation, query, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { nanoid } from "nanoid";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
  * Create a new artifact with version 1
@@ -28,12 +29,11 @@ export const create = mutation({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
       throw new Error("Not authenticated");
     }
 
-    const userId = identity.subject as any;
     const now = Date.now();
     const shareToken = nanoid(8);
 
@@ -219,12 +219,10 @@ export const list = query({
   ),
   handler: async (ctx, args) => {
     // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
       throw new Error("Not authenticated");
     }
-
-    const userId = identity.subject as any;
 
     // Get user's active artifacts
     return await ctx.db
@@ -259,12 +257,10 @@ export const addVersion = mutation({
   }),
   handler: async (ctx, args) => {
     // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
       throw new Error("Not authenticated");
     }
-
-    const userId = identity.subject as any;
 
     // Verify artifact exists and belongs to user
     const artifact = await ctx.db.get(args.artifactId);
@@ -321,12 +317,10 @@ export const softDelete = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
       throw new Error("Not authenticated");
     }
-
-    const userId = identity.subject as any;
 
     // Verify artifact exists and belongs to user
     const artifact = await ctx.db.get(args.id);
@@ -389,12 +383,10 @@ export const softDeleteVersion = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     // Get authenticated user
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
       throw new Error("Not authenticated");
     }
-
-    const userId = identity.subject as any;
 
     // Get version
     const version = await ctx.db.get(args.versionId);
@@ -473,13 +465,24 @@ export const getVersions = query({
     })
   ),
   handler: async (ctx, args) => {
-    return await ctx.db
+    const versions = await ctx.db
       .query("artifactVersions")
       .withIndex("by_artifact_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .order("desc")
       .collect();
+
+    // Project only the fields needed for the version switcher UI
+    return versions.map((v) => ({
+      _id: v._id,
+      _creationTime: v._creationTime,
+      artifactId: v.artifactId,
+      versionNumber: v.versionNumber,
+      fileType: v.fileType,
+      fileSize: v.fileSize,
+      createdAt: v.createdAt,
+    }));
   },
 });
 

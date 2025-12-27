@@ -9,23 +9,38 @@ auth.addHttpRoutes(http);
 
 /**
  * Serve artifact files via HTTP
- * Pattern: /artifact/{shareToken}/v{version}/{filePath}
+ * Pattern: /artifact/*
  *
+ * URL Structure: /artifact/{shareToken}/v{version}/{filePath}
  * Examples:
  * - /artifact/abc123/v1/index.html - Serve HTML content directly
  * - /artifact/abc123/v2/assets/logo.png - Serve file from ZIP storage
+ *
+ * Note: We use a catch-all pattern because Convex HTTP routes don't support:
+ * 1. Mixed literal+parameter segments (e.g., "v{version}")
+ * 2. Path parameters that span multiple segments (e.g., {filePath} with slashes)
  */
 http.route({
-  path: "/artifact/{shareToken}/v{version}/{filePath}",
+  pathPrefix: "/artifact/",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
     const url = new URL(request.url);
-    const pathSegments = url.pathname.split("/");
 
     // Parse URL: /artifact/{shareToken}/v{version}/{filePath}
-    const shareToken = pathSegments[2];
-    const versionStr = pathSegments[3]; // e.g., "v1", "v2"
-    const filePath = pathSegments.slice(4).join("/") || "index.html";
+    // Remove "/artifact/" prefix and split remainder
+    const pathAfterPrefix = url.pathname.replace(/^\/artifact\//, "");
+    const pathSegments = pathAfterPrefix.split("/");
+
+    if (pathSegments.length < 2) {
+      return new Response("Invalid artifact URL. Expected: /artifact/{shareToken}/v{version}/{filePath}", {
+        status: 400,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
+
+    const shareToken = pathSegments[0];
+    const versionStr = pathSegments[1]; // e.g., "v1", "v2"
+    const filePath = pathSegments.slice(2).join("/") || "index.html";
 
     try {
       // 1. Validate version format
