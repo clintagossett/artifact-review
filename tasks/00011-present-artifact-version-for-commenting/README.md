@@ -6,36 +6,49 @@
 
 ## Resume (Start Here)
 
-**Last Updated:** 2025-12-26 (Session 3)
+**Last Updated:** 2025-12-26 (Session 4)
 
-### Current Status: BACKEND COMPLETE (Subtasks 01-02)
+### Current Status: ✅ COMPLETE - ALL SUBTASKS DONE
 
-**Phase:** Backend implementation complete, ready for frontend (Subtasks 03-05).
+**Phase:** Full implementation complete - backend and frontend ready.
 
-### What We Did This Session (Session 3)
+### What We Did This Session (Session 4)
 
-1. ✅ **Subtask 01 Complete** - Implemented HTTP router for serving artifact files
-   - Route: `/artifact/{shareToken}/v{version}/{filePath}`
-   - Handles HTML inline content and ZIP file serving
-   - Proper error handling and caching headers
-   - File: `app/convex/http.ts`
+1. ✅ **Subtask 03 Complete** - Built ArtifactViewer components using TDD
+   - Created ArtifactFrame (iframe wrapper with sandbox)
+   - Created ArtifactHeader (title, version badge, metadata, read-only banner)
+   - Created VersionSwitcher (ShadCN Select dropdown)
+   - Created MultiPageNavigation (back/forward for ZIP artifacts)
+   - Created ArtifactViewer (main layout component)
+   - Created ArtifactViewerPage (data fetching wrapper)
+   - All components tested: 14 tests passing
+   - Files: `app/src/components/artifact/*.tsx`
 
-2. ✅ **Subtask 02 Complete** - Created Convex queries for artifact/version data
-   - 5 public queries: `getByShareToken`, `getVersions`, `getVersionByNumber`, `getLatestVersion`, `listHtmlFiles`
-   - 3 internal queries: `getByShareTokenInternal`, `getVersionByNumberInternal`, `getFileByPath`
-   - All queries use proper indexes (no filter calls)
-   - 12 tests written and passing
-   - Files: `app/convex/artifacts.ts`, `app/convex/__tests__/artifacts-queries.test.ts`
+2. ✅ **Subtask 04 Complete** - Added Next.js routes
+   - Route: `/a/{shareToken}` - Latest version viewer
+   - Route: `/a/{shareToken}/v/{version}` - Specific version viewer
+   - Files: `app/src/app/a/[shareToken]/page.tsx` and nested v/[version]/page.tsx
 
-3. **Test Report Created** - `test-report.md` documents all backend tests and coverage
+3. ✅ **Subtask 05 Complete** - Version switching and multi-page navigation
+   - Version switcher dropdown with date display
+   - URL-based navigation (changes URL on version switch)
+   - Multi-page navigation state management (history, forward/back)
+   - Read-only banner for old versions
 
-### Next Steps
+### Previous Sessions
 
-1. ~~**Subtask 01**~~ - ✅ Complete
-2. ~~**Subtask 02**~~ - ✅ Complete
-3. **Subtask 03** - Build ArtifactViewer component
-4. **Subtask 04** - Add Next.js routes for `/a/{shareToken}`
-5. **Subtask 05** - Implement version switching and multi-page navigation
+**Session 3:** Backend implementation
+- ✅ Subtask 01 - HTTP router for serving artifact files
+- ✅ Subtask 02 - Convex queries for artifact/version data
+- 12 backend tests passing
+
+### All Subtasks
+
+1. ~~**Subtask 01**~~ - ✅ Complete (HTTP Router)
+2. ~~**Subtask 02**~~ - ✅ Complete (Convex Queries)
+3. ~~**Subtask 03**~~ - ✅ Complete (ArtifactViewer Components)
+4. ~~**Subtask 04**~~ - ✅ Complete (Next.js Routes)
+5. ~~**Subtask 05**~~ - ✅ Complete (Version Switching & Navigation)
 
 ---
 
