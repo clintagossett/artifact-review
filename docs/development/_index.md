@@ -32,15 +32,15 @@ REPEAT → Next test
 
 ### After Feature Complete
 
-1. Run E2E tests (generates `trace.zip` automatically)
-2. Copy trace: `cp test-results/*/trace.zip validation-videos/feature-trace.zip`
+1. Run E2E tests (generates videos and `trace.zip` automatically)
+2. **Uplevel tests** from subtasks to task level if appropriate
 3. Create `test-report.md` in task folder
 4. Hand over for review with:
    - Passing tests (backend + E2E)
    - Validation trace (`trace.zip`)
    - Test report
 
-**Note:** Use Playwright trace.zip, NOT manual video recording. See [TESTING-QUICK-START.md](./TESTING-QUICK-START.md)
+**Note:** Videos are MANDATORY for e2e tests but are gitignored (not committed). Use Playwright trace.zip for debugging. See [testing-guide.md](./testing-guide.md#test-upleveling)
 
 ## Test Data
 

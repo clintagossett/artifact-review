@@ -86,6 +86,61 @@ cp test-results/*/trace.zip validation-videos/feature-name-trace.zip
 npx playwright show-trace validation-videos/feature-name-trace.zip
 ```
 
+## Subtask E2E Tests Setup
+
+For tests scoped to a specific subtask:
+
+### 1. Create Structure
+
+```bash
+cd tasks/XXXXX-task-name/01-subtask-name
+mkdir -p tests/unit tests/e2e
+```
+
+### 2. Setup E2E (same as task-level)
+
+```bash
+cd tests/e2e
+# Create package.json and playwright.config.ts (see Task-Level setup above)
+npm install
+```
+
+### 3. Playwright Config for Subtask
+
+Note: Adjust paths for subtask depth:
+
+```typescript
+export default defineConfig({
+  testDir: '.',  // Tests in this directory
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on',
+    video: 'on',  // MANDATORY
+  },
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,
+    cwd: '../../../../../app',  // Adjust path for subtask depth
+    timeout: 120000,
+  },
+});
+```
+
+### 4. Upleveling Tests
+
+When subtask is complete, evaluate if tests should be upleveled:
+
+```bash
+# Move test to task level
+mv tests/e2e/feature.spec.ts ../../tests/e2e/
+
+# Update imports and paths
+# Run from task tests to verify
+```
+
+See `testing-guide.md` for full upleveling criteria.
+
 ## Key Points
 
 ✅ **Tests live in task folders** (`tasks/XXXXX/tests/`) during development
@@ -93,6 +148,9 @@ npx playwright show-trace validation-videos/feature-name-trace.zip
 ✅ **node_modules/ is gitignored** - recreate with `npm install`
 ✅ **Use trace.zip for validation** - NOT manual video recording
 ✅ **Trace = video + network + console + DOM** - much better for debugging
+✅ **Video recording is MANDATORY** - Playwright config must have `video: 'on'`
+✅ **Videos are gitignored** - `validation-videos/` and `*.webm`/`*.mp4` not committed
+✅ **Subtask tests can be upleveled** - Move to task-level when they provide broader value
 
 ## Commands Cheat Sheet
 

@@ -93,6 +93,21 @@ The trace provides:
 - DOM snapshots
 - Better than manual videos for debugging
 
+**IMPORTANT:** All e2e tests MUST generate video recordings. Configure Playwright with:
+```typescript
+use: {
+  video: 'on',  // MANDATORY - records all tests
+  trace: 'on',
+}
+```
+
+Videos are gitignored and not committed to the repository. They are generated for:
+- Human review during development
+- Debugging failed tests
+- Stakeholder demonstrations
+
+To keep videos locally, copy them outside the git repo or to a shared drive.
+
 ### 7. Create Test Report
 
 Create `test-report.md` documenting:
@@ -163,6 +178,50 @@ npx playwright show-trace test-results/*/trace.zip
 ```bash
 cd app
 npm run test:e2e
+```
+
+## Subtask Test Workflow
+
+When working on subtasks, tests should be created at the subtask level first:
+
+### 1. Create Subtask Test Structure
+
+```
+tasks/XXXXX-task/01-subtask-name/
+└── tests/
+    ├── unit/           # Unit tests
+    │   └── feature.test.ts
+    └── e2e/            # E2E tests
+        ├── package.json
+        ├── playwright.config.ts
+        └── feature.spec.ts
+```
+
+### 2. Write Subtask-Scoped Tests
+
+Tests should validate only the subtask's scope:
+- Unit tests for functions/logic created in this subtask
+- E2E tests for user flows introduced by this subtask
+
+### 3. Uplevel When Appropriate
+
+After subtask completion, evaluate tests for upleveling:
+
+| Keep at Subtask | Uplevel to Task |
+|-----------------|-----------------|
+| Subtask-specific logic | Cross-subtask integration |
+| Implementation details | User-facing flows |
+| Edge cases from TDD | Regression tests |
+
+### 4. Uplevel Process
+
+```bash
+# Move test to task level
+mv 01-subtask/tests/e2e/flow.spec.ts ../tests/e2e/
+
+# Update imports if needed
+# Run from task tests directory to verify
+cd ../tests && npx playwright test
 ```
 
 ## Test Promotion

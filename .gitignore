@@ -23,6 +23,11 @@ package-lock.json
 test-results/
 playwright-report/
 
+# Test videos (generated, not committed)
+*.webm
+*.mp4
+**/validation-videos/
+
 # Python
 .venv/
 __pycache__/

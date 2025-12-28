@@ -67,14 +67,22 @@ Subtasks are smaller units of work within a task. They live inside the task fold
 tasks/00001-first-task/
 ├── README.md
 ├── scripts/                      # Task-level utility scripts
-├── tests/                        # Task-level tests
+├── tests/                        # Task-level tests (upleveled from subtasks)
+│   ├── unit/
+│   └── e2e/
 ├── output/                       # Task-level output
 ├── 01-subtask-descriptive-name/
 │   ├── README.md
 │   ├── scripts/                  # Subtask-specific scripts
+│   ├── tests/                    # Subtask-specific tests
+│   │   ├── unit/                 # Unit tests for this subtask
+│   │   └── e2e/                  # E2E tests for this subtask
 │   └── output/                   # Subtask-specific output
 └── 02-subtask-another-name/
     ├── README.md
+    ├── tests/
+    │   ├── unit/
+    │   └── e2e/
     └── output/
 ```
 
@@ -83,6 +91,10 @@ tasks/00001-first-task/
 - Each subtask has its own `README.md`
 - Subtasks are ordered/stacked numerically
 - Subtasks can have their own `scripts/`, `tests/`, and `output/` folders
+- Subtask `tests/` folders have `unit/` and `e2e/` subdirectories
+- All e2e tests MUST produce video recordings (mandatory)
+- Videos are gitignored and NOT committed to the repository
+- Tests can be "upleveled" from subtask to task level when they provide broader value
 
 ## Documentation System
 

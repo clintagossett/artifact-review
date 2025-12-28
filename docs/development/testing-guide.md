@@ -113,6 +113,89 @@ cd samples/04-invalid/wrong-type
 ./generate.sh  # Requires: brew install ffmpeg
 ```
 
+## Subtask-Level Testing
+
+Each subtask can have its own tests scoped to that subtask's functionality.
+
+### Structure
+
+```
+tasks/XXXXX-task-name/
+├── tests/                          # Task-level tests
+│   ├── package.json
+│   ├── playwright.config.ts
+│   ├── unit/
+│   ├── e2e/
+│   └── validation-videos/          # GITIGNORED
+├── 01-subtask-name/
+│   └── tests/
+│       ├── unit/                   # Subtask unit tests
+│       │   └── feature.test.ts
+│       └── e2e/                    # Subtask e2e tests
+│           ├── package.json        # Optional: own deps
+│           ├── playwright.config.ts
+│           └── flow.spec.ts
+```
+
+### When to Create Subtask Tests
+
+- **Unit tests**: When subtask introduces new functions, utilities, or logic
+- **E2E tests**: When subtask adds new user-facing functionality
+
+### Running Subtask Tests
+
+```bash
+# Unit tests (from app directory)
+cd app && npx vitest tasks/XXXXX/01-subtask/tests/unit/
+
+# E2E tests (from subtask tests directory)
+cd tasks/XXXXX/01-subtask/tests/e2e
+npm install  # First time only
+npx playwright test
+```
+
+## Test Upleveling
+
+Tests can be "upleveled" from subtask to task level when they provide broader value.
+
+### Uplevel Criteria
+
+| Uplevel TO Task Level | Keep AT Subtask Level |
+|-----------------------|----------------------|
+| Tests multiple subtasks' integration | Tests single subtask's internals |
+| Validates complete user journey | Validates subtask-specific step |
+| Provides regression value | Was useful only during TDD |
+| Will break if feature changes | Will break if implementation changes |
+
+### Uplevel Process
+
+1. **Evaluate**: Does the test provide value beyond the subtask?
+2. **Move**: Copy test file to task-level tests directory
+3. **Update**: Fix any relative paths or imports
+4. **Verify**: Run test from new location
+5. **Document**: Note in subtask README that test was upleveled
+
+### Example
+
+```bash
+# Original location
+tasks/00015-feature/01-auth/tests/e2e/login.spec.ts
+
+# After upleveling
+tasks/00015-feature/tests/e2e/login.spec.ts
+
+# Document in 01-auth/README.md:
+# "login.spec.ts upleveled to task-level tests"
+```
+
+### Promotion Path Summary
+
+```
+Subtask → Task → Project
+   ↓        ↓        ↓
+TDD use  Feature  Regression
+```
+
 ## Test Types
 
 | Type | Speed | When to Use |
@@ -302,7 +385,9 @@ npm install
 - Easy to promote to project-level when ready
 - `node_modules/` is gitignored (no repo bloat)
 
-### Playwright Config Template
+### Playwright Config Template (Mandatory Video Recording)
+
+**CRITICAL:** Video recording is MANDATORY for all e2e tests.
 
 Create `tasks/XXXXX-task-name/tests/playwright.config.ts`:
 
@@ -314,7 +399,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on',      // CRITICAL: Enables trace.zip with action tracking
-    video: 'on',      // Also record video for backup
+    video: 'on',      // MANDATORY - all e2e tests must record video
     screenshot: 'on',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -327,6 +412,17 @@ export default defineConfig({
   },
 });
 ```
+
+**Why mandatory videos?**
+- Human review during development
+- Debug test failures visually
+- Stakeholder demonstrations
+- Documentation of feature behavior
+
+**Videos are gitignored** - they are NOT committed to the repository. To preserve videos:
+- Copy to shared drive
+- Attach to GitHub issue
+- Store in project documentation system
 
 ### Click Indicator for Video Recordings
 
@@ -452,7 +548,39 @@ The trace viewer shows:
 
 ## File Organization
 
-### Task-Level Tests
+### Task-Level Tests (with Subtasks)
+
+```
+tasks/00015-feature/
+├── tests/                              # Task-level tests
+│   ├── package.json
+│   ├── playwright.config.ts
+│   ├── unit/
+│   │   └── shared-utils.test.ts       # Shared/upleveled unit tests
+│   ├── e2e/
+│   │   └── full-flow.spec.ts          # Upleveled e2e tests
+│   ├── test-results/                   # GITIGNORED
+│   └── validation-videos/              # GITIGNORED - video output
+├── 01-auth-subtask/
+│   ├── README.md
+│   └── tests/
+│       ├── unit/
+│       │   └── auth.test.ts           # Subtask-specific unit tests
+│       └── e2e/
+│           ├── package.json
+│           ├── playwright.config.ts
+│           └── auth.spec.ts           # Subtask-specific e2e tests
+├── 02-upload-subtask/
+│   └── tests/
+│       ├── unit/
+│       └── e2e/
+├── test-report.md
+└── README.md
+```
+
+**Note:** `test-results/` and `validation-videos/` directories are gitignored. Videos are generated for local review but not committed.
+
+### Task-Level Tests (without Subtasks)
 
 ```
 tasks/00008-magic-link-authentication/
@@ -465,7 +593,7 @@ tasks/00008-magic-link-authentication/
 │   ├── e2e/
 │   │   ├── magic-link.spec.ts     # E2E tests (with click indicators)
 │   │   └── password-auth.spec.ts  # E2E tests (with click indicators)
-│   ├── test-results/               # Playwright auto-generated
+│   ├── test-results/               # GITIGNORED - Playwright auto-generated
 │   │   ├── magic-link-Auth-hash1-chromium/
 │   │   │   ├── video.webm         # Video for test 1
 │   │   │   ├── trace.zip          # Debug trace
@@ -476,7 +604,7 @@ tasks/00008-magic-link-authentication/
 │   │   ├── magic-link-Auth-hash3-chromium/
 │   │   │   └── video.webm         # Video for test 3
 │   │   └── flow.webm              # Combined (created by script)
-│   └── validation-videos/
+│   └── validation-videos/          # GITIGNORED - video output
 │       ├── master-validation.mp4  # Final assembled video
 │       └── README.md              # Viewing instructions
 ├── test-report.md
@@ -491,9 +619,10 @@ tasks/00008-magic-link-authentication/
 - `flow.webm` is the combined video (intermediate step)
 - `master-validation.mp4` is the final deliverable
 - E2E tests need `package.json` + `node_modules` in `tests/` folder
-- `node_modules/` is gitignored (recreate with `npm install`)
+- `node_modules/`, `test-results/`, and `validation-videos/` are gitignored
 - Backend tests use app's vitest (no local deps needed)
 - All E2E tests use click indicators for visible interactions
+- Videos are MANDATORY but not committed to the repository
 
 ### Project-Level Tests (Promoted)
 

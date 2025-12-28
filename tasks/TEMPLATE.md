@@ -45,23 +45,75 @@ For complex tasks, break work into numbered subtasks. Each subtask gets its own 
 tasks/XXXXX-task-name/
 ├── README.md                           # Main task file (this template)
 ├── scripts/                            # Task-level utility/setup/debugging scripts
-├── tests/                              # Task-level tests
+├── tests/                              # Task-level tests (upleveled from subtasks)
+│   ├── package.json                    # E2E dependencies
+│   ├── playwright.config.ts
+│   ├── unit/                           # Unit tests upleveled from subtasks
+│   ├── e2e/                            # E2E tests upleveled from subtasks
+│   └── validation-videos/              # GITIGNORED - video output
 ├── output/                             # Task-level generated artifacts
 ├── 01_subtask_descriptive-name/
 │   ├── README.md                       # Subtask requirements & status
 │   ├── scripts/                        # Subtask-specific utility scripts
+│   ├── tests/                          # Subtask-specific tests
+│   │   ├── unit/                       # Unit tests scoped to this subtask
+│   │   └── e2e/                        # E2E tests scoped to this subtask
+│   │       └── playwright.config.ts    # Subtask E2E config (inherits from task)
 │   ├── output/                         # Subtask deliverables
 │   └── *.sql                           # Self-contained SQL (if applicable)
 ├── 02_subtask_another-name/
 │   ├── README.md
 │   ├── scripts/
+│   ├── tests/
+│   │   ├── unit/
+│   │   └── e2e/
 │   └── output/
 └── 03_subtask_third-name/
     ├── README.md
+    ├── tests/
+    │   ├── unit/
+    │   └── e2e/
     └── output/
 ```
 
 **Important:** Keep all task-related work contained within the task folder. Any utility scripts, debugging tools, or temporary files created during the task must live in the appropriate `scripts/` folder, NOT in the main app/ directory.
+
+### Test Upleveling
+
+Tests start at the subtask level and can be "upleveled" to the task level when:
+
+1. **Broader coverage**: Test validates functionality across multiple subtasks
+2. **Integration boundary**: Test validates how subtasks integrate with each other
+3. **Regression value**: Test provides ongoing regression protection for the feature
+
+#### How to Uplevel
+
+1. Move test file from `subtask/tests/` to `task/tests/`
+2. Update any relative imports/paths
+3. Document the uplevel in the subtask README ("Test upleveled to task level")
+4. Run the test from its new location to verify it still passes
+
+#### Keep at Subtask Level
+
+- Tests that validate only subtask-specific logic
+- Tests that would break if subtask implementation changes
+- Exploratory tests used during development
+
+#### Video Recording (Mandatory)
+
+All e2e tests MUST produce video recordings. Configure Playwright with:
+
+```typescript
+use: {
+  video: 'on',  // MANDATORY - records all tests
+  trace: 'on',
+}
+```
+
+**Videos are gitignored** - they are NOT committed to the repository. They are generated for:
+- Human review during development
+- Debugging failed tests
+- Stakeholder demonstrations
 
 ### Subtask README Template
 
