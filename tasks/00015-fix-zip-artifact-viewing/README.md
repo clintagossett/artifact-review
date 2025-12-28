@@ -1,8 +1,10 @@
 # Task 00015: Fix ZIP Artifact Viewing
 
-**Status:** Planning
-**Priority:** CRITICAL
+**Status:** ⏸️ POSTPONED
+**Priority:** LOW (deferred)
 **Created:** 2025-12-27
+**Postponed:** 2025-12-27
+**Reason:** Focusing on single-file (HTML/Markdown) workflows first
 
 ## Problem Statement
 

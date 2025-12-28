@@ -1,0 +1,17 @@
+{
+  "name": "task-00015-01-e2e-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E tests for comprehensive version management",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "show-report": "playwright show-report ../test-results/html",
+    "show-trace": "playwright show-trace ../validation-videos/*.zip"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

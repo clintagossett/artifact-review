@@ -1,7 +1,7 @@
 # Task 00015: Fix ZIP Artifact Viewing - RESUME
 
 **Last Updated:** 2025-12-27
-**Status:** Ready for TDD Developer Agent
+**Status:** ⏸️ POSTPONED - Focusing on single-file workflows for now
 
 ---
 
