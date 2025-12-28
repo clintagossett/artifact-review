@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
+import { DocumentViewer } from "./DocumentViewer";
+import { ShareModal } from "./ShareModal";
 import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +21,7 @@ export function ArtifactViewerPage({
   versionNumber,
 }: ArtifactViewerPageProps) {
   const router = useRouter();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Fetch artifact by share token
   const artifact = useQuery(api.artifacts.getByShareToken, { shareToken });
@@ -128,16 +132,43 @@ export function ArtifactViewerPage({
     }
   };
 
-  // Show artifact viewer for users with permission
+  // Create mock project data for DocumentViewer (Phase 1)
+  const mockProject = {
+    id: artifact._id,
+    name: artifact.title,
+    description: "",
+    versions: versions.map((v) => ({
+      id: `v${v.versionNumber}`,
+      number: v.versionNumber,
+      fileName: artifact.title,
+      uploadedAt: new Date(v._creationTime).toLocaleDateString(),
+      uploadedBy: currentUser?.name || "Unknown",
+    })),
+    members: [],
+    lastActivity: new Date().toISOString(),
+    status: "active" as const,
+  };
+
+  // Show DocumentViewer for users with permission (Phase 1)
   return (
-    <ArtifactViewer
-      artifact={artifact}
-      version={targetVersion}
-      versions={versions}
-      isLatestVersion={isLatestVersion}
-      onVersionChange={handleVersionChange}
-      currentUser={currentUser}
-      userPermission={userPermission}
-    />
+    <>
+      <DocumentViewer
+        documentId={artifact._id}
+        onBack={() => router.push("/dashboard")}
+        project={mockProject}
+        onNavigateToShare={() => setShareModalOpen(true)}
+        onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
+      />
+
+      <ShareModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        artifact={{
+          _id: artifact._id,
+          title: artifact.title,
+          shareToken: artifact.shareToken,
+        }}
+      />
+    </>
   );
 }
