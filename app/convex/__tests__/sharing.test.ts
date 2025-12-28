@@ -14,8 +14,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -59,14 +58,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const otherUserId = await ctx.db.insert("users", {
           email: "other@example.com",
           name: "Other",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -97,8 +94,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -136,8 +132,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -172,14 +167,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const existingUserId = await ctx.db.insert("users", {
           email: "existing@example.com",
           name: "Existing User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -215,8 +208,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -249,8 +241,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -280,8 +271,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -334,8 +324,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -389,14 +378,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const otherUserId = await ctx.db.insert("users", {
           email: "other@example.com",
           name: "Other",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -426,14 +413,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const existingUserId = await ctx.db.insert("users", {
           email: "existing@example.com",
           name: "Existing User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -477,8 +462,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -519,14 +503,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const existingUserId = await ctx.db.insert("users", {
           email: "existing@example.com",
           name: "Existing User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -569,8 +551,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -615,14 +596,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const otherUserId = await ctx.db.insert("users", {
           email: "other@example.com",
           name: "Other",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -662,8 +641,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -709,8 +687,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -740,14 +717,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const reviewerUserId = await ctx.db.insert("users", {
           email: "reviewer@example.com",
           name: "Reviewer",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -787,14 +762,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const otherUserId = await ctx.db.insert("users", {
           email: "other@example.com",
           name: "Other",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -824,8 +797,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -855,14 +827,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const userId = await ctx.db.insert("users", {
           email: "newuser@example.com",
           name: "New User",
-          isAnonymous: false,
-        });
+          });
 
         const artifact1Id = await ctx.db.insert("artifacts", {
           title: "Artifact 1",
@@ -932,14 +902,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const userId = await ctx.db.insert("users", {
           email: "newuser@example.com",
           name: "New User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -983,14 +951,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const userId = await ctx.db.insert("users", {
           email: "reviewer@example.com",
           name: "Reviewer",
-          isAnonymous: false,
-        });
+          });
 
         // Create 3 artifacts with invitations
         for (let i = 0; i < 3; i++) {
@@ -1043,14 +1009,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const userId = await ctx.db.insert("users", {
           email: "existing@example.com",
           name: "Existing User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -1097,14 +1061,12 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const userId = await ctx.db.insert("users", {
           email: "user@example.com",
           name: "User",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",
@@ -1169,8 +1131,7 @@ describe("sharing", () => {
         const ownerId = await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
-          isAnonymous: false,
-        });
+          });
 
         const artifactId = await ctx.db.insert("artifacts", {
           title: "Test Artifact",

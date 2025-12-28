@@ -17,7 +17,6 @@ async function createTestUser(t: ReturnType<typeof convexTest>) {
     return await ctx.db.insert("users", {
       email: "test@example.com",
       name: "Test User",
-      isAnonymous: false,
     });
   });
 }
@@ -32,7 +31,6 @@ describe("Artifact Viewing Queries", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
         });
       });
 

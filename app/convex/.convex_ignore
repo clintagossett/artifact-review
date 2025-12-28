@@ -1,0 +1,7 @@
+# Ignore test files to prevent triggering Convex rebuilds
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Ignore other non-production files
+*.md

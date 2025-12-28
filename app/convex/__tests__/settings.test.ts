@@ -16,7 +16,6 @@ describe("settings.calculateGracePeriodForSession", () => {
       const userId = await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
 
       const sessionId = await ctx.db.insert("authSessions", {
@@ -48,7 +47,6 @@ describe("settings.calculateGracePeriodForSession", () => {
       const userId = await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
 
       const sessionId = await ctx.db.insert("authSessions", {
@@ -83,8 +81,7 @@ describe("settings.calculateGracePeriodForSession", () => {
         const userId = await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
 
         const sessionId = await ctx.db.insert("authSessions", {
           userId,
@@ -129,8 +126,7 @@ describe("settings.calculateGracePeriodForSession", () => {
         const userId = await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
 
         const sessionId = await ctx.db.insert("authSessions", {
           userId,
@@ -180,8 +176,7 @@ describe("settings.calculateGracePeriodForSession", () => {
         const userId = await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
 
         const sessionId = await ctx.db.insert("authSessions", {
           userId,
@@ -226,7 +221,6 @@ describe("settings.getGracePeriodStatus", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
     });
 
@@ -261,7 +255,6 @@ describe("settings.changePassword", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
     });
 
@@ -282,7 +275,6 @@ describe("settings.changePassword", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
     });
 
@@ -303,7 +295,6 @@ describe("settings.changePassword", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
     });
 
@@ -324,7 +315,6 @@ describe("settings.changePassword", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
-        isAnonymous: false,
       });
     });
 

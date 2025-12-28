@@ -13,8 +13,7 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -75,8 +74,7 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -129,8 +127,7 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });

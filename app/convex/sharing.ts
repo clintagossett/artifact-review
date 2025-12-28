@@ -376,9 +376,7 @@ export const getUserById = internalQuery({
       emailVerificationTime: v.optional(v.number()),
       phone: v.optional(v.string()),
       phoneVerificationTime: v.optional(v.number()),
-      isAnonymous: v.optional(v.boolean()),
       image: v.optional(v.string()),
-      username: v.optional(v.string()),
     }),
     v.null()
   ),

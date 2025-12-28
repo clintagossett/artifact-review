@@ -16,10 +16,10 @@ describe("users", () => {
     it("should return user data when authenticated", async () => {
       const t = convexTest(schema);
 
-      // Create an anonymous user
+      // Create a user
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
-          isAnonymous: true,
+          email: "user@example.com",
         });
       });
 
@@ -29,8 +29,8 @@ describe("users", () => {
       const user = await asUser.query(api.users.getCurrentUser);
 
       expect(user).not.toBeNull();
-      expect(user?.isAnonymous).toBe(true);
       expect(user?._id).toBe(userId);
+      expect(user?.email).toBe("user@example.com");
     });
 
     it("should include email when user has email", async () => {
@@ -38,8 +38,7 @@ describe("users", () => {
 
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
-          isAnonymous: false,
-          email: "test@example.com",
+            email: "test@example.com",
           name: "Test User",
         });
       });
@@ -51,7 +50,6 @@ describe("users", () => {
       expect(user).not.toBeNull();
       expect(user?.email).toBe("test@example.com");
       expect(user?.name).toBe("Test User");
-      expect(user?.isAnonymous).toBe(false);
     });
   });
 
@@ -63,8 +61,7 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Old Name",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -92,8 +89,7 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -110,8 +106,7 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -128,8 +123,7 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -148,8 +142,7 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
-        });
+          });
       });
 
       const asUser = t.withIdentity({ subject: userId });

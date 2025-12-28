@@ -14,11 +14,11 @@ This checklist uses a **Just-In-Time (JIT)** approach - you only set up accounts
 
 ## JIT Setup Phases
 
-### Phase 1: Local Development - Anonymous Auth
+### Phase 1: Local Development - Email Auth
 
-**When:** Before starting [Task 00006, Step 1](/Users/clintgossett/Documents/personal/personal projects/html-review-poc/tasks/00006-local-dev-environment/README.md#step-1-anonymous-authentication)
+**When:** Starting local development
 
-**What you're building:** Anonymous authentication working locally
+**What you're building:** Email-based authentication working locally
 
 **Accounts needed:**
 - [ ] Convex account (free tier, no deploy keys yet)
@@ -91,15 +91,15 @@ npx convex dev
 # Should succeed and show Convex dev URL
 ```
 
-**Move to Phase 2 when:** Anonymous auth works locally
+**Move to Phase 2 when:** Email auth works locally with Mailpit
 
 ---
 
-### Phase 2: Local Development - Magic Links
+### Phase 2: Local Development - Email Testing with Mailpit
 
-**When:** Before starting [Task 00006, Step 2](/Users/clintgossett/Documents/personal/personal projects/html-review-poc/tasks/00006-local-dev-environment/README.md#step-2-magic-link-authentication)
+**When:** After basic email auth is working
 
-**What you're building:** Magic link authentication working locally (emails captured, not delivered)
+**What you're building:** Email testing infrastructure (emails captured locally, not delivered)
 
 **NEW accounts needed:**
 - None - just Docker for Mailpit
@@ -155,15 +155,15 @@ open http://localhost:8025
 
 **Verification:**
 
-After implementing magic link auth in Task 6 Step 2:
+After implementing email auth:
 
 1. Start app: `npm run dev`
-2. Go to magic link signup flow
+2. Go to email signup/login flow
 3. Check Mailpit UI: `http://localhost:8025`
-4. Should see magic link email
+4. Should see authentication email
 5. Click link → should authenticate
 
-**Move to Phase 3 when:** Magic links work locally and you're ready to deploy
+**Move to Phase 3 when:** Email authentication works locally and you're ready to deploy
 
 ---
 
@@ -267,8 +267,8 @@ vercel --prod
 # Visit deployment
 open https://artifact-review.vercel.app
 
-# Test anonymous auth - should work
-# Test magic links - emails logged in Resend dashboard (test mode, not delivered)
+# Test email auth - should work
+# Test authentication emails - logged in Resend dashboard (test mode, not delivered)
 ```
 
 **Move to Phase 4 when:** Ready for staging/production
@@ -307,8 +307,8 @@ See [Complete Account Reference](#complete-account-reference) below for full set
 
 | Phase | Accounts | Tools | Time |
 |-------|----------|-------|------|
-| **Phase 1** (Local - Anonymous) | GitHub, Convex | Node, git, direnv | 15-20 min |
-| **Phase 2** (Local - Magic Links) | (same) | Docker + Mailpit | 10 min |
+| **Phase 1** (Local - Email Auth) | GitHub, Convex | Node, git, direnv | 15-20 min |
+| **Phase 2** (Local - Email Testing) | (same) | Docker + Mailpit | 10 min |
 | **Phase 3** (Hosted Dev) | + Vercel, Resend (test) | (same) | 30-45 min |
 | **Phase 4** (Staging/Prod) | + Domain, OAuth apps | (same) | 2-3 hours |
 
@@ -382,12 +382,12 @@ docker logs mailpit
 open http://localhost:8025
 ```
 
-**Problem:** Magic link not working
+**Problem:** Authentication email not working
 
 **Solutions:**
 - Check Convex logs: `npx convex logs`
 - Verify email sending code uses SMTP (not Resend) for local
-- Check magic link URL points to `http://localhost:3000`
+- Check authentication link URL points to `http://localhost:3000`
 - Verify Convex Auth configured correctly
 
 ---

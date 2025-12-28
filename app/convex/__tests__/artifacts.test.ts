@@ -13,7 +13,6 @@ describe("artifacts", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
         });
       });
 
@@ -69,7 +68,6 @@ describe("artifacts", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
         });
       });
 
@@ -116,7 +114,6 @@ describe("artifacts", () => {
         return await ctx.db.insert("users", {
           email: "user1@example.com",
           name: "User 1",
-          isAnonymous: false,
         });
       });
 
@@ -124,7 +121,6 @@ describe("artifacts", () => {
         return await ctx.db.insert("users", {
           email: "user2@example.com",
           name: "User 2",
-          isAnonymous: false,
         });
       });
 
@@ -175,7 +171,6 @@ describe("artifacts", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          isAnonymous: false,
         });
       });
 

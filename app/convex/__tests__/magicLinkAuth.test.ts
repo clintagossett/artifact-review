@@ -9,7 +9,6 @@ describe("Magic Link Authentication Schema", () => {
     const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "magiclink@example.com",
-        isAnonymous: false,
       });
     });
 
@@ -26,7 +25,6 @@ describe("Magic Link Authentication Schema", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("users", {
         email: "verify@example.com",
-        isAnonymous: false,
       });
     });
 
