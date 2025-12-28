@@ -66,117 +66,12 @@ const mockReviewers = [
   { name: 'Emma Davis', avatar: 'ED', online: false },
 ];
 
+// Mock comments for Interactive Components demo
+// These comments showcase advanced features: hidden tabs, collapsed accordions, multi-page navigation
 const mockComments: Comment[] = [
-  // v1 comments
+  // Index page - Hidden tab comments
   {
     id: '1',
-    versionId: 'v1',
-    author: { name: 'Sarah Chen', avatar: 'SC' },
-    content: 'The hero section looks great, but we should adjust the CTA button positioning for better visual hierarchy.',
-    timestamp: '2 hours ago',
-    resolved: false,
-    highlightedText: 'Get Started Today',
-    elementType: 'button',
-    elementId: 'cta-button',
-    replies: [
-      {
-        id: '1-1',
-        author: { name: 'Mike Johnson', avatar: 'MJ' },
-        content: 'I agree! Maybe we could move it slightly to the right?',
-        timestamp: '1 hour ago',
-      },
-    ],
-  },
-  {
-    id: '2',
-    versionId: 'v1',
-    author: { name: 'Emma Davis', avatar: 'ED' },
-    content: 'Missing alt text for this image. This is important for accessibility.',
-    timestamp: '3 hours ago',
-    resolved: false,
-    elementType: 'image',
-    elementId: 'feature-image-1',
-    elementPreview: 'https://images.unsplash.com/photo-1704225618899-b19b021dc9e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9kdWN0JTIwdGVjaG5vbG9neXxlbnwxfHx8fDE3NjY0OTc0NjJ8MA&ixlib=rb-4.1.0&q=80&w=400',
-    replies: [],
-  },
-  {
-    id: '3',
-    versionId: 'v1',
-    author: { name: 'Mike Johnson', avatar: 'MJ' },
-    content: 'Font size looks perfect here. Good job!',
-    timestamp: '5 hours ago',
-    resolved: true,
-    highlightedText: 'Our Mission',
-    elementType: 'heading',
-    elementId: 'mission-heading',
-    replies: [],
-  },
-  {
-    id: '4',
-    versionId: 'v1',
-    author: { name: 'Sarah Chen', avatar: 'SC' },
-    content: 'This image really captures the collaborative spirit. Great choice!',
-    timestamp: '1 day ago',
-    resolved: true,
-    elementType: 'image',
-    elementId: 'hero-image',
-    elementPreview: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3b3Jrc3BhY2V8ZW58MXx8fHwxNzY2NDIyNzYxfDA&ixlib=rb-4.1.0&q=80&w=400',
-    replies: [],
-  },
-  // v2 comments
-  {
-    id: '5',
-    versionId: 'v2',
-    author: { name: 'Mike Johnson', avatar: 'MJ' },
-    content: 'Great improvements from v1! The layout is much cleaner now.',
-    timestamp: '1 hour ago',
-    resolved: false,
-    highlightedText: 'Welcome to Our Amazing Product',
-    elementType: 'heading',
-    replies: [],
-  },
-  {
-    id: '6',
-    versionId: 'v2',
-    author: { name: 'Emma Davis', avatar: 'ED' },
-    content: 'Color scheme is more professional in this version.',
-    timestamp: '2 hours ago',
-    resolved: true,
-    elementType: 'section',
-    replies: [],
-  },
-  // v3 comments
-  {
-    id: '7',
-    versionId: 'v3',
-    author: { name: 'Sarah Chen', avatar: 'SC' },
-    content: 'The new navigation structure is excellent! Much easier to use.',
-    timestamp: '30 mins ago',
-    resolved: false,
-    highlightedText: 'Transform your workflow',
-    elementType: 'text',
-    replies: [
-      {
-        id: '7-1',
-        author: { name: 'Emma Davis', avatar: 'ED' },
-        content: 'Agreed! This is ready for approval.',
-        timestamp: '15 mins ago',
-      },
-    ],
-  },
-  {
-    id: '8',
-    versionId: 'v3',
-    author: { name: 'Mike Johnson', avatar: 'MJ' },
-    content: 'Perfect! All my previous feedback has been addressed.',
-    timestamp: '45 mins ago',
-    resolved: true,
-    elementType: 'section',
-    replies: [],
-  },
-  // Interactive Components project (project ID: '2') - Comments on hidden content!
-  {
-    id: '9',
     versionId: 'v1',
     author: { name: 'Mike Johnson', avatar: 'MJ' },
     content: 'This pricing is too high for starter plan. Should be $19/month.',
@@ -189,27 +84,7 @@ const mockComments: Comment[] = [
     replies: [],
   },
   {
-    id: '10',
-    versionId: 'v1',
-    author: { name: 'Sarah Chen', avatar: 'SC' },
-    content: 'Great explanation! This FAQ is really helpful.',
-    timestamp: '2 hours ago',
-    resolved: true,
-    elementType: 'text',
-    elementId: 'faq3-details', // This is in a COLLAPSED accordion!
-    highlightedText: 'automatically expand that section',
-    page: '/index.html',
-    replies: [
-      {
-        id: '10-1',
-        author: { name: 'Mike Johnson', avatar: 'MJ' },
-        content: 'Agreed, the auto-expand feature is a game changer.',
-        timestamp: '1 hour ago',
-      },
-    ],
-  },
-  {
-    id: '11',
+    id: '2',
     versionId: 'v1',
     author: { name: 'Emma Davis', avatar: 'ED' },
     content: 'Should we add more details about the Text Edit Tool here?',
@@ -222,7 +97,7 @@ const mockComments: Comment[] = [
     replies: [],
   },
   {
-    id: '12',
+    id: '3',
     versionId: 'v1',
     author: { name: 'Sarah Chen', avatar: 'SC' },
     content: 'The support info looks good. Maybe add live chat hours?',
@@ -233,9 +108,43 @@ const mockComments: Comment[] = [
     page: '/index.html',
     replies: [],
   },
+  // Index page - Accordion comments
+  {
+    id: '4',
+    versionId: 'v1',
+    author: { name: 'Sarah Chen', avatar: 'SC' },
+    content: 'Great explanation! This FAQ is really helpful.',
+    timestamp: '2 hours ago',
+    resolved: true,
+    elementType: 'text',
+    elementId: 'faq3-details', // This is in a COLLAPSED accordion!
+    highlightedText: 'automatically expand that section',
+    page: '/index.html',
+    replies: [
+      {
+        id: '4-1',
+        author: { name: 'Mike Johnson', avatar: 'MJ' },
+        content: 'Agreed, the auto-expand feature is a game changer.',
+        timestamp: '1 hour ago',
+      },
+    ],
+  },
+  {
+    id: '5',
+    versionId: 'v1',
+    author: { name: 'Mike Johnson', avatar: 'MJ' },
+    content: 'We should emphasize the optional labels feature more prominently.',
+    timestamp: '5 hours ago',
+    resolved: false,
+    elementType: 'text',
+    elementId: 'faq1-li-2',
+    highlightedText: 'Optional custom labels',
+    page: '/index.html',
+    replies: [],
+  },
   // Documentation page comments
   {
-    id: '13',
+    id: '6',
     versionId: 'v1',
     author: { name: 'Mike Johnson', avatar: 'MJ' },
     content: 'The API table is really well organized. Nice work!',
@@ -247,7 +156,7 @@ const mockComments: Comment[] = [
     replies: [],
   },
   {
-    id: '14',
+    id: '7',
     versionId: 'v1',
     author: { name: 'Emma Davis', avatar: 'ED' },
     content: 'Should we add authentication examples in this section?',
@@ -259,7 +168,7 @@ const mockComments: Comment[] = [
     page: '/documentation.html',
     replies: [
       {
-        id: '14-1',
+        id: '7-1',
         author: { name: 'Sarah Chen', avatar: 'SC' },
         content: 'Good idea! Let\'s add a separate authentication section.',
         timestamp: '30 mins ago',
@@ -267,7 +176,7 @@ const mockComments: Comment[] = [
     ],
   },
   {
-    id: '15',
+    id: '8',
     versionId: 'v1',
     author: { name: 'Sarah Chen', avatar: 'SC' },
     content: 'This configuration example is perfect. Very clear.',
@@ -813,32 +722,24 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
-  // Filter comments by current version AND project
-  // For project '2', show comments 9-12; for project '1', show comments 1-8
-  const projectComments = project?.id === '2' 
-    ? comments.filter(c => parseInt(c.id) >= 9) 
-    : comments.filter(c => parseInt(c.id) <= 8);
-  
-  const currentVersionComments = projectComments.filter(
-    comment => comment.versionId === currentVersionId && 
+  // Filter comments by current version and page
+  const currentVersionComments = comments.filter(
+    comment => comment.versionId === currentVersionId &&
       (!comment.page || comment.page === currentPage) // Filter by page if specified
   );
   
   const currentVersion = project?.versions.find(v => v.id === currentVersionId);
   const isViewingOldVersion = currentVersionId !== defaultVersionId;
   
-  // Choose HTML based on project and current page
+  // Choose HTML based on current page
+  // Using Interactive Components HTML as default (has tabs, accordions, multi-page)
   const getHTMLContent = () => {
-    if (project?.id === '2') {
-      // Interactive Components project - multi-page
-      if (currentPage === '/documentation.html') {
-        return interactiveComponentsSubPageHTML;
-      }
-      return interactiveComponentsHTML;
+    if (currentPage === '/documentation.html') {
+      return interactiveComponentsSubPageHTML;
     }
-    return sampleHTML;
+    return interactiveComponentsHTML;
   };
-  
+
   const htmlContent = getHTMLContent();
   
   // Store location context for each comment
@@ -1046,11 +947,9 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
 
   // Reset to index page when version changes
   useEffect(() => {
-    if (project?.id === '2') {
-      setCurrentPage('/index.html');
-      setNavigationHistory(['/index.html']);
-      setHistoryIndex(0);
-    }
+    setCurrentPage('/index.html');
+    setNavigationHistory(['/index.html']);
+    setHistoryIndex(0);
   }, [currentVersionId]);
 
   const handleTextSelection = (e: MouseEvent) => {
