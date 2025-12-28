@@ -8,7 +8,9 @@
 
 ## Objective
 
-Design and implement Convex schema, queries, and mutations for comments and text edits. This phase builds the complete backend data layer without touching the frontend.
+Design and implement Convex schema, queries, and mutations for commenting on text and elements. This phase builds the complete backend data layer without touching the frontend.
+
+**SCOPE:** Comments only - no text editing suggestions.
 
 ---
 
@@ -16,11 +18,10 @@ Design and implement Convex schema, queries, and mutations for comments and text
 
 ### What to Do
 
-1. Design schema for `comments` and `textEdits` tables
+1. Design schema for `comments` table
 2. Implement CRUD operations for comments
-3. Implement CRUD operations for text edits
-4. Add permission checks to all mutations
-5. Write comprehensive backend tests
+3. Add permission checks to all mutations
+4. Write comprehensive backend tests
 
 ### What NOT to Do
 
@@ -34,11 +35,11 @@ Design and implement Convex schema, queries, and mutations for comments and text
 
 ### 01-schema-design
 
-Design Convex schema for comments and text edits tables with proper indexes.
+Design Convex schema for comments table with proper indexes.
 
 **Deliverables:**
 - ADR documenting schema decisions
-- `convex/schema.ts` updated with new tables
+- `convex/schema.ts` updated with comments table
 - Indexes for efficient queries
 
 ### 02-comment-crud
@@ -48,36 +49,24 @@ Implement comment queries and mutations.
 **Deliverables:**
 - `convex/comments.ts` with:
   - `getByVersion` query
-  - `create` mutation
+  - `create` mutation (for text and element comments)
   - `addReply` mutation
   - `toggleResolved` mutation
   - `delete` mutation
 
-### 03-text-edit-crud
+### 03-permissions
 
-Implement text edit queries and mutations.
-
-**Deliverables:**
-- `convex/textEdits.ts` with:
-  - `getByVersion` query
-  - `create` mutation
-  - `accept` mutation
-  - `reject` mutation
-  - `delete` mutation
-
-### 04-permissions
-
-Add permission checks to all mutations.
+Add permission checks to all comment mutations.
 
 **Deliverables:**
 - Permission logic in all mutations:
-  - `can-comment` or `owner` can create comments/edits
-  - `owner` can accept/reject text edits
-  - Author can delete own comments
-  - Author or owner can delete comments
+  - `can-comment` or `owner` can create comments
+  - `can-comment` or `owner` can reply to comments
+  - Author or `owner` can delete comments
+  - Anyone with `can-comment` can toggle resolved
 - Update `convex/sharing.ts` if needed
 
-### 05-tests
+### 04-tests
 
 Write comprehensive tests for all backend functionality.
 
@@ -90,8 +79,8 @@ Write comprehensive tests for all backend functionality.
 
 ## Success Criteria
 
-- All tables defined in schema with proper indexes
-- All CRUD operations implemented following Convex rules
+- Comments table defined in schema with proper indexes
+- All comment CRUD operations implemented following Convex rules
 - Permission checks enforce proper access control
 - All tests passing
 - No frontend changes made in this phase
@@ -103,7 +92,6 @@ Write comprehensive tests for all backend functionality.
 ### New Files
 
 - `convex/comments.ts`
-- `convex/textEdits.ts`
 - `docs/architecture/decisions/00XX-comments-schema.md`
 
 ### Modified Files

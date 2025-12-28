@@ -38,7 +38,9 @@
 
 ## Objective
 
-Implement commenting functionality for shared artifacts based on Figma designs, enabling stakeholders to provide inline feedback on AI-generated artifacts during collaborative review.
+Implement commenting functionality for shared artifacts based on Figma designs, enabling stakeholders to add comments on text selections and UI elements in AI-generated artifacts during collaborative review.
+
+**SCOPE CLARIFICATION:** This task implements commenting on text/elements only. Text editing suggestions (replace/delete text) are out of scope for this phase.
 
 ---
 
@@ -58,7 +60,6 @@ Should we:
 |--------|---------------------|-------------------|
 | Lines of Code | ~2200 lines | ~105 lines |
 | Comments System | Complete | None |
-| Text Edit System | Complete | None |
 | Tool Modes + Badges | Complete | None |
 | Backend Integration | Mock data | Full Convex |
 
@@ -109,16 +110,18 @@ Should we:
 
 ### Phase 2: Build Backend (Convex)
 **Location:** `tasks/00017-implement-commenting/phase-2-backend/`
-**Goal:** Design and implement Convex schema, queries, and mutations for comments.
+**Goal:** Design and implement Convex schema, queries, and mutations for comments on text and elements.
+
+**SCOPE:** Comments only - no text editing suggestions.
 
 #### Subtask 2.1: Schema Design
 **Location:** `phase-2-backend/01-schema-design/`
 **Deliverables:**
 - ADR for comments schema
-- `convex/schema.ts` updates with `comments` and `textEdits` tables
+- `convex/schema.ts` updates with `comments` table
 - Indexes for efficient queries
 
-**Tables to design:**
+**Table to design:**
 ```typescript
 // Comments table
 comments: defineTable({
@@ -127,10 +130,10 @@ comments: defineTable({
   content: v.string(),
   resolved: v.boolean(),
   parentCommentId: v.optional(v.id("comments")), // For replies
-  // Target info
+  // Target info (what the comment is on)
   targetType: v.union(v.literal("text"), v.literal("element")),
-  highlightedText: v.optional(v.string()),
-  elementType: v.optional(v.string()),
+  highlightedText: v.optional(v.string()), // For text comments
+  elementType: v.optional(v.string()), // For element comments (button, heading, etc.)
   elementId: v.optional(v.string()),
   elementPreview: v.optional(v.string()),
   page: v.optional(v.string()),
@@ -138,21 +141,6 @@ comments: defineTable({
   .index("by_version", ["artifactVersionId"])
   .index("by_author", ["authorId"])
   .index("by_parent", ["parentCommentId"])
-
-// Text Edits table
-textEdits: defineTable({
-  artifactVersionId: v.id("artifactVersions"),
-  authorId: v.id("users"),
-  type: v.union(v.literal("replace"), v.literal("delete")),
-  originalText: v.string(),
-  newText: v.optional(v.string()),
-  comment: v.string(),
-  status: v.union(v.literal("pending"), v.literal("accepted"), v.literal("rejected")),
-  page: v.optional(v.string()),
-})
-  .index("by_version", ["artifactVersionId"])
-  .index("by_author", ["authorId"])
-  .index("by_status", ["status"])
 ```
 
 #### Subtask 2.2: Comment CRUD Operations
@@ -160,33 +148,23 @@ textEdits: defineTable({
 **Deliverables:**
 - `convex/comments.ts` with queries and mutations:
   - `getByVersion` - Get all comments for a version
-  - `create` - Add a new comment
+  - `create` - Add a new comment (on text or element)
   - `addReply` - Reply to a comment
   - `toggleResolved` - Mark as resolved/unresolved
-  - `delete` - Delete a comment (owner only)
+  - `delete` - Delete a comment (author or owner)
 
-#### Subtask 2.3: Text Edit CRUD Operations
-**Location:** `phase-2-backend/03-text-edit-crud/`
-**Deliverables:**
-- `convex/textEdits.ts` with queries and mutations:
-  - `getByVersion` - Get all text edits for a version
-  - `create` - Add a new text edit suggestion
-  - `accept` - Accept a text edit (artifact owner only)
-  - `reject` - Reject a text edit (artifact owner only)
-  - `delete` - Delete a text edit (author only)
-
-#### Subtask 2.4: Permissions Logic
-**Location:** `phase-2-backend/04-permissions/`
+#### Subtask 2.3: Permissions Logic
+**Location:** `phase-2-backend/03-permissions/`
 **Deliverables:**
 - Permission checks in all mutations:
-  - Only `can-comment` or `owner` can create comments/edits
-  - Only `owner` can accept/reject text edits
-  - Only author can delete their own comments
-  - Only author or owner can delete comments
+  - Only `can-comment` or `owner` can create comments
+  - Only `can-comment` or `owner` can reply to comments
+  - Only author or `owner` can delete comments
+  - Anyone with `can-comment` can toggle resolved status
 - Update `convex/sharing.ts` if needed
 
-#### Subtask 2.5: Backend Tests
-**Location:** `phase-2-backend/05-tests/`
+#### Subtask 2.4: Backend Tests
+**Location:** `phase-2-backend/04-tests/`
 **Deliverables:**
 - Unit tests for all queries/mutations
 - Permission tests (unauthorized access blocked)
@@ -196,29 +174,27 @@ textEdits: defineTable({
 
 ### Phase 3: Connect Frontend to Backend
 **Location:** `tasks/00017-implement-commenting/phase-3-integration/`
-**Goal:** Replace mock data with real Convex data.
+**Goal:** Replace mock data with real Convex data for commenting.
 
 #### Subtask 3.1: Create React Hooks
 **Location:** `phase-3-integration/01-hooks/`
 **Deliverables:**
 - `useComments(versionId)` hook - Fetches comments from Convex
-- `useTextEdits(versionId)` hook - Fetches text edits from Convex
 - `useCommentActions()` hook - Create, reply, resolve, delete
-- `useTextEditActions()` hook - Create, accept, reject, delete
 
 #### Subtask 3.2: Replace Mock Data in DocumentViewer
 **Location:** `phase-3-integration/02-wire-data/`
 **Deliverables:**
 - Replace `mockComments` with `useComments()` hook
-- Replace `mockTextEdits` with `useTextEdits()` hook
-- Wire up all action handlers to mutations
+- Wire up all comment action handlers to mutations
 - Add loading states
 - Add error handling
+- Remove text edit UI/logic (out of scope)
 
 #### Subtask 3.3: Integration Testing
 **Location:** `phase-3-integration/03-testing/`
 **Deliverables:**
-- End-to-end tests for full commenting flow
+- End-to-end tests for commenting flow
 - Test permission scenarios
 - Test real-time updates (optimistic UI)
 - Validation video showing complete flow
@@ -337,7 +313,9 @@ export interface TextEdit {
 
 ### Backend Schema (Phase 2)
 
-See Subtask 2.1 above for Convex schema design.
+See Subtask 2.1 above for Convex comments schema design.
+
+**Note:** Text editing suggestions (replace/delete) are out of scope.
 
 ---
 
@@ -356,11 +334,12 @@ See Subtask 2.1 above for Convex schema design.
 
 ## Out of Scope (Future Tasks)
 
-1. **Location Badges** - Tab/accordion hidden content indicators
-2. **Active Viewers Presence** - Real-time presence indicators
-3. **Element Highlighting in iframe** - Requires iframe communication
-4. **Notifications** - Email/in-app notifications
-5. **@mentions** - User mentions in comments
+1. **Text Editing Suggestions** - Replace/delete text with accept/reject workflow
+2. **Location Badges** - Tab/accordion hidden content indicators
+3. **Active Viewers Presence** - Real-time presence indicators
+4. **Element Highlighting in iframe** - Requires iframe communication
+5. **Notifications** - Email/in-app notifications
+6. **@mentions** - User mentions in comments
 
 ---
 
@@ -372,7 +351,7 @@ See Subtask 2.1 above for Convex schema design.
 | 3-Phase Approach | Clean separation: UI first, backend second, integration third | 2025-12-28 |
 | Phase 1 = Single Task | Lift everything at once, avoid partial states | 2025-12-28 |
 | Keep ArtifactViewerPage | Preserve Convex integration, permissions, routing | 2025-12-28 |
-| Include Text Edit Tool | Core part of commenting UX per user clarification | 2025-12-28 |
+| Comments Only (No Text Edits) | Text editing suggestions deferred to future task | 2025-12-28 |
 | Include Badge Modes | Core part of tool UX per user clarification | 2025-12-28 |
 
 ---

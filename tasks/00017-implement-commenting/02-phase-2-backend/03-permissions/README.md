@@ -1,14 +1,14 @@
-# Subtask 2.4: Permissions Logic
+# Subtask 2.3: Permissions Logic
 
 **Parent:** Phase 2 - Build Backend
 **Status:** Not Started
-**Prerequisites:** Subtasks 2.2 and 2.3
+**Prerequisites:** Subtask 2.2 (Comment CRUD)
 
 ---
 
 ## Objective
 
-Add comprehensive permission checks to all comment and text edit mutations, ensuring proper access control.
+Add comprehensive permission checks to all comment mutations, ensuring proper access control.
 
 ---
 
@@ -27,19 +27,10 @@ Add comprehensive permission checks to all comment and text edit mutations, ensu
 
 | Action | Who Can Do It |
 |--------|---------------|
-| Create comment | `can-comment` OR `owner` |
+| Create comment (text or element) | `can-comment` OR `owner` |
 | Add reply | `can-comment` OR `owner` |
 | Toggle resolved | `can-comment` OR `owner` |
 | Delete comment | Author OR `owner` |
-
-### Text Edits
-
-| Action | Who Can Do It |
-|--------|---------------|
-| Create text edit | `can-comment` OR `owner` |
-| Accept edit | `owner` ONLY |
-| Reject edit | `owner` ONLY |
-| Delete edit | Author ONLY |
 
 ---
 
@@ -49,7 +40,7 @@ Add comprehensive permission checks to all comment and text edit mutations, ensu
 
 Check `convex/sharing.ts` for existing permission helpers:
 - `getSharePermission(ctx, shareToken)` - Get user's permission level
-- May need to add helpers for comment/edit ownership checks
+- May need to add helpers for comment ownership checks
 
 ### Add Permission Helpers
 
@@ -83,10 +74,6 @@ if (!canComment) {
 if (!isAuthor && !isOwner) {
   throw new Error("Only the comment author or artifact owner can delete this comment");
 }
-
-if (!isOwner) {
-  throw new Error("Only the artifact owner can accept/reject text edits");
-}
 ```
 
 ---
@@ -97,12 +84,8 @@ if (!isOwner) {
 - Add permission checks to all mutations
 - Use helper functions for readability
 
-### `convex/textEdits.ts`
-- Add permission checks to all mutations
-- Enforce owner-only for accept/reject
-
 ### `convex/sharing.ts` (if needed)
-- Add helper functions for permission checks
+- Add helper functions for comment permission checks
 - Keep DRY - don't repeat permission logic
 
 ---
@@ -110,10 +93,12 @@ if (!isOwner) {
 ## Testing Requirements
 
 Must verify:
-1. Unauthorized users cannot create comments/edits
-2. Users can only delete their own comments (unless owner)
-3. Only owners can accept/reject text edits
-4. Permission errors return clear messages
+1. Unauthorized users cannot create comments
+2. `view-only` users cannot create comments
+3. `can-comment` users can create comments
+4. Users can only delete their own comments (unless owner)
+5. Owners can delete any comment
+6. Permission errors return clear messages
 
 ---
 

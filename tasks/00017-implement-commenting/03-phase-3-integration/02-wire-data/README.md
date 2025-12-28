@@ -8,18 +8,20 @@
 
 ## Objective
 
-Replace all mock data in DocumentViewer with real Convex data using the hooks created in Subtask 3.1.
+Replace all mock comment data in DocumentViewer with real Convex data using the hooks created in Subtask 3.1.
+
+**SCOPE:** Wire up comments only - remove text edit UI/logic from lifted DocumentViewer.
 
 ---
 
 ## Deliverables
 
 - [ ] DocumentViewer uses `useComments()` instead of `mockComments`
-- [ ] DocumentViewer uses `useTextEdits()` instead of `mockTextEdits`
-- [ ] All action handlers call real mutations
+- [ ] All comment action handlers call real mutations
 - [ ] Loading states added for all async operations
 - [ ] Error handling for all mutations
-- [ ] Optimistic updates for better UX
+- [ ] Remove text edit UI/logic (out of scope)
+- [ ] Optimistic updates for better UX (optional)
 
 ---
 
@@ -37,22 +39,6 @@ const [comments, setComments] = useState(mockComments);
 import { useComments } from '@/components/comments/hooks/useComments';
 
 const { comments, isLoading } = useComments(versionId);
-```
-
----
-
-### Replace Mock Text Edits
-
-**Before:**
-```typescript
-const [textEdits, setTextEdits] = useState(mockTextEdits);
-```
-
-**After:**
-```typescript
-import { useTextEdits } from '@/components/comments/hooks/useTextEdits';
-
-const { textEdits, isLoading: editsLoading } = useTextEdits(versionId);
 ```
 
 ---
@@ -77,6 +63,7 @@ const handleCreateComment = async (commentData) => {
   const result = await create(commentData);
   if (!result.success) {
     // Show error toast
+    toast.error('Failed to create comment: ' + result.error);
     logger.error(LOG_TOPICS.Comments, 'DocumentViewer', 'Failed to create comment', { error: result.error });
   }
 };
@@ -84,31 +71,87 @@ const handleCreateComment = async (commentData) => {
 
 ---
 
-### Wire Up Text Edit Actions
+### Wire Up Reply Action
 
 **Before:**
 ```typescript
-const handleAcceptEdit = (editId) => {
-  setTextEdits(edits =>
-    edits.map(e => e.id === editId ? { ...e, status: 'accepted' } : e)
-  );
+const handleReply = (parentId, content) => {
+  const reply = { id: uuid(), content, ...};
+  // Add to comments array
 };
 ```
 
 **After:**
 ```typescript
-import { useTextEditActions } from '@/components/comments/hooks/useTextEditActions';
+const { addReply } = useCommentActions();
 
-const { accept } = useTextEditActions();
-
-const handleAcceptEdit = async (editId) => {
-  const result = await accept({ textEditId: editId });
+const handleReply = async (parentId, content) => {
+  const result = await addReply({ parentCommentId: parentId, content });
   if (!result.success) {
-    // Show error toast
-    logger.error(LOG_TOPICS.TextEdits, 'DocumentViewer', 'Failed to accept edit', { error: result.error });
+    toast.error('Failed to add reply');
   }
 };
 ```
+
+---
+
+### Wire Up Toggle Resolved
+
+**Before:**
+```typescript
+const handleToggleResolved = (commentId) => {
+  setComments(comments.map(c =>
+    c.id === commentId ? { ...c, resolved: !c.resolved } : c
+  ));
+};
+```
+
+**After:**
+```typescript
+const { toggleResolved } = useCommentActions();
+
+const handleToggleResolved = async (commentId) => {
+  const result = await toggleResolved(commentId);
+  if (!result.success) {
+    toast.error('Failed to toggle resolved status');
+  }
+};
+```
+
+---
+
+### Wire Up Delete Comment
+
+**Before:**
+```typescript
+const handleDelete = (commentId) => {
+  setComments(comments.filter(c => c.id !== commentId));
+};
+```
+
+**After:**
+```typescript
+const { delete: deleteComment } = useCommentActions();
+
+const handleDelete = async (commentId) => {
+  const result = await deleteComment(commentId);
+  if (!result.success) {
+    toast.error('Failed to delete comment');
+  }
+};
+```
+
+---
+
+## Remove Text Edit Functionality
+
+Since text editing is out of scope, remove:
+- Text edit tool from toolbar
+- Text edit state and handlers
+- Text edit UI components
+- Any mock text edit data
+
+Keep only comment tool in the toolbar.
 
 ---
 
@@ -117,7 +160,7 @@ const handleAcceptEdit = async (editId) => {
 Add loading indicators while data is fetching:
 
 ```typescript
-if (isLoading || editsLoading) {
+if (isLoading) {
   return <LoadingSpinner />;
 }
 ```
@@ -156,7 +199,7 @@ logger.error(LOG_TOPICS.Comments, 'DocumentViewer', 'Failed to create comment', 
 
 ---
 
-## Optimistic Updates
+## Optimistic Updates (Optional)
 
 For better UX, implement optimistic updates:
 
@@ -186,11 +229,12 @@ const handleCreateComment = async (commentData) => {
 
 ### `app/src/components/artifact/DocumentViewer.tsx`
 
-- Import hooks instead of mock data
-- Replace all `useState` for comments/edits with hooks
-- Wire up all action handlers to mutations
+- Import hooks instead of using mock data
+- Replace all comment `useState` with `useComments()` hook
+- Wire up all comment action handlers to mutations
 - Add loading states
 - Add error handling
+- **Remove text edit tool and all text edit logic**
 
 ### `app/src/components/artifact/ArtifactViewerPage.tsx`
 
@@ -207,9 +251,8 @@ const handleCreateComment = async (commentData) => {
 4. Create a new comment - verify it appears
 5. Reply to comment - verify reply appears
 6. Toggle resolved - verify status changes
-7. Create text edit - verify it appears
-8. Accept/reject edit (as owner) - verify status changes
-9. Delete comment - verify it disappears
+7. Delete comment - verify it disappears
+8. Verify text edit UI is removed
 
 ---
 

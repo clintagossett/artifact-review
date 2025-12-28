@@ -8,13 +8,15 @@
 
 ## Objective
 
-Write comprehensive end-to-end tests for the complete commenting feature, including all user flows and permission scenarios.
+Write comprehensive end-to-end tests for the commenting feature, including all user flows and permission scenarios.
+
+**SCOPE:** Comments only - no text edit tests.
 
 ---
 
 ## Deliverables
 
-- [ ] E2E tests for full commenting flow
+- [ ] E2E tests for commenting flow
 - [ ] Permission scenario tests
 - [ ] Real-time update tests
 - [ ] Validation video showing complete feature
@@ -29,7 +31,6 @@ Write comprehensive end-to-end tests for the complete commenting feature, includ
 tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 ├── e2e/
 │   ├── commenting-flow.test.ts
-│   ├── text-edits-flow.test.ts
 │   ├── permissions.test.ts
 │   └── real-time-updates.test.ts
 ├── validation-videos/
@@ -51,7 +52,7 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
   - Verify comment appears in sidebar
 
 - [ ] **Create comment on element**
-  - Click element tool
+  - Click comment tool
   - Click element in artifact
   - Enter comment content
   - Verify comment appears in sidebar
@@ -80,42 +81,6 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 
 ---
 
-### Text Edits Flow (`text-edits-flow.test.ts`)
-
-- [ ] **Create replace text edit**
-  - Select text in artifact
-  - Click text edit tool
-  - Choose "Replace" option
-  - Enter original and new text
-  - Enter comment
-  - Verify edit appears in sidebar
-
-- [ ] **Create delete text edit**
-  - Select text in artifact
-  - Click text edit tool
-  - Choose "Delete" option
-  - Enter comment
-  - Verify edit appears in sidebar
-
-- [ ] **Accept text edit (as owner)**
-  - Log in as owner
-  - Click accept on pending edit
-  - Verify status changes to "accepted"
-  - Verify badge shows "Accepted"
-
-- [ ] **Reject text edit (as owner)**
-  - Log in as owner
-  - Click reject on pending edit
-  - Verify status changes to "rejected"
-  - Verify badge shows "Rejected"
-
-- [ ] **Delete text edit (as author)**
-  - Log in as author
-  - Click delete on own edit
-  - Verify edit disappears
-
----
-
 ### Permissions Tests (`permissions.test.ts`)
 
 - [ ] **View-only cannot comment**
@@ -125,15 +90,16 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 
 - [ ] **Can-comment can create**
   - Log in as can-comment user
-  - Verify can create comments
-  - Verify can create text edits
-  - Verify cannot accept/reject edits
+  - Verify can create text comments
+  - Verify can create element comments
+  - Verify can reply to comments
+  - Verify can toggle resolved
 
 - [ ] **Owner can do everything**
   - Log in as owner
   - Verify can create comments
-  - Verify can accept/reject edits
   - Verify can delete any comment
+  - Verify can toggle resolved
 
 - [ ] **Author can delete own**
   - Log in as comment author
@@ -161,7 +127,7 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 - [ ] **Mutation errors handled gracefully**
   - Simulate permission error
   - Verify error toast appears
-  - Verify optimistic update reverted
+  - Verify optimistic update reverted (if applicable)
 
 ---
 
@@ -176,16 +142,11 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 4. Reply to comment
 5. Toggle resolved status
 6. Filter comments (all/resolved/unresolved)
-7. Create replace text edit
-8. Accept text edit (as owner)
-9. Create delete text edit
-10. Reject text edit (as owner)
-11. Delete own comment
-12. Tool mode switching (comment ↔ text edit)
-13. Badge mode switching (one-shot ↔ infinite)
-14. Permission checks (show disabled UI for view-only)
+7. Delete own comment
+8. Permission checks (show disabled UI for view-only)
+9. **Verify text edit UI is NOT present (out of scope)**
 
-**Duration:** 3-5 minutes
+**Duration:** 2-3 minutes
 
 ---
 
@@ -198,7 +159,8 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 2. **Test Coverage** - List all test cases with pass/fail
 3. **Known Issues** - Any bugs or limitations
 4. **Performance Notes** - Loading times, responsiveness
-5. **Next Steps** - Future improvements (out of scope items)
+5. **Out of Scope** - Text editing deferred to future task
+6. **Next Steps** - Future improvements
 
 ---
 
@@ -210,6 +172,7 @@ tasks/00017-implement-commenting/03-phase-3-integration/03-testing/
 - [ ] Test report written
 - [ ] No regressions in existing features
 - [ ] Performance acceptable (comments load quickly)
+- [ ] Text edit UI removed from DocumentViewer
 
 ---
 

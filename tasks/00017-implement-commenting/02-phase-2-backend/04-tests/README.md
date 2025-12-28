@@ -1,4 +1,4 @@
-# Subtask 2.5: Backend Tests
+# Subtask 2.4: Backend Tests
 
 **Parent:** Phase 2 - Build Backend
 **Status:** Not Started
@@ -8,7 +8,7 @@
 
 ## Objective
 
-Write comprehensive unit tests for all comment and text edit queries and mutations, including permission scenarios.
+Write comprehensive unit tests for all comment queries and mutations, including permission scenarios.
 
 ---
 
@@ -25,10 +25,9 @@ Write comprehensive unit tests for all comment and text edit queries and mutatio
 ## Test Structure
 
 ```
-tasks/00017-implement-commenting/02-phase-2-backend/05-tests/
+tasks/00017-implement-commenting/02-phase-2-backend/04-tests/
 ├── unit/
 │   ├── comments.test.ts
-│   ├── textEdits.test.ts
 │   └── permissions.test.ts
 └── README.md (this file)
 ```
@@ -73,60 +72,20 @@ tasks/00017-implement-commenting/02-phase-2-backend/05-tests/
 
 ---
 
-### Text Edits Tests (`textEdits.test.ts`)
-
-#### Query: `getByVersion`
-- [ ] Returns empty array when no edits
-- [ ] Returns all text edits for a version
-- [ ] Includes author information
-- [ ] Filters by version
-
-#### Mutation: `create`
-- [ ] Creates "replace" type edit
-- [ ] Creates "delete" type edit
-- [ ] Validates newText required for "replace"
-- [ ] Requires authentication
-- [ ] Enforces `can-comment` permission
-
-#### Mutation: `accept`
-- [ ] Owner can accept pending edit
-- [ ] Non-owner cannot accept
-- [ ] Cannot accept already accepted edit
-- [ ] Cannot accept rejected edit
-
-#### Mutation: `reject`
-- [ ] Owner can reject pending edit
-- [ ] Non-owner cannot reject
-- [ ] Cannot reject already rejected edit
-- [ ] Cannot reject accepted edit
-
-#### Mutation: `delete`
-- [ ] Author can delete own edit
-- [ ] Non-author cannot delete
-- [ ] Can delete at any status
-
----
-
 ### Permission Tests (`permissions.test.ts`)
 
 #### Authentication
 - [ ] Unauthenticated users cannot create comments
-- [ ] Unauthenticated users cannot create text edits
 - [ ] Unauthenticated users cannot modify anything
 
 #### Comment Permissions
 - [ ] `view-only` users cannot comment
-- [ ] `can-comment` users can create comments
+- [ ] `can-comment` users can create text comments
+- [ ] `can-comment` users can create element comments
 - [ ] `owner` users can create comments
 - [ ] `owner` can delete any comment
 - [ ] Non-owner can only delete own comments
-
-#### Text Edit Permissions
-- [ ] `view-only` users cannot create edits
-- [ ] `can-comment` users can create edits
-- [ ] Only `owner` can accept edits
-- [ ] Only `owner` can reject edits
-- [ ] Authors can delete own edits
+- [ ] Anyone with `can-comment` can toggle resolved
 
 ---
 

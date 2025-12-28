@@ -8,16 +8,16 @@
 
 ## Objective
 
-Create React hooks that wrap Convex queries and mutations for comments and text edits, providing a clean API for the DocumentViewer component.
+Create React hooks that wrap Convex queries and mutations for comments, providing a clean API for the DocumentViewer component.
+
+**SCOPE:** Comments only - no text edit hooks.
 
 ---
 
 ## Deliverables
 
 - [ ] `useComments(versionId)` hook created
-- [ ] `useTextEdits(versionId)` hook created
 - [ ] `useCommentActions()` hook created
-- [ ] `useTextEditActions()` hook created
 - [ ] All hooks have proper TypeScript types
 - [ ] Error handling in all hooks
 
@@ -52,33 +52,6 @@ export function useComments(versionId: string) {
 
 ---
 
-### `useTextEdits(versionId)`
-
-**Location:** `app/src/components/comments/hooks/useTextEdits.ts`
-
-```typescript
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-
-export function useTextEdits(versionId: string) {
-  const textEdits = useQuery(
-    api.textEdits.getByVersion,
-    versionId ? { versionId } : "skip"
-  );
-
-  return {
-    textEdits: textEdits ?? [],
-    isLoading: textEdits === undefined,
-  };
-}
-```
-
-**Returns:**
-- `textEdits` - Array of TextEdit objects
-- `isLoading` - Boolean loading state
-
----
-
 ### `useCommentActions()`
 
 **Location:** `app/src/components/comments/hooks/useCommentActions.ts`
@@ -103,7 +76,32 @@ export function useCommentActions() {
     }
   }, [createMutation]);
 
-  // Similar for addReply, toggleResolved, delete...
+  const addReply = useCallback(async (args) => {
+    try {
+      const commentId = await addReplyMutation(args);
+      return { success: true, commentId };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, [addReplyMutation]);
+
+  const toggleResolved = useCallback(async (commentId: string) => {
+    try {
+      await toggleResolvedMutation({ commentId });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, [toggleResolvedMutation]);
+
+  const deleteComment = useCallback(async (commentId: string) => {
+    try {
+      await deleteMutation({ commentId });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }, [deleteMutation]);
 
   return {
     create,
@@ -115,53 +113,10 @@ export function useCommentActions() {
 ```
 
 **Returns:**
-- `create(args)` - Create new comment
+- `create(args)` - Create new comment (text or element)
 - `addReply(args)` - Add reply to comment
 - `toggleResolved(commentId)` - Toggle resolved status
 - `delete(commentId)` - Delete comment
-
----
-
-### `useTextEditActions()`
-
-**Location:** `app/src/components/comments/hooks/useTextEditActions.ts`
-
-```typescript
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { useCallback } from "react";
-
-export function useTextEditActions() {
-  const createMutation = useMutation(api.textEdits.create);
-  const acceptMutation = useMutation(api.textEdits.accept);
-  const rejectMutation = useMutation(api.textEdits.reject);
-  const deleteMutation = useMutation(api.textEdits.delete);
-
-  const create = useCallback(async (args) => {
-    try {
-      const editId = await createMutation(args);
-      return { success: true, editId };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }, [createMutation]);
-
-  // Similar for accept, reject, delete...
-
-  return {
-    create,
-    accept,
-    reject,
-    delete: deleteEdit,
-  };
-}
-```
-
-**Returns:**
-- `create(args)` - Create text edit suggestion
-- `accept(editId)` - Accept text edit (owner only)
-- `reject(editId)` - Reject text edit (owner only)
-- `delete(editId)` - Delete text edit (author only)
 
 ---
 
@@ -191,7 +146,7 @@ try {
 Import types from comments/types.ts:
 
 ```typescript
-import type { Comment, TextEdit } from '../types';
+import type { Comment } from '../types';
 ```
 
 Ensure all hooks have proper TypeScript return types.
