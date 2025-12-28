@@ -1058,7 +1058,12 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
     if (isViewingOldVersion) {
       return;
     }
-    
+
+    // Only show comment tooltip if comment tool is active (via button or badge)
+    if (activeToolMode !== 'comment' && commentBadge === null) {
+      return;
+    }
+
     const selection = iframeRef.current?.contentWindow?.getSelection();
     if (selection && selection.toString().trim().length > 0) {
       setSelectedText(selection.toString());
@@ -1075,21 +1080,30 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
     if (isViewingOldVersion) {
       return;
     }
-    
+
+    // Only allow commenting when comment tool is active
+    if (activeToolMode !== 'comment' && commentBadge === null) {
+      return;
+    }
+
     const mouseEvent = e as MouseEvent;
-    
-    // Right-click triggers comment mode
-    if (e.type === 'contextmenu') {
+
+    // When comment tool is active, left-click creates comment
+    if (e.type === 'click' && (activeToolMode === 'comment' || commentBadge !== null)) {
+      e.preventDefault();
+      e.stopPropagation();
+    } else if (e.type === 'contextmenu') {
+      // Right-click also triggers comment (legacy support)
       e.preventDefault();
       e.stopPropagation();
     } else {
-      // Regular left-click - let elements work normally
+      // Regular clicks when tool not active - let elements work normally
       return;
     }
-    
+
     const target = e.target as HTMLElement;
     const elementId = target.id;
-    
+
     if (!elementId) return;
 
     let elementType: 'image' | 'heading' | 'button' | 'section' = 'section';
@@ -1139,7 +1153,7 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
       // Comment on an element (image, button, heading, etc.)
       newComment = {
         id: Date.now().toString(),
-        versionId: 'v1', // NEW: Associate comment with specific version
+        versionId: currentVersionId, // Associate comment with current version
         author: { name: 'You', avatar: 'YU' },
         content: newCommentText,
         timestamp: 'Just now',
@@ -1148,19 +1162,21 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
         elementId: selectedElement.id,
         elementPreview: selectedElement.preview,
         highlightedText: selectedElement.text,
+        page: currentPage,
         replies: [],
       };
     } else if (selectedText) {
       // Comment on selected text
       newComment = {
         id: Date.now().toString(),
-        versionId: 'v1', // NEW: Associate comment with specific version
+        versionId: currentVersionId, // Associate comment with current version
         author: { name: 'You', avatar: 'YU' },
         content: newCommentText,
         timestamp: 'Just now',
         resolved: false,
         highlightedText: selectedText,
         elementType: 'text',
+        page: currentPage,
         replies: [],
       };
     } else {
@@ -1172,6 +1188,17 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
     setSelectedText('');
     setSelectedElement(null);
     setShowCommentTooltip(false);
+
+    // Handle one-shot vs infinite mode
+    if (commentBadge === 'one-shot') {
+      // One-shot mode: deactivate tool after creating comment
+      setActiveToolMode(null);
+      setCommentBadge(null);
+    } else if (commentBadge === 'infinite') {
+      // Infinite mode: keep tool active
+      // Tool stays active for next comment
+    }
+    // If activeToolMode is set without badge, keep it active (manual toggle mode)
   };
 
   const handleAddReply = (commentId: string) => {
@@ -1493,6 +1520,7 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
         onBadgeClick={handleBadgeClick}
         filter={filter}
         onFilterChange={setFilter}
+        activeCount={filteredComments.filter(c => !c.resolved).length}
       />
 
       {/* Main Content Area */}
