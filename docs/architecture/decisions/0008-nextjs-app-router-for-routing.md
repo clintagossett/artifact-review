@@ -36,25 +36,9 @@ Use Next.js App Router with file-based routing for authentication flows (login, 
 
 ## Context
 
-### Current Approach (Anonymous Auth)
+### Why File-Based Routing is Required
 
-Task 6 implemented anonymous authentication using a single-page approach with client-side state:
-
-```tsx
-// Single page with state toggle
-const [authState, setAuthState] = useState<'landing' | 'signin'>('landing');
-
-return authState === 'landing' ? <LandingPage /> : <SignInForm />;
-```
-
-**This worked for anonymous auth because:**
-- No email flows needed (magic links, password reset)
-- No SEO requirements (internal development page)
-- Single, linear flow (land → sign in → dashboard)
-
-### Why Client-Side Routing Fails for Password Authentication
-
-Password authentication introduces new requirements:
+Authentication with email-based flows introduces requirements that client-side state routing cannot satisfy:
 
 | Requirement | Client-Side State | Next.js App Router |
 |------------|-------------------|-------------------|
