@@ -51,6 +51,10 @@ import type {
   Version,
   Project
 } from '@/components/comments/types';
+import { Id } from '@/convex/_generated/dataModel';
+import { useComments } from '@/hooks/useComments';
+import { useCommentActions } from '@/hooks/useCommentActions';
+import { useReplyActions } from '@/hooks/useReplyActions';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -62,6 +66,7 @@ interface DocumentViewerProps {
   // Real artifact data
   shareToken: string;
   versionNumber: number;
+  versionId: Id<"artifactVersions">;
   convexUrl: string;
 }
 
@@ -685,10 +690,44 @@ export function DocumentViewer({
   onNavigateToVersions,
   shareToken,
   versionNumber,
+  versionId,
   convexUrl
 }: DocumentViewerProps) {
+  // Fetch comments from backend
+  const backendComments = useComments(versionId);
+  const { createComment } = useCommentActions();
+  const { createReply } = useReplyActions();
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>(mockComments);
+
+  // Merge backend comments with mock comments when backend data loads
+  useEffect(() => {
+    if (backendComments) {
+      // Transform backend comments to frontend Comment type
+      const transformedComments: Comment[] = backendComments.map((bc) => ({
+        id: bc._id,
+        versionId: bc.versionId,
+        author: {
+          name: bc.author.name || 'Anonymous',
+          avatar: (bc.author.name || 'A').substring(0, 2).toUpperCase(),
+        },
+        content: bc.content,
+        timestamp: new Date(bc.createdAt).toLocaleString(),
+        resolved: bc.resolved,
+        // We'll fetch replies separately for now (or set empty array)
+        replies: [],
+        // Map target metadata to frontend fields
+        elementType: bc.target?.type === 'element' ? (bc.target.elementId ? 'section' : 'text') : 'text',
+        elementId: bc.target?.elementId,
+        highlightedText: bc.target?.selectedText,
+        page: bc.target?.page,
+      }));
+
+      // Prepend backend comments to mock comments
+      setComments([...transformedComments, ...mockComments]);
+    }
+  }, [backendComments]);
   const [textEdits, setTextEdits] = useState<TextEdit[]>(mockTextEdits);
   const [selectedText, setSelectedText] = useState('');
   const [showCommentTooltip, setShowCommentTooltip] = useState(false);
@@ -862,6 +901,30 @@ export function DocumentViewer({
     }, 350);
   };
 
+  // Global click handler to block ALL clicks when comment mode is active
+  const handleGlobalClick = (e: Event) => {
+    // Only intercept when comment mode is active
+    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
+      return; // Let clicks work normally
+    }
+
+    const target = e.target as HTMLElement;
+
+    // Allow clicks on comment tooltip (don't block our own UI)
+    if (target.closest('.comment-tooltip')) {
+      return;
+    }
+
+    // Block ALL clicks when comment mode is active
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If element has an ID, trigger comment creation
+    if (target.id) {
+      handleElementClick(e);
+    }
+  };
+
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -870,10 +933,13 @@ export function DocumentViewer({
       const doc = iframe.contentDocument;
       if (!doc) return;
 
+      // Add global click handler with capture phase (runs before element handlers)
+      doc.addEventListener('click', handleGlobalClick, true);
+
       // Add selection listener for text
       doc.addEventListener('mouseup', handleTextSelection);
-        
-        // Add click listeners for images and other elements
+
+        // Add click listeners for images and other elements (for comment creation)
         const images = doc.querySelectorAll('img[id]');
         images.forEach((img) => {
           img.addEventListener('click', handleElementClick);
@@ -976,6 +1042,7 @@ export function DocumentViewer({
     return () => {
       iframe.removeEventListener('load', setupIframeListeners);
       if (iframe.contentDocument) {
+        iframe.contentDocument.removeEventListener('click', handleGlobalClick, true);
         iframe.contentDocument.removeEventListener('mouseup', handleTextSelection);
       }
     };
@@ -1035,20 +1102,9 @@ export function DocumentViewer({
       return;
     }
 
-    const mouseEvent = e as MouseEvent;
-
-    // When comment tool is active, left-click creates comment
-    if (e.type === 'click' && (activeToolModeRef.current === 'comment' || commentBadgeRef.current !== null)) {
-      e.preventDefault();
-      e.stopPropagation();
-    } else if (e.type === 'contextmenu') {
-      // Right-click also triggers comment (legacy support)
-      e.preventDefault();
-      e.stopPropagation();
-    } else {
-      // Regular clicks when tool not active - let elements work normally
-      return;
-    }
+    // When comment mode is active, prevent normal element behavior
+    e.preventDefault();
+    e.stopPropagation();
 
     const target = e.target as HTMLElement;
     const elementId = target.id;
@@ -1093,85 +1149,75 @@ export function DocumentViewer({
     }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!newCommentText.trim()) return;
 
-    let newComment: Comment;
+    try {
+      // Build target metadata object for backend
+      let target: any;
 
-    if (selectedElement) {
-      // Comment on an element (image, button, heading, etc.)
-      newComment = {
-        id: Date.now().toString(),
-        versionId: currentVersionId, // Associate comment with current version
-        author: { name: 'You', avatar: 'YU' },
-        content: newCommentText,
-        timestamp: 'Just now',
-        resolved: false,
-        elementType: selectedElement.type,
-        elementId: selectedElement.id,
-        elementPreview: selectedElement.preview,
-        highlightedText: selectedElement.text,
-        page: currentPage,
-        replies: [],
-      };
-    } else if (selectedText) {
-      // Comment on selected text
-      newComment = {
-        id: Date.now().toString(),
-        versionId: currentVersionId, // Associate comment with current version
-        author: { name: 'You', avatar: 'YU' },
-        content: newCommentText,
-        timestamp: 'Just now',
-        resolved: false,
-        highlightedText: selectedText,
-        elementType: 'text',
-        page: currentPage,
-        replies: [],
-      };
-    } else {
-      return;
+      if (selectedElement) {
+        // Comment on an element (image, button, heading, etc.)
+        target = {
+          _version: 1,
+          type: 'element',
+          elementId: selectedElement.id,
+          selectedText: selectedElement.text,
+          page: currentPage,
+        };
+      } else if (selectedText) {
+        // Comment on selected text
+        target = {
+          _version: 1,
+          type: 'text',
+          selectedText: selectedText,
+          page: currentPage,
+        };
+      } else {
+        return;
+      }
+
+      // Save to backend (Convex will broadcast update via useComments hook)
+      await createComment(versionId, newCommentText, target);
+
+      // Clear form
+      setNewCommentText('');
+      setSelectedText('');
+      setSelectedElement(null);
+      setShowCommentTooltip(false);
+
+      // Handle one-shot vs infinite mode
+      if (commentBadge === 'one-shot') {
+        // One-shot mode: deactivate tool after creating comment
+        setActiveToolMode(null);
+        setCommentBadge(null);
+      } else if (commentBadge === 'infinite') {
+        // Infinite mode: keep tool active
+        // Tool stays active for next comment
+      }
+      // If activeToolMode is set without badge, keep it active (manual toggle mode)
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+      // TODO: Show error toast to user
     }
-
-    setComments([newComment, ...comments]);
-    setNewCommentText('');
-    setSelectedText('');
-    setSelectedElement(null);
-    setShowCommentTooltip(false);
-
-    // Handle one-shot vs infinite mode
-    if (commentBadge === 'one-shot') {
-      // One-shot mode: deactivate tool after creating comment
-      setActiveToolMode(null);
-      setCommentBadge(null);
-    } else if (commentBadge === 'infinite') {
-      // Infinite mode: keep tool active
-      // Tool stays active for next comment
-    }
-    // If activeToolMode is set without badge, keep it active (manual toggle mode)
   };
 
-  const handleAddReply = (commentId: string) => {
-    if (replyText.trim()) {
-      setComments(
-        comments.map((comment) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                replies: [
-                  ...comment.replies,
-                  {
-                    id: Date.now().toString(),
-                    author: { name: 'You', avatar: 'YU' },
-                    content: replyText,
-                    timestamp: 'Just now',
-                  },
-                ],
-              }
-            : comment
-        )
-      );
+  const handleAddReply = async (commentId: string) => {
+    if (!replyText.trim()) return;
+
+    try {
+      // Save reply to backend (replies won't show yet - need to fetch them separately)
+      await createReply(commentId as Id<"comments">, replyText);
+
+      // Clear form
       setReplyText('');
       setReplyingTo(null);
+
+      // Note: Replies won't appear in UI yet because we're not fetching them
+      // TODO: Fetch replies using useCommentReplies hook
+    } catch (error) {
+      console.error('Failed to create reply:', error);
+      // TODO: Show error toast to user
     }
   };
 

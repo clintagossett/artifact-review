@@ -164,6 +164,7 @@ export function ArtifactViewerPage({
         onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
         shareToken={shareToken}
         versionNumber={targetVersion.versionNumber}
+        versionId={targetVersion._id}
         convexUrl={convexUrl}
       />
 
