@@ -37,7 +37,8 @@ Follow Red-Green-Refactor cycle:
 - `app/convex/schema.ts` - Updated with comments tables
 - `app/convex/comments.ts` - All comment CRUD operations
 - `app/convex/lib/commentPermissions.ts` - Permission helpers
-- `app/convex/__tests__/comments.test.ts` - Comprehensive tests
+- `tests/e2e/comments.test.ts` - E2E backend integration tests (during development)
+- Tests upleveled to `app/convex/__tests__/comments.test.ts` (after completion)
 
 ### Step 3: Validation
 
@@ -80,47 +81,53 @@ Follow Red-Green-Refactor cycle:
 
 ## Test Coverage Required
 
+**Test Type:** E2E Backend Integration Tests (using `convex-test`)
+
+These tests validate the complete backend flow: query/mutation → permission checks → database operations.
+
 ### CRUD Operations
 - ✅ Create comment with valid data
-- ✅ Get comments by version
-- ✅ Update own comment
+- ✅ Get comments by version (with replies assembled)
+- ✅ Update own comment content
 - ✅ Delete own comment
-- ✅ Create and get replies
+- ✅ Create and retrieve replies
 
 ### Permissions
 - ✅ Owner can create/edit/delete
 - ✅ Reviewer can create/edit own
-- ✅ Reviewer CANNOT delete others
-- ✅ Owner CAN delete any comment
-- ✅ Unauthorized user blocked
+- ✅ Reviewer CANNOT delete others' comments
+- ✅ Owner CAN delete any comment (moderation)
+- ✅ Unauthorized user blocked from all operations
 
 ### Edit Tracking
-- ✅ isEdited flag set on edit
-- ✅ editedAt timestamp updated
+- ✅ isEdited flag set on first edit
+- ✅ editedAt timestamp updated on edit
 - ✅ New comments have isEdited=false
 
 ### Soft Delete
-- ✅ Deleted comments excluded from queries
+- ✅ Deleted comments excluded from active queries
 - ✅ Cascade delete (version → comments → replies)
-- ✅ deletedAt timestamp set
+- ✅ deletedAt timestamp set correctly
 
 ### Edge Cases
 - ✅ Cannot comment on deleted version
 - ✅ Cannot edit deleted comment
 - ✅ Invalid versionId returns error
+- ✅ Empty content rejected
 
 ---
 
 ## Success Criteria
 
 - [ ] All functions implemented with validators
-- [ ] All tests passing (100%)
-- [ ] Permission checks enforced
+- [ ] All E2E backend integration tests passing (100%)
+- [ ] Permission checks enforced in all mutations
 - [ ] Follows Convex rules (no filter, proper indexes)
 - [ ] Edit tracking works correctly
 - [ ] Soft delete pattern followed
 - [ ] API design documented
 - [ ] Completion report written
+- [ ] Tests upleveled to project-level `convex/__tests__/`
 
 ---
 
@@ -134,7 +141,10 @@ Follow Red-Green-Refactor cycle:
 - `app/convex/schema.ts` (update)
 - `app/convex/comments.ts` (new)
 - `app/convex/lib/commentPermissions.ts` (new)
-- `app/convex/__tests__/comments.test.ts` (new)
+
+### Test Files
+- `tests/e2e/comments.test.ts` (E2E backend integration tests)
+- Will be upleveled to `app/convex/__tests__/comments.test.ts` after completion
 
 ---
 
