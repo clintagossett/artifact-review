@@ -22,6 +22,7 @@ import {
   Star,
   MapPin,
   Settings,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,7 @@ import { Id } from '@/convex/_generated/dataModel';
 import { useComments } from '@/hooks/useComments';
 import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
+import { useAuthUserId } from '@convex-dev/auth/react';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -67,6 +69,7 @@ interface DocumentViewerProps {
   shareToken: string;
   versionNumber: number;
   versionId: Id<"artifactVersions">;
+  artifactOwnerId: Id<"users">; // For delete permissions
   convexUrl: string;
 }
 
@@ -691,23 +694,39 @@ export function DocumentViewer({
   shareToken,
   versionNumber,
   versionId,
+  artifactOwnerId,
   convexUrl
 }: DocumentViewerProps) {
+  // Get current user for permission checks
+  const currentUserId = useAuthUserId();
+
   // Fetch comments from backend
   const backendComments = useComments(versionId);
-  const { createComment } = useCommentActions();
+  const { createComment, toggleResolved, softDelete } = useCommentActions();
   const { createReply } = useReplyActions();
+
+  // Check if user can delete a comment (author or owner)
+  const canDeleteComment = (authorId: string) => {
+    if (!currentUserId) return false;
+    return currentUserId === authorId || currentUserId === artifactOwnerId;
+  };
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>(mockComments);
 
   // Merge backend comments with mock comments when backend data loads
   useEffect(() => {
+    console.log('[BACKEND COMMENTS UPDATE]', {
+      backendCommentsCount: backendComments?.length || 0,
+      backendComments
+    });
+
     if (backendComments) {
       // Transform backend comments to frontend Comment type
       const transformedComments: Comment[] = backendComments.map((bc) => ({
         id: bc._id,
         versionId: bc.versionId,
+        authorId: bc.authorId, // Keep authorId for permission checks
         author: {
           name: bc.author.name || 'Anonymous',
           avatar: (bc.author.name || 'A').substring(0, 2).toUpperCase(),
@@ -724,8 +743,12 @@ export function DocumentViewer({
         page: bc.target?.page,
       }));
 
+      console.log('[BACKEND COMMENTS UPDATE] Transformed comments:', transformedComments);
+
       // Prepend backend comments to mock comments
       setComments([...transformedComments, ...mockComments]);
+
+      console.log('[BACKEND COMMENTS UPDATE] Set comments to:', transformedComments.length + mockComments.length);
     }
   }, [backendComments]);
   const [textEdits, setTextEdits] = useState<TextEdit[]>(mockTextEdits);
@@ -769,12 +792,9 @@ export function DocumentViewer({
   }, [commentBadge]);
   
   // Version management states
-  const [currentVersionId, setCurrentVersionId] = useState<string>(
-    project?.versions[project.versions.length - 1]?.id || 'v1'
-  );
-  const [defaultVersionId, setDefaultVersionId] = useState<string>(
-    project?.versions[project.versions.length - 1]?.id || 'v1'
-  );
+  // Use the real versionId prop instead of mock version IDs
+  const [currentVersionId, setCurrentVersionId] = useState<string>(versionId);
+  const [defaultVersionId, setDefaultVersionId] = useState<string>(versionId);
   
   // Presence states
   const [recentActivity, setRecentActivity] = useState<{
@@ -1150,7 +1170,17 @@ export function DocumentViewer({
   };
 
   const handleAddComment = async () => {
-    if (!newCommentText.trim()) return;
+    console.log('[HANDLE ADD COMMENT] Called', {
+      hasText: !!newCommentText.trim(),
+      versionId,
+      selectedElement,
+      selectedText
+    });
+
+    if (!newCommentText.trim()) {
+      console.log('[HANDLE ADD COMMENT] No text, returning');
+      return;
+    }
 
     try {
       // Build target metadata object for backend
@@ -1165,6 +1195,7 @@ export function DocumentViewer({
           selectedText: selectedElement.text,
           page: currentPage,
         };
+        console.log('[HANDLE ADD COMMENT] Element comment target:', target);
       } else if (selectedText) {
         // Comment on selected text
         target = {
@@ -1173,12 +1204,22 @@ export function DocumentViewer({
           selectedText: selectedText,
           page: currentPage,
         };
+        console.log('[HANDLE ADD COMMENT] Text comment target:', target);
       } else {
+        console.log('[HANDLE ADD COMMENT] No selection, returning');
         return;
       }
 
+      console.log('[HANDLE ADD COMMENT] Calling createComment...', {
+        versionId,
+        content: newCommentText,
+        target
+      });
+
       // Save to backend (Convex will broadcast update via useComments hook)
-      await createComment(versionId, newCommentText, target);
+      const commentId = await createComment(versionId, newCommentText, target);
+
+      console.log('[HANDLE ADD COMMENT] Comment created successfully:', commentId);
 
       // Clear form
       setNewCommentText('');
@@ -1197,7 +1238,7 @@ export function DocumentViewer({
       }
       // If activeToolMode is set without badge, keep it active (manual toggle mode)
     } catch (error) {
-      console.error('Failed to create comment:', error);
+      console.error('[HANDLE ADD COMMENT] Failed to create comment:', error);
       // TODO: Show error toast to user
     }
   };
@@ -1221,12 +1262,38 @@ export function DocumentViewer({
     }
   };
 
-  const toggleResolve = (commentId: string) => {
-    setComments(
-      comments.map((comment) =>
-        comment.id === commentId ? { ...comment, resolved: !comment.resolved } : comment
-      )
-    );
+  const toggleResolve = async (commentId: string) => {
+    try {
+      // Toggle resolved status in backend
+      await toggleResolved(commentId as Id<"comments">);
+
+      // Optimistic update - update local state immediately for better UX
+      setComments(
+        comments.map((comment) =>
+          comment.id === commentId ? { ...comment, resolved: !comment.resolved } : comment
+        )
+      );
+
+      console.log('[TOGGLE RESOLVE] Successfully toggled comment:', commentId);
+    } catch (error) {
+      console.error('[TOGGLE RESOLVE] Failed to toggle resolve:', error);
+      // TODO: Show error toast to user
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      // Soft delete in backend
+      await softDelete(commentId as Id<"comments">);
+
+      // Optimistic update - remove from local state immediately
+      setComments(comments.filter(comment => comment.id !== commentId));
+
+      console.log('[DELETE COMMENT] Successfully deleted comment:', commentId);
+    } catch (error) {
+      console.error('[DELETE COMMENT] Failed to delete comment:', error);
+      // TODO: Show error toast to user
+    }
   };
 
   const highlightElement = (elementId: string | undefined) => {
@@ -1730,6 +1797,23 @@ export function DocumentViewer({
                           </>
                         )}
                       </Button>
+                      {/* Show delete button if user can delete */}
+                      {comment.authorId && canDeleteComment(comment.authorId) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('Are you sure you want to delete this comment?')) {
+                              handleDeleteComment(comment.id);
+                            }
+                          }}
+                          title="Delete comment"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

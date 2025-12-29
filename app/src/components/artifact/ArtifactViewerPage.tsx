@@ -165,6 +165,7 @@ export function ArtifactViewerPage({
         shareToken={shareToken}
         versionNumber={targetVersion.versionNumber}
         versionId={targetVersion._id}
+        artifactOwnerId={artifact.creatorId}
         convexUrl={convexUrl}
       />
 

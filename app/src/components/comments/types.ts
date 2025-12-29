@@ -15,6 +15,7 @@ export interface Reply {
 export interface Comment {
   id: string;
   versionId: string;
+  authorId?: string; // For permission checks (optional for mock comments)
   author: Author;
   content: string;
   timestamp: string;
