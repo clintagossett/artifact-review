@@ -12,6 +12,12 @@ Two tables for collaborative commenting on artifact versions:
 
 **Key Principle:** Backend stores/retrieves; frontend interprets targeting. The `target` field is an opaque JSON blob owned by the frontend.
 
+**⚠️ CRITICAL - FOR AGENTS IMPLEMENTING BACKEND:**
+- Convex does NOT understand `targetSchemaVersion` - it's just a number field
+- Convex does NOT validate `target` structure - it's just JSON (`v.any()`)
+- These are **frontend-only conventions** - DO NOT implement version logic in Convex
+- Backend's job: store the number and JSON, return them unchanged
+
 ---
 
 ## Schema Definition
@@ -33,8 +39,10 @@ comments: defineTable({
   resolvedAt: v.optional(v.number()),    // When last resolved (audit)
 
   // === TARGET (frontend-owned JSON) ===
-  targetSchemaVersion: v.number(),       // Version of target format (currently: 1)
-  target: v.any(),                       // Opaque JSON - see TargetMetadataV1
+  // ⚠️ IMPORTANT: Convex does NOT interpret these fields!
+  // They are opaque storage for frontend use only.
+  targetSchemaVersion: v.number(),       // Just a number - frontend interprets meaning
+  target: v.any(),                       // Just JSON - backend does NOT validate structure
 
   // === EDIT TRACKING ===
   isEdited: v.boolean(),                 // Has been edited after creation
@@ -91,7 +99,13 @@ commentReplies: defineTable({
 
 **Why:** Target location is frontend-specific (DOM elements, text selections, page paths). Using opaque JSON lets frontend evolve targeting without backend changes. Supports HTML, Markdown, and future formats with one schema.
 
-**Current Version:** `targetSchemaVersion: 1`
+**⚠️ CRITICAL FOR BACKEND IMPLEMENTATION:**
+- `targetSchemaVersion` is just `v.number()` - Convex has no special handling
+- `target` is just `v.any()` - Convex does NOT validate its structure
+- The versioning is a **frontend convention** - mutations accept any number and any JSON
+- Backend treats these as opaque data: store them, retrieve them, don't interpret them
+
+**Current Version (frontend only):** `targetSchemaVersion: 1`
 
 ```typescript
 // app/src/lib/comments/targetSchema.ts (frontend type)
@@ -122,10 +136,10 @@ interface TargetMetadataV1 {
 }
 ```
 
-**Version Rules:**
+**Version Rules (FRONTEND ONLY - NOT ENFORCED BY CONVEX):**
 - New optional fields = no version bump
 - Breaking changes = bump version, frontend handles migration
-- Backend never interprets target content
+- Backend never interprets or validates target content
 
 ### 2. Separate Tables for Replies
 
