@@ -1,7 +1,7 @@
 # Task 17 Session Resume
 
 **Last Updated:** 2025-12-28
-**Session:** Schema Design Complete, Ready for Implementation
+**Session:** API Design & Test Plan Complete, Ready for TDD Implementation
 
 ---
 
@@ -11,24 +11,43 @@
 
 1. **Schema Design (Subtask 01)** - COMPLETE
    - Designed `comments` and `commentReplies` tables
-   - Key innovation: Versioned JSON for target metadata (11 fields vs 17)
+   - Key innovation: Versioned JSON for target metadata (13 fields total)
    - Backend-agnostic approach (HTML, Markdown, future formats)
    - Permission model: Owner + Reviewer (no public/moderation)
    - Location: `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
    - Committed: 5b0ebcb, 8b52840, b649a97
 
-2. **Task Restructuring** - COMPLETE
-   - Reorganized from waterfall (4 steps) to TDD (2 steps)
-   - Removed artificial CRUD/permissions/tests separation
-   - Combined into single TDD implementation subtask
-   - Updated READMEs to reflect proper TDD workflow
+2. **API Design (Subtask 02 - Step 1)** - COMPLETE
+   - Created comprehensive API design with full Convex validators
+   - 9 public functions (5 comment ops, 4 reply ops)
+   - 5 internal permission helpers
+   - Query patterns with proper index usage (no filter)
+   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
+   - Agent: a99221f (architect)
+
+3. **Test Plan (Subtask 02 - Step 2)** - COMPLETE
+   - Comprehensive test plan with 92 tests
+   - Test fixtures matching actual schema
+   - TDD execution order defined
+   - Security tests for both unauthenticated and authenticated-outsider
+   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
+   - Agent: ab24ff2 (tdd-developer)
+
+4. **Test Plan Review & Updates** - COMPLETE
+   - Architect reviewed test plan
+   - Fixed schema mismatches in test fixtures
+   - Added 2 outsider security tests
+   - Added 5 "not found" tests
+   - Updated test count: 85 → 92
+   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
 
 ### ⏳ Next Up
 
-**Subtask 02: Implementation** (Not Started)
-- Step 1: Architect designs API (function signatures, validators, permissions)
-- Step 2: TDD Developer implements with E2E backend integration tests
-- Step 3: Validation and test upleveling
+**Subtask 02: TDD Implementation** (Not Started)
+- TDD Developer implements using Red-Green-Refactor cycle
+- Tests written directly in `app/convex/__tests__/comments.test.ts`
+- Implementation in `app/convex/comments.ts`, `app/convex/commentReplies.ts`, `app/convex/lib/commentPermissions.ts`
+- 92 tests to implement following the test plan
 
 ---
 
@@ -90,21 +109,50 @@ target: v.any()  // Opaque JSON blob with _version inside
 - Owner can delete any (moderation power)
 - Both can resolve/unresolve
 
+**Two types of outsiders:**
+- **Unauthenticated** - No auth token at all
+- **Authenticated outsider** - Valid user, but NOT in artifactReviewers and NOT owner
+
+**Testing strategy:**
+- Test both types at `requireCommentPermission` helper level
+- Test authenticated-outsider at each function level (proves helper is called)
+- Don't re-test unauthenticated at every function (redundant)
+
 **Deferred:**
 - No public viewing considerations
 - No reviewer moderation
 
-### 4. TDD Workflow (Not Waterfall)
+### 4. Security Architecture Decision
 
-**Wrong approach (original):**
-1. Write CRUD code
-2. Add permissions
-3. Write tests
+**Issue discovered:** `softDelete` and `softDeleteReply` didn't call `requireCommentPermission` in original API design
 
-**Correct approach (updated):**
-1. Architect designs API
-2. TDD Developer: RED (test) → GREEN (code) → REFACTOR → REPEAT
-3. Tests and code emerge together
+**Impact:**
+- Outsiders would get "Only the comment author or artifact owner can delete" error
+- Information leakage (outsider learns comment exists)
+- Inconsistent error messages
+
+**Resolution:**
+- API design amended to add `requireCommentPermission` call BEFORE permission checks
+- Ensures consistent "No permission to comment on this artifact" error
+- Defense-in-depth: helper blocks outsiders, then author/owner check runs
+
+### 5. Test Location for Backend Tests
+
+**Critical clarification:**
+- `convex-test` tests MUST live in `app/convex/__tests__/`
+- Cannot be in `tasks/.../tests/` (wrong context, import path issues)
+- This is different from E2E Playwright tests (those stay in tasks folder)
+
+**Test structure:**
+```
+app/convex/
+  __tests__/
+    comments.test.ts    # All backend integration tests (92 tests)
+  comments.ts           # Comment operations
+  commentReplies.ts     # Reply operations
+  lib/
+    commentPermissions.ts  # Permission helpers
+```
 
 ---
 
@@ -169,7 +217,7 @@ commentReplies: defineTable({
 
 ## Functions to Implement
 
-### Comment Operations
+### Comment Operations (5 functions)
 | Function | Type | Purpose |
 |----------|------|---------|
 | `getByVersion` | query | Get all comments for a version |
@@ -178,26 +226,45 @@ commentReplies: defineTable({
 | `toggleResolved` | mutation | Mark resolved/unresolved |
 | `softDelete` | mutation | Soft delete comment |
 
-### Reply Operations
+### Reply Operations (4 functions)
 | Function | Type | Purpose |
 |----------|------|---------|
+| `getReplies` | query | Get all replies for a comment |
 | `createReply` | mutation | Add reply to comment |
 | `updateReply` | mutation | Edit own reply |
 | `softDeleteReply` | mutation | Soft delete reply |
 
-### Permission Helpers
+### Permission Helpers (5 internal functions)
 | Function | Purpose |
 |----------|---------|
-| `requireCommentPermission` | Check can-comment or owner |
-| `canEdit` | Check if user is author |
-| `canDelete` | Check if user is author OR owner |
+| `requireCommentPermission` | Check can-comment or owner (throws if unauthorized) |
+| `canEditComment` | Check if user is comment author |
+| `canDeleteComment` | Check if user is author OR owner |
+| `canEditReply` | Check if user is reply author |
+| `canDeleteReply` | Check if user is author OR owner |
 
 ---
 
 ## Testing Approach
 
 ### Test Type
-**E2E Backend Integration Tests** using `convex-test`
+**Backend Integration Tests** using `convex-test`
+
+### Test Location
+**CRITICAL:** Tests written directly in `app/convex/__tests__/comments.test.ts`
+- NOT in `tasks/` folder (convex-test requires Convex project context)
+- Different from E2E Playwright tests which DO live in tasks folder
+
+### Test Count: 92 Tests
+
+| Category | Test Count |
+|----------|-----------|
+| Permission Helpers | 12 |
+| Comment Operations | 37 |
+| Reply Operations | 35 |
+| Integration Tests | 3 |
+| Not Found Tests | 5 |
+| **Total** | **92** |
 
 ### What convex-test Can Test
 ✅ Database operations
@@ -206,39 +273,38 @@ commentReplies: defineTable({
 ✅ Metadata handling
 ✅ Soft deletes
 ✅ Edit tracking
+✅ Cascade deletes
 
 ### What convex-test Cannot Test
 ❌ Actual file uploads (has storage limitations)
 ❌ External services (email)
 ❌ Full-stack UI flows
 
-### Test Location
-- During development: `tasks/00017.../02-implementation/tests/e2e/`
-- After completion: Uplevel to `app/convex/__tests__/comments.test.ts`
-
 ### Test Coverage Required
 - CRUD operations (create, read, update, delete)
-- Permission enforcement (owner, reviewer, unauthorized)
+- Permission enforcement (owner, reviewer, authenticated-outsider, unauthenticated)
+- Content validation (empty, whitespace, max length)
 - Edit tracking (isEdited flag, editedAt timestamp)
-- Soft delete behavior
-- Cascade delete (version → comments → replies)
-- Edge cases (deleted version, invalid IDs, empty content)
+- Resolution tracking (resolvedChangedBy, resolvedChangedAt)
+- Soft delete behavior with audit trail
+- Cascade delete (comment → replies)
+- Edge cases (deleted records, invalid IDs, not found)
 
 ---
 
-## Files Modified This Session
+## Files Created This Session
 
-### Created
+### Design Documents
 - `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/README.md`
+- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
+- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
+- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
+
+### Previous Session
 - `tasks/00017-implement-commenting/02-phase-2-backend/README.md` (updated)
+- Deleted: `02-comment-crud/`, `03-permissions/`, `04-tests/` (waterfall approach)
 
-### Deleted
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-comment-crud/`
-- `tasks/00017-implement-commenting/02-phase-2-backend/03-permissions/`
-- `tasks/00017-implement-commenting/02-phase-2-backend/04-tests/`
-
-### Commits
+### Commits (Previous Session)
 - `5b0ebcb` - Task 17: Design comment schema with versioned JSON target metadata
 - `8b52840` - Task 17: Restructure Phase 2 subtasks to reflect TDD workflow
 - `b649a97` - Task 17: Update implementation docs to clarify E2E test standard
@@ -249,21 +315,21 @@ commentReplies: defineTable({
 
 ### From User
 - "DRY things out" = Don't Repeat Yourself
-- E2E tests are the standard (not unit tests)
+- Backend integration tests (convex-test) are the standard
 - Always use environment management (venv for Python, not conda)
 - Show commit messages after git commit
+- Tests written directly in `app/convex/__tests__/` not tasks folder
 
 ### From CLAUDE.md
 - Use TDD workflow from `docs/development/workflow.md`
 - Test samples from `/samples/` directory (central repository)
-- All e2e tests MUST produce video recordings (validation)
-- Videos are gitignored
 - Convex rules: no filter, use indexes, new function syntax
+- All validators required (use `v.null()` for void)
 
 ### Project Standards
-- Soft delete pattern (ADR 0011): `isDeleted` + `deletedAt`
+- Soft delete pattern (ADR 0011): `isDeleted` + `deletedAt` + `deletedBy`
 - Convex function syntax: `args`, `returns`, `handler`
-- All validators required (use `v.null()` for void)
+- All validators required
 - Logging: Use structured logging, not console.log
 
 ---
@@ -271,52 +337,100 @@ commentReplies: defineTable({
 ## Next Actions
 
 ### Immediate Next Step
-**Have architect design the API:**
 
-```bash
-# Option 1: Resume existing architect agent
-Task tool with subagent_type="architect" and resume="a7d112c"
+**Have TDD developer implement the backend:**
 
-# Option 2: Start fresh architect agent
-Task tool with subagent_type="architect"
-```
+Resume TDD developer agent (ab24ff2) with task:
+1. Read `api-design.md` and `test-plan.md`
+2. Create `app/convex/__tests__/comments.test.ts`
+3. Implement using Red-Green-Refactor cycle:
+   - Write ONE test (RED)
+   - Write minimal code to pass (GREEN)
+   - Refactor
+   - Repeat for all 92 tests
+4. Follow TDD execution order from test plan:
+   - Phase 1: Permission helpers
+   - Phase 2: Comment CRUD
+   - Phase 3: Reply CRUD
+   - Phase 4: Integration tests
+5. Create files:
+   - `app/convex/comments.ts`
+   - `app/convex/commentReplies.ts`
+   - `app/convex/lib/commentPermissions.ts`
+   - Update `app/convex/schema.ts`
+6. Write completion report
 
-**Task for architect:**
-Create `tasks/00017.../02-implementation/api-design.md` containing:
-1. All function signatures with full Convex validators
-2. Permission requirements for each function
-3. Query patterns showing index usage
-4. Helper function specifications
-5. Example usage for each function
-
-### After API Design
-Hand off to TDD developer:
-1. Read api-design.md
-2. Implement using Red-Green-Refactor cycle
-3. Create tests in `tasks/.../02-implementation/tests/e2e/`
-4. Write completion report
-5. Uplevel tests to `app/convex/__tests__/`
+### Success Criteria
+- All 92 tests passing
+- No `filter()` usage (only `withIndex`)
+- All validators present
+- Follows Convex rules exactly
+- Soft delete with audit trail working
+- Cascade delete working
+- Permission boundaries enforced
 
 ---
 
-## Questions to Clarify (if any)
+## Security Review Highlights
 
-None currently - schema is approved, permission model is clear, ready to proceed.
+### Key Questions Answered
+
+1. **Are outsiders blocked from all operations?**
+   - ✅ Yes, tested at helper level and each function level
+
+2. **Can artifact owner delete reviewer comments?**
+   - ✅ Yes, tested (moderation power)
+
+3. **Can artifact owner edit reviewer comments?**
+   - ❌ No, tested (authorship integrity)
+
+4. **Do we test both unauthenticated and authenticated-outsider?**
+   - ✅ Yes at helper level, authenticated-outsider at function level
+   - Architect decision: Option A (test at helper level, verify at endpoints)
+
+5. **Are delete operations protected?**
+   - ✅ Yes, API design amended to call `requireCommentPermission` first
+   - Prevents information leakage and ensures consistent error messages
 
 ---
 
 ## References
 
-- Schema design: `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
-- Implementation plan: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/README.md`
-- Convex rules: `docs/architecture/convex-rules.md`
-- TDD workflow: `docs/development/workflow.md`
-- Testing guide: `docs/development/testing-guide.md`
-- Soft delete ADR: `docs/architecture/decisions/0011-soft-delete-strategy.md`
+- **Schema design:** `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
+- **API design:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
+- **Test plan:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
+- **Test plan review:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
+- **Convex rules:** `docs/architecture/convex-rules.md`
+- **TDD workflow:** `docs/development/workflow.md`
+- **Testing guide:** `docs/development/testing-guide.md`
+- **Soft delete ADR:** `docs/architecture/decisions/0011-soft-delete-strategy.md`
 
 ---
 
 ## Session Notes
+
+### This Session (API Design & Test Plan)
+
+**What went well:**
+- Architect created comprehensive API design with full validators
+- TDD developer created detailed test plan (92 tests)
+- Security review caught important permission check inconsistency
+- Good discussion on authenticated vs unauthenticated outsider testing
+- Test plan corrected to match actual schema
+
+**Key decisions:**
+- Tests go in `app/convex/__tests__/` not tasks folder
+- Test both outsider types at helper level, authenticated-outsider at endpoints
+- API design amended to add `requireCommentPermission` to delete operations
+- 92 tests (up from 85) for comprehensive coverage
+
+**Issues resolved:**
+- Schema mismatches in test fixtures (fixed)
+- Missing outsider security tests (added 2)
+- Missing "not found" tests (added 5)
+- Permission check inconsistency in API design (fixed)
+
+### Previous Session (Schema Design)
 
 **What went well:**
 - User caught important architectural issues early (JSON vs separate fields)
@@ -326,6 +440,8 @@ None currently - schema is approved, permission model is clear, ready to proceed
 **Key learnings:**
 - Always check existing project standards before planning
 - `convex-test` has storage limitations (good for comments, not for file uploads)
-- E2E backend integration tests are the standard, not unit tests
+- Backend integration tests are the standard
 
-**Ready to proceed:** Yes - schema approved, structure clear, next step defined.
+---
+
+**Ready to proceed:** Yes - API design complete, test plan approved, ready for TDD implementation
