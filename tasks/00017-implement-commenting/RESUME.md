@@ -48,7 +48,7 @@ target: v.any()  // Opaque JSON blob with _version inside
 - Frontend owns targeting schema entirely
 - Can evolve without backend changes
 - Self-describing data (version travels with content)
-- Reduced from 17 to 12 fields (includes resolution tracking)
+- Reduced from 17 to 13 fields (includes resolution and delete tracking)
 
 **Example:**
 ```typescript
@@ -110,7 +110,7 @@ target: v.any()  // Opaque JSON blob with _version inside
 
 ## Schema Summary
 
-### Comments Table (12 fields)
+### Comments Table (13 fields)
 
 ```typescript
 comments: defineTable({
@@ -133,6 +133,7 @@ comments: defineTable({
 
   // Soft delete (ADR 0011)
   isDeleted: v.boolean(),
+  deletedBy: v.optional(v.id("users")),
   deletedAt: v.optional(v.number()),
 
   // Timestamps
@@ -144,7 +145,7 @@ comments: defineTable({
   .index("by_author_active", ["authorId", "isDeleted"])
 ```
 
-### Comment Replies Table (8 fields)
+### Comment Replies Table (9 fields)
 
 ```typescript
 commentReplies: defineTable({
@@ -154,6 +155,7 @@ commentReplies: defineTable({
   isEdited: v.boolean(),
   editedAt: v.optional(v.number()),
   isDeleted: v.boolean(),
+  deletedBy: v.optional(v.id("users")),
   deletedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
