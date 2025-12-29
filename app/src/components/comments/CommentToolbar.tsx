@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Edit3, Filter } from 'lucide-react';
+import { MessageSquare, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,10 +15,8 @@ import type { ToolMode, ToolBadge } from './types';
 interface CommentToolbarProps {
   activeToolMode: ToolMode;
   commentBadge: ToolBadge;
-  textEditBadge?: ToolBadge; // Text Edit tool - out of scope but present in UI
   onToolChange: (tool: ToolMode) => void;
   onBadgeClick: () => void;
-  onTextEditBadgeClick?: () => void; // Out of scope
   filter: 'all' | 'unresolved' | 'resolved';
   onFilterChange: (filter: 'all' | 'unresolved' | 'resolved') => void;
   activeCount: number; // Count of active (unresolved) items
@@ -27,10 +25,8 @@ interface CommentToolbarProps {
 export function CommentToolbar({
   activeToolMode,
   commentBadge,
-  textEditBadge,
   onToolChange,
   onBadgeClick,
-  onTextEditBadgeClick,
   filter,
   onFilterChange,
   activeCount,
@@ -64,20 +60,6 @@ export function CommentToolbar({
             )}
           </div>
 
-          {/* Text Edit Tool - OUT OF SCOPE for Task 17, but present in UI (disabled) */}
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              className="opacity-50 cursor-not-allowed"
-              title="Text editing coming in future release"
-            >
-              <Edit3 className="w-4 h-4 mr-2" />
-              Text Edit
-            </Button>
-          </div>
-
           <div className="h-6 w-px bg-gray-300 mx-2" />
 
           {/* Filter Dropdown */}
@@ -106,11 +88,6 @@ export function CommentToolbar({
       {activeToolMode === 'comment' && (
         <div className="mt-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
           <strong>Comment Mode:</strong> Click any element or select text to add a comment
-        </div>
-      )}
-      {activeToolMode === 'text-edit' && (
-        <div className="mt-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
-          <strong>Text Edit Mode:</strong> Select text, then Delete for strikethrough or Type to replace
         </div>
       )}
     </div>

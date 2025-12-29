@@ -15,6 +15,21 @@ interface ArtifactSettingsProps {
 
 type TabType = 'details' | 'versions' | 'access';
 
+// Map tab types to hash values
+const tabToHash: Record<TabType, string> = {
+  'access': 'access-and-activity',
+  'versions': 'versions',
+  'details': 'details',
+};
+
+// Map hash values to tab types
+const hashToTab: Record<string, TabType> = {
+  'access-and-activity': 'access',
+  'access': 'access',
+  'versions': 'versions',
+  'details': 'details',
+};
+
 export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, initialTab = 'versions' }: ArtifactSettingsProps) {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
 
@@ -22,6 +37,25 @@ export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, in
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab]);
+
+  // Listen for hash changes (browser back/forward buttons)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hashToTab[hash]) {
+        setActiveTab(hashToTab[hash]);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Update hash when tab changes
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    window.location.hash = tabToHash[tab];
+  };
 
   // If not owner, redirect back (shouldn't happen but safety check)
   if (!isOwner) {
@@ -66,7 +100,7 @@ export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, in
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`
                   px-4 py-3 text-sm font-medium transition-colors relative
                   ${

@@ -58,6 +58,7 @@ interface DocumentViewerProps {
   project?: Project;
   onNavigateToSettings?: () => void;
   onNavigateToShare?: () => void;
+  onNavigateToVersions?: () => void;
 }
 
 const mockReviewers = [
@@ -671,7 +672,7 @@ const sampleHTML = `
 </html>
 `;
 
-export function DocumentViewer({ documentId, onBack, project, onNavigateToSettings, onNavigateToShare }: DocumentViewerProps) {
+export function DocumentViewer({ documentId, onBack, project, onNavigateToSettings, onNavigateToShare, onNavigateToVersions }: DocumentViewerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>(mockComments);
   const [textEdits, setTextEdits] = useState<TextEdit[]>(mockTextEdits);
@@ -1375,7 +1376,10 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
                         </DropdownMenuItem>
                       ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-purple-600">
+                      <DropdownMenuItem
+                        className="text-purple-600"
+                        onClick={onNavigateToVersions}
+                      >
                         <Upload className="w-4 h-4 mr-2" />
                         Upload New Version
                       </DropdownMenuItem>

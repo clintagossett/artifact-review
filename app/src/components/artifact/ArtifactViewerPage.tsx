@@ -156,8 +156,9 @@ export function ArtifactViewerPage({
         documentId={artifact._id}
         onBack={() => router.push("/dashboard")}
         project={mockProject}
-        onNavigateToShare={() => setShareModalOpen(true)}
+        onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
         onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
+        onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
       />
 
       <ShareModal
