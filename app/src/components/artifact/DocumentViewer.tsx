@@ -56,7 +56,8 @@ import { Id } from '@/convex/_generated/dataModel';
 import { useComments } from '@/hooks/useComments';
 import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
-import { useAuthUserId } from '@convex-dev/auth/react';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -698,7 +699,8 @@ export function DocumentViewer({
   convexUrl
 }: DocumentViewerProps) {
   // Get current user for permission checks
-  const currentUserId = useAuthUserId();
+  const currentUser = useQuery(api.users.getCurrentUser);
+  const currentUserId = currentUser?._id;
 
   // Fetch comments from backend
   const backendComments = useComments(versionId);
