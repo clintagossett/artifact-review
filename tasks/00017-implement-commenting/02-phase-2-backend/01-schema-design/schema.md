@@ -67,6 +67,7 @@ This document defines the Convex database schema for the commenting feature.
 **Backend needs:**
 - Relationships: `versionId`, `authorId`
 - Core data: `content`, `resolved`
+- Resolution audit: `resolvedBy`, `resolvedAt`
 - Lifecycle: `isEdited`, `editedAt`, `isDeleted`, `deletedAt`, `createdAt`
 
 **Frontend owns:**
@@ -115,6 +116,21 @@ comments: defineTable({
    * Can be toggled by owner or any reviewer with can-comment permission.
    */
   resolved: v.boolean(),
+
+  /**
+   * Reference to the user who last resolved this comment.
+   * Set when `resolved` is toggled to `true`.
+   * Undefined when `resolved` is `false` or has never been resolved.
+   */
+  resolvedBy: v.optional(v.id("users")),
+
+  /**
+   * Timestamp when the comment was last resolved.
+   * Unix timestamp in milliseconds.
+   * Set when `resolved` is toggled to `true`.
+   * Undefined when `resolved` is `false` or has never been resolved.
+   */
+  resolvedAt: v.optional(v.number()),
 
   // ============================================================================
   // TARGET METADATA (Frontend-owned, versioned JSON)
@@ -226,6 +242,8 @@ comments: defineTable({
 | `authorId` | Id | `v.id("users")` | Yes | Comment creator |
 | `content` | string | `v.string()` | Yes | Comment text |
 | `resolved` | boolean | `v.boolean()` | Yes | Thread resolution status |
+| `resolvedBy` | Id | `v.optional(v.id("users"))` | No | Who last resolved (audit trail) |
+| `resolvedAt` | number | `v.optional(v.number())` | No | When last resolved (audit trail) |
 | `targetSchemaVersion` | number | `v.number()` | Yes | Version of target metadata format |
 | `target` | any | `v.any()` | Yes | Opaque JSON for target location |
 | `isEdited` | boolean | `v.boolean()` | Yes | Has been edited |
@@ -234,7 +252,7 @@ comments: defineTable({
 | `deletedAt` | number | `v.optional(v.number())` | No | Deletion timestamp |
 | `createdAt` | number | `v.number()` | Yes | Creation timestamp |
 
-**Reduced from 17 fields to 11 fields** - cleaner, backend-focused schema.
+**Reduced from 17 fields to 13 fields** - cleaner, backend-focused schema.
 
 ---
 
@@ -502,7 +520,7 @@ if (comment.targetSchemaVersion === 1) {
 |---------|-------------|
 | **Flexibility** | Frontend can evolve target schema without backend changes |
 | **Artifact-agnostic** | Same backend works for HTML, Markdown, PDF, etc. |
-| **Simpler schema** | 11 fields instead of 17 |
+| **Simpler schema** | 13 fields instead of 17 |
 | **No field bloat** | No unused optional fields for different artifact types |
 | **Frontend ownership** | Clear separation of concerns |
 | **Version support** | Can introduce breaking changes with new schema versions |
@@ -810,6 +828,18 @@ Commenting requires authentication. Only two roles exist for comment operations.
 5. **Deleting any:** Only the artifact owner can delete other users' comments/replies (moderation)
 6. **Resolving:** Both owner and reviewers can toggle resolution status
 
+### Resolution Tracking
+
+When a user toggles `resolved` to `true`:
+- `resolvedBy` is set to the current user's ID
+- `resolvedAt` is set to the current timestamp
+
+When a user toggles `resolved` to `false`:
+- `resolvedBy` is cleared (`undefined`)
+- `resolvedAt` is cleared (`undefined`)
+
+If the same or different user re-resolves the comment later, `resolvedBy` and `resolvedAt` update to reflect the latest resolution.
+
 ### Permission Check Examples
 
 ```typescript
@@ -943,6 +973,8 @@ const schema = defineSchema({
     authorId: v.id("users"),
     content: v.string(),
     resolved: v.boolean(),
+    resolvedBy: v.optional(v.id("users")),
+    resolvedAt: v.optional(v.number()),
     targetSchemaVersion: v.number(),
     target: v.any(),
     isEdited: v.boolean(),
@@ -1024,7 +1056,7 @@ export const CURRENT_TARGET_SCHEMA_VERSION = 1;
 | Change | Before (v1) | After (v2) |
 |--------|-------------|------------|
 | Target fields | 8 separate fields | 1 JSON field + version |
-| Field count | 17 | 11 |
+| Field count | 17 | 13 |
 | Backend responsibility | Interpret target data | Store/retrieve opaque JSON |
 | Frontend responsibility | Use backend fields | Own target schema entirely |
 | Flexibility | Add new field = schema change | Add to JSON = no backend change |
