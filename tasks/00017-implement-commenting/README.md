@@ -6,33 +6,52 @@
 
 ## Resume (Start Here)
 
-**Last Updated:** 2025-12-28 (Session 2 - Final)
+**Last Updated:** 2025-12-28 (Session 3 - Phases 1 & 2 Complete)
 
-### Current Status: Architecture Complete - 3-Phase Plan
+### Current Status: ✅ PHASES 1 & 2 COMPLETE - Frontend Fully Functional
 
-**Phase:** Ready to begin Phase 1 (Lift Figma Design).
+**Phase:** Phase 1 & 2 Complete. Phase 3 (Backend Integration) pending.
 
-### What We Did This Session (Session 2)
+### What We Completed This Session (Session 3)
 
+**✅ Phase 1: Lift Figma Design - COMPLETE**
+- Lifted DocumentViewer.tsx from Figma (static content version)
+- Created CommentToolbar component
+- Integrated into ArtifactViewerPage
+- Created types.ts for TypeScript interfaces
+- See: `tasks/00017-implement-commenting/01-phase-1-lift-figma/COMPLETION-REPORT.md`
+
+**✅ Phase 2: Interactive UI Components - COMPLETE**
+- Enhanced CommentToolbar with active count and Text Edit button (disabled)
+- Implemented comment tool activation workflow
+- Added badge cycling: null → one-shot (①) → infinite (∞) → null
+- One-shot mode: tool deactivates after creating one comment
+- Infinite mode: tool stays active for multiple comments
+- Tool mode hints for user guidance
+- Switched to Interactive Components HTML as default demo content
+- 8 demo comments showcasing tabs, accordions, multi-page navigation
+- See: `tasks/00017-implement-commenting/02-phase-2-interactive-components/COMPLETION-REPORT.md`
+
+### Previous Sessions
+
+**Session 2 (2025-12-28):**
 1. **Analyzed Figma designs** - Reviewed DocumentViewer.tsx (2198 lines), CommentToolbar.tsx
 2. **Analyzed current implementation** - Reviewed ArtifactViewer (105 lines) and related components
 3. **Critical decision: Full Lift vs Incremental** - Decided on FULL LIFT approach
-4. **Created 3-phase implementation plan:**
-   - Phase 1: Lift Figma Design (Frontend Only)
-   - Phase 2: Build Backend (Convex)
-   - Phase 3: Connect Frontend to Backend
-
-### Previous Sessions
+4. **Created 3-phase implementation plan**
 
 **Session 1 (2025-12-28):**
 1. Created GitHub issue - Issue #16 for tracking
 2. Created task folder - Set up task structure
 
-### Next Steps
+### Next Steps (Phase 3 - Backend Integration)
 
-1. **Phase 1** - Lift entire DocumentViewer from Figma with mock data
-2. Confirm visual rendering matches Figma
-3. Then proceed to Phase 2 (Backend)
+1. **Design Convex Schema** - Comments table with proper indexes
+2. **Build Comment CRUD** - Queries and mutations for comments
+3. **Add Permissions** - Ensure proper access control
+4. **Create React Hooks** - useComments, useCommentActions
+5. **Replace Mock Data** - Wire up DocumentViewer to Convex
+6. **Integration Testing** - E2E tests and validation videos
 
 ---
 
@@ -72,8 +91,9 @@ Should we:
 
 ## 3-Phase Implementation Plan
 
-### Phase 1: Lift Figma Design (Frontend Only)
-**Location:** `tasks/00017-implement-commenting/phase-1-lift-figma/`
+### ✅ Phase 1: Lift Figma Design (Frontend Only) - COMPLETE
+**Status:** ✅ Complete (2025-12-28)
+**Location:** `tasks/00017-implement-commenting/01-phase-1-lift-figma/`
 **Goal:** Get the Figma DocumentViewer rendering in our app with mock data.
 
 **What to do:**
@@ -108,14 +128,40 @@ Should we:
 
 ---
 
-### Phase 2: Build Backend (Convex)
-**Location:** `tasks/00017-implement-commenting/phase-2-backend/`
+### ✅ Phase 2: Interactive UI Components - COMPLETE
+**Status:** ✅ Complete (2025-12-28)
+**Location:** `tasks/00017-implement-commenting/02-phase-2-interactive-components/`
+**Original Name:** Build Backend (Convex) - Repurposed to Interactive Components
+**Goal:** Add full commenting interaction workflow with tool activation and badge modes.
+
+**What Was Delivered:**
+- Enhanced CommentToolbar with active count, Text Edit button (disabled), tool hints
+- Comment tool activation workflow (must activate before commenting)
+- Badge cycling: null → one-shot (①) → infinite (∞) → null
+- One-shot vs infinite mode behavior
+- Interactive Components HTML as default demo content
+- 8 demo comments showcasing advanced features (tabs, accordions, multi-page)
+
+**Success Criteria Met:**
+- ✅ Comment tool can be activated/deactivated
+- ✅ Badge cycling works correctly
+- ✅ One-shot mode deactivates after creating comment
+- ✅ Infinite mode stays active after creating comment
+- ✅ Filter dropdown filters comments correctly
+- ✅ Active count updates based on filter
+- ✅ Comments display with proper metadata
+- ✅ Smart navigation to hidden content (tabs/accordions)
+
+---
+
+### Phase 3: Build Backend (Convex) - PENDING
+**Location:** `tasks/00017-implement-commenting/03-backend/` (to be created)
 **Goal:** Design and implement Convex schema, queries, and mutations for comments on text and elements.
 
 **SCOPE:** Comments only - no text editing suggestions.
 
-#### Subtask 2.1: Schema Design
-**Location:** `phase-2-backend/01-schema-design/`
+#### Subtask 3.1: Schema Design
+**Location:** `03-backend/01-schema-design/`
 **Deliverables:**
 - ADR for comments schema
 - `convex/schema.ts` updates with `comments` table
@@ -143,8 +189,8 @@ comments: defineTable({
   .index("by_parent", ["parentCommentId"])
 ```
 
-#### Subtask 2.2: Comment CRUD Operations
-**Location:** `phase-2-backend/02-comment-crud/`
+#### Subtask 3.2: Comment CRUD Operations
+**Location:** `03-backend/02-comment-crud/`
 **Deliverables:**
 - `convex/comments.ts` with queries and mutations:
   - `getByVersion` - Get all comments for a version
@@ -153,8 +199,8 @@ comments: defineTable({
   - `toggleResolved` - Mark as resolved/unresolved
   - `delete` - Delete a comment (author or owner)
 
-#### Subtask 2.3: Permissions Logic
-**Location:** `phase-2-backend/03-permissions/`
+#### Subtask 3.3: Permissions Logic
+**Location:** `03-backend/03-permissions/`
 **Deliverables:**
 - Permission checks in all mutations:
   - Only `can-comment` or `owner` can create comments
@@ -163,8 +209,8 @@ comments: defineTable({
   - Anyone with `can-comment` can toggle resolved status
 - Update `convex/sharing.ts` if needed
 
-#### Subtask 2.4: Backend Tests
-**Location:** `phase-2-backend/04-tests/`
+#### Subtask 3.4: Backend Tests
+**Location:** `03-backend/04-tests/`
 **Deliverables:**
 - Unit tests for all queries/mutations
 - Permission tests (unauthorized access blocked)
@@ -172,18 +218,18 @@ comments: defineTable({
 
 ---
 
-### Phase 3: Connect Frontend to Backend
-**Location:** `tasks/00017-implement-commenting/phase-3-integration/`
+### Phase 4: Connect Frontend to Backend - PENDING
+**Location:** `tasks/00017-implement-commenting/04-integration/`
 **Goal:** Replace mock data with real Convex data for commenting.
 
-#### Subtask 3.1: Create React Hooks
-**Location:** `phase-3-integration/01-hooks/`
+#### Subtask 4.1: Create React Hooks
+**Location:** `04-integration/01-hooks/`
 **Deliverables:**
 - `useComments(versionId)` hook - Fetches comments from Convex
 - `useCommentActions()` hook - Create, reply, resolve, delete
 
-#### Subtask 3.2: Replace Mock Data in DocumentViewer
-**Location:** `phase-3-integration/02-wire-data/`
+#### Subtask 4.2: Replace Mock Data in DocumentViewer
+**Location:** `04-integration/02-wire-data/`
 **Deliverables:**
 - Replace `mockComments` with `useComments()` hook
 - Wire up all comment action handlers to mutations
@@ -191,8 +237,8 @@ comments: defineTable({
 - Add error handling
 - Remove text edit UI/logic (out of scope)
 
-#### Subtask 3.3: Integration Testing
-**Location:** `phase-3-integration/03-testing/`
+#### Subtask 4.3: Integration Testing
+**Location:** `04-integration/03-testing/`
 **Deliverables:**
 - End-to-end tests for commenting flow
 - Test permission scenarios
@@ -221,7 +267,21 @@ app/src/components/
 │   └── types.ts                    # TypeScript interfaces
 ```
 
-### File Structure After Phase 3
+### File Structure After Phase 2 (Current)
+
+```
+app/src/components/
+├── artifact/
+│   ├── ArtifactViewerPage.tsx      # Updated to use DocumentViewer
+│   ├── DocumentViewer.tsx          # Full interactive UI with mock data
+│   └── ...
+│
+├── comments/
+│   ├── CommentToolbar.tsx          # Interactive toolbar with badge modes
+│   └── types.ts                    # TypeScript interfaces
+```
+
+### File Structure After Phase 4 (Future)
 
 ```
 app/src/components/
@@ -235,14 +295,11 @@ app/src/components/
 │   ├── types.ts
 │   └── hooks/
 │       ├── useComments.ts          # Convex hook
-│       ├── useTextEdits.ts         # Convex hook
 │       ├── useCommentActions.ts    # Mutations
-│       └── useTextEditActions.ts   # Mutations
 │
 convex/
 ├── comments.ts                      # NEW - Comments queries/mutations
-├── textEdits.ts                     # NEW - Text edits queries/mutations
-└── schema.ts                        # Updated with new tables
+└── schema.ts                        # Updated with comments table
 ```
 
 ---
