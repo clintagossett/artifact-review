@@ -48,7 +48,7 @@ target: v.any()                   // Opaque JSON blob
 - Backend-agnostic (works for HTML, Markdown, PDF, etc.)
 - Frontend owns targeting schema entirely
 - Can evolve without backend changes
-- Reduced from 17 to 11 fields
+- Reduced from 17 to 13 fields (includes resolution tracking)
 
 **Example:**
 ```typescript
@@ -110,7 +110,7 @@ target: v.any()                   // Opaque JSON blob
 
 ## Schema Summary
 
-### Comments Table (11 fields)
+### Comments Table (13 fields)
 
 ```typescript
 comments: defineTable({
@@ -121,6 +121,8 @@ comments: defineTable({
   // Content
   content: v.string(),
   resolved: v.boolean(),
+  resolvedBy: v.optional(v.id("users")),
+  resolvedAt: v.optional(v.number()),
 
   // Target metadata (versioned JSON)
   targetSchemaVersion: v.number(),
