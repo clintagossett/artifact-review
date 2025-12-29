@@ -715,6 +715,19 @@ export function DocumentViewer({
     originalText: string;
     newText?: string;
   } | null>(null);
+
+  // Refs to track current tool state for event listeners (fixes closure issue)
+  const activeToolModeRef = useRef<ToolMode>(null);
+  const commentBadgeRef = useRef<ToolBadge>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    activeToolModeRef.current = activeToolMode;
+  }, [activeToolMode]);
+
+  useEffect(() => {
+    commentBadgeRef.current = commentBadge;
+  }, [commentBadge]);
   
   // Version management states
   const [currentVersionId, setCurrentVersionId] = useState<string>(
@@ -746,12 +759,13 @@ export function DocumentViewer({
   const currentVersion = project?.versions.find(v => v.id === currentVersionId);
   const isViewingOldVersion = currentVersionId !== defaultVersionId;
   
-  // Build URL to real artifact HTML served by HTTP router
-  // Format: {convexUrl}/artifact/{shareToken}/v{versionNumber}/{page}
+  // Build URL to artifact HTML via Next.js proxy (same-origin to avoid CORS issues)
+  // Format: /api/artifact/{shareToken}/v{versionNumber}/{page}
+  // This proxies to Convex HTTP endpoint, allowing iframe.contentDocument access
   const getArtifactUrl = (page: string = 'index.html') => {
     // Remove leading slash from page if present
     const cleanPage = page.startsWith('/') ? page.substring(1) : page;
-    return `${convexUrl}/artifact/${shareToken}/v${versionNumber}/${cleanPage}`;
+    return `/api/artifact/${shareToken}/v${versionNumber}/${cleanPage}`;
   };
 
   const artifactUrl = getArtifactUrl(currentPage);
@@ -981,16 +995,29 @@ export function DocumentViewer({
     }
 
     // Only show comment tooltip if comment tool is active (via button or badge)
-    if (activeToolMode !== 'comment' && commentBadge === null) {
+    // Use refs to get current values (fixes closure issue)
+    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
       return;
     }
 
     const selection = iframeRef.current?.contentWindow?.getSelection();
-    if (selection && selection.toString().trim().length > 0) {
+    const selectedTextValue = selection?.toString().trim() || '';
+
+    if (selection && selectedTextValue.length > 0) {
       setSelectedText(selection.toString());
       setSelectedElement(null);
       setShowCommentTooltip(true);
-      setTooltipPosition({ x: e.clientX, y: e.clientY });
+
+      // Position tooltip relative to iframe position
+      const iframeRect = iframeRef.current?.getBoundingClientRect();
+      if (iframeRect) {
+        setTooltipPosition({
+          x: iframeRect.left + e.clientX,
+          y: iframeRect.top + e.clientY
+        });
+      } else {
+        setTooltipPosition({ x: e.clientX, y: e.clientY });
+      }
     } else {
       setShowCommentTooltip(false);
     }
@@ -1003,14 +1030,15 @@ export function DocumentViewer({
     }
 
     // Only allow commenting when comment tool is active
-    if (activeToolMode !== 'comment' && commentBadge === null) {
+    // Use refs to get current values (fixes closure issue)
+    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
       return;
     }
 
     const mouseEvent = e as MouseEvent;
 
     // When comment tool is active, left-click creates comment
-    if (e.type === 'click' && (activeToolMode === 'comment' || commentBadge !== null)) {
+    if (e.type === 'click' && (activeToolModeRef.current === 'comment' || commentBadgeRef.current !== null)) {
       e.preventDefault();
       e.stopPropagation();
     } else if (e.type === 'contextmenu') {
@@ -1212,8 +1240,20 @@ export function DocumentViewer({
     }
   };
 
+  // Track last click to prevent double-firing
+  const lastClickRef = useRef<number>(0);
+
   // Tool handlers
   const handleToolChange = (tool: ToolMode) => {
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickRef.current;
+
+    // Prevent double-clicks within 300ms
+    if (timeSinceLastClick < 300) {
+      return;
+    }
+
+    lastClickRef.current = now;
     setActiveToolMode(tool);
   };
 

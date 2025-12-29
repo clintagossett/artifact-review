@@ -40,23 +40,20 @@ export function CommentToolbar({
             <Button
               variant={activeToolMode === 'comment' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => onToolChange(activeToolMode === 'comment' ? null : 'comment')}
+              onClick={onBadgeClick}
               className={activeToolMode === 'comment' ? 'bg-purple-600 hover:bg-purple-700' : ''}
             >
               <MessageSquare className="w-4 h-4 mr-2" />
               Comment
             </Button>
+            {/* Badge - only visible when in one-shot or infinite mode */}
             {commentBadge && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBadgeClick();
-                }}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md transition-all hover:scale-110"
-                title="Click to cycle: one-shot → infinite → off"
+              <div
+                className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md pointer-events-none"
+                title={commentBadge === 'one-shot' ? 'One-shot mode' : 'Infinite mode'}
               >
                 {commentBadge === 'one-shot' ? '①' : '∞'}
-              </button>
+              </div>
             )}
           </div>
 
