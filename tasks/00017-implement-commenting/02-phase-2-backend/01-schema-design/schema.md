@@ -28,9 +28,11 @@ comments: defineTable({
 
   // === CONTENT ===
   content: v.string(),                   // Comment text (required)
-  resolved: v.boolean(),                 // Thread resolution status
-  resolvedBy: v.optional(v.id("users")), // Who last resolved (audit)
-  resolvedAt: v.optional(v.number()),    // When last resolved (audit)
+
+  // === RESOLUTION STATE ===
+  resolved: v.boolean(),                         // Current resolution status
+  resolvedChangedBy: v.optional(v.id("users")),  // Who last changed resolved status
+  resolvedChangedAt: v.optional(v.number()),     // When resolved status last changed
 
   // === TARGET (self-describing JSON) ===
   target: v.any(),  // Opaque JSON with _version inside - see TargetMetadataV1
@@ -135,14 +137,30 @@ interface TargetMetadataV1 {
 
 **Why:** Enables independent CRUD operations on replies (edit, delete) without modifying parent comment. Avoids array mutation issues and Convex array limits (8192).
 
-### 3. Resolution Tracking
+### 3. Resolution State Tracking
 
-**Why:** Audit trail for who resolved comments and when.
+**Why:** Full audit trail for who changed resolution status and when, for both resolve AND unresolve actions.
+
+**Naming Convention:**
+- `resolvedChangedBy` / `resolvedChangedAt` uses "Changed" because:
+  - We're tracking a state **change** (toggle), not an edit to content
+  - "Changed" is accurate for both resolve and unresolve actions
+  - Matches common patterns (SAP uses `changedBy/At`)
+  - More precise than "modified" or "edited" which imply content changes
 
 **Behavior:**
-- `resolved: true` -> set `resolvedBy` and `resolvedAt`
-- `resolved: false` -> clear both to `undefined`
-- Re-resolving updates to latest resolver
+- On creation: `resolved: false`, both tracking fields are `undefined`
+- On first toggle (resolve): set `resolvedChangedBy` and `resolvedChangedAt`
+- On subsequent toggles (resolve or unresolve): update both fields to current user/time
+- Fields are NEVER cleared once set - they always reflect the last change
+
+**Example Timeline:**
+```
+1. Comment created:     resolved=false, changedBy=undefined, changedAt=undefined
+2. Alice resolves:      resolved=true,  changedBy=Alice,     changedAt=T1
+3. Bob unresolves:      resolved=false, changedBy=Bob,       changedAt=T2
+4. Alice re-resolves:   resolved=true,  changedBy=Alice,     changedAt=T3
+```
 
 ---
 
@@ -178,12 +196,12 @@ interface TargetMetadataV1 {
 | Edit own | Yes | Yes |
 | Delete own | Yes | Yes |
 | Delete any | Yes | No |
-| Resolve | Yes | Yes |
+| Resolve/Unresolve | Yes | Yes |
 
 **Key Rules:**
 - Only author can edit their content
 - Only owner can delete others' content (moderation)
-- Both roles can toggle resolution
+- Both roles can toggle resolution status
 
 ---
 
@@ -205,6 +223,29 @@ await ctx.runMutation(api.comments.create, {
   versionId,
   content: "This should be a clickable email link",
   target,
+});
+```
+
+### Toggling Resolution
+
+```typescript
+// Backend: convex/comments.ts
+export const toggleResolved = mutation({
+  args: { commentId: v.id("comments") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    const userId = await getAuthUserId(ctx);
+    const now = Date.now();
+
+    await ctx.db.patch(args.commentId, {
+      resolved: !comment.resolved,
+      resolvedChangedBy: userId,
+      resolvedChangedAt: now,
+    });
+  },
 });
 ```
 
@@ -237,14 +278,15 @@ const withReplies = await Promise.all(
 ### Stored Document Example
 
 ```typescript
+// Newly created comment (never resolved)
 {
   _id: "abc123",
   versionId: "version456",
   authorId: "user789",
   content: "Button color should be blue per brand guidelines",
   resolved: false,
-  resolvedBy: undefined,
-  resolvedAt: undefined,
+  resolvedChangedBy: undefined,
+  resolvedChangedAt: undefined,
   target: {
     _version: 1,
     type: "element",
@@ -259,6 +301,16 @@ const withReplies = await Promise.all(
   isDeleted: false,
   deletedAt: undefined,
   createdAt: 1703808000000,
+}
+
+// After being resolved, then unresolved by different user
+{
+  _id: "abc123",
+  // ... same fields ...
+  resolved: false,                    // Currently unresolved
+  resolvedChangedBy: "user456",       // Bob unresolved it
+  resolvedChangedAt: 1703894400000,   // When Bob unresolved
+  // ... same fields ...
 }
 ```
 
@@ -378,8 +430,8 @@ comments: defineTable({
   authorId: v.id("users"),
   content: v.string(),
   resolved: v.boolean(),
-  resolvedBy: v.optional(v.id("users")),
-  resolvedAt: v.optional(v.number()),
+  resolvedChangedBy: v.optional(v.id("users")),
+  resolvedChangedAt: v.optional(v.number()),
   target: v.any(),
   isEdited: v.boolean(),
   editedAt: v.optional(v.number()),
@@ -421,3 +473,4 @@ commentReplies: defineTable({
 5. **Cascade delete** - When version is deleted, soft-delete all comments and replies
 6. **No filter queries** - Use `withIndex` per Convex rules; no `filter()` on queries
 7. **Version inside JSON** - Bump `target._version` for breaking changes
+8. **Resolution tracking persists** - `resolvedChangedBy/At` are never cleared, always reflect last change
