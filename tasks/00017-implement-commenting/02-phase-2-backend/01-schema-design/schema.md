@@ -7,16 +7,10 @@
 ## Overview
 
 Two tables for collaborative commenting on artifact versions:
-- **`comments`** - Top-level comments with versioned JSON target metadata
+- **`comments`** - Top-level comments with self-describing JSON target metadata
 - **`commentReplies`** - Replies to comments (separate table for independent CRUD)
 
-**Key Principle:** Backend stores/retrieves; frontend interprets targeting. The `target` field is an opaque JSON blob owned by the frontend.
-
-**⚠️ CRITICAL - FOR AGENTS IMPLEMENTING BACKEND:**
-- Convex does NOT understand `targetSchemaVersion` - it's just a number field
-- Convex does NOT validate `target` structure - it's just JSON (`v.any()`)
-- These are **frontend-only conventions** - DO NOT implement version logic in Convex
-- Backend's job: store the number and JSON, return them unchanged
+**Key Principle:** Backend stores/retrieves; frontend interprets targeting. The `target` field is a self-describing opaque JSON blob owned by the frontend, containing its own `_version` field.
 
 ---
 
@@ -38,11 +32,8 @@ comments: defineTable({
   resolvedBy: v.optional(v.id("users")), // Who last resolved (audit)
   resolvedAt: v.optional(v.number()),    // When last resolved (audit)
 
-  // === TARGET (frontend-owned JSON) ===
-  // ⚠️ IMPORTANT: Convex does NOT interpret these fields!
-  // They are opaque storage for frontend use only.
-  targetSchemaVersion: v.number(),       // Just a number - frontend interprets meaning
-  target: v.any(),                       // Just JSON - backend does NOT validate structure
+  // === TARGET (self-describing JSON) ===
+  target: v.any(),  // Opaque JSON with _version inside - see TargetMetadataV1
 
   // === EDIT TRACKING ===
   isEdited: v.boolean(),                 // Has been edited after creation
@@ -95,22 +86,21 @@ commentReplies: defineTable({
 
 ## Design Principles
 
-### 1. Versioned JSON for Target Metadata
+### 1. Self-Describing JSON for Target Metadata
 
-**Why:** Target location is frontend-specific (DOM elements, text selections, page paths). Using opaque JSON lets frontend evolve targeting without backend changes. Supports HTML, Markdown, and future formats with one schema.
+**Why version is inside target:**
+- **Consistency:** Backend truly doesn't interpret, so version belongs with the data
+- **Self-describing:** Version and data travel together as one unit
+- **Simpler schema:** 12 fields instead of 13
 
-**⚠️ CRITICAL FOR BACKEND IMPLEMENTATION:**
-- `targetSchemaVersion` is just `v.number()` - Convex has no special handling
-- `target` is just `v.any()` - Convex does NOT validate its structure
-- The versioning is a **frontend convention** - mutations accept any number and any JSON
-- Backend treats these as opaque data: store them, retrieve them, don't interpret them
-
-**Current Version (frontend only):** `targetSchemaVersion: 1`
+**Current Version:** `_version: 1` (inside target JSON)
 
 ```typescript
 // app/src/lib/comments/targetSchema.ts (frontend type)
 
 interface TargetMetadataV1 {
+  _version: 1;  // Required - identifies schema version
+
   // What was commented on
   type: "text" | "element" | "general";
   selectedText?: string;      // For text selections
@@ -136,10 +126,10 @@ interface TargetMetadataV1 {
 }
 ```
 
-**Version Rules (FRONTEND ONLY - NOT ENFORCED BY CONVEX):**
+**Version Rules:**
 - New optional fields = no version bump
-- Breaking changes = bump version, frontend handles migration
-- Backend never interprets or validates target content
+- Breaking changes = bump `_version`, frontend handles migration
+- Backend never interprets target content
 
 ### 2. Separate Tables for Replies
 
@@ -204,6 +194,7 @@ interface TargetMetadataV1 {
 ```typescript
 // Frontend
 const target: TargetMetadataV1 = {
+  _version: 1,
   type: "text",
   selectedText: "Contact our support team",
   page: "/faq.html",
@@ -213,7 +204,6 @@ const target: TargetMetadataV1 = {
 await ctx.runMutation(api.comments.create, {
   versionId,
   content: "This should be a clickable email link",
-  targetSchemaVersion: 1,
   target,
 });
 ```
@@ -255,8 +245,8 @@ const withReplies = await Promise.all(
   resolved: false,
   resolvedBy: undefined,
   resolvedAt: undefined,
-  targetSchemaVersion: 1,
   target: {
+    _version: 1,
     type: "element",
     elementType: "button",
     elementId: "submit-form-btn",
@@ -341,6 +331,7 @@ export async function canDelete(
 // app/src/lib/comments/targetSchema.ts
 
 export interface TargetMetadataV1 {
+  _version: 1;
   type: "text" | "element" | "general";
   selectedText?: string;
   elementType?: string;
@@ -361,11 +352,12 @@ export interface TargetMetadataV1 {
 }
 
 export type TargetMetadata = TargetMetadataV1;
-export const CURRENT_TARGET_SCHEMA_VERSION = 1;
+export const CURRENT_TARGET_VERSION = 1;
 
-export function parseTarget(version: number, target: unknown): TargetMetadata {
-  if (version === 1) return target as TargetMetadataV1;
-  console.warn(`Unknown target schema version: ${version}`);
+export function parseTarget(target: unknown): TargetMetadata {
+  const t = target as { _version?: number };
+  if (t._version === 1) return target as TargetMetadataV1;
+  console.warn(`Unknown target version: ${t._version}`);
   return target as TargetMetadataV1; // Best effort fallback
 }
 ```
@@ -388,7 +380,6 @@ comments: defineTable({
   resolved: v.boolean(),
   resolvedBy: v.optional(v.id("users")),
   resolvedAt: v.optional(v.number()),
-  targetSchemaVersion: v.number(),
   target: v.any(),
   isEdited: v.boolean(),
   editedAt: v.optional(v.number()),
@@ -424,9 +415,9 @@ commentReplies: defineTable({
 ## Constraints & Rules
 
 1. **Soft delete** - Follows ADR 0011 (`isDeleted` + `deletedAt`)
-2. **Target is opaque** - Backend stores JSON without validation; frontend owns structure
+2. **Target is self-describing** - Contains `_version` field; backend stores without validation
 3. **Author-only edit** - Only the comment/reply author can edit content
 4. **Owner moderation** - Artifact owner can delete any comment/reply
 5. **Cascade delete** - When version is deleted, soft-delete all comments and replies
 6. **No filter queries** - Use `withIndex` per Convex rules; no `filter()` on queries
-7. **Version for evolution** - Bump `targetSchemaVersion` for breaking JSON changes
+7. **Version inside JSON** - Bump `target._version` for breaking changes
