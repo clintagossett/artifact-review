@@ -16,7 +16,7 @@ export interface UploadDropzoneProps {
   className?: string;
 }
 
-const DEFAULT_ACCEPT = ".html,.htm,.md,.zip";
+const DEFAULT_ACCEPT = ".html,.htm,.md";
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024; // 100MB
 
 /**
@@ -26,7 +26,6 @@ const FILE_SIZE_LIMITS: Record<string, number> = {
   html: 5 * 1024 * 1024,      // 5MB
   htm: 5 * 1024 * 1024,       // 5MB
   md: 1 * 1024 * 1024,        // 1MB
-  zip: 100 * 1024 * 1024,     // 100MB
 };
 
 /**
@@ -266,7 +265,7 @@ export function UploadDropzone({
               Drop your files here
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              Supports .html, .md, .zip files
+              Supports .html and .md files
             </p>
             <Button
               type="button"

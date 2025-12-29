@@ -106,7 +106,7 @@ export function NewArtifactDialog({
             <div>
               <DialogTitle>Create New Artifact</DialogTitle>
               <DialogDescription>
-                Upload an HTML, Markdown, or ZIP package to start reviewing with your team.
+                Upload an HTML or Markdown file to start reviewing with your team.
               </DialogDescription>
             </div>
           </div>
@@ -120,20 +120,20 @@ export function NewArtifactDialog({
               onFileSelect={handleFileSelect}
               onRemoveFile={handleRemoveFile}
               selectedFile={selectedFile}
-              accept=".html,.htm,.md,.zip"
+              accept=".html,.htm,.md"
             />
           </div>
 
-          {/* Project Name */}
+          {/* Artifact Name */}
           <div className="space-y-2">
-            <Label htmlFor="project-name">
-              Project Name <span className="text-red-500">*</span>
+            <Label htmlFor="artifact-name">
+              Artifact Name <span className="text-red-500">*</span>
             </Label>
             <Input
-              id="project-name"
+              id="artifact-name"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Product Landing Page"
+              placeholder="e.g., June Earnings by Region"
               disabled={isSubmitting}
             />
           </div>
@@ -168,7 +168,7 @@ export function NewArtifactDialog({
             disabled={!isValid || isSubmitting}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            {isSubmitting ? "Creating..." : "Create Project"}
+            {isSubmitting ? "Creating..." : "Create Artifact"}
           </Button>
         </DialogFooter>
       </DialogContent>

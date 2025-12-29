@@ -353,8 +353,8 @@ const interactiveComponentsHTML = `
                 <div class="accordion-content">
                     <div class="accordion-body">
                         <h3 id="faq2-heading">Supported Formats</h3>
-                        <p id="faq2-html">We support single .html files and .zip archives containing HTML and assets.</p>
-                        <p id="faq2-zip">For .zip files, you'll be prompted to select the entry point (main HTML file).</p>
+                        <p id="faq2-html">We support .html files and .md (Markdown) files.</p>
+                        <p id="faq2-formats">Upload your HTML or Markdown artifacts to start reviewing with your team.</p>
                     </div>
                 </div>
             </div>

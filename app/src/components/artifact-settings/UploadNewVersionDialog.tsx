@@ -60,8 +60,6 @@ export function UploadNewVersionDialog({
   const handleSubmit = () => {
     if (!uploadedFile) return;
 
-    // For .zip files, we might need entry point selection
-    // For now, we'll pass it directly and handle entry point later if needed
     onUploadVersion(uploadedFile);
 
     // Reset form
@@ -83,7 +81,7 @@ export function UploadNewVersionDialog({
             Upload New Version
           </DialogTitle>
           <DialogDescription>
-            Upload a new version of this artifact. Supports HTML, Markdown, or ZIP files.
+            Upload a new version of this artifact. Supports HTML and Markdown files.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,7 +127,7 @@ export function UploadNewVersionDialog({
                       Drop file here or click to browse
                     </p>
                     <p className="text-sm text-gray-500">
-                      Supports .html, .md, and .zip files
+                      Supports .html and .md files
                     </p>
                   </div>
                   <Button
@@ -142,7 +140,7 @@ export function UploadNewVersionDialog({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".html,.md,.markdown,.zip,text/html,text/markdown,application/zip,application/x-zip-compressed"
+                    accept=".html,.md,.markdown,text/html,text/markdown"
                     className="hidden"
                     onChange={handleFileInput}
                   />

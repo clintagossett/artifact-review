@@ -558,6 +558,260 @@ const schema = defineSchema({
      * @example ctx.db.query("artifactReviewers").withIndex("by_user", q => q.eq("userId", userId))
      */
     .index("by_user", ["userId"]),
+
+  // ============================================================================
+  // COMMENTS
+  // ============================================================================
+  /**
+   * Comments on artifact versions - top-level feedback with replies.
+   *
+   * ## Purpose
+   * Enables collaborative review by allowing owners and reviewers to leave
+   * feedback on specific parts of artifacts. Each comment can have multiple replies.
+   *
+   * ## Lifecycle
+   * - **Created**: `comments.create` mutation
+   * - **Updated**: `comments.updateContent` (content), `comments.toggleResolved` (resolution)
+   * - **Deleted**: `comments.softDelete` sets `isDeleted=true` and cascades to replies
+   *
+   * ## Permission Model
+   * - **Owner**: Can view, create, edit own, delete any, resolve/unresolve
+   * - **Reviewer**: Can view, create, edit own, delete own, resolve/unresolve
+   * - **Outsider**: No access
+   *
+   * ## Target Metadata
+   * The `target` field is self-describing JSON with `_version` field inside.
+   * Backend stores without validation; frontend interprets for positioning.
+   *
+   * @see convex/comments.ts - Comment CRUD operations
+   * @see convex/lib/commentPermissions.ts - Permission helpers
+   */
+  comments: defineTable({
+    /**
+     * Reference to artifact version being commented on.
+     * All comments belong to exactly one version.
+     */
+    versionId: v.id("artifactVersions"),
+
+    /**
+     * Reference to user who created the comment.
+     * Determines edit permissions (only author can edit content).
+     */
+    authorId: v.id("users"),
+
+    /**
+     * Comment text content.
+     * Required, max 10,000 characters, trimmed before storage.
+     */
+    content: v.string(),
+
+    /**
+     * Resolution status.
+     * Can be toggled by owner or reviewer.
+     * Defaults to false on creation.
+     */
+    resolved: v.boolean(),
+
+    /**
+     * User who last changed resolution status.
+     * Set on first toggle, updated on subsequent toggles.
+     * Never cleared once set.
+     */
+    resolvedChangedBy: v.optional(v.id("users")),
+
+    /**
+     * Timestamp when resolution status last changed.
+     * Unix timestamp in milliseconds.
+     * Never cleared once set.
+     */
+    resolvedChangedAt: v.optional(v.number()),
+
+    /**
+     * Self-describing JSON target metadata.
+     * Contains `_version` field inside the object.
+     * Backend stores as-is; frontend interprets for positioning.
+     * @example { _version: 1, type: "text", selectedText: "...", page: "/index.html" }
+     */
+    target: v.any(),
+
+    /**
+     * Edit tracking flag.
+     * Set to true when content is updated after creation.
+     */
+    isEdited: v.boolean(),
+
+    /**
+     * Timestamp of last content edit.
+     * Unix timestamp in milliseconds.
+     * Undefined until first edit.
+     */
+    editedAt: v.optional(v.number()),
+
+    /**
+     * Soft deletion flag.
+     * When true, comment and all replies are hidden.
+     * @see ADR 0011 - Soft Delete Strategy
+     */
+    isDeleted: v.boolean(),
+
+    /**
+     * User who soft deleted the comment.
+     * Used for audit trail (author or artifact owner).
+     * Undefined when not deleted.
+     */
+    deletedBy: v.optional(v.id("users")),
+
+    /**
+     * Timestamp when soft deleted.
+     * Unix timestamp in milliseconds.
+     * Undefined when not deleted.
+     */
+    deletedAt: v.optional(v.number()),
+
+    /**
+     * Timestamp when comment was created.
+     * Unix timestamp in milliseconds.
+     * Set once at creation, never updated.
+     */
+    createdAt: v.number(),
+  })
+    /**
+     * List active comments for a version (primary query).
+     * Used by viewer to display comments.
+     * @example ctx.db.query("comments").withIndex("by_version_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
+     */
+    .index("by_version_active", ["versionId", "isDeleted"])
+
+    /**
+     * List all comments for a version (including deleted).
+     * Used for cascade soft delete operations.
+     * @example ctx.db.query("comments").withIndex("by_version", q => q.eq("versionId", versionId))
+     */
+    .index("by_version", ["versionId"])
+
+    /**
+     * List comments by author (all artifacts).
+     * Used for user comment history.
+     * @example ctx.db.query("comments").withIndex("by_author", q => q.eq("authorId", userId))
+     */
+    .index("by_author", ["authorId"])
+
+    /**
+     * List active comments by author.
+     * Used for user dashboard.
+     * @example ctx.db.query("comments").withIndex("by_author_active", q => q.eq("authorId", userId).eq("isDeleted", false))
+     */
+    .index("by_author_active", ["authorId", "isDeleted"]),
+
+  // ============================================================================
+  // COMMENT REPLIES
+  // ============================================================================
+  /**
+   * Replies to comments - enables threaded discussions.
+   *
+   * ## Purpose
+   * Allows back-and-forth discussion on comments.
+   * Separate table enables independent CRUD without array mutation issues.
+   *
+   * ## Lifecycle
+   * - **Created**: `commentReplies.createReply` mutation
+   * - **Updated**: `commentReplies.updateReply` (content only)
+   * - **Deleted**: `commentReplies.softDeleteReply` or cascade from parent comment
+   *
+   * ## Permission Model
+   * Same as comments (inherits from parent comment's version).
+   *
+   * ## Cascade Behavior
+   * When parent comment is soft deleted, all replies are also soft deleted.
+   *
+   * @see convex/commentReplies.ts - Reply CRUD operations
+   */
+  commentReplies: defineTable({
+    /**
+     * Reference to parent comment.
+     * All replies belong to exactly one comment.
+     */
+    commentId: v.id("comments"),
+
+    /**
+     * Reference to user who created the reply.
+     * Determines edit permissions (only author can edit content).
+     */
+    authorId: v.id("users"),
+
+    /**
+     * Reply text content.
+     * Required, max 5,000 characters, trimmed before storage.
+     */
+    content: v.string(),
+
+    /**
+     * Edit tracking flag.
+     * Set to true when content is updated after creation.
+     */
+    isEdited: v.boolean(),
+
+    /**
+     * Timestamp of last content edit.
+     * Unix timestamp in milliseconds.
+     * Undefined until first edit.
+     */
+    editedAt: v.optional(v.number()),
+
+    /**
+     * Soft deletion flag.
+     * @see ADR 0011 - Soft Delete Strategy
+     */
+    isDeleted: v.boolean(),
+
+    /**
+     * User who soft deleted the reply.
+     * Used for audit trail (author or artifact owner).
+     * Undefined when not deleted.
+     */
+    deletedBy: v.optional(v.id("users")),
+
+    /**
+     * Timestamp when soft deleted.
+     * Unix timestamp in milliseconds.
+     * Undefined when not deleted.
+     */
+    deletedAt: v.optional(v.number()),
+
+    /**
+     * Timestamp when reply was created.
+     * Unix timestamp in milliseconds.
+     * Set once at creation, never updated.
+     */
+    createdAt: v.number(),
+  })
+    /**
+     * List active replies for a comment (primary query).
+     * Used by viewer to display reply threads.
+     * @example ctx.db.query("commentReplies").withIndex("by_comment_active", q => q.eq("commentId", commentId).eq("isDeleted", false))
+     */
+    .index("by_comment_active", ["commentId", "isDeleted"])
+
+    /**
+     * List all replies for a comment (including deleted).
+     * Used for cascade soft delete operations.
+     * @example ctx.db.query("commentReplies").withIndex("by_comment", q => q.eq("commentId", commentId))
+     */
+    .index("by_comment", ["commentId"])
+
+    /**
+     * List replies by author (all comments).
+     * Used for user reply history.
+     * @example ctx.db.query("commentReplies").withIndex("by_author", q => q.eq("authorId", userId))
+     */
+    .index("by_author", ["authorId"])
+
+    /**
+     * List active replies by author.
+     * Used for user dashboard.
+     * @example ctx.db.query("commentReplies").withIndex("by_author_active", q => q.eq("authorId", userId).eq("isDeleted", false))
+     */
+    .index("by_author_active", ["authorId", "isDeleted"]),
 });
 
 export default schema;
