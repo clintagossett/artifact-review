@@ -121,8 +121,8 @@ comments: defineTable({
   // Content
   content: v.string(),
   resolved: v.boolean(),
-  resolvedBy: v.optional(v.id("users")),
-  resolvedAt: v.optional(v.number()),
+  resolvedChangedBy: v.optional(v.id("users")),
+  resolvedChangedAt: v.optional(v.number()),
 
   // Target metadata (self-describing JSON with _version inside)
   target: v.any(),
