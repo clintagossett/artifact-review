@@ -38,17 +38,17 @@
 
 **Problem:** Original schema had 8+ HTML-specific fields polluting backend.
 
-**Solution:** Two fields instead:
+**Solution:** Self-describing JSON instead:
 ```typescript
-targetSchemaVersion: v.number()  // Version number
-target: v.any()                   // Opaque JSON blob
+target: v.any()  // Opaque JSON blob with _version inside
 ```
 
 **Benefits:**
 - Backend-agnostic (works for HTML, Markdown, PDF, etc.)
 - Frontend owns targeting schema entirely
 - Can evolve without backend changes
-- Reduced from 17 to 13 fields (includes resolution tracking)
+- Self-describing data (version travels with content)
+- Reduced from 17 to 12 fields (includes resolution tracking)
 
 **Example:**
 ```typescript
@@ -110,7 +110,7 @@ target: v.any()                   // Opaque JSON blob
 
 ## Schema Summary
 
-### Comments Table (13 fields)
+### Comments Table (12 fields)
 
 ```typescript
 comments: defineTable({
@@ -124,8 +124,7 @@ comments: defineTable({
   resolvedBy: v.optional(v.id("users")),
   resolvedAt: v.optional(v.number()),
 
-  // Target metadata (versioned JSON)
-  targetSchemaVersion: v.number(),
+  // Target metadata (self-describing JSON with _version inside)
   target: v.any(),
 
   // Edit tracking
