@@ -53,8 +53,8 @@ target: v.any()  // Opaque JSON blob with _version inside
 **Example:**
 ```typescript
 {
-  targetSchemaVersion: 1,
   target: {
+    _version: 1,
     type: "text",
     selectedText: "Click here",
     page: "/index.html",
