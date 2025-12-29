@@ -7,8 +7,8 @@
 ## Overview
 
 Two tables for collaborative commenting on artifact versions:
-- **`comments`** - Top-level comments with self-describing JSON target metadata
-- **`commentReplies`** - Replies to comments (separate table for independent CRUD)
+- **`comments`** - Top-level comments with self-describing JSON target metadata (13 fields)
+- **`commentReplies`** - Replies to comments (separate table for independent CRUD) (9 fields)
 
 **Key Principle:** Backend stores/retrieves; frontend interprets targeting. The `target` field is a self-describing opaque JSON blob owned by the frontend, containing its own `_version` field.
 
@@ -42,8 +42,9 @@ comments: defineTable({
   editedAt: v.optional(v.number()),      // Last edit timestamp
 
   // === SOFT DELETE (ADR 0011) ===
-  isDeleted: v.boolean(),
-  deletedAt: v.optional(v.number()),
+  isDeleted: v.boolean(),                // Soft deletion flag
+  deletedBy: v.optional(v.id("users")),  // Who soft deleted (audit)
+  deletedAt: v.optional(v.number()),     // When soft deleted
 
   // === TIMESTAMPS ===
   createdAt: v.number(),
@@ -72,8 +73,9 @@ commentReplies: defineTable({
   editedAt: v.optional(v.number()),
 
   // === SOFT DELETE (ADR 0011) ===
-  isDeleted: v.boolean(),
-  deletedAt: v.optional(v.number()),
+  isDeleted: v.boolean(),                // Soft deletion flag
+  deletedBy: v.optional(v.id("users")),  // Who soft deleted (audit)
+  deletedAt: v.optional(v.number()),     // When soft deleted
 
   // === TIMESTAMPS ===
   createdAt: v.number(),
@@ -93,7 +95,7 @@ commentReplies: defineTable({
 **Why version is inside target:**
 - **Consistency:** Backend truly doesn't interpret, so version belongs with the data
 - **Self-describing:** Version and data travel together as one unit
-- **Simpler schema:** 12 fields instead of 13
+- **Simpler schema:** Fewer top-level fields
 
 **Current Version:** `_version: 1` (inside target JSON)
 
@@ -160,6 +162,31 @@ interface TargetMetadataV1 {
 2. Alice resolves:      resolved=true,  changedBy=Alice,     changedAt=T1
 3. Bob unresolves:      resolved=false, changedBy=Bob,       changedAt=T2
 4. Alice re-resolves:   resolved=true,  changedBy=Alice,     changedAt=T3
+```
+
+### 4. Soft Delete Audit Trail
+
+**Why:** Consistency with resolution tracking - track who deleted and when for audit purposes.
+
+**Behavior:**
+- On soft delete: set `isDeleted: true`, `deletedBy`, and `deletedAt`
+- On restore (if implemented): clear all three fields (`isDeleted: false`, others `undefined`)
+
+**Example:**
+```typescript
+// Soft delete
+await ctx.db.patch(commentId, {
+  isDeleted: true,
+  deletedBy: userId,
+  deletedAt: Date.now(),
+});
+
+// Restore (if needed)
+await ctx.db.patch(commentId, {
+  isDeleted: false,
+  deletedBy: undefined,
+  deletedAt: undefined,
+});
 ```
 
 ---
@@ -249,6 +276,33 @@ export const toggleResolved = mutation({
 });
 ```
 
+### Soft Deleting a Comment
+
+```typescript
+// Backend: convex/comments.ts
+export const softDelete = mutation({
+  args: { commentId: v.id("comments") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) throw new Error("Comment not found");
+
+    const userId = await getAuthUserId(ctx);
+    const now = Date.now();
+
+    // Verify permission (author or owner can delete)
+    const canDeleteComment = await canDelete(ctx, comment.authorId, comment.versionId, userId);
+    if (!canDeleteComment) throw new Error("No permission to delete");
+
+    await ctx.db.patch(args.commentId, {
+      isDeleted: true,
+      deletedBy: userId,
+      deletedAt: now,
+    });
+  },
+});
+```
+
 ### Querying Comments
 
 ```typescript
@@ -278,7 +332,7 @@ const withReplies = await Promise.all(
 ### Stored Document Example
 
 ```typescript
-// Newly created comment (never resolved)
+// Newly created comment (never resolved, not deleted)
 {
   _id: "abc123",
   versionId: "version456",
@@ -299,6 +353,7 @@ const withReplies = await Promise.all(
   isEdited: false,
   editedAt: undefined,
   isDeleted: false,
+  deletedBy: undefined,
   deletedAt: undefined,
   createdAt: 1703808000000,
 }
@@ -310,6 +365,16 @@ const withReplies = await Promise.all(
   resolved: false,                    // Currently unresolved
   resolvedChangedBy: "user456",       // Bob unresolved it
   resolvedChangedAt: 1703894400000,   // When Bob unresolved
+  // ... same fields ...
+}
+
+// After being soft deleted by artifact owner
+{
+  _id: "abc123",
+  // ... same fields ...
+  isDeleted: true,
+  deletedBy: "owner123",              // Owner deleted it
+  deletedAt: 1703980800000,           // When deleted
   // ... same fields ...
 }
 ```
@@ -436,6 +501,7 @@ comments: defineTable({
   isEdited: v.boolean(),
   editedAt: v.optional(v.number()),
   isDeleted: v.boolean(),
+  deletedBy: v.optional(v.id("users")),
   deletedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
@@ -451,6 +517,7 @@ commentReplies: defineTable({
   isEdited: v.boolean(),
   editedAt: v.optional(v.number()),
   isDeleted: v.boolean(),
+  deletedBy: v.optional(v.id("users")),
   deletedAt: v.optional(v.number()),
   createdAt: v.number(),
 })
@@ -466,7 +533,7 @@ commentReplies: defineTable({
 
 ## Constraints & Rules
 
-1. **Soft delete** - Follows ADR 0011 (`isDeleted` + `deletedAt`)
+1. **Soft delete with audit** - Follows ADR 0011 (`isDeleted` + `deletedBy` + `deletedAt`)
 2. **Target is self-describing** - Contains `_version` field; backend stores without validation
 3. **Author-only edit** - Only the comment/reply author can edit content
 4. **Owner moderation** - Artifact owner can delete any comment/reply
@@ -474,3 +541,4 @@ commentReplies: defineTable({
 6. **No filter queries** - Use `withIndex` per Convex rules; no `filter()` on queries
 7. **Version inside JSON** - Bump `target._version` for breaking changes
 8. **Resolution tracking persists** - `resolvedChangedBy/At` are never cleared, always reflect last change
+9. **Delete tracking clears on restore** - `deletedBy/At` are cleared when `isDeleted` becomes `false`
