@@ -149,6 +149,9 @@ export function ArtifactViewerPage({
     status: "active" as const,
   };
 
+  // Get Convex HTTP URL from environment (for serving artifact files)
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "";
+
   // Show DocumentViewer for users with permission (Phase 1)
   return (
     <>
@@ -159,6 +162,9 @@ export function ArtifactViewerPage({
         onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
         onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
         onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
+        shareToken={shareToken}
+        versionNumber={targetVersion.versionNumber}
+        convexUrl={convexUrl}
       />
 
       <ShareModal

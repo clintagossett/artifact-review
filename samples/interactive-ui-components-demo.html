@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive UI Components</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        /* Header */
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 60px 0; text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 42px; margin-bottom: 10px; }
+        .header p { font-size: 18px; opacity: 0.9; }
+
+        /* Tabs */
+        .tabs-container { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 40px; }
+        .tab-buttons { display: flex; background: #f8f9fa; border-bottom: 2px solid #e9ecef; }
+        .tab-button { flex: 1; padding: 16px 24px; border: none; background: transparent; color: #6c757d; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
+        .tab-button:hover { background: #e9ecef; }
+        .tab-button.active { color: #667eea; border-bottom-color: #667eea; background: white; }
+        .tab-content { display: none; padding: 30px; }
+        .tab-content.active { display: block; }
+        .tab-content h2 { color: #667eea; margin-bottom: 15px; font-size: 28px; }
+        .tab-content p { margin-bottom: 15px; color: #555; }
+        .tab-content ul { margin-left: 20px; margin-bottom: 15px; }
+        .tab-content li { margin-bottom: 8px; color: #555; }
+
+        /* Accordion */
+        .accordion-container { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .accordion-item { border-bottom: 1px solid #e9ecef; }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-header { padding: 20px 24px; background: white; border: none; width: 100%; text-align: left; cursor: pointer; font-size: 18px; font-weight: 600; color: #333; display: flex; justify-content: space-between; align-items: center; transition: background 0.3s; }
+        .accordion-header:hover { background: #f8f9fa; }
+        .accordion-header.active { color: #667eea; background: #f8f9fa; }
+        .accordion-icon { transition: transform 0.3s; font-weight: bold; color: #667eea; }
+        .accordion-header.active .accordion-icon { transform: rotate(180deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .accordion-content.active { max-height: 1000px; }
+        .accordion-body { padding: 0 24px 20px 24px; }
+        .accordion-body h3 { color: #667eea; margin-bottom: 10px; font-size: 20px; }
+        .accordion-body p { margin-bottom: 12px; color: #555; }
+        .accordion-body ul { margin-left: 20px; margin-bottom: 12px; }
+        .accordion-body li { margin-bottom: 6px; color: #555; }
+
+        /* Highlight effect */
+        .highlight-element { box-shadow: 0 0 0 3px #a78bfa, 0 0 20px rgba(167, 139, 250, 0.5) !important; }
+        h2.highlight-element, h3.highlight-element, p.highlight-element { background: rgba(167, 139, 250, 0.2); padding: 8px; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 id="main-heading">Interactive UI Components Demo</h1>
+        <p id="main-subtitle">Testing tabs and accordion with hidden content</p>
+    </div>
+
+    <div class="container">
+        <!-- Tabs Section -->
+        <div class="tabs-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="openTab(event, 'overview')">Overview</button>
+                <button class="tab-button" onclick="openTab(event, 'features')">Features</button>
+                <button class="tab-button" onclick="openTab(event, 'pricing')">Pricing</button>
+                <button class="tab-button" onclick="openTab(event, 'support')">Support</button>
+            </div>
+
+            <div id="overview" class="tab-content active">
+                <h2 id="overview-heading">Product Overview</h2>
+                <p id="overview-intro">Our platform revolutionizes the way teams collaborate on HTML document reviews. Built for product managers, designers, and developers.</p>
+                <p id="overview-benefits">Key benefits include real-time collaboration, version control, and comprehensive commenting tools that make feedback collection seamless.</p>
+                <ul>
+                    <li id="overview-li-1">Streamlined review process</li>
+                    <li id="overview-li-2">Built-in version management</li>
+                    <li id="overview-li-3">Team collaboration features</li>
+                </ul>
+            </div>
+
+            <div id="features" class="tab-content">
+                <h2 id="features-heading">Advanced Features</h2>
+                <p id="features-intro">Discover powerful tools designed to enhance your review workflow.</p>
+                <ul>
+                    <li id="features-li-1"><strong>Comment Tool:</strong> Add non-destructive feedback on any element or selected text</li>
+                    <li id="features-li-2"><strong>Text Edit Tool:</strong> Suggest Track Changes-style edits</li>
+                    <li id="features-li-3"><strong>Version Control:</strong> Upload multiple versions and compare changes</li>
+                    <li id="features-li-4"><strong>Real-time Presence:</strong> See who's viewing the document</li>
+                </ul>
+                <p id="features-outro">All features are designed with product teams in mind, ensuring a smooth and efficient review process.</p>
+            </div>
+
+            <div id="pricing" class="tab-content">
+                <h2 id="pricing-heading">Pricing Plans</h2>
+                <p id="pricing-intro">Choose the plan that fits your team's needs.</p>
+                <p id="pricing-starter"><strong>Starter:</strong> $29/month - Perfect for small teams (up to 5 members)</p>
+                <p id="pricing-pro"><strong>Professional:</strong> $99/month - For growing teams (up to 20 members)</p>
+                <p id="pricing-enterprise"><strong>Enterprise:</strong> Custom pricing - Unlimited members with premium support</p>
+            </div>
+
+            <div id="support" class="tab-content">
+                <h2 id="support-heading">Customer Support</h2>
+                <p id="support-intro">We're here to help you succeed with our platform.</p>
+                <p id="support-availability">Our support team is available 24/7 via email, chat, and phone.</p>
+                <ul>
+                    <li id="support-li-1">Email: support@artifactreview.com</li>
+                    <li id="support-li-2">Chat: Available in-app</li>
+                    <li id="support-li-3">Phone: +1 (555) 123-4567</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Accordion Section -->
+        <h2 style="margin-bottom: 20px; color: #333;">Frequently Asked Questions</h2>
+        <div class="accordion-container">
+            <div class="accordion-item">
+                <button class="accordion-header active" onclick="toggleAccordion(this)">
+                    <span>How does version control work?</span>
+                    <span class="accordion-icon">▼</span>
+                </button>
+                <div class="accordion-content active">
+                    <div class="accordion-body">
+                        <p id="faq1-intro">Our version control system maintains a complete history of all uploaded HTML documents.</p>
+                        <p id="faq1-details">Each upload creates an immutable version (v1, v2, v3, etc.) within your project. Comments are version-specific, meaning each version has its own isolated set of comments.</p>
+                        <ul>
+                            <li id="faq1-li-1">Auto-incrementing version numbers</li>
+                            <li id="faq1-li-2">Optional custom labels</li>
+                            <li id="faq1-li-3">Set any version as default for sharing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>What file formats are supported?</span>
+                    <span class="accordion-icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                        <h3 id="faq2-heading">Supported Formats</h3>
+                        <p id="faq2-html">We support .html files and .md (Markdown) files.</p>
+                        <p id="faq2-formats">Upload your HTML or Markdown artifacts to start reviewing with your team.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>Can I comment on hidden content?</span>
+                    <span class="accordion-icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                        <p id="faq3-intro">Yes! You can add comments to any element, even if it's in a collapsed accordion or hidden tab.</p>
+                        <p id="faq3-details">When you hover over a comment that references hidden content, we'll automatically expand that section and highlight the element.</p>
+                        <ul>
+                            <li id="faq3-li-1">Smart navigation to hidden elements</li>
+                            <li id="faq3-li-2">Automatic expansion of collapsed sections</li>
+                            <li id="faq3-li-3">Visual highlighting of referenced content</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>How do permissions work?</span>
+                    <span class="accordion-icon">▼</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="accordion-body">
+                        <p id="faq4-intro">Artifact Review offers granular permission controls for sharing projects.</p>
+                        <p id="faq4-roles">Three roles are available: Viewer (read-only), Commenter (can add feedback), and Editor (full access).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            const tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function toggleAccordion(header) {
+            const content = header.nextElementSibling;
+            const isActive = header.classList.contains('active');
+
+            // Close all accordions
+            const allHeaders = document.querySelectorAll('.accordion-header');
+            const allContents = document.querySelectorAll('.accordion-content');
+            allHeaders.forEach(h => h.classList.remove('active'));
+            allContents.forEach(c => c.classList.remove('active'));
+
+            // Open clicked accordion if it wasn't active
+            if (!isActive) {
+                header.classList.add('active');
+                content.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

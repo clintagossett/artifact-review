@@ -1,7 +1,7 @@
 # Task 17 Session Resume
 
 **Last Updated:** 2025-12-28
-**Session:** Phase 2 Backend COMPLETE - 87/87 tests passing, ready for Phase 3 Frontend
+**Session:** Phase 2 Backend COMPLETE, Artifact Viewing FIXED, Ready for Phase 3 Integration
 
 ---
 
@@ -9,503 +9,373 @@
 
 ### ✅ Completed
 
-1. **Schema Design (Subtask 01)** - COMPLETE
-   - Designed `comments` and `commentReplies` tables
-   - Key innovation: Versioned JSON for target metadata (13 fields total)
-   - Backend-agnostic approach (HTML, Markdown, future formats)
-   - Permission model: Owner + Reviewer (no public/moderation)
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
-   - Committed: 5b0ebcb, 8b52840, b649a97
+#### Phase 1: Figma Lift (COMPLETE)
+- DocumentViewer component with full commenting UI (2,197 lines)
+- CommentToolbar with all interactions
+- Mock data working visually
+- Location: `tasks/00017-implement-commenting/01-phase-1-lift-figma/`
 
-2. **API Design (Subtask 02 - Step 1)** - COMPLETE
-   - Created comprehensive API design with full Convex validators
-   - 9 public functions (5 comment ops, 4 reply ops)
-   - 5 internal permission helpers
-   - Query patterns with proper index usage (no filter)
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
-   - Agent: a99221f (architect)
+#### Phase 2: Backend API (COMPLETE) ✅
+- **87/87 tests passing** - Full backend implementation
+- 9 Convex functions (5 comment ops, 4 reply ops)
+- 5 internal permission helpers
+- 2,988 lines of production code and tests
+- Files:
+  - `app/convex/comments.ts` (268 lines)
+  - `app/convex/commentReplies.ts` (238 lines)
+  - `app/convex/lib/commentPermissions.ts` (167 lines)
+  - `app/convex/__tests__/comments.test.ts` (2,060 lines)
+  - `app/convex/schema.ts` (+254 lines for comments tables)
+- Code review: APPROVED ✅
+- Location: `tasks/00017-implement-commenting/02-phase-2-backend/`
+- Commit: d325166
 
-3. **Test Plan (Subtask 02 - Step 2)** - COMPLETE
-   - Comprehensive test plan with 92 tests
-   - Test fixtures matching actual schema
-   - TDD execution order defined
-   - Security tests for both unauthenticated and authenticated-outsider
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
-   - Agent: ab24ff2 (tdd-developer)
+#### Artifact Viewing Infrastructure (COMPLETE) ✅
+**Problem:** Before we could integrate commenting, needed real artifact HTML rendering to work.
 
-4. **Test Plan Review & Updates** - COMPLETE
-   - Architect reviewed test plan
-   - Fixed schema mismatches in test fixtures
-   - Added 2 outsider security tests
-   - Added 5 "not found" tests
-   - Updated test count: 85 → 92
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
+**Fixed Today:**
+1. **Created sample artifact** - `samples/interactive-ui-components-demo.html`
+   - Self-contained HTML with tabs, accordions, hidden content
+   - Element IDs matching mock comments for seamless testing
+   - 5.5KB, fully interactive
 
-5. **TDD Implementation (Subtask 02)** - COMPLETE ✅
-   - Implemented all 9 backend functions using Red-Green-Refactor cycle
-   - 87/87 tests passing (100% coverage)
-   - 2,988 lines of production code and tests
-   - Files created:
-     - `app/convex/comments.ts` (268 lines)
-     - `app/convex/commentReplies.ts` (238 lines)
-     - `app/convex/lib/commentPermissions.ts` (167 lines)
-     - `app/convex/__tests__/comments.test.ts` (2,060 lines)
-     - Updated `app/convex/schema.ts` (+254 lines)
-   - Agent: ac3d6ee (tdd-developer)
-   - Committed: d325166
+2. **Fixed DocumentViewer rendering:**
+   - Changed from mock HTML (`doc.write(mockHTML)`) to real artifact URL
+   - Updated props to accept `shareToken`, `versionNumber`, `convexUrl`
+   - Changed iframe from `srcDoc` to `src={artifactUrl}`
+   - Updated ArtifactViewerPage to pass real artifact data
+   - Files modified:
+     - `app/src/components/artifact/DocumentViewer.tsx`
+     - `app/src/components/artifact/ArtifactViewerPage.tsx`
 
-6. **Code Review** - COMPLETE ✅
-   - Architect reviewed full implementation
-   - Verdict: APPROVED with minor items (non-blocking)
-   - 100% Convex rules compliance verified
-   - Security architecture validated (defense-in-depth)
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/code-review.md`
-   - Location: `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/COMPLETION-REPORT.md`
-   - Agent: a2bd097 (architect)
+3. **Fixed Convex URL configuration:**
+   - **Problem:** Convex requires TWO separate URLs
+     - `.convex.cloud` - For SDK (queries/mutations)
+     - `.convex.site` - For HTTP actions (serving artifacts)
+   - **Solution:** Added dual env vars in `.env.local`:
+     - `NEXT_PUBLIC_CONVEX_URL=https://mild-ptarmigan-109.convex.cloud`
+     - `NEXT_PUBLIC_CONVEX_HTTP_URL=https://mild-ptarmigan-109.convex.site`
+   - ArtifactViewerPage uses `NEXT_PUBLIC_CONVEX_HTTP_URL` for iframe
+
+4. **Fixed schema compatibility:**
+   - Added `isAnonymous: v.optional(v.boolean())` to users table
+   - Allows legacy anonymous user data (hundreds of old test users)
+   - File: `app/convex/schema.ts`
+
+**Result:**
+- Real artifact HTML now renders at `http://localhost:3000/a/{shareToken}` ✅
+- HTTP router serving correctly: `https://mild-ptarmigan-109.convex.site/artifact/{shareToken}/v{versionNumber}/index.html` ✅
+- Ready for commenting integration ✅
+
+#### Phase 3 Planning (COMPLETE)
+- Restructured to combine UI + backend integration into single phase
+- Removed redundant "build with mock data then wire" approach
+- Plan: Create hooks → Wire to DocumentViewer → Test
+- Location: `tasks/00017-implement-commenting/03-phase-3-frontend-integration/README.md`
 
 ### ⏳ Next Up
 
-**Phase 3: Frontend Integration** (Not Started)
-- Create React components for commenting UI
-- Integrate with Convex backend API
-- Build comment thread interface
-- Implement reply functionality
-- Add edit/delete controls
-- Display resolution states
-- Handle permissions in UI
+**Phase 3: Wire Backend to Frontend** (Not Started)
+
+Since we already have:
+- ✅ Frontend UI (DocumentViewer with mock comments)
+- ✅ Backend API (87/87 tests passing)
+- ✅ Artifact viewing working
+
+The remaining work is straightforward integration:
+
+**Subtask 01: Create Hooks** (~30 min)
+- `app/src/hooks/useComments.ts` - Fetch comments for version
+- `app/src/hooks/useCommentReplies.ts` - Fetch replies for comment
+- `app/src/hooks/useCommentActions.ts` - Comment mutations (create, update, delete, resolve)
+- `app/src/hooks/useReplyActions.ts` - Reply mutations (create, update, delete)
+
+**Subtask 02: Wire Data** (~1 hour)
+- Replace mock comments in DocumentViewer with `useComments(versionId)`
+- Replace mock replies with `useCommentReplies(commentId)`
+- Wire all buttons to mutation hooks
+- Add loading/error states
+- Add optimistic updates
+
+**Subtask 03: Testing** (~1 hour)
+- E2E tests for complete commenting flow
+- Test scenarios:
+  - Create comment
+  - Reply to comment
+  - Edit own comment
+  - Delete own comment
+  - Toggle resolved
+  - Owner vs reviewer permissions
+- Validation video
+- Test report
 
 ---
 
-## Key Design Decisions
+## Architecture Summary
 
-### 1. Versioned JSON for Target Metadata
+### Data Flow (Phase 3)
 
-**Problem:** Original schema had 8+ HTML-specific fields polluting backend.
-
-**Solution:** Self-describing JSON instead:
-```typescript
-target: v.any()  // Opaque JSON blob with _version inside
+```
+DocumentViewer (React)
+  ↓
+useComments(versionId) → Convex query → comments.getByVersion
+  ↓
+Comments display in sidebar
+  ↓
+User clicks "Add Comment" → useCommentActions().createComment() → Convex mutation
+  ↓
+Real-time update → useComments refreshes → UI updates
 ```
 
-**Benefits:**
-- Backend-agnostic (works for HTML, Markdown, PDF, etc.)
-- Frontend owns targeting schema entirely
-- Can evolve without backend changes
-- Self-describing data (version travels with content)
-- Reduced from 17 to 13 fields (includes resolution and delete tracking)
+### Backend API (Phase 2 - Complete)
 
-**Example:**
-```typescript
-{
-  target: {
-    _version: 1,
-    type: "text",
-    selectedText: "Click here",
-    page: "/index.html",
-    location: {
-      containerType: "accordion",
-      containerLabel: "FAQ 3",
-      isHidden: true
-    }
-  }
-}
-```
-
-### 2. Separate Tables for Replies
-
-**Decision:** `commentReplies` as separate table, not nested array
-
-**Rationale:**
-- Independent CRUD operations
-- Proper edit tracking per reply
-- Independent soft delete
-- Avoids array mutation complexity
-- Follows existing pattern (artifacts → versions → files)
-
-### 3. Permission Model (Simplified)
-
-**Two roles only:**
-- **Owner** - Full control, can delete any comment (moderation)
-- **Reviewer (can-comment)** - Can create/edit own, cannot delete others
-
-**Key rules:**
-- Only author can edit their own content
-- Owner cannot edit others (would imply authorship)
-- Owner can delete any (moderation power)
-- Both can resolve/unresolve
-
-**Two types of outsiders:**
-- **Unauthenticated** - No auth token at all
-- **Authenticated outsider** - Valid user, but NOT in artifactReviewers and NOT owner
-
-**Testing strategy:**
-- Test both types at `requireCommentPermission` helper level
-- Test authenticated-outsider at each function level (proves helper is called)
-- Don't re-test unauthenticated at every function (redundant)
-
-**Deferred:**
-- No public viewing considerations
-- No reviewer moderation
-
-### 4. Security Architecture Decision
-
-**Issue discovered:** `softDelete` and `softDeleteReply` didn't call `requireCommentPermission` in original API design
-
-**Impact:**
-- Outsiders would get "Only the comment author or artifact owner can delete" error
-- Information leakage (outsider learns comment exists)
-- Inconsistent error messages
-
-**Resolution:**
-- API design amended to add `requireCommentPermission` call BEFORE permission checks
-- Ensures consistent "No permission to comment on this artifact" error
-- Defense-in-depth: helper blocks outsiders, then author/owner check runs
-
-### 5. Test Location for Backend Tests
-
-**Critical clarification:**
-- `convex-test` tests MUST live in `app/convex/__tests__/`
-- Cannot be in `tasks/.../tests/` (wrong context, import path issues)
-- This is different from E2E Playwright tests (those stay in tasks folder)
-
-**Test structure:**
-```
-app/convex/
-  __tests__/
-    comments.test.ts    # All backend integration tests (92 tests)
-  comments.ts           # Comment operations
-  commentReplies.ts     # Reply operations
-  lib/
-    commentPermissions.ts  # Permission helpers
-```
-
----
-
-## Schema Summary
-
-### Comments Table (13 fields)
-
-```typescript
-comments: defineTable({
-  // Relationships
-  versionId: v.id("artifactVersions"),
-  authorId: v.id("users"),
-
-  // Content
-  content: v.string(),
-  resolved: v.boolean(),
-  resolvedChangedBy: v.optional(v.id("users")),
-  resolvedChangedAt: v.optional(v.number()),
-
-  // Target metadata (self-describing JSON with _version inside)
-  target: v.any(),
-
-  // Edit tracking
-  isEdited: v.boolean(),
-  editedAt: v.optional(v.number()),
-
-  // Soft delete (ADR 0011)
-  isDeleted: v.boolean(),
-  deletedBy: v.optional(v.id("users")),
-  deletedAt: v.optional(v.number()),
-
-  // Timestamps
-  createdAt: v.number(),
-})
-  .index("by_version_active", ["versionId", "isDeleted"])
-  .index("by_version", ["versionId"])
-  .index("by_author", ["authorId"])
-  .index("by_author_active", ["authorId", "isDeleted"])
-```
-
-### Comment Replies Table (9 fields)
-
-```typescript
-commentReplies: defineTable({
-  commentId: v.id("comments"),
-  authorId: v.id("users"),
-  content: v.string(),
-  isEdited: v.boolean(),
-  editedAt: v.optional(v.number()),
-  isDeleted: v.boolean(),
-  deletedBy: v.optional(v.id("users")),
-  deletedAt: v.optional(v.number()),
-  createdAt: v.number(),
-})
-  .index("by_comment_active", ["commentId", "isDeleted"])
-  .index("by_comment", ["commentId"])
-  .index("by_author", ["authorId"])
-  .index("by_author_active", ["authorId", "isDeleted"])
-```
-
----
-
-## Functions to Implement
-
-### Comment Operations (5 functions)
+#### Comment Operations
 | Function | Type | Purpose |
 |----------|------|---------|
 | `getByVersion` | query | Get all comments for a version |
 | `create` | mutation | Create new comment |
-| `updateContent` | mutation | Edit own comment content |
+| `updateContent` | mutation | Edit comment content |
 | `toggleResolved` | mutation | Mark resolved/unresolved |
 | `softDelete` | mutation | Soft delete comment |
 
-### Reply Operations (4 functions)
+#### Reply Operations
 | Function | Type | Purpose |
 |----------|------|---------|
 | `getReplies` | query | Get all replies for a comment |
-| `createReply` | mutation | Add reply to comment |
-| `updateReply` | mutation | Edit own reply |
+| `createReply` | mutation | Add reply |
+| `updateReply` | mutation | Edit reply |
 | `softDeleteReply` | mutation | Soft delete reply |
 
-### Permission Helpers (5 internal functions)
-| Function | Purpose |
-|----------|---------|
-| `requireCommentPermission` | Check can-comment or owner (throws if unauthorized) |
-| `canEditComment` | Check if user is comment author |
-| `canDeleteComment` | Check if user is author OR owner |
-| `canEditReply` | Check if user is reply author |
-| `canDeleteReply` | Check if user is author OR owner |
+### Frontend Components (Phase 1 - Complete)
+
+- **DocumentViewer** - Main artifact viewer with iframe and comment sidebar
+- **CommentToolbar** - Floating toolbar with comment/text-edit tools
+- **Comment display** - Thread UI with replies, resolution, edit/delete controls
+- All currently using mock data (to be replaced in Phase 3)
 
 ---
 
-## Testing Approach
+## Key Technical Details
 
-### Test Type
-**Backend Integration Tests** using `convex-test`
+### Convex URL Configuration
 
-### Test Location
-**CRITICAL:** Tests written directly in `app/convex/__tests__/comments.test.ts`
-- NOT in `tasks/` folder (convex-test requires Convex project context)
-- Different from E2E Playwright tests which DO live in tasks folder
+**CRITICAL:** Convex requires two separate URLs:
 
-### Test Count: 92 Tests
+```bash
+# .env.local
+NEXT_PUBLIC_CONVEX_URL=https://mild-ptarmigan-109.convex.cloud        # SDK
+NEXT_PUBLIC_CONVEX_HTTP_URL=https://mild-ptarmigan-109.convex.site    # HTTP
+```
 
-| Category | Test Count |
-|----------|-----------|
-| Permission Helpers | 12 |
-| Comment Operations | 37 |
-| Reply Operations | 35 |
-| Integration Tests | 3 |
-| Not Found Tests | 5 |
-| **Total** | **92** |
+- **`.convex.cloud`** - Used by Convex React SDK for queries/mutations
+- **`.convex.site`** - Used for HTTP actions (artifact file serving)
 
-### What convex-test Can Test
-✅ Database operations
-✅ Permission logic
-✅ Business logic
-✅ Metadata handling
-✅ Soft deletes
-✅ Edit tracking
-✅ Cascade deletes
+**Why separate?**
+- Convex client validates deployment URL and rejects `.site` URLs
+- HTTP router only responds on `.site` domain
+- Different domains, same backend deployment
 
-### What convex-test Cannot Test
-❌ Actual file uploads (has storage limitations)
-❌ External services (email)
-❌ Full-stack UI flows
+### Artifact HTML Serving
 
-### Test Coverage Required
-- CRUD operations (create, read, update, delete)
-- Permission enforcement (owner, reviewer, authenticated-outsider, unauthenticated)
-- Content validation (empty, whitespace, max length)
-- Edit tracking (isEdited flag, editedAt timestamp)
-- Resolution tracking (resolvedChangedBy, resolvedChangedAt)
-- Soft delete behavior with audit trail
-- Cascade delete (comment → replies)
-- Edge cases (deleted records, invalid IDs, not found)
+**URL Pattern:**
+```
+{CONVEX_HTTP_URL}/artifact/{shareToken}/v{versionNumber}/{filePath}
+```
+
+**Example:**
+```
+https://mild-ptarmigan-109.convex.site/artifact/dP0HV6OP/v1/index.html
+```
+
+**How it works:**
+1. ArtifactViewerPage fetches version data from Convex
+2. Passes `shareToken`, `versionNumber`, `convexUrl` to DocumentViewer
+3. DocumentViewer builds iframe URL using HTTP endpoint
+4. HTTP router (`app/convex/http.ts`) serves HTML directly from `version.htmlContent`
+
+**For single-file HTML:**
+- Content stored inline in `artifactVersions.htmlContent`
+- Served directly by HTTP router with `text/html` MIME type
+- No external files needed
+
+### Schema: Comments + Replies
+
+**Comments table (13 fields):**
+```typescript
+{
+  versionId: Id<"artifactVersions">,  // Which version
+  authorId: Id<"users">,               // Who created
+  content: string,                     // Comment text
+  resolved: boolean,                   // Resolution state
+  target: any,                         // Versioned JSON metadata
+  isEdited: boolean,                   // Edit tracking
+  isDeleted: boolean,                  // Soft delete
+  deletedBy?: Id<"users">,             // Audit trail
+  // ... timestamps
+}
+```
+
+**Target metadata (versioned JSON):**
+```typescript
+{
+  _version: 1,
+  type: "element" | "text",
+  selectedText?: string,
+  page?: string,
+  elementId?: string,
+  location?: {
+    containerType?: string,
+    containerLabel?: string,
+    isHidden?: boolean
+  }
+}
+```
 
 ---
 
-## Files Created This Session
+## Files Modified This Session
 
-### Implementation Files (Phase 2 Backend)
-- `app/convex/comments.ts` - 5 comment operations (268 lines)
-- `app/convex/commentReplies.ts` - 4 reply operations (238 lines)
-- `app/convex/lib/commentPermissions.ts` - 5 permission helpers (167 lines)
-- `app/convex/__tests__/comments.test.ts` - Complete test suite (2,060 lines, 87 tests)
-- `app/convex/schema.ts` - Updated with comments and commentReplies tables (+254 lines)
+### New Files Created
+- `samples/interactive-ui-components-demo.html` - Test artifact with interactive UI
 
-### Documentation
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/code-review.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/COMPLETION-REPORT.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/IMPLEMENTATION-STATUS.md`
+### Modified Files
+- `app/src/components/artifact/DocumentViewer.tsx` - Real HTML rendering
+- `app/src/components/artifact/ArtifactViewerPage.tsx` - Pass artifact data
+- `app/convex/schema.ts` - Added `isAnonymous` field
+- `app/.env.local` - Added `NEXT_PUBLIC_CONVEX_HTTP_URL`
+- `samples/README.md` - Documented new test artifact
+- `tasks/00017-implement-commenting/03-phase-3-frontend-integration/README.md` - Updated plan
 
-### Previous Sessions
-- `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
-- `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
+### Commits (Today)
+- 6b4cf30 - Task 17: Update RESUME.md with backend completion status
+- (Ready to commit DocumentViewer changes)
 
-### Commits
-- `d325166` - Task 17: Implement commenting backend with TDD (87/87 tests passing)
-- `81eed46` - Task 17: Complete API design and test plan for commenting backend
-- `aeddd6b` - Task 17: Update RESUME.md with deletedBy field
-- `a713809` - Task 17: Add deletedBy field for soft delete audit trail
-- `58cbd4b` - Task 17: Update RESUME.md with correct resolution field names
-- `ae6424f` - Task 17: Fix resolution tracking to capture both resolve/unresolve
-- `5b0ebcb` - Task 17: Design comment schema with versioned JSON target metadata
-- `8b52840` - Task 17: Restructure Phase 2 subtasks to reflect TDD workflow
-- `b649a97` - Task 17: Update implementation docs to clarify E2E test standard
+---
+
+## Testing Status
+
+### Backend Tests (Phase 2) ✅
+- **87/87 tests passing** (100% coverage)
+- `app/convex/__tests__/comments.test.ts`
+- All CRUD operations tested
+- Permission boundaries enforced
+- Soft delete + audit trails verified
+- Cascade delete (comment → replies) working
+
+### Frontend Tests (Phase 3) ⏳
+- **Not yet created** (will be in Phase 3 Subtask 03)
+- E2E tests using Playwright
+- Test real commenting flow with backend integration
+- Location: `tasks/00017-implement-commenting/03-phase-3-frontend-integration/03-testing/`
 
 ---
 
 ## Important Context
 
-### From User
-- "DRY things out" = Don't Repeat Yourself
-- Backend integration tests (convex-test) are the standard
-- Always use environment management (venv for Python, not conda)
-- Show commit messages after git commit
-- Tests written directly in `app/convex/__tests__/` not tasks folder
+### Design Decisions
 
-### From CLAUDE.md
-- Use TDD workflow from `docs/development/workflow.md`
-- Test samples from `/samples/` directory (central repository)
-- Convex rules: no filter, use indexes, new function syntax
-- All validators required (use `v.null()` for void)
+**1. Versioned JSON for Target Metadata**
+- Backend stores opaque `v.any()` blob
+- Frontend owns the schema entirely
+- Self-describing with `_version` field
+- Backend-agnostic (works for HTML, Markdown, PDF, etc.)
 
-### Project Standards
-- Soft delete pattern (ADR 0011): `isDeleted` + `deletedAt` + `deletedBy`
-- Convex function syntax: `args`, `returns`, `handler`
-- All validators required
-- Logging: Use structured logging, not console.log
+**2. Separate Tables for Replies**
+- Independent CRUD operations
+- Per-reply edit tracking
+- Independent soft delete
+- Avoids array mutation complexity
+
+**3. Permission Model**
+- **Owner:** Full control, can delete any comment (moderation)
+- **Reviewer (can-comment):** Can create/edit own, cannot delete others
+- **Outsiders:** Blocked from all operations
+
+**4. Dual Convex URLs**
+- SDK requires `.cloud` URL
+- HTTP actions require `.site` URL
+- Same backend, different entry points
+- Configuration in `.env.local`
+
+### Known Issues
+
+**Version Upload Not Working** (Out of Scope)
+- "Upload New Version" dialog exists but doesn't actually upload
+- Mock implementation only
+- Deferred to separate task
+- For now: Test with single-version artifacts only
+
+**ZIP Artifacts Not Supported** (Task 15 - Postponed)
+- ZIP upload incomplete
+- ZIP processing not triggered
+- Single-file HTML works perfectly
+- Multi-file artifacts deferred
+
+---
+
+## Success Criteria (Phase 3)
+
+### Must Have
+- [ ] Hooks created for all 9 backend functions
+- [ ] Mock comments replaced with real Convex data
+- [ ] Can create new comments via UI
+- [ ] Can reply to comments
+- [ ] Can edit own comments
+- [ ] Can delete own comments (soft delete)
+- [ ] Can toggle resolved status
+- [ ] Owner can delete any comment
+- [ ] Reviewer cannot delete others' comments
+- [ ] Loading states display correctly
+- [ ] Error messages show on failures
+- [ ] E2E tests passing
+- [ ] Validation video recorded
+
+### Nice to Have
+- [ ] Optimistic updates for better UX
+- [ ] Real-time updates (Convex subscriptions)
+- [ ] Toast notifications for actions
+- [ ] Keyboard shortcuts
 
 ---
 
 ## Next Actions
 
-### Immediate Next Step
+### Immediate: Phase 3 Subtask 01 - Create Hooks
 
-**Phase 3: Frontend Integration**
+**Goal:** Create 4 React hooks that wrap Convex queries/mutations
 
-Create the frontend commenting UI that integrates with the completed backend:
+**Files to create:**
+1. `app/src/hooks/useComments.ts`
+2. `app/src/hooks/useCommentReplies.ts`
+3. `app/src/hooks/useCommentActions.ts`
+4. `app/src/hooks/useReplyActions.ts`
 
-1. **Component Structure Planning:**
-   - Comment thread container
-   - Individual comment component
-   - Reply thread component
-   - Comment/reply input forms
-   - Edit/delete controls
-   - Resolution toggle UI
+**Pattern to follow:**
+```typescript
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
-2. **Convex Integration:**
-   - Use the 9 backend API functions
-   - Real-time updates via Convex subscriptions
-   - Optimistic UI updates
-   - Error handling
+export function useComments(versionId: Id<"artifactVersions"> | undefined) {
+  return useQuery(
+    api.comments.getByVersion,
+    versionId ? { versionId } : "skip"
+  );
+}
+```
 
-3. **Permission-Based UI:**
-   - Show/hide edit buttons (author only)
-   - Show/hide delete buttons (author + owner)
-   - Resolution controls (owner + reviewers)
-   - Disable actions for outsiders
-
-4. **Location in Artifact:**
-   - Integrate into artifact viewer
-   - Position comment threads contextually
-   - Handle hidden/collapsed sections
-
-### Success Criteria (Phase 3)
-- Comments display in real-time
-- CRUD operations working through UI
-- Permission boundaries enforced in UI
-- Reply threading works correctly
-- Resolution states visible
-- Edit tracking displayed
-- Soft delete reflected in UI
-- E2E tests passing
-
----
-
-## Security Review Highlights
-
-### Key Questions Answered
-
-1. **Are outsiders blocked from all operations?**
-   - ✅ Yes, tested at helper level and each function level
-
-2. **Can artifact owner delete reviewer comments?**
-   - ✅ Yes, tested (moderation power)
-
-3. **Can artifact owner edit reviewer comments?**
-   - ❌ No, tested (authorship integrity)
-
-4. **Do we test both unauthenticated and authenticated-outsider?**
-   - ✅ Yes at helper level, authenticated-outsider at function level
-   - Architect decision: Option A (test at helper level, verify at endpoints)
-
-5. **Are delete operations protected?**
-   - ✅ Yes, API design amended to call `requireCommentPermission` first
-   - Prevents information leakage and ensures consistent error messages
+**Estimated time:** 30 minutes
 
 ---
 
 ## References
 
-- **Schema design:** `tasks/00017-implement-commenting/02-phase-2-backend/01-schema-design/schema.md`
-- **API design:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/api-design.md`
-- **Test plan:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan.md`
-- **Test plan review:** `tasks/00017-implement-commenting/02-phase-2-backend/02-implementation/test-plan-review.md`
-- **Convex rules:** `docs/architecture/convex-rules.md`
-- **TDD workflow:** `docs/development/workflow.md`
-- **Testing guide:** `docs/development/testing-guide.md`
-- **Soft delete ADR:** `docs/architecture/decisions/0011-soft-delete-strategy.md`
+- **Backend implementation:** `tasks/00017-implement-commenting/02-phase-2-backend/`
+- **Frontend UI:** `tasks/00017-implement-commenting/01-phase-1-lift-figma/`
+- **Phase 3 plan:** `tasks/00017-implement-commenting/03-phase-3-frontend-integration/README.md`
+- **Convex hooks docs:** https://docs.convex.dev/client/react
+- **HTTP router:** `app/convex/http.ts`
+- **Sample artifact:** `samples/interactive-ui-components-demo.html`
 
 ---
 
-## Session Notes
-
-### This Session (Backend Implementation & Code Review) ✅
-
-**What went well:**
-- TDD developer completed all 87 backend tests (100% coverage)
-- Architect code review approved implementation with only minor items
-- 100% Convex rules compliance verified
-- Defense-in-depth security architecture validated
-- All permission boundaries enforced correctly
-- Cascade delete working perfectly
-- Audit trails implemented correctly
-
-**Key achievements:**
-- 2,988 lines of production code and tests written
-- 9 backend API functions fully implemented
-- 5 permission helpers with defense-in-depth
-- 87/87 tests passing
-- Zero `filter()` usage (all queries use indexes)
-- Complete documentation (code review, completion report, implementation status)
-
-**Minor items noted (non-blocking):**
-- Redundant auth check in `comments.create` (kept for defensive programming)
-- N+1 queries for reply count (documented as future optimization)
-
-### Previous Session (API Design & Test Plan)
-
-**What went well:**
-- Architect created comprehensive API design with full validators
-- TDD developer created detailed test plan (92 tests)
-- Security review caught important permission check inconsistency
-- Good discussion on authenticated vs unauthenticated outsider testing
-- Test plan corrected to match actual schema
-
-**Key decisions:**
-- Tests go in `app/convex/__tests__/` not tasks folder
-- Test both outsider types at helper level, authenticated-outsider at endpoints
-- API design amended to add `requireCommentPermission` to delete operations
-- 92 tests (up from 85) for comprehensive coverage
-
-### Earlier Session (Schema Design)
-
-**What went well:**
-- User caught important architectural issues early (JSON vs separate fields)
-- Good discussion on permission model led to simplification
-- TDD restructuring aligned with project standards
-
-**Key learnings:**
-- Always check existing project standards before planning
-- `convex-test` has storage limitations (good for comments, not for file uploads)
-- Backend integration tests are the standard
-
----
-
-**Status:** Phase 2 Backend COMPLETE ✅ - Ready for Phase 3 Frontend Integration
+**Status:** Backend complete, artifact viewing working, ready to wire commenting UI to backend ✅

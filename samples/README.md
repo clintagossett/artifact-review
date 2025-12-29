@@ -99,6 +99,33 @@ simple-html/
 
 ---
 
+#### `interactive-ui-components-demo.html`
+**Description:** Interactive HTML with tabs and accordion components
+
+**Purpose:** Testing artifact with complex UI interactions (tabs, accordions, hidden content) - matches the mock data in DocumentViewer for commenting feature testing
+
+**Features:**
+- Tabs component (Overview, Features, Pricing, Support)
+- Accordion component (FAQs with expand/collapse)
+- JavaScript for tab switching and accordion toggling
+- All elements have IDs for comment targeting
+- Gradient header styling
+- Hidden content testing (comments on inactive tabs, collapsed accordions)
+
+**Expected Behavior:**
+- ✅ Upload as single HTML file
+- ✅ All JavaScript interactions work in iframe
+- ✅ Can comment on visible and hidden elements
+- ✅ Tabs switch correctly
+- ✅ Accordions expand/collapse
+- ✅ Element IDs match mock comments for testing
+
+**File Size:** ~5.5KB
+**Dependencies:** None (fully self-contained)
+**Use Case:** Testing commenting on interactive HTML with hidden content
+
+---
+
 ### Markdown (`01-valid/markdown/`)
 
 #### `product-spec/`

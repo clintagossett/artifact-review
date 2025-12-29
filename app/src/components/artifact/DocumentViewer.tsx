@@ -59,6 +59,10 @@ interface DocumentViewerProps {
   onNavigateToSettings?: () => void;
   onNavigateToShare?: () => void;
   onNavigateToVersions?: () => void;
+  // Real artifact data
+  shareToken: string;
+  versionNumber: number;
+  convexUrl: string;
 }
 
 const mockReviewers = [
@@ -672,7 +676,17 @@ const sampleHTML = `
 </html>
 `;
 
-export function DocumentViewer({ documentId, onBack, project, onNavigateToSettings, onNavigateToShare, onNavigateToVersions }: DocumentViewerProps) {
+export function DocumentViewer({
+  documentId,
+  onBack,
+  project,
+  onNavigateToSettings,
+  onNavigateToShare,
+  onNavigateToVersions,
+  shareToken,
+  versionNumber,
+  convexUrl
+}: DocumentViewerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>(mockComments);
   const [textEdits, setTextEdits] = useState<TextEdit[]>(mockTextEdits);
@@ -732,16 +746,15 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
   const currentVersion = project?.versions.find(v => v.id === currentVersionId);
   const isViewingOldVersion = currentVersionId !== defaultVersionId;
   
-  // Choose HTML based on current page
-  // Using Interactive Components HTML as default (has tabs, accordions, multi-page)
-  const getHTMLContent = () => {
-    if (currentPage === '/documentation.html') {
-      return interactiveComponentsSubPageHTML;
-    }
-    return interactiveComponentsHTML;
+  // Build URL to real artifact HTML served by HTTP router
+  // Format: {convexUrl}/artifact/{shareToken}/v{versionNumber}/{page}
+  const getArtifactUrl = (page: string = 'index.html') => {
+    // Remove leading slash from page if present
+    const cleanPage = page.startsWith('/') ? page.substring(1) : page;
+    return `${convexUrl}/artifact/${shareToken}/v${versionNumber}/${cleanPage}`;
   };
 
-  const htmlContent = getHTMLContent();
+  const artifactUrl = getArtifactUrl(currentPage);
   
   // Store location context for each comment
   const [commentLocations, setCommentLocations] = useState<Record<string, Comment['location']>>({});
@@ -836,15 +849,15 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
   };
 
   useEffect(() => {
-    if (iframeRef.current) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(htmlContent);
-        doc.close();
+    const iframe = iframeRef.current;
+    if (!iframe) return;
 
-        // Add selection listener for text
-        doc.addEventListener('mouseup', handleTextSelection);
+    const setupIframeListeners = () => {
+      const doc = iframe.contentDocument;
+      if (!doc) return;
+
+      // Add selection listener for text
+      doc.addEventListener('mouseup', handleTextSelection);
         
         // Add click listeners for images and other elements
         const images = doc.querySelectorAll('img[id]');
@@ -936,15 +949,23 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
           }
         `;
         doc.head.appendChild(presenceStyle);
-      }
+    };
+
+    // Wait for iframe to load before setting up listeners
+    iframe.addEventListener('load', setupIframeListeners);
+
+    // If already loaded, setup immediately
+    if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
+      setupIframeListeners();
     }
 
     return () => {
-      if (iframeRef.current?.contentDocument) {
-        iframeRef.current.contentDocument.removeEventListener('mouseup', handleTextSelection);
+      iframe.removeEventListener('load', setupIframeListeners);
+      if (iframe.contentDocument) {
+        iframe.contentDocument.removeEventListener('mouseup', handleTextSelection);
       }
     };
-  }, [currentVersionId, htmlContent, currentPage]);
+  }, [currentVersionId, artifactUrl, currentPage]);
 
   // Reset to index page when version changes
   useEffect(() => {
@@ -1467,6 +1488,7 @@ export function DocumentViewer({ documentId, onBack, project, onNavigateToSettin
           <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
             <iframe
               ref={iframeRef}
+              src={artifactUrl}
               className="w-full h-[1000px] border-0"
               title="HTML Document Preview"
             />

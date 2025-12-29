@@ -99,6 +99,12 @@ const schema = defineSchema({
      * Typically populated from OAuth provider (future) or left empty.
      */
     image: v.optional(v.string()),
+
+    /**
+     * Whether this is an anonymous user.
+     * Legacy field from previous auth implementation.
+     */
+    isAnonymous: v.optional(v.boolean()),
   })
     /**
      * Lookup user by email address.
