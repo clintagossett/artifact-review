@@ -1,7 +1,7 @@
 # Task 17 Session Resume
 
-**Last Updated:** 2025-12-28
-**Session:** Phase 3 + Edit + Replies COMPLETE - Commenting System Fully Functional! 🎉
+**Last Updated:** 2025-12-31
+**Status:** ✅ TASK COMPLETE - All phases finished, E2E testing deferred to future task
 
 ---
 
@@ -82,26 +82,17 @@
 - e78ff61 - Clean up debug logging from commenting system
 - ad91010 - Fix: Use correct method to get current user ID for permission checks
 
-### ⏳ Remaining Work (Lower Priority)
+### ⏳ Deferred to Future Tasks
 
-**Not Yet Implemented:**
-- [x] Display replies ✅ **COMPLETE**
-  - Fetches using `useCommentReplies` hook
-  - Displays in real-time via CommentCard component
-  - Real-time updates via Convex subscriptions
-- [x] Edit comment content ✅ **COMPLETE**
-  - Inline editing with textarea
-  - Edit button shows for comment author only
-  - Save/Cancel buttons
-  - Optimistic UI updates
-- [x] Edit reply content ✅ **COMPLETE**
-  - Inline editing with textarea
-  - Edit button shows for reply author only
-  - Save/Cancel buttons
-  - Delete button for author or owner
-- [ ] Element click prevention improvements
-  - Currently blocks ALL clicks when comment mode active
-  - Could refine to be more selective
+**E2E Testing & Validation:**
+- [ ] Automated E2E test suite (Playwright)
+- [ ] Validation videos
+- **Reason for deferral:** Will be done once invitations, versions, and other core features are implemented to test complete user workflows
+
+**Enhancement Opportunities (Optional):**
+- [ ] Element click prevention improvements (currently blocks ALL clicks when comment mode active)
+- [ ] Toast notifications for user actions
+- [ ] Keyboard shortcuts for power users
 
 ---
 
@@ -302,47 +293,34 @@ canDeleteComment(authorId: string): boolean {
 
 ---
 
-## Known Issues / TODO
+## Implementation Notes
 
-### 1. Replies Don't Display Yet
-**Status:** Saves to backend ✅, Display ❌
+### Technical Challenges Solved
 
-**What's working:**
-- `createReply()` saves to Convex successfully
-- Backend has `getReplies` query implemented
+**1. Cross-Origin Iframe Access**
+- Created Next.js API proxy to enable same-origin iframe access
+- Allows DOM access for text selection and element commenting
+- See: `app/src/app/api/artifact/[shareToken]/[...path]/route.ts`
 
-**What's needed:**
-- Fetch replies for each comment using `useCommentReplies` hook
-- Wire into comment thread UI
-- Display reply count badge
+**2. React Closure Issues**
+- Used refs pattern to prevent stale closures in event listeners
+- Ensures activeToolMode and commentBadge always have current values
+- See: `app/src/components/artifact/DocumentViewer.tsx`
 
-**Effort:** ~1 hour
+**3. Permission Model**
+- Author can edit/delete own comments/replies
+- Owner can delete any comment/reply (moderation)
+- Reviewers cannot delete others' content
+- All permission checks use current user ID
 
-### 2. ~~Edit Functionality Not Wired~~ ✅ **COMPLETE**
-**Status:** Backend ready ✅, UI ✅ **DONE**
+### Known Limitations (Acceptable)
 
-**What was implemented:**
-- ✅ Edit button for comment authors (permission-based)
-- ✅ Inline textarea editing UI
-- ✅ Save/Cancel buttons
-- ✅ Optimistic UI updates
-- ✅ Backend integration via `updateContent` mutation
-
-**Note:** Edit for replies is still TODO (see Deferred section)
-
-### 3. Click Blocking Could Be Refined
-**Status:** Works but aggressive
-
-**Current behavior:**
-- When comment mode active, ALL clicks blocked
+**Click Blocking Behavior:**
+- When comment mode active, ALL clicks are blocked in the iframe
 - This includes tabs, accordions, links, buttons
-
-**Possible improvement:**
-- Only block clicks on commentable elements (with IDs)
-- Let other elements work normally
-- Trade-off: More complex logic
-
-**Priority:** Low (current behavior is acceptable)
+- **Trade-off:** Simple implementation vs. selective blocking
+- **Impact:** Users must disable comment mode to interact with page elements
+- **Future improvement:** Could refine to only block clicks on commentable elements
 
 ---
 
@@ -366,29 +344,32 @@ canDeleteComment(authorId: string): boolean {
 
 ---
 
-## Next Steps (Optional)
+## Task Completion
 
-### High Value
-1. **Display replies** - Users expect to see their replies
-   - Fetch using `useCommentReplies` hook
-   - Wire into thread display
-   - ~1 hour
+### Acceptance Criteria Met ✅
 
-### Medium Value
-2. **Edit comment content** - Common user need
-   - Add edit UI trigger
-   - Inline editing
-   - ~2 hours
+All core requirements for the commenting system have been implemented and are working:
 
-3. **E2E tests** - Ensure stability
-   - Playwright test suite
-   - Full commenting flow
-   - ~3 hours
+- ✅ Users can create comments on text selections
+- ✅ Users can create comments on UI elements (with IDs)
+- ✅ Comments display in real-time sidebar
+- ✅ Users can reply to comments
+- ✅ Replies display in real-time
+- ✅ Authors can edit their own comments/replies
+- ✅ Authors can delete their own comments/replies
+- ✅ Owners can delete any comment/reply (moderation)
+- ✅ Users can resolve/unresolve comments
+- ✅ Backend has full test coverage (87/87 tests passing)
+- ✅ Real-time updates via Convex subscriptions
+- ✅ Optimistic UI for better UX
 
-### Lower Priority
-4. **Refine click blocking** - Nice to have
-5. **Toast notifications** - Better UX feedback
-6. **Keyboard shortcuts** - Power user feature
+### Rationale for Deferring E2E Testing
+
+E2E testing deferred to future task because:
+1. Need complete user flows (invitations, multiple versions, etc.)
+2. More efficient to test all features together once implemented
+3. Core functionality manually validated and working
+4. Backend has comprehensive test coverage (87 tests)
 
 ---
 
@@ -401,21 +382,20 @@ canDeleteComment(authorId: string): boolean {
 
 ---
 
-**Status:** Full commenting & reply system COMPLETE and working! 🎉
+## Final Status
 
-**What's working:**
-- Create comments ✅
-- View comments ✅
-- Edit comments (inline) ✅
-- Delete comments (permission-based) ✅
-- Create replies ✅
-- View replies (real-time) ✅
-- Edit replies (inline) ✅
-- Delete replies (permission-based) ✅
-- Resolve/unresolve ✅
-- Real-time updates ✅
-- Optimistic UI ✅
+**✅ TASK COMPLETE (2025-12-31)**
 
-**What's deferred:**
-- Automated E2E testing
-- Validation videos
+This task successfully implemented a full-featured commenting system for artifact review:
+- Complete CRUD operations for comments and replies
+- Real-time collaborative features via Convex
+- Permission-based access controls
+- Optimistic UI for excellent UX
+- 87/87 backend tests passing
+
+**E2E testing intentionally deferred** to a future comprehensive testing task that will cover invitations, versions, and other features once they're implemented.
+
+**Next recommended tasks:**
+1. Implement invitation system for sharing artifacts with reviewers
+2. Implement version management and comparison
+3. Create comprehensive E2E test suite for all features together
