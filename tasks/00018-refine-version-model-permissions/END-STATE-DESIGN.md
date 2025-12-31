@@ -1,0 +1,1478 @@
+# End-State Design: Unified Single-File Artifact Storage
+
+**Task:** 00018 - Refine Single-File Artifact Upload and Versioning
+**Date:** 2025-12-31
+**Status:** Design Complete
+**Related ADR:** [0012 - Unified Artifact Storage Strategy](../../docs/architecture/decisions/0012-unified-artifact-storage.md)
+
+---
+
+## Executive Summary
+
+This document defines the **ideal end-state** for single-file artifacts (HTML and Markdown) using unified file storage via the `artifactFiles` table. The key change is removing inline content storage (`htmlContent`, `markdownContent`) from `artifactVersions` and storing ALL file content through Convex File Storage.
+
+**Core Principle:** A single-file artifact is simply a multi-file artifact with exactly one file.
+
+---
+
+## Table of Contents
+
+1. [End-State Schema Design](#1-end-state-schema-design)
+2. [Upload Flow (Single-File)](#2-upload-flow-single-file)
+3. [Storage Pattern](#3-storage-pattern)
+4. [Retrieval Pattern](#4-retrieval-pattern)
+5. [Migration Strategy](#5-migration-strategy)
+6. [Benefits and Trade-offs](#6-benefits-and-trade-offs)
+7. [Implementation Checklist](#7-implementation-checklist)
+
+---
+
+## 1. End-State Schema Design
+
+### 1.1 artifactVersions Table (End State)
+
+```typescript
+artifactVersions: defineTable({
+  // ========================================
+  // PARENT REFERENCE
+  // ========================================
+  /**
+   * Reference to parent artifact.
+   * All versions belong to exactly one artifact.
+   */
+  artifactId: v.id("artifacts"),
+
+  // ========================================
+  // VERSION IDENTIFICATION
+  // ========================================
+  /**
+   * Sequential version number within the artifact.
+   * Starts at 1, increments by 1 for each new version.
+   * Unique per artifact (enforced by application logic).
+   */
+  versionNumber: v.number(),
+
+  // ========================================
+  // AUTHORSHIP (NEW)
+  // ========================================
+  /**
+   * Reference to user who created this version.
+   * Required for all new versions.
+   * Backfilled to artifact.creatorId for existing versions.
+   */
+  authorId: v.id("users"),
+
+  /**
+   * Optional description/changelog for this version.
+   * Displayed in version switcher UI.
+   * Max 1000 characters.
+   */
+  description: v.optional(v.string()),
+
+  // ========================================
+  // FILE TYPE
+  // ========================================
+  /**
+   * Type of artifact content.
+   * Extensible string validated at application layer.
+   * Known types: "html", "markdown", "zip"
+   * Future: "txt", "csv", "pdf", etc.
+   */
+  fileType: v.string(),
+
+  // ========================================
+  // CONTENT LOCATION (UNIFIED)
+  // ========================================
+  /**
+   * Path to the main/entry file in artifactFiles.
+   * ALWAYS set - points to primary content file.
+   *
+   * For single-file artifacts:
+   *   - HTML: "index.html" (or original filename)
+   *   - Markdown: "README.md" (or original filename)
+   *
+   * For multi-file artifacts (ZIP):
+   *   - "index.html" or detected entry point
+   */
+  entryPoint: v.string(),  // Changed from v.optional() to required
+
+  // ========================================
+  // SIZE TRACKING
+  // ========================================
+  /**
+   * Total size of all files in this version (bytes).
+   * For single-file: size of that file
+   * For multi-file: sum of all extracted files
+   */
+  fileSize: v.number(),
+
+  // ========================================
+  // SOFT DELETE (per ADR 0011)
+  // ========================================
+  isDeleted: v.boolean(),
+  deletedAt: v.optional(v.number()),
+
+  // ========================================
+  // TIMESTAMPS
+  // ========================================
+  createdAt: v.number(),
+
+  // ========================================
+  // REMOVED FIELDS (inline content)
+  // ========================================
+  // htmlContent: REMOVED - use artifactFiles
+  // markdownContent: REMOVED - use artifactFiles
+})
+  // ========================================
+  // INDEXES
+  // ========================================
+  .index("by_artifact", ["artifactId"])
+  .index("by_artifact_active", ["artifactId", "isDeleted"])
+  .index("by_artifact_version", ["artifactId", "versionNumber"])
+  .index("by_author", ["authorId"])  // NEW: List versions by author
+```
+
+### 1.2 Field Changelog
+
+| Field | Current | End State | Rationale |
+|-------|---------|-----------|-----------|
+| `htmlContent` | `v.optional(v.string())` | **REMOVED** | Content stored in `artifactFiles` |
+| `markdownContent` | `v.optional(v.string())` | **REMOVED** | Content stored in `artifactFiles` |
+| `entryPoint` | `v.optional(v.string())` | `v.string()` (required) | Always points to main file |
+| `fileType` | `v.union(v.literal(...))` | `v.string()` | Application-level validation for extensibility |
+| `authorId` | N/A | `v.id("users")` (required) | Track who created each version |
+| `description` | N/A | `v.optional(v.string())` | Version notes/changelog |
+
+### 1.3 artifactFiles Table (Used for ALL File Types)
+
+The existing `artifactFiles` table is already designed correctly. No schema changes needed.
+
+```typescript
+artifactFiles: defineTable({
+  /**
+   * Reference to parent version.
+   * All files belong to exactly one version.
+   *
+   * For single-file artifacts: One row per version
+   * For multi-file artifacts: Multiple rows per version
+   */
+  versionId: v.id("artifactVersions"),
+
+  /**
+   * Relative file path.
+   * For single-file: The entry point path (e.g., "index.html", "README.md")
+   * For multi-file: Original path structure from ZIP
+   *
+   * @example "index.html"
+   * @example "assets/styles/main.css"
+   */
+  filePath: v.string(),
+
+  /**
+   * Reference to file content in Convex File Storage.
+   * Use ctx.storage.getUrl(storageId) to get signed download URL.
+   */
+  storageId: v.id("_storage"),
+
+  /**
+   * MIME type for HTTP Content-Type header.
+   * @example "text/html"
+   * @example "text/markdown"
+   */
+  mimeType: v.string(),
+
+  /**
+   * File size in bytes.
+   */
+  fileSize: v.number(),
+
+  /**
+   * Soft deletion (per ADR 0011)
+   */
+  isDeleted: v.boolean(),
+  deletedAt: v.optional(v.number()),
+})
+  .index("by_version", ["versionId"])
+  .index("by_version_path", ["versionId", "filePath"])
+  .index("by_version_active", ["versionId", "isDeleted"])
+```
+
+### 1.4 Example Database Rows
+
+#### HTML Artifact (Single File)
+
+```
+artifactVersions:
++--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
+| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint| fileSize | isDeleted |
++--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
+| jh77x23m8w9k...    | kg45a12...  | 1             | u789abc...   | "html"      | "index.html"| 45230   | false     |
++--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
+
+artifactFiles:
++--------------------+--------------------+--------------+--------------------+-------------+----------+-----------+
+| _id                | versionId          | filePath     | storageId          | mimeType    | fileSize | isDeleted |
++--------------------+--------------------+--------------+--------------------+-------------+----------+-----------+
+| af23x98m7y1k...    | jh77x23m8w9k...    | "index.html" | _storage:abc123... | "text/html" | 45230    | false     |
++--------------------+--------------------+--------------+--------------------+-------------+----------+-----------+
+```
+
+#### Markdown Artifact (Single File)
+
+```
+artifactVersions:
++--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
+| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint  | fileSize | isDeleted |
++--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
+| mk55y67n3z2l...    | kg45a12...  | 1             | u789abc...   | "markdown"  | "README.md" | 8192     | false     |
++--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
+
+artifactFiles:
++--------------------+--------------------+--------------+--------------------+-----------------+----------+-----------+
+| _id                | versionId          | filePath     | storageId          | mimeType        | fileSize | isDeleted |
++--------------------+--------------------+--------------+--------------------+-----------------+----------+-----------+
+| af88z12k4m9n...    | mk55y67n3z2l...    | "README.md"  | _storage:def456... | "text/markdown" | 8192     | false     |
++--------------------+--------------------+--------------+--------------------+-----------------+----------+-----------+
+```
+
+#### Multi-File ZIP (For Comparison)
+
+```
+artifactVersions:
++--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
+| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint   | fileSize | isDeleted |
++--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
+| zp99k34j8m1x...    | kg45a12...  | 1             | u789abc...   | "zip"       | "index.html" | 523400   | false     |
++--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
+
+artifactFiles: (multiple rows)
++--------------------+--------------------+-------------------------+--------------------+----------------------+----------+-----------+
+| _id                | versionId          | filePath                | storageId          | mimeType             | fileSize | isDeleted |
++--------------------+--------------------+-------------------------+--------------------+----------------------+----------+-----------+
+| af01...            | zp99k34j8m1x...    | "index.html"            | _storage:xyz789... | "text/html"          | 45230    | false     |
+| af02...            | zp99k34j8m1x...    | "styles/main.css"       | _storage:abc123... | "text/css"           | 12400    | false     |
+| af03...            | zp99k34j8m1x...    | "scripts/app.js"        | _storage:def456... | "application/javascript" | 89000 | false     |
+| af04...            | zp99k34j8m1x...    | "assets/logo.png"       | _storage:ghi789... | "image/png"          | 376770   | false     |
++--------------------+--------------------+-------------------------+--------------------+----------------------+----------+-----------+
+```
+
+**Key Observation:** The pattern is identical for single-file and multi-file artifacts. The only difference is the number of rows in `artifactFiles`.
+
+---
+
+## 2. Upload Flow (Single-File)
+
+### 2.1 Flow Diagram
+
+```
+                        USER ACTION
+                             |
+                             v
+            +--------------------------------+
+            |   Select HTML or Markdown File |
+            |   Enter Title, Description     |
+            +--------------------------------+
+                             |
+                             v
+            +--------------------------------+
+            |   Frontend Validation          |
+            |   - File extension check       |
+            |   - File size check (< 5MB)    |
+            |   - Read file as text          |
+            +--------------------------------+
+                             |
+                             v
+            +--------------------------------+
+            |   Call createSingleFileArtifact|
+            |   mutation with content        |
+            +--------------------------------+
+                             |
+                             v
++------------------------------------------------------------------+
+|                      CONVEX BACKEND                               |
+|                                                                   |
+|  +------------------------------------------------------------+   |
+|  |  1. Authenticate user (getAuthUserId)                      |   |
+|  +------------------------------------------------------------+   |
+|                             |                                     |
+|                             v                                     |
+|  +------------------------------------------------------------+   |
+|  |  2. Create artifact record                                  |   |
+|  |     - Generate shareToken (nanoid)                          |   |
+|  |     - Set creatorId, timestamps                             |   |
+|  +------------------------------------------------------------+   |
+|                             |                                     |
+|                             v                                     |
+|  +------------------------------------------------------------+   |
+|  |  3. Store content in Convex File Storage                    |   |
+|  |     - Convert text to Blob                                  |   |
+|  |     - Upload via ctx.storage.store()                        |   |
+|  |     - Receive storageId                                     |   |
+|  +------------------------------------------------------------+   |
+|                             |                                     |
+|                             v                                     |
+|  +------------------------------------------------------------+   |
+|  |  4. Create artifactVersions record                          |   |
+|  |     - versionNumber: 1                                      |   |
+|  |     - authorId: userId                                      |   |
+|  |     - fileType: "html" | "markdown"                         |   |
+|  |     - entryPoint: "index.html" | "README.md"                |   |
+|  +------------------------------------------------------------+   |
+|                             |                                     |
+|                             v                                     |
+|  +------------------------------------------------------------+   |
+|  |  5. Create artifactFiles record                             |   |
+|  |     - versionId: from step 4                                |   |
+|  |     - filePath: same as entryPoint                          |   |
+|  |     - storageId: from step 3                                |   |
+|  |     - mimeType: "text/html" | "text/markdown"               |   |
+|  +------------------------------------------------------------+   |
+|                             |                                     |
+|                             v                                     |
+|  +------------------------------------------------------------+   |
+|  |  6. Return { artifactId, versionId, shareToken }            |   |
+|  +------------------------------------------------------------+   |
+|                                                                   |
++------------------------------------------------------------------+
+                             |
+                             v
+            +--------------------------------+
+            |   Frontend: Navigate to        |
+            |   /a/{shareToken}              |
+            +--------------------------------+
+```
+
+### 2.2 Mutation Implementation
+
+```typescript
+// convex/artifacts.ts
+
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+import { nanoid } from "nanoid";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { isValidFileType, getMimeType, getDefaultFilePath } from "./lib/fileTypes";
+
+/**
+ * Create a new artifact with version 1 (unified storage pattern)
+ *
+ * This mutation handles both single-file (HTML/Markdown) and multi-file (ZIP) artifacts.
+ * All content is stored via artifactFiles -> _storage.
+ */
+export const createSingleFileArtifact = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+    fileType: v.string(),  // "html" | "markdown" - validated at application level
+    content: v.string(),   // The file content as text
+    originalFileName: v.optional(v.string()),  // e.g., "dashboard.html"
+  },
+  returns: v.object({
+    artifactId: v.id("artifacts"),
+    versionId: v.id("artifactVersions"),
+    versionNumber: v.number(),
+    shareToken: v.string(),
+  }),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Validate file type
+    if (!isValidFileType(args.fileType)) {
+      throw new Error(`Unsupported file type: ${args.fileType}. Supported: html, markdown`);
+    }
+
+    // 3. Determine file path and MIME type
+    const filePath = args.originalFileName || getDefaultFilePath(args.fileType);
+    const mimeType = getMimeType(args.fileType);
+
+    // 4. Calculate file size
+    const contentBlob = new Blob([args.content]);
+    const fileSize = contentBlob.size;
+
+    // 5. Validate size limit (5MB for single files)
+    const MAX_SINGLE_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (fileSize > MAX_SINGLE_FILE_SIZE) {
+      throw new Error(`File too large. Maximum size is 5MB, got ${(fileSize / 1024 / 1024).toFixed(2)}MB`);
+    }
+
+    const now = Date.now();
+    const shareToken = nanoid(8);
+
+    // 6. Create artifact
+    const artifactId = await ctx.db.insert("artifacts", {
+      title: args.title,
+      description: args.description,
+      creatorId: userId,
+      shareToken,
+      isDeleted: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // 7. Store content in Convex File Storage
+    const storageId = await ctx.storage.store(contentBlob);
+
+    // 8. Create version record (NO inline content)
+    const versionId = await ctx.db.insert("artifactVersions", {
+      artifactId,
+      versionNumber: 1,
+      authorId: userId,
+      description: undefined,  // Can be set later
+      fileType: args.fileType,
+      entryPoint: filePath,
+      fileSize,
+      isDeleted: false,
+      createdAt: now,
+    });
+
+    // 9. Create file record
+    await ctx.db.insert("artifactFiles", {
+      versionId,
+      filePath,
+      storageId,
+      mimeType,
+      fileSize,
+      isDeleted: false,
+    });
+
+    return {
+      artifactId,
+      versionId,
+      versionNumber: 1,
+      shareToken,
+    };
+  },
+});
+```
+
+### 2.3 Adding New Version
+
+```typescript
+/**
+ * Add a new version to an existing artifact (single-file)
+ */
+export const addSingleFileVersion = mutation({
+  args: {
+    artifactId: v.id("artifacts"),
+    fileType: v.string(),
+    content: v.string(),
+    originalFileName: v.optional(v.string()),
+    description: v.optional(v.string()),  // Version notes
+  },
+  returns: v.object({
+    versionId: v.id("artifactVersions"),
+    versionNumber: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Verify artifact exists and user is owner
+    const artifact = await ctx.db.get(args.artifactId);
+    if (!artifact || artifact.isDeleted) {
+      throw new Error("Artifact not found");
+    }
+    if (artifact.creatorId !== userId) {
+      throw new Error("Not authorized: Only the owner can add versions");
+    }
+
+    // 3. Validate file type
+    if (!isValidFileType(args.fileType)) {
+      throw new Error(`Unsupported file type: ${args.fileType}`);
+    }
+
+    // 4. Calculate next version number
+    const versions = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
+      .collect();
+    const maxVersionNumber = Math.max(...versions.map((v) => v.versionNumber), 0);
+    const newVersionNumber = maxVersionNumber + 1;
+
+    // 5. Prepare file metadata
+    const filePath = args.originalFileName || getDefaultFilePath(args.fileType);
+    const mimeType = getMimeType(args.fileType);
+    const contentBlob = new Blob([args.content]);
+    const fileSize = contentBlob.size;
+
+    // 6. Store content
+    const storageId = await ctx.storage.store(contentBlob);
+
+    const now = Date.now();
+
+    // 7. Create version record
+    const versionId = await ctx.db.insert("artifactVersions", {
+      artifactId: args.artifactId,
+      versionNumber: newVersionNumber,
+      authorId: userId,
+      description: args.description,
+      fileType: args.fileType,
+      entryPoint: filePath,
+      fileSize,
+      isDeleted: false,
+      createdAt: now,
+    });
+
+    // 8. Create file record
+    await ctx.db.insert("artifactFiles", {
+      versionId,
+      filePath,
+      storageId,
+      mimeType,
+      fileSize,
+      isDeleted: false,
+    });
+
+    // 9. Update artifact timestamp
+    await ctx.db.patch(args.artifactId, {
+      updatedAt: now,
+    });
+
+    return {
+      versionId,
+      versionNumber: newVersionNumber,
+    };
+  },
+});
+```
+
+### 2.4 Frontend Hook Updates
+
+```typescript
+// src/hooks/useArtifactUpload.ts
+
+export function useArtifactUpload(): UseArtifactUploadReturn {
+  // ...existing state...
+
+  const createSingleFileArtifact = useMutation(api.artifacts.createSingleFileArtifact);
+
+  const uploadFile = useCallback(
+    async (data: CreateArtifactData): Promise<UploadResult> => {
+      const { file, title, description } = data;
+
+      setIsUploading(true);
+      setError(null);
+      setUploadProgress(0);
+
+      try {
+        // Determine file type from extension
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        let fileType: "html" | "markdown";
+
+        if (extension === "html" || extension === "htm") {
+          fileType = "html";
+        } else if (extension === "md" || extension === "markdown") {
+          fileType = "markdown";
+        } else {
+          throw new Error(`Unsupported file type: .${extension}`);
+        }
+
+        setUploadProgress(10);
+
+        // Read file content
+        const content = await readFileAsText(file);
+        setUploadProgress(50);
+
+        // Call unified mutation
+        const result = await createSingleFileArtifact({
+          title,
+          description,
+          fileType,
+          content,
+          originalFileName: file.name,
+        });
+
+        setUploadProgress(100);
+        setIsUploading(false);
+
+        return result;
+      } catch (err) {
+        // ...error handling...
+      }
+    },
+    [createSingleFileArtifact]
+  );
+
+  // ...rest of hook...
+}
+```
+
+### 2.5 File Type Helper Functions
+
+```typescript
+// convex/lib/fileTypes.ts
+
+export const SUPPORTED_SINGLE_FILE_TYPES = ["html", "markdown"] as const;
+export const SUPPORTED_FILE_TYPES = [...SUPPORTED_SINGLE_FILE_TYPES, "zip"] as const;
+
+export type SupportedFileType = typeof SUPPORTED_FILE_TYPES[number];
+export type SupportedSingleFileType = typeof SUPPORTED_SINGLE_FILE_TYPES[number];
+
+/**
+ * Validate that a file type string is supported
+ */
+export function isValidFileType(type: string): type is SupportedFileType {
+  return SUPPORTED_FILE_TYPES.includes(type as SupportedFileType);
+}
+
+/**
+ * Validate that a file type is a single-file type (not ZIP)
+ */
+export function isSingleFileType(type: string): type is SupportedSingleFileType {
+  return SUPPORTED_SINGLE_FILE_TYPES.includes(type as SupportedSingleFileType);
+}
+
+/**
+ * Get default file path for a file type
+ */
+export function getDefaultFilePath(fileType: string): string {
+  switch (fileType) {
+    case "html":
+      return "index.html";
+    case "markdown":
+      return "README.md";
+    default:
+      return "content";
+  }
+}
+
+/**
+ * Get MIME type for a file type
+ */
+export function getMimeType(fileType: string): string {
+  switch (fileType) {
+    case "html":
+      return "text/html";
+    case "markdown":
+      return "text/markdown";
+    case "zip":
+      return "application/zip";
+    default:
+      return "application/octet-stream";
+  }
+}
+```
+
+---
+
+## 3. Storage Pattern
+
+### 3.1 Unified Pattern Diagram
+
+```
+                              UNIFIED STORAGE PATTERN
+                              ======================
+
+    +-----------------------+        +------------------------+
+    |    HTML Artifact      |        |   Markdown Artifact    |
+    +-----------------------+        +------------------------+
+              |                                 |
+              v                                 v
+    +-----------------------+        +------------------------+
+    | artifactVersions      |        | artifactVersions       |
+    |-----------------------|        |------------------------|
+    | fileType: "html"      |        | fileType: "markdown"   |
+    | entryPoint: "index.html"       | entryPoint: "README.md"|
+    +-----------------------+        +------------------------+
+              |                                 |
+              | (1 row)                         | (1 row)
+              v                                 v
+    +-----------------------+        +------------------------+
+    | artifactFiles         |        | artifactFiles          |
+    |-----------------------|        |------------------------|
+    | filePath: "index.html"|        | filePath: "README.md"  |
+    | mimeType: "text/html" |        | mimeType: "text/md"    |
+    | storageId: _stor:abc..|        | storageId: _stor:def.. |
+    +-----------------------+        +------------------------+
+              |                                 |
+              v                                 v
+    +-----------------------+        +------------------------+
+    |    CONVEX _storage    |        |    CONVEX _storage     |
+    |   (Blob: HTML text)   |        |   (Blob: MD text)      |
+    +-----------------------+        +------------------------+
+
+
+    +---------------------------------------------------------+
+    |                    ZIP Artifact (comparison)             |
+    +---------------------------------------------------------+
+                              |
+                              v
+    +-----------------------+
+    | artifactVersions      |
+    |-----------------------|
+    | fileType: "zip"       |
+    | entryPoint: "index.html"
+    +-----------------------+
+              |
+              | (N rows)
+              v
+    +-------------------------------------------------------+
+    | artifactFiles                                          |
+    |-------------------------------------------------------|
+    | filePath: "index.html"        | storageId: _stor:abc..|
+    | filePath: "styles/main.css"   | storageId: _stor:def..|
+    | filePath: "scripts/app.js"    | storageId: _stor:ghi..|
+    | filePath: "images/logo.png"   | storageId: _stor:jkl..|
+    +-------------------------------------------------------+
+              |
+              v
+    +-------------------------------------------------------+
+    |              CONVEX _storage (multiple files)          |
+    +-------------------------------------------------------+
+```
+
+### 3.2 Storage Comparison Table
+
+| Artifact Type | artifactVersions Fields | artifactFiles Rows | Storage Objects |
+|---------------|------------------------|-------------------|-----------------|
+| **HTML** | `fileType: "html"`, `entryPoint: "index.html"` | 1 | 1 |
+| **Markdown** | `fileType: "markdown"`, `entryPoint: "README.md"` | 1 | 1 |
+| **ZIP (10 files)** | `fileType: "zip"`, `entryPoint: "index.html"` | 10 | 10 |
+
+### 3.3 Concrete Examples
+
+#### HTML Artifact Storage
+
+```typescript
+// artifactVersions record
+{
+  _id: Id<"artifactVersions">,
+  artifactId: Id<"artifacts">,
+  versionNumber: 1,
+  authorId: Id<"users">,
+  description: undefined,
+  fileType: "html",
+  entryPoint: "index.html",  // Points to file in artifactFiles
+  fileSize: 45230,
+  isDeleted: false,
+  createdAt: 1704067200000,
+}
+
+// artifactFiles record (exactly one row)
+{
+  _id: Id<"artifactFiles">,
+  versionId: Id<"artifactVersions">,  // References version above
+  filePath: "index.html",             // Matches entryPoint
+  storageId: Id<"_storage">,          // Convex file storage reference
+  mimeType: "text/html",
+  fileSize: 45230,
+  isDeleted: false,
+}
+```
+
+#### Markdown Artifact Storage
+
+```typescript
+// artifactVersions record
+{
+  _id: Id<"artifactVersions">,
+  artifactId: Id<"artifacts">,
+  versionNumber: 1,
+  authorId: Id<"users">,
+  description: "Initial spec document",
+  fileType: "markdown",
+  entryPoint: "README.md",  // Points to file in artifactFiles
+  fileSize: 8192,
+  isDeleted: false,
+  createdAt: 1704067200000,
+}
+
+// artifactFiles record (exactly one row)
+{
+  _id: Id<"artifactFiles">,
+  versionId: Id<"artifactVersions">,
+  filePath: "README.md",              // Matches entryPoint
+  storageId: Id<"_storage">,
+  mimeType: "text/markdown",
+  fileSize: 8192,
+  isDeleted: false,
+}
+```
+
+---
+
+## 4. Retrieval Pattern
+
+### 4.1 Retrieval Flow Diagram
+
+```
+                         CONTENT RETRIEVAL (UNIFIED)
+                         ===========================
+
+    +------------------------+
+    |  Request for content   |
+    |  (versionId + filePath)|
+    +------------------------+
+              |
+              v
+    +----------------------------------------------+
+    |  Query artifactFiles                          |
+    |  .withIndex("by_version_path")                |
+    |  q.eq("versionId", versionId)                 |
+    |    .eq("filePath", filePath)                  |
+    +----------------------------------------------+
+              |
+              | O(1) lookup
+              v
+    +----------------------------------------------+
+    |  Get file record                              |
+    |  { storageId, mimeType, fileSize }            |
+    +----------------------------------------------+
+              |
+              v
+    +----------------------------------------------+
+    |  Fetch from Convex Storage                    |
+    |  ctx.storage.getUrl(storageId)                |
+    +----------------------------------------------+
+              |
+              v
+    +----------------------------------------------+
+    |  Return content with correct Content-Type     |
+    +----------------------------------------------+
+
+
+    SAME PATTERN FOR ALL FILE TYPES (HTML, Markdown, ZIP files)
+```
+
+### 4.2 Query Implementation
+
+```typescript
+// convex/artifacts.ts
+
+/**
+ * Get entry point content for a version (works for ALL file types)
+ *
+ * This is the primary retrieval method for displaying artifact content.
+ * For single-file artifacts, this returns the only file.
+ * For multi-file artifacts, this returns the entry point file.
+ */
+export const getEntryPointContent = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+  },
+  returns: v.union(
+    v.object({
+      storageId: v.id("_storage"),
+      mimeType: v.string(),
+      fileSize: v.number(),
+      filePath: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // 1. Get version to find entryPoint
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      return null;
+    }
+
+    // 2. Query artifactFiles for the entry point
+    const file = await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version_path", (q) =>
+        q.eq("versionId", args.versionId).eq("filePath", version.entryPoint)
+      )
+      .unique();
+
+    if (!file || file.isDeleted) {
+      return null;
+    }
+
+    return {
+      storageId: file.storageId,
+      mimeType: file.mimeType,
+      fileSize: file.fileSize,
+      filePath: file.filePath,
+    };
+  },
+});
+
+/**
+ * Get any file by path (for multi-file navigation)
+ */
+export const getFileByPath = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+    filePath: v.string(),
+  },
+  returns: v.union(
+    v.object({
+      storageId: v.id("_storage"),
+      mimeType: v.string(),
+      fileSize: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const file = await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version_path", (q) =>
+        q.eq("versionId", args.versionId).eq("filePath", args.filePath)
+      )
+      .unique();
+
+    if (!file || file.isDeleted) {
+      return null;
+    }
+
+    return {
+      storageId: file.storageId,
+      mimeType: file.mimeType,
+      fileSize: file.fileSize,
+    };
+  },
+});
+```
+
+### 4.3 File Tree Generation
+
+```typescript
+/**
+ * Get all files for a version (for file tree UI)
+ *
+ * For single-file artifacts: Returns array with one item
+ * For multi-file artifacts: Returns array with all files, sorted
+ */
+export const getFileTree = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+  },
+  returns: v.array(
+    v.object({
+      filePath: v.string(),
+      mimeType: v.string(),
+      fileSize: v.number(),
+      isEntryPoint: v.boolean(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    // 1. Get version for entryPoint
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      return [];
+    }
+
+    // 2. Get all active files
+    const files = await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version_active", (q) =>
+        q.eq("versionId", args.versionId).eq("isDeleted", false)
+      )
+      .collect();
+
+    // 3. Sort by filePath and mark entry point
+    return files
+      .map((f) => ({
+        filePath: f.filePath,
+        mimeType: f.mimeType,
+        fileSize: f.fileSize,
+        isEntryPoint: f.filePath === version.entryPoint,
+      }))
+      .sort((a, b) => {
+        // Entry point first, then alphabetical
+        if (a.isEntryPoint) return -1;
+        if (b.isEntryPoint) return 1;
+        return a.filePath.localeCompare(b.filePath);
+      });
+  },
+});
+```
+
+### 4.4 HTTP Serving (Unified)
+
+```typescript
+// convex/http.ts
+
+http.route({
+  path: "/artifact/:shareToken/v:version/*filePath",
+  method: "GET",
+  handler: httpAction(async (ctx, request) => {
+    // Parse URL parameters
+    const url = new URL(request.url);
+    const pathMatch = url.pathname.match(/^\/artifact\/([^/]+)\/v(\d+)(?:\/(.*))?$/);
+
+    if (!pathMatch) {
+      return new Response("Invalid URL", { status: 400 });
+    }
+
+    const [, shareToken, versionStr, filePath] = pathMatch;
+    const versionNumber = parseInt(versionStr, 10);
+
+    // 1. Get artifact by share token
+    const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, {
+      shareToken,
+    });
+    if (!artifact) {
+      return new Response("Artifact not found", { status: 404 });
+    }
+
+    // 2. Get version
+    const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+      artifactId: artifact._id,
+      versionNumber,
+    });
+    if (!version) {
+      return new Response("Version not found", { status: 404 });
+    }
+
+    // 3. Determine which file to serve
+    const requestedPath = filePath || version.entryPoint;
+
+    // 4. Get file (SAME QUERY FOR ALL FILE TYPES)
+    const file = await ctx.runQuery(internal.artifacts.getFileByPath, {
+      versionId: version._id,
+      filePath: requestedPath,
+    });
+    if (!file) {
+      return new Response("File not found", { status: 404 });
+    }
+
+    // 5. Fetch from storage and serve
+    const fileUrl = await ctx.storage.getUrl(file.storageId);
+    if (!fileUrl) {
+      return new Response("File content not found", { status: 404 });
+    }
+
+    const response = await fetch(fileUrl);
+    const content = await response.arrayBuffer();
+
+    return new Response(content, {
+      headers: {
+        "Content-Type": file.mimeType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }),
+});
+```
+
+---
+
+## 5. Migration Strategy
+
+### 5.1 Migration Overview
+
+```
+                        MIGRATION PHASES
+                        ================
+
+    Phase 1: Schema Preparation (No Data Changes)
+    +-------------------------------------------------+
+    | - Make htmlContent and markdownContent optional  |
+    | - Add authorId as optional field                 |
+    | - Change fileType to v.string()                  |
+    | - Make entryPoint required                       |
+    | - Add by_author index                            |
+    | - Deploy schema changes                          |
+    +-------------------------------------------------+
+                          |
+                          v
+    Phase 2: Dual-Mode Support (Transitional)
+    +-------------------------------------------------+
+    | - Update mutations to use new storage pattern    |
+    | - Update queries to check both patterns          |
+    | - All NEW uploads use artifactFiles              |
+    | - OLD data still works via inline fields         |
+    +-------------------------------------------------+
+                          |
+                          v
+    Phase 3: Data Migration (Batch Job)
+    +-------------------------------------------------+
+    | - For each version with inline content:          |
+    |   - Store content in _storage                    |
+    |   - Create artifactFiles record                  |
+    |   - Set entryPoint                               |
+    |   - Backfill authorId from artifact.creatorId   |
+    | - Run in batches to avoid timeouts               |
+    +-------------------------------------------------+
+                          |
+                          v
+    Phase 4: Cleanup (Final State)
+    +-------------------------------------------------+
+    | - Remove inline content from migrated versions   |
+    | - Remove htmlContent/markdownContent from schema |
+    | - Make authorId required                         |
+    | - Remove dual-mode query logic                   |
+    +-------------------------------------------------+
+```
+
+### 5.2 Migration Script
+
+```typescript
+// convex/migrations/migrateInlineContent.ts
+
+import { internalMutation } from "../_generated/server";
+import { v } from "convex/values";
+import { internal } from "../_generated/api";
+
+/**
+ * Migration: Move inline content to artifactFiles
+ *
+ * Run this migration in batches:
+ *   npx convex run migrations/migrateInlineContent:migrate --batchSize 50
+ */
+export const migrate = internalMutation({
+  args: {
+    batchSize: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  returns: v.object({
+    migrated: v.number(),
+    nextCursor: v.union(v.string(), v.null()),
+    done: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const batchSize = args.batchSize ?? 50;
+    let migrated = 0;
+
+    // Query versions with inline content that haven't been migrated yet
+    // (no corresponding artifactFiles record)
+    const versions = await ctx.db
+      .query("artifactVersions")
+      .order("asc")
+      .take(batchSize);
+
+    for (const version of versions) {
+      // Skip if already has artifactFiles records
+      const existingFiles = await ctx.db
+        .query("artifactFiles")
+        .withIndex("by_version", (q) => q.eq("versionId", version._id))
+        .first();
+
+      if (existingFiles) {
+        continue; // Already migrated
+      }
+
+      // Get parent artifact for authorId backfill
+      const artifact = await ctx.db.get(version.artifactId);
+      if (!artifact) {
+        continue; // Orphaned version, skip
+      }
+
+      // Determine content and metadata
+      let content: string | null = null;
+      let filePath: string;
+      let mimeType: string;
+
+      if (version.htmlContent) {
+        content = version.htmlContent;
+        filePath = version.entryPoint || "index.html";
+        mimeType = "text/html";
+      } else if (version.markdownContent) {
+        content = version.markdownContent;
+        filePath = version.entryPoint || "README.md";
+        mimeType = "text/markdown";
+      } else {
+        // ZIP or already migrated, skip
+        continue;
+      }
+
+      // Store content in file storage
+      const contentBlob = new Blob([content]);
+      const storageId = await ctx.storage.store(contentBlob);
+
+      // Create artifactFiles record
+      await ctx.db.insert("artifactFiles", {
+        versionId: version._id,
+        filePath,
+        storageId,
+        mimeType,
+        fileSize: contentBlob.size,
+        isDeleted: version.isDeleted,
+        deletedAt: version.deletedAt,
+      });
+
+      // Update version record
+      await ctx.db.patch(version._id, {
+        entryPoint: filePath,
+        authorId: version.authorId ?? artifact.creatorId,  // Backfill if needed
+        // Keep htmlContent/markdownContent for now (Phase 4 removes them)
+      });
+
+      migrated++;
+    }
+
+    // Determine if there are more to process
+    const hasMore = versions.length === batchSize;
+    const nextCursor = hasMore ? versions[versions.length - 1]._id : null;
+
+    return {
+      migrated,
+      nextCursor,
+      done: !hasMore,
+    };
+  },
+});
+
+/**
+ * Verify migration completeness
+ */
+export const verify = internalMutation({
+  args: {},
+  returns: v.object({
+    totalVersions: v.number(),
+    withInlineContent: v.number(),
+    withArtifactFiles: v.number(),
+    missingFiles: v.number(),
+  }),
+  handler: async (ctx) => {
+    const versions = await ctx.db.query("artifactVersions").collect();
+
+    let withInlineContent = 0;
+    let withArtifactFiles = 0;
+    let missingFiles = 0;
+
+    for (const version of versions) {
+      if (version.htmlContent || version.markdownContent) {
+        withInlineContent++;
+      }
+
+      const files = await ctx.db
+        .query("artifactFiles")
+        .withIndex("by_version", (q) => q.eq("versionId", version._id))
+        .collect();
+
+      if (files.length > 0) {
+        withArtifactFiles++;
+      } else if (version.fileType !== "zip") {
+        missingFiles++;
+      }
+    }
+
+    return {
+      totalVersions: versions.length,
+      withInlineContent,
+      withArtifactFiles,
+      missingFiles,
+    };
+  },
+});
+```
+
+### 5.3 Rollback Strategy
+
+If migration fails:
+
+1. **Immediate rollback:** Inline content is preserved until Phase 4
+2. **Query fallback:** Transitional queries check both patterns
+3. **No data loss:** Storage IDs are additive, not replacing
+
+```typescript
+// Transitional query (Phase 2-3)
+export const getVersionContent = query({
+  args: { versionId: v.id("artifactVersions") },
+  returns: v.union(
+    v.object({
+      source: v.union(v.literal("storage"), v.literal("inline")),
+      content: v.optional(v.string()),        // For inline
+      storageId: v.optional(v.id("_storage")), // For storage
+      mimeType: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) return null;
+
+    // Try new pattern first (artifactFiles)
+    const file = await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version_path", (q) =>
+        q.eq("versionId", args.versionId).eq("filePath", version.entryPoint ?? "index.html")
+      )
+      .first();
+
+    if (file && !file.isDeleted) {
+      return {
+        source: "storage" as const,
+        storageId: file.storageId,
+        mimeType: file.mimeType,
+      };
+    }
+
+    // Fall back to legacy inline content
+    if (version.htmlContent) {
+      return {
+        source: "inline" as const,
+        content: version.htmlContent,
+        mimeType: "text/html",
+      };
+    }
+    if (version.markdownContent) {
+      return {
+        source: "inline" as const,
+        content: version.markdownContent,
+        mimeType: "text/markdown",
+      };
+    }
+
+    return null;
+  },
+});
+```
+
+### 5.4 Validation Checklist
+
+Before removing inline fields (Phase 4):
+
+- [ ] All versions have corresponding artifactFiles records
+- [ ] All versions have authorId set
+- [ ] All versions have entryPoint set
+- [ ] Storage IDs are valid and files are accessible
+- [ ] HTTP serving works for all migrated artifacts
+- [ ] Frontend displays content correctly
+- [ ] No 404 errors in production logs
+
+---
+
+## 6. Benefits and Trade-offs
+
+### 6.1 Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Unified Code Path** | One retrieval pattern for all file types. No `if (html) { ... } else if (markdown) { ... }` branching. |
+| **Extensibility** | Add new file types (TXT, CSV, PDF) without schema changes. Just update `SUPPORTED_FILE_TYPES`. |
+| **Consistent Metadata** | All files have `mimeType`, `fileSize`, `filePath` - not just ZIP files. |
+| **Smaller Documents** | `artifactVersions` records don't contain large text blobs. Faster queries. |
+| **File Tree for All** | Same `getFileTree` query works for single-file and multi-file artifacts. |
+| **Clean Separation** | Versions = metadata, Files = content. Clear responsibility boundary. |
+| **Future-Proof** | Pattern naturally extends to attachments, assets, multi-file Markdown bundles. |
+
+### 6.2 Trade-offs
+
+| Trade-off | Impact | Mitigation |
+|-----------|--------|------------|
+| **Extra DB Query** | One additional query (version -> files) for single-file artifacts | Convex is fast (<10ms). Can combine queries if needed. |
+| **Extra Storage Fetch** | Content fetched from `_storage` instead of inline | Storage is optimized for this. Negligible latency. |
+| **Migration Complexity** | Must migrate existing inline content | Phased approach with backward compatibility. No downtime. |
+| **Schema Validation** | `fileType: v.string()` doesn't enforce valid types at DB level | Application-level validation. TypeScript catches errors. |
+| **More Records** | Each single-file creates an `artifactFiles` row | Trivial storage cost. Better than inline content bloat. |
+
+### 6.3 Performance Comparison
+
+| Operation | Current (Inline) | End State (Storage) | Difference |
+|-----------|------------------|---------------------|------------|
+| Create HTML | 1 mutation, 1 insert | 1 mutation, 2 inserts + 1 storage | +1 insert, +1 storage write |
+| Read HTML | 1 query (version with content) | 2 queries (version + file) + 1 storage | +1 query, +1 storage read |
+| List Versions | Returns content inline (slow) | Returns metadata only (fast) | Much faster for lists |
+| File Size Query | Must parse content | Read from `fileSize` field | Much faster |
+
+**Net Assessment:** Slightly more operations for single reads, but significantly faster for listing and bulk operations.
+
+---
+
+## 7. Implementation Checklist
+
+### Phase 1: Schema Preparation
+
+- [ ] Update `convex/schema.ts`:
+  - [ ] Add `authorId: v.optional(v.id("users"))` to artifactVersions
+  - [ ] Add `description: v.optional(v.string())` to artifactVersions
+  - [ ] Change `entryPoint` from `v.optional(v.string())` to `v.string()`
+  - [ ] Change `fileType` from `v.union(...)` to `v.string()`
+  - [ ] Add `.index("by_author", ["authorId"])` to artifactVersions
+- [ ] Create `convex/lib/fileTypes.ts` with validation helpers
+- [ ] Deploy schema changes
+
+### Phase 2: Update Upload Mutations
+
+- [ ] Create `artifacts.createSingleFileArtifact` mutation
+- [ ] Create `artifacts.addSingleFileVersion` mutation
+- [ ] Update frontend `useArtifactUpload` hook to use new mutations
+- [ ] Test new upload flow end-to-end
+- [ ] Keep old mutations working for backward compatibility
+
+### Phase 3: Update Retrieval Queries
+
+- [ ] Create `artifacts.getEntryPointContent` query
+- [ ] Create `artifacts.getFileTree` query
+- [ ] Update HTTP serving to use unified pattern
+- [ ] Add transitional logic to check both inline and storage
+- [ ] Update frontend viewer to use new queries
+- [ ] Test retrieval for all file types
+
+### Phase 4: Data Migration
+
+- [ ] Create migration script `migrations/migrateInlineContent.ts`
+- [ ] Run `verify` to count versions needing migration
+- [ ] Run `migrate` in batches (50-100 at a time)
+- [ ] Run `verify` again to confirm completion
+- [ ] Test migrated artifacts in viewer
+- [ ] Monitor for errors in production
+
+### Phase 5: Schema Cleanup
+
+- [ ] Remove `htmlContent` field from schema
+- [ ] Remove `markdownContent` field from schema
+- [ ] Change `authorId` from optional to required
+- [ ] Remove transitional query logic
+- [ ] Deploy final schema
+- [ ] Remove old mutation code
+
+### Phase 6: Frontend Updates
+
+- [ ] Update `NewArtifactDialog.tsx` to use new upload flow
+- [ ] Update `DocumentViewer.tsx` to use new retrieval
+- [ ] Update `VersionSwitcher.tsx` to show author info
+- [ ] Add file tree component for navigation
+- [ ] Test all UI flows
+
+### Phase 7: Testing
+
+- [ ] Unit tests for new mutations
+- [ ] Unit tests for new queries
+- [ ] Integration tests for upload flow
+- [ ] Integration tests for retrieval flow
+- [ ] E2E tests for complete user journey
+- [ ] Performance testing for retrieval latency
+- [ ] Load testing for concurrent uploads
+
+---
+
+## Appendix A: File Type Extension Support
+
+When adding new file types, update these locations:
+
+```typescript
+// convex/lib/fileTypes.ts
+export const SUPPORTED_FILE_TYPES = [
+  "html",
+  "markdown",
+  "zip",
+  // Add new types here
+] as const;
+
+// convex/lib/mimeTypes.ts
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".htm": "text/html",
+  ".md": "text/markdown",
+  ".markdown": "text/markdown",
+  // Add new extensions here
+};
+```
+
+---
+
+## Appendix B: Related Documents
+
+- [Task 00018 README](./README.md) - Task overview and problem statement
+- [Implementation Overview](./IMPLEMENTATION-OVERVIEW.md) - Current state analysis
+- [ADR 0012 - Unified Artifact Storage](../../docs/architecture/decisions/0012-unified-artifact-storage.md) - Architecture decision
+- [ADR 0002 - HTML Artifact Storage](../../docs/architecture/decisions/0002-html-artifact-storage.md) - Original storage decision
+- [ADR 0009 - Artifact File Storage Structure](../../docs/architecture/decisions/0009-artifact-file-storage-structure.md) - artifactFiles table design
+
+---
+
+**Document Author:** Software Architect Agent
+**Last Updated:** 2025-12-31
+**Version:** 1.0
