@@ -1,4 +1,4 @@
-# Task 00018: Refine Document Version Model and Permissioning
+# Task 00018: Refine Single-File Artifact Upload and Versioning
 
 **GitHub Issue:** #18
 
@@ -8,23 +8,179 @@
 
 ## Objective
 
-Refine the artifact version model and permission system to support robust version management, proper access controls, and clear ownership semantics.
+Refine and perfect the architecture and process for **single-file artifacts (HTML and Markdown)** including upload flow, storage, retrieval, versioning, and permissions.
+
+**Scope:** HTML and Markdown artifacts only. Multi-file ZIP artifacts are explicitly out of scope and will be addressed in a separate task.
+
+## Scope Definition
+
+### ✅ In Scope: Single-File Artifacts
+
+**File Types:**
+- HTML artifacts (`fileType: "html"`, stored in `htmlContent` field)
+- Markdown artifacts (`fileType: "markdown"`, stored in `markdownContent` field)
+
+**Areas to Perfect:**
+1. **Upload Flow** - How users create and upload HTML/Markdown artifacts
+2. **Storage** - How content is stored (inline in database)
+3. **Retrieval** - How versions are fetched and served
+4. **Versioning** - Creating new versions, version metadata, authorship
+5. **Permissions** - Who can create/view/edit/delete versions
+
+### ❌ Out of Scope: Multi-File Artifacts
+
+**Deferred to separate task:**
+- ZIP artifacts (`fileType: "zip"`)
+- File extraction and processing (`zipProcessor.ts`)
+- Multi-file storage (`artifactFiles` table)
+- ZIP serving via HTTP routes
+
+**Rationale:** Perfect the simpler single-file case first, but design with forward-compatibility for ZIP artifacts in mind. The patterns we establish here (versioning, permissions, authorship) should naturally extend to multi-file artifacts.
+
+**Design Principle:** Any schema changes, permission models, or architectural decisions made for single-file artifacts must work equally well when we add ZIP support later.
+
+---
 
 ## Problem Statement
 
-The current implementation has basic version support but lacks:
+The current implementation has a **fundamentally flawed data model** that needs to be fixed:
 
-1. **Version Lifecycle Management**: No concept of draft, published, or archived states
-2. **Version Authorship**: No tracking of who created each version (assumes artifact owner)
-3. **Permission Inheritance**: Permission model exists at artifact level but unclear how it applies to versions
-4. **Version-Level Permissions**: No way to control who can create/view/delete specific versions
-5. **Missing Validation**: No checks for version authorship or creation permissions
+### 🚨 PRIMARY ISSUE: Type-Specific Content Fields (Wrong Design)
+
+**Current Schema (WRONG):**
+```typescript
+artifactVersions {
+  fileType: "html" | "markdown" | "zip",
+  htmlContent?: string,      // ❌ Type-specific field
+  markdownContent?: string,  // ❌ Type-specific field
+  entryPoint?: string,       // ❌ Only used for ZIP
+}
+```
+
+**Problems:**
+1. **Not Extensible** - Adding a new file type requires schema change
+2. **Inconsistent** - Different storage pattern for each type
+3. **Fragile** - Must maintain type-specific logic everywhere
+4. **Type-Unsafe** - Nothing prevents HTML content in markdownContent field
+
+**Correct Approach:**
+```typescript
+artifactVersions {
+  fileType: "html" | "markdown" | "zip",  // Extensible union
+  entryPoint: string,  // ALWAYS points to content location
+  // For single-file: Point to storage ID or use special marker
+  // For multi-file: Path like "index.html"
+}
+```
+
+**Benefits:**
+1. ✅ Unified model - All types use same pattern
+2. ✅ Extensible - Add new types without schema changes
+3. ✅ Consistent - Same retrieval logic for all types
+4. ✅ Forward-compatible - Naturally extends to ZIP
+
+### Secondary Issues:
+
+2. **Version Authorship**: No tracking of who created each version
+3. **Permission Checks**: Inconsistent - mutations check auth, queries don't
+4. **Version Metadata**: No description/changelog for versions
+
+## Proposed Unified Storage Model
+
+### Current (Wrong) vs Proposed (Correct)
+
+**❌ CURRENT - Type-Specific Fields:**
+```typescript
+artifactVersions {
+  fileType: "html" | "markdown" | "zip",
+  htmlContent?: string,      // Only for HTML
+  markdownContent?: string,  // Only for Markdown
+  entryPoint?: string,       // Only for ZIP
+  fileSize: number,
+}
+// Problem: Each type has different storage pattern
+```
+
+**✅ PROPOSED - Unified File Storage (artifactFiles for everything):**
+```typescript
+artifactVersions {
+  fileType: "html" | "markdown" | "zip" | "pdf" | ...,  // Infinitely extensible
+  authorId: v.id("users"),    // NEW: Who created this version
+  description?: string,       // NEW: Version notes
+  versionNumber: number,      // Existing
+
+  entryPoint: string,         // Path to main file in artifactFiles
+  fileSize: number,           // Total size (sum of all files)
+
+  // NO type-specific fields!
+  // NO inline content storage!
+}
+
+artifactFiles {  // Used for ALL file types (single and multi-file)
+  versionId: Id<"artifactVersions">,
+  filePath: string,        // Relative path: "index.html", "style.css", etc.
+  storageId: Id<"_storage">,  // Convex file storage reference
+  mimeType: string,        // "text/html", "text/markdown", etc.
+  fileSize: number,
+  isDeleted: boolean,
+  deletedAt?: number,
+}
+```
+
+### How It Works (Unified Pattern)
+
+**Single-File HTML:**
+1. Upload: User uploads `dashboard.html`
+2. Storage: Store in Convex file storage → `storageId`
+3. Database:
+   - `artifactVersions`: `entryPoint = "index.html"`, `fileType = "html"`
+   - `artifactFiles`: One row: `filePath = "index.html"`, `storageId = ...`
+4. Retrieval: Lookup `artifactFiles` where `filePath = entryPoint` ("index.html")
+
+**Single-File Markdown:**
+1. Upload: User uploads `README.md`
+2. Storage: Store in Convex file storage → `storageId`
+3. Database:
+   - `artifactVersions`: `entryPoint = "README.md"`, `fileType = "markdown"`
+   - `artifactFiles`: One row: `filePath = "README.md"`, `storageId = ...`
+4. Retrieval: Lookup `artifactFiles` where `filePath = entryPoint` ("README.md")
+
+**Multi-File ZIP:**
+1. Upload: User uploads `site.zip`
+2. Extraction: Extract files → store each in Convex file storage
+3. Database:
+   - `artifactVersions`: `entryPoint = "index.html"`, `fileType = "zip"`
+   - `artifactFiles`: Multiple rows (one per extracted file)
+4. Retrieval: Lookup `artifactFiles` where `filePath = entryPoint` ("index.html")
+
+**Future (PDF, JSON, etc.):**
+- Same pattern - store file in `artifactFiles`, set `entryPoint`
+- No schema changes needed!
+
+### Benefits
+
+**Unified Pattern:**
+- ✅ ALL file types use `artifactFiles` table (no special cases)
+- ✅ Same retrieval logic for everything
+- ✅ No inline content fields cluttering schema
+- ✅ Single-file and multi-file are identical patterns
+
+**Extensibility:**
+- ✅ Add new file types by adding to `fileType` union (trivial change)
+- ✅ No new fields needed per file type
+- ✅ Support ANY file extension via `filePath` + `mimeType`
+
+**Migration Path:**
+- ✅ Easy to convert single-file to multi-file (just add more `artifactFiles` rows)
+- ✅ Can attach assets to HTML/Markdown later (CSS, images, etc.)
+
+---
 
 ## Current State Analysis
 
 ### Schema (convex/schema.ts)
 
-**artifactVersions table:**
+**artifactVersions table (current):**
 ```typescript
 {
   artifactId: Id<"artifacts">,
@@ -231,16 +387,41 @@ async function canAccessArtifact(
 
 ## Implementation Plan
 
-### Subtask 1: Design Permission Model (ADR)
-**Location:** `tasks/00018-refine-version-model-permissions/01-adr-permission-model/`
+### Subtask 1: Architect Review (In Progress)
+**Location:** `tasks/00018-refine-version-model-permissions/IMPLEMENTATION-OVERVIEW.md`
+
+**Status:** 🔄 Background agent analyzing architecture
 
 **Deliverables:**
-- ADR documenting permission decisions
+- Comprehensive implementation overview document
+- Data flow diagrams for upload/storage/retrieval
+- Current state assessment
+- Specific recommendations for single-file artifacts
+
+### Subtask 2: Review Upload Flow for Single-File Artifacts
+**Location:** `tasks/00018-refine-version-model-permissions/02-upload-flow-analysis/`
+
+**Deliverables:**
+- Analysis of current HTML/Markdown upload UI and UX
+- Validation rules and error handling
+- File size limits and content checks
+- Upload flow diagram (user action → backend → storage)
+
+**Key Files:**
+- `app/src/hooks/useArtifactUpload.ts` - Upload hook
+- `app/src/components/artifacts/NewArtifactDialog.tsx` - Upload UI
+- `app/convex/artifacts.ts` - Create/addVersion mutations
+
+### Subtask 3: Design Permission Model (ADR)
+**Location:** `tasks/00018-refine-version-model-permissions/03-adr-permission-model/`
+
+**Deliverables:**
+- ADR documenting permission decisions for single-file artifacts
 - Diagrams showing permission flow
 - Edge case analysis
 
 **Key Decisions:**
-1. Who can create versions?
+1. Who can create versions? (HTML/Markdown only)
 2. Who can view versions?
 3. Who can delete versions?
 4. Do we need draft/published states now?
@@ -314,6 +495,13 @@ artifactVersions: defineTable({
 
 ## Out of Scope (Future Tasks)
 
+### Deferred: Multi-File Artifacts (Task 19+)
+- ZIP artifact upload and processing
+- Multi-file storage and serving
+- File extraction logic
+- ZIP-specific permissions
+
+### Deferred: Advanced Features (Later)
 1. **Version Lifecycle States**: Draft, published, archived states
 2. **Version Comparison**: Diff view between versions
 3. **Version Approval Workflow**: Owner approves reviewer-submitted versions

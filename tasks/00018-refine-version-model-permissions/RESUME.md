@@ -1,7 +1,9 @@
 # Task 18 Session Resume
 
 **Last Updated:** 2025-12-31
-**Status:** 🚧 In Progress - Planning Phase
+**Status:** 🚧 In Progress - Architect Review + Scope Refinement
+
+**Scope:** Single-file artifacts (HTML, Markdown) only. Design with forward-compatibility for ZIP in mind.
 
 ---
 
@@ -15,19 +17,63 @@
 3. ✅ Analyzed current version model and permission implementation
 4. ✅ Documented current state with issues identified
 5. ✅ Created comprehensive task README with implementation plan
+6. ✅ **Scope Refinement** - Narrowed to single-file artifacts only
+7. ✅ **Forward-Compatibility Planning** - Documented storage patterns for future ZIP support
+8. ✅ Launched architect agent (background) - Analyzing upload/storage/retrieval architecture
 
 ### 🚧 In Progress
 
-**Next Step:** Subtask 1 - Write ADR for permission model
+**Subtask 1:** Architect agent analyzing implementation (background)
+- Creating: `IMPLEMENTATION-OVERVIEW.md`
+- Analyzing: Upload flow, storage patterns, retrieval, current gaps
+- Will inform: Permission model design and schema changes
+
+**Next Step:** Review architect's findings, then proceed with permission model ADR
 
 ### ⏳ Pending
 
 **Remaining Subtasks:**
-1. Subtask 1: Design Permission Model (ADR)
-2. Subtask 2: Schema Updates
-3. Subtask 3: Update Version Operations
-4. Subtask 4: Backend Tests
-5. Subtask 5: Migration & Deployment
+1. ✅ Subtask 1: Architect Review (In Progress - background)
+2. Subtask 2: Review Upload Flow for Single-File Artifacts
+3. Subtask 3: Design Permission Model (ADR)
+4. Subtask 4: Schema Updates (authorId, description)
+5. Subtask 5: Update Version Operations
+6. Subtask 6: Backend Tests
+7. Subtask 7: Migration & Deployment
+
+---
+
+## Scope Refinement (Session 1)
+
+### Initial Scope (Too Broad)
+- All artifact types (HTML, Markdown, ZIP)
+- Version model and permissions for all cases
+- Risk: Trying to solve both simple and complex cases at once
+
+### Refined Scope (Focused)
+**✅ In Scope: Single-File Artifacts**
+- HTML artifacts (content in `htmlContent` field)
+- Markdown artifacts (content in `markdownContent` field)
+- Upload, storage, retrieval, versioning, permissions
+
+**❌ Out of Scope: Multi-File Artifacts**
+- ZIP artifacts (deferred to Task 19+)
+- File extraction, `artifactFiles` table
+- Multi-file serving logic
+
+### Forward-Compatibility Requirement
+
+**Key Insight:** Single-file vs multi-file storage is different, but versioning/permissions should be the same.
+
+**Storage Patterns:**
+| Aspect | Single-File (HTML/MD) | Multi-File (ZIP) |
+|--------|----------------------|------------------|
+| Content storage | Inline (one field) | Separate table (`artifactFiles`) |
+| Versioning | ✅ Shared pattern | ✅ Shared pattern |
+| Permissions | ✅ Shared pattern | ✅ Shared pattern |
+| Authorship | ✅ Shared pattern | ✅ Shared pattern |
+
+**Design Goal:** Any schema changes (authorId, description) must work for both storage patterns.
 
 ---
 
