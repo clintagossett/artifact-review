@@ -83,7 +83,11 @@ artifactVersions {
 
 2. **Version Authorship**: No tracking of who created each version
 3. **Permission Checks**: Inconsistent - mutations check auth, queries don't
-4. **Version Metadata**: No description/changelog for versions
+4. **Version Metadata**: No versionName field for labeling versions
+5. **File Tree Navigation**: Need ability to list all files in a version and navigate between them
+   - `entryPoint` = default file to show first
+   - File tree shows all files in `artifactFiles` for the version
+   - Supports single-file (one item) and multi-file (many items)
 
 ## Proposed Unified Storage Model
 
@@ -106,7 +110,7 @@ artifactVersions {
 artifactVersions {
   fileType: "html" | "markdown" | "zip" | "pdf" | ...,  // Infinitely extensible
   authorId: v.id("users"),    // NEW: Who created this version
-  description?: string,       // NEW: Version notes
+  versionName?: string,       // NEW: Version label/name
   versionNumber: number,      // Existing
 
   entryPoint: string,         // Path to main file in artifactFiles
@@ -174,6 +178,12 @@ artifactFiles {  // Used for ALL file types (single and multi-file)
 - ✅ Easy to convert single-file to multi-file (just add more `artifactFiles` rows)
 - ✅ Can attach assets to HTML/Markdown later (CSS, images, etc.)
 
+**File Tree Navigation:**
+- ✅ Query: `SELECT * FROM artifactFiles WHERE versionId = X ORDER BY filePath`
+- ✅ Single-file version: Tree has one item (the entryPoint)
+- ✅ Multi-file version: Tree has multiple items, entryPoint shown first
+- ✅ UI can render file tree and allow navigation between files
+
 ---
 
 ## Current State Analysis
@@ -195,7 +205,7 @@ artifactFiles {  // Used for ALL file types (single and multi-file)
   createdAt: number,
   // ❌ Missing: authorId (who created this version)
   // ❌ Missing: status (draft/published)
-  // ❌ Missing: description (version notes/changelog)
+  // ❌ Missing: versionName (label/name for version)
 }
 ```
 
@@ -385,18 +395,78 @@ async function canAccessArtifact(
 
 ---
 
-## Implementation Plan
+## Development Strategy: Two-Phase Approach
 
-### Subtask 1: Architect Review (In Progress)
-**Location:** `tasks/00018-refine-version-model-permissions/IMPLEMENTATION-OVERVIEW.md`
+### Phase 1: Upload Flow + Write Permissions (CURRENT)
+**Focus:** Fix the data model, get file uploads working correctly, and secure write operations
 
-**Status:** 🔄 Background agent analyzing architecture
+**Core Changes:**
+1. **Remove inline content fields** - Delete `htmlContent`, `markdownContent` from schema
+2. **Unified storage** - ALL file types use `artifactFiles` table + Convex `_storage`
+3. **Add audit trails** - Add `createdBy`, `deletedBy` to all tables
+4. **Add version metadata** - Add `versionName` field for version labels
+5. **Make entryPoint required** - Always points to main file in `artifactFiles`
+6. **Extensible fileType** - Change from union to `v.string()` with app-level validation
+7. **Write permissions** - Owner-only controls for version operations
+
+**Permission Rules (Owner Only):**
+- ✅ Upload new versions (`artifacts.addVersion`)
+- ✅ Update version name (new mutation: `artifacts.updateVersionName`)
+- ✅ Soft delete versions (`artifacts.softDeleteVersion`)
 
 **Deliverables:**
-- Comprehensive implementation overview document
-- Data flow diagrams for upload/storage/retrieval
-- Current state assessment
-- Specific recommendations for single-file artifacts
+- Updated schema (`convex/schema.ts`)
+- Updated upload mutations (`artifacts.create`, `artifacts.addVersion`)
+- New mutation: `artifacts.updateVersionName`
+- Permission checks on all write operations
+- Working single-file HTML/Markdown upload using blob storage
+- Migration script to convert existing inline content to blob storage
+- Backend tests for upload + write permissions
+
+**Why Phase 1 First:**
+- Must get the data model right before anything else
+- Upload + write permissions are the critical path (one-way operations)
+- Establishes unified pattern that extends to multi-file (Task 19+)
+- Can validate data integrity before implementing reads
+
+### Phase 2: Retrieval + Read Permissions (AFTER PHASE 1)
+**Focus:** Secure reading of artifacts and serve content from blob storage
+
+**Core Changes:**
+1. **Update retrieval logic** - Read from `artifactFiles` + blob storage instead of inline fields
+2. **Read permission checks** - All query operations validate access (viewing)
+3. **Version permission helpers** - Shared functions for auth checks
+4. **Query optimization** - Proper indexes for permission-filtered queries
+5. **Viewer updates** - Fetch and display content from blob storage
+
+**Deliverables:**
+- Updated query operations to read from blob storage
+- Permission checks on all read operations
+- Updated viewer UI to fetch from blob storage
+- Backend tests for read permission enforcement
+
+**Why Phase 2 Second:**
+- Retrieval only works if data is stored correctly (Phase 1)
+- Read permissions are simpler once write permissions are established
+- Can deploy Phase 1 and validate uploads before changing viewer
+- Cleaner separation of concerns (write vs read)
+
+---
+
+## Implementation Plan
+
+### ✅ Completed
+
+**Subtask 1: Architect Review**
+**Location:** `tasks/00018-refine-version-model-permissions/IMPLEMENTATION-OVERVIEW.md`, `END-STATE-DESIGN.md`
+
+**Status:** ✅ Complete
+
+**Deliverables:**
+- ✅ Comprehensive implementation overview document
+- ✅ End-state schema design with unified storage
+- ✅ Data flow diagrams for upload/storage/retrieval
+- ✅ Current state assessment
 
 ### Subtask 2: Review Upload Flow for Single-File Artifacts
 **Location:** `tasks/00018-refine-version-model-permissions/02-upload-flow-analysis/`

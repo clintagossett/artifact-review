@@ -1,79 +1,174 @@
 # Task 18 Session Resume
 
 **Last Updated:** 2025-12-31
-**Status:** 🚧 In Progress - Architect Review + Scope Refinement
+**Status:** 🎯 Design Complete - Ready for Phase 1 Implementation
 
-**Scope:** Single-file artifacts (HTML, Markdown) only. Design with forward-compatibility for ZIP in mind.
+**Scope:** Single-file artifacts (HTML, Markdown) using unified storage model. Design with forward-compatibility for ZIP in mind.
 
 ---
 
 ## Current Status
 
-### ✅ Completed
+### ✅ Completed (Session 1 - 2025-12-31)
 
-**Session 1 (2025-12-31):**
+**Task Setup:**
 1. ✅ Created GitHub Issue #18
 2. ✅ Created task folder (00018)
 3. ✅ Analyzed current version model and permission implementation
 4. ✅ Documented current state with issues identified
-5. ✅ Created comprehensive task README with implementation plan
-6. ✅ **Scope Refinement** - Narrowed to single-file artifacts only
-7. ✅ **Forward-Compatibility Planning** - Documented storage patterns for future ZIP support
-8. ✅ Launched architect agent (background) - Analyzing upload/storage/retrieval architecture
 
-### 🚧 In Progress
+**Design Phase:**
+5. ✅ **Scope Refinement** - Narrowed to single-file artifacts only
+6. ✅ **Architect Review** - Launched architect agent (background) to analyze architecture
+7. ✅ **End-State Design** - Created `END-STATE-DESIGN.md` with unified storage model
+8. ✅ **Key Decision: Unified Storage** - ALL files use `artifactFiles` + `_storage` blobs
+9. ✅ **Key Decision: Audit Trails** - Added `createdBy`, `deletedBy` to all tables
+10. ✅ **Key Decision: Version Naming** - Changed `description` → `versionName`
+11. ✅ **Key Decision: Extensible fileType** - Changed union → `v.string()` with app validation
+12. ✅ **Two-Phase Development Strategy** - Phase 1: Upload, Phase 2: Retrieval + Permissions
+13. ✅ **Schema Changes Summary** - Created `SCHEMA-CHANGES-SUMMARY.md` as quick reference
+14. ✅ **Updated README** - Documented two-phase approach and core changes
 
-**Subtask 1:** Architect agent analyzing implementation (background)
-- Creating: `IMPLEMENTATION-OVERVIEW.md`
-- Analyzing: Upload flow, storage patterns, retrieval, current gaps
-- Will inform: Permission model design and schema changes
+### 🎯 Ready to Start
 
-**Next Step:** Review architect's findings, then proceed with permission model ADR
+**Phase 1: Upload + Write Permissions (Next)**
+- Implement schema changes (backward compatible)
+- Update upload mutations to use blob storage
+- **Implement write permissions:**
+  - Only artifact owner can upload new versions
+  - Only artifact owner can update version name
+  - Only artifact owner can soft delete versions
+- Create migration script for existing inline content
+- Test single-file uploads with new unified storage
 
-### ⏳ Pending
+### ⏳ Pending (Phase 2)
 
-**Remaining Subtasks:**
-1. ✅ Subtask 1: Architect Review (In Progress - background)
-2. Subtask 2: Review Upload Flow for Single-File Artifacts
-3. Subtask 3: Design Permission Model (ADR)
-4. Subtask 4: Schema Updates (authorId, description)
-5. Subtask 5: Update Version Operations
-6. Subtask 6: Backend Tests
-7. Subtask 7: Migration & Deployment
+**Phase 2: Retrieval + Read Permissions**
+- Update retrieval logic to read from `artifactFiles` + blob storage
+- Add permission checks to all query operations (viewing)
+- Update viewer UI to fetch from blob storage
+- Backend tests for permission enforcement
 
 ---
 
-## Scope Refinement (Session 1)
+## Key Design Decisions
+
+### 1. Unified Storage Model ✅
+**Decision:** ALL file types (HTML, Markdown, future types) use the same storage pattern
+- Content stored in Convex `_storage` as blobs
+- File metadata in `artifactFiles` table
+- No type-specific inline content fields
+
+**Rationale:**
+- Consistency - Same code path for all file types
+- Extensibility - Add new types without schema changes
+- Simplicity - Single-file = Multi-file with 1 file
+
+### 2. Audit Trail Fields ✅
+**Decision:** Add `createdBy` and `deletedBy` to all tables with lifecycle tracking
+
+**Fields:**
+- `createdBy: v.id("users")` - Who created the record
+- `createdAt: v.number()` - When it was created
+- `deletedBy: v.optional(v.id("users"))` - Who soft-deleted it
+- `deletedAt: v.optional(v.number())` - When it was deleted
+- `isDeleted: v.boolean()` - Whether it's deleted
+
+**Affected Tables:**
+- `artifacts` - Add `deletedBy`
+- `artifactVersions` - Add `createdBy`, `deletedBy`
+- `artifactFiles` - Add `deletedBy`
+
+### 3. Version Naming ✅
+**Decision:** Add optional `versionName` field for user-friendly version labels
+
+**Field:** `versionName: v.optional(v.string())`
+
+**Examples:** "Initial Draft", "Client Review v2", "Final"
+
+### 4. Extensible File Types ✅
+**Decision:** Change `fileType` from union to `v.string()` with application-level validation
+
+**Current (WRONG):**
+```typescript
+fileType: v.union(v.literal("zip"), v.literal("html"), v.literal("markdown"))
+```
+
+**New (CORRECT):**
+```typescript
+fileType: v.string()
+// Validated in mutation handlers with ALLOWED_FILE_TYPES array
+```
+
+**Benefits:**
+- Add new types by updating validation array (no schema migration)
+- Flexibility for experimentation
+- Future-proof
+
+### 5. Required Entry Point ✅
+**Decision:** Make `entryPoint` required (not optional)
+
+**Rationale:**
+- ALL versions have a main file to display
+- Simplifies retrieval logic (no null checks)
+- Clear contract for all file types
+
+### 6. Two-Phase Development ✅
+**Decision:** Split implementation into Upload (Phase 1) and Retrieval + Permissions (Phase 2)
+
+**Phase 1: Upload Flow**
+- Fix data model
+- Update mutations to use blob storage
+- Migration script
+
+**Phase 2: Retrieval + Permissions**
+- Add permission checks
+- Update queries to read from blobs
+- Viewer UI updates
+
+**Rationale:**
+- Upload is one-way write (simpler)
+- Must get data model right before permissions matter
+- Cleaner separation of concerns
+
+---
+
+## Design Evolution (Session 1)
 
 ### Initial Scope (Too Broad)
 - All artifact types (HTML, Markdown, ZIP)
 - Version model and permissions for all cases
 - Risk: Trying to solve both simple and complex cases at once
 
-### Refined Scope (Focused)
+### Refined Scope (Focused on Single-File)
 **✅ In Scope: Single-File Artifacts**
-- HTML artifacts (content in `htmlContent` field)
-- Markdown artifacts (content in `markdownContent` field)
+- HTML artifacts
+- Markdown artifacts
 - Upload, storage, retrieval, versioning, permissions
 
 **❌ Out of Scope: Multi-File Artifacts**
 - ZIP artifacts (deferred to Task 19+)
-- File extraction, `artifactFiles` table
+- File extraction and processing
 - Multi-file serving logic
 
-### Forward-Compatibility Requirement
+### Critical Insight: Unified Storage is Better
 
-**Key Insight:** Single-file vs multi-file storage is different, but versioning/permissions should be the same.
+**Initial Thought (WRONG):** Keep inline storage for single-file, use `artifactFiles` for multi-file
 
-**Storage Patterns:**
+**User Feedback:** "I think we need to expand our file storage to be more like multi-file zip so we can have all types of extensions"
+
+**Final Decision (CORRECT):** ALL files use unified storage (`artifactFiles` + `_storage` blobs)
+
+**Storage Pattern:**
 | Aspect | Single-File (HTML/MD) | Multi-File (ZIP) |
 |--------|----------------------|------------------|
-| Content storage | Inline (one field) | Separate table (`artifactFiles`) |
-| Versioning | ✅ Shared pattern | ✅ Shared pattern |
-| Permissions | ✅ Shared pattern | ✅ Shared pattern |
-| Authorship | ✅ Shared pattern | ✅ Shared pattern |
+| Content storage | ✅ `artifactFiles` + blobs | ✅ `artifactFiles` + blobs |
+| Number of files | Exactly 1 row | Multiple rows |
+| Versioning | ✅ Same pattern | ✅ Same pattern |
+| Permissions | ✅ Same pattern | ✅ Same pattern |
+| Authorship | ✅ Same pattern | ✅ Same pattern |
 
-**Design Goal:** Any schema changes (authorId, description) must work for both storage patterns.
+**Design Principle:** Single-file artifact = Multi-file artifact with exactly one file
 
 ---
 
@@ -84,7 +179,7 @@
 1. **No Version Authorship**
    - Current: No tracking of who created each version
    - Problem: Can't attribute versions to users
-   - Solution: Add `authorId` field to `artifactVersions` table
+   - Solution: Add `createdBy` field to `artifactVersions` table
 
 2. **Inconsistent Permission Checks**
    - Mutations have auth checks ✅
@@ -123,35 +218,51 @@
 
 ## Proposed Solution
 
-### Simple Approach (Recommended)
+### Unified Storage Approach (Selected)
+
+**Core Principle:** Single-file artifact = Multi-file artifact with exactly one file
 
 **Schema Changes:**
 ```typescript
 artifactVersions: defineTable({
-  // ... existing fields
-  authorId: v.id("users"),  // NEW: Track who created version
-  description: v.optional(v.string()),  // NEW: Version notes
+  // REMOVE: htmlContent, markdownContent fields
+  // CHANGE: fileType from union → v.string()
+  // CHANGE: entryPoint from optional → required
+  // ADD: Audit trail fields
+  createdBy: v.id("users"),              // NEW: Who created version
+  versionName: v.optional(v.string()),   // NEW: Version label
+  deletedBy: v.optional(v.id("users")),  // NEW: Who deleted version
+  entryPoint: v.string(),                // CHANGED: Now required
+  fileType: v.string(),                  // CHANGED: Extensible string
 })
-  .index("by_author", ["authorId"])  // NEW: List by author
+  .index("by_created_by", ["createdBy"])  // NEW: List by creator
 ```
+
+**Storage Pattern:**
+- ALL content → Convex `_storage` blobs
+- File metadata → `artifactFiles` table
+- One row per version for single-file
+- Multiple rows per version for multi-file (future)
 
 **Permission Model:**
 - Keep existing permission levels (owner, can-comment, null)
 - Add version authorship tracking
 - Add auth checks to all queries
-- Defer advanced features (draft states, can-edit role)
+- Defer advanced features (draft states, can-edit role) to Phase 2
 
 **Migration:**
-- Backfill `authorId` from `artifact.creatorId` for existing versions
+- Convert inline content (`htmlContent`, `markdownContent`) to blobs
+- Create `artifactFiles` row for each existing version
+- Backfill `createdBy` from `artifact.creatorId`
 
 ### Implementation Phases
 
-1. **ADR** - Document permission decisions
-2. **Schema** - Add authorId + description fields
-3. **Operations** - Update mutations to set authorId
-4. **Permissions** - Add query auth checks
-5. **Tests** - Backend test coverage
-6. **Migration** - Backfill existing data
+1. **Schema Changes** - Unified storage model + audit trails
+2. **Upload Mutations** - Store content as blobs
+3. **Migration Script** - Convert existing inline content
+4. **Retrieval Queries** - Read from artifactFiles + blobs
+5. **Permission Checks** - Add auth to all queries
+6. **Tests** - Backend test coverage
 
 ---
 
@@ -190,7 +301,7 @@ These questions need answers in Subtask 1:
 ## Files to Modify
 
 ### Schema
-- `app/convex/schema.ts` - Add authorId, description to artifactVersions
+- `app/convex/schema.ts` - Unified storage model changes (see `SCHEMA-CHANGES-SUMMARY.md`)
 
 ### Operations
 - `app/convex/artifacts.ts` - Update all version mutations

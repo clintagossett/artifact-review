@@ -60,14 +60,15 @@ artifactVersions: defineTable({
    * Required for all new versions.
    * Backfilled to artifact.creatorId for existing versions.
    */
-  authorId: v.id("users"),
+  createdBy: v.id("users"),
 
   /**
-   * Optional description/changelog for this version.
+   * Optional name/label for this version.
    * Displayed in version switcher UI.
-   * Max 1000 characters.
+   * Examples: "Initial draft", "Client review v2", "Final"
+   * Max 100 characters.
    */
-  description: v.optional(v.string()),
+  versionName: v.optional(v.string()),
 
   // ========================================
   // FILE TYPE
@@ -111,6 +112,7 @@ artifactVersions: defineTable({
   // ========================================
   isDeleted: v.boolean(),
   deletedAt: v.optional(v.number()),
+  deletedBy: v.optional(v.id("users")),  // Who soft-deleted this version
 
   // ========================================
   // TIMESTAMPS
@@ -129,7 +131,7 @@ artifactVersions: defineTable({
   .index("by_artifact", ["artifactId"])
   .index("by_artifact_active", ["artifactId", "isDeleted"])
   .index("by_artifact_version", ["artifactId", "versionNumber"])
-  .index("by_author", ["authorId"])  // NEW: List versions by author
+  .index("by_created_by", ["createdBy"])  // NEW: List versions by creator
 ```
 
 ### 1.2 Field Changelog
@@ -140,8 +142,9 @@ artifactVersions: defineTable({
 | `markdownContent` | `v.optional(v.string())` | **REMOVED** | Content stored in `artifactFiles` |
 | `entryPoint` | `v.optional(v.string())` | `v.string()` (required) | Always points to main file |
 | `fileType` | `v.union(v.literal(...))` | `v.string()` | Application-level validation for extensibility |
-| `authorId` | N/A | `v.id("users")` (required) | Track who created each version |
-| `description` | N/A | `v.optional(v.string())` | Version notes/changelog |
+| `createdBy` | N/A | `v.id("users")` (required) | Track who created each version |
+| `versionName` | N/A | `v.optional(v.string())` | Version label/name (e.g., "Draft 1", "Final") |
+| `deletedBy` | N/A | `v.optional(v.id("users"))` | Track who deleted this version |
 
 ### 1.3 artifactFiles Table (Used for ALL File Types)
 
@@ -191,6 +194,7 @@ artifactFiles: defineTable({
    */
   isDeleted: v.boolean(),
   deletedAt: v.optional(v.number()),
+  deletedBy: v.optional(v.id("users")),  // Who soft-deleted this file
 })
   .index("by_version", ["versionId"])
   .index("by_version_path", ["versionId", "filePath"])
@@ -204,7 +208,7 @@ artifactFiles: defineTable({
 ```
 artifactVersions:
 +--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
-| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint| fileSize | isDeleted |
+| _id                | artifactId  | versionNumber | createdBy    | fileType    | entryPoint| fileSize | isDeleted |
 +--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
 | jh77x23m8w9k...    | kg45a12...  | 1             | u789abc...   | "html"      | "index.html"| 45230   | false     |
 +--------------------+-------------+---------------+--------------+-------------+-----------+----------+-----------+
@@ -222,7 +226,7 @@ artifactFiles:
 ```
 artifactVersions:
 +--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
-| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint  | fileSize | isDeleted |
+| _id                | artifactId  | versionNumber | createdBy    | fileType    | entryPoint  | fileSize | isDeleted |
 +--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
 | mk55y67n3z2l...    | kg45a12...  | 1             | u789abc...   | "markdown"  | "README.md" | 8192     | false     |
 +--------------------+-------------+---------------+--------------+-------------+-------------+----------+-----------+
@@ -240,7 +244,7 @@ artifactFiles:
 ```
 artifactVersions:
 +--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
-| _id                | artifactId  | versionNumber | authorId     | fileType    | entryPoint   | fileSize | isDeleted |
+| _id                | artifactId  | versionNumber | createdBy     | fileType    | entryPoint   | fileSize | isDeleted |
 +--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
 | zp99k34j8m1x...    | kg45a12...  | 1             | u789abc...   | "zip"       | "index.html" | 523400   | false     |
 +--------------------+-------------+---------------+--------------+-------------+--------------+----------+-----------+
@@ -314,7 +318,7 @@ artifactFiles: (multiple rows)
 |  +------------------------------------------------------------+   |
 |  |  4. Create artifactVersions record                          |   |
 |  |     - versionNumber: 1                                      |   |
-|  |     - authorId: userId                                      |   |
+|  |     - createdBy: userId                                      |   |
 |  |     - fileType: "html" | "markdown"                         |   |
 |  |     - entryPoint: "index.html" | "README.md"                |   |
 |  +------------------------------------------------------------+   |
@@ -362,7 +366,7 @@ import { isValidFileType, getMimeType, getDefaultFilePath } from "./lib/fileType
 export const createSingleFileArtifact = mutation({
   args: {
     title: v.string(),
-    description: v.optional(v.string()),
+    description: v.optional(v.string()),  // Artifact description
     fileType: v.string(),  // "html" | "markdown" - validated at application level
     content: v.string(),   // The file content as text
     originalFileName: v.optional(v.string()),  // e.g., "dashboard.html"
@@ -420,8 +424,8 @@ export const createSingleFileArtifact = mutation({
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId,
       versionNumber: 1,
-      authorId: userId,
-      description: undefined,  // Can be set later
+      createdBy: userId,
+      versionName: undefined,  // Can be set later
       fileType: args.fileType,
       entryPoint: filePath,
       fileSize,
@@ -461,7 +465,7 @@ export const addSingleFileVersion = mutation({
     fileType: v.string(),
     content: v.string(),
     originalFileName: v.optional(v.string()),
-    description: v.optional(v.string()),  // Version notes
+    versionName: v.optional(v.string()),  // Version name
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
@@ -511,8 +515,8 @@ export const addSingleFileVersion = mutation({
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId: args.artifactId,
       versionNumber: newVersionNumber,
-      authorId: userId,
-      description: args.description,
+      createdBy: userId,
+      versionName: args.versionName,
       fileType: args.fileType,
       entryPoint: filePath,
       fileSize,
@@ -746,8 +750,8 @@ export function getMimeType(fileType: string): string {
   _id: Id<"artifactVersions">,
   artifactId: Id<"artifacts">,
   versionNumber: 1,
-  authorId: Id<"users">,
-  description: undefined,
+  createdBy: Id<"users">,
+  versionName: undefined,
   fileType: "html",
   entryPoint: "index.html",  // Points to file in artifactFiles
   fileSize: 45230,
@@ -775,8 +779,8 @@ export function getMimeType(fileType: string): string {
   _id: Id<"artifactVersions">,
   artifactId: Id<"artifacts">,
   versionNumber: 1,
-  authorId: Id<"users">,
-  description: "Initial spec document",
+  createdBy: Id<"users">,
+  versionName: "Initial spec document",
   fileType: "markdown",
   entryPoint: "README.md",  // Points to file in artifactFiles
   fileSize: 8192,
@@ -1067,7 +1071,7 @@ http.route({
     Phase 1: Schema Preparation (No Data Changes)
     +-------------------------------------------------+
     | - Make htmlContent and markdownContent optional  |
-    | - Add authorId as optional field                 |
+    | - Add createdBy as optional field                 |
     | - Change fileType to v.string()                  |
     | - Make entryPoint required                       |
     | - Add by_author index                            |
@@ -1090,7 +1094,7 @@ http.route({
     |   - Store content in _storage                    |
     |   - Create artifactFiles record                  |
     |   - Set entryPoint                               |
-    |   - Backfill authorId from artifact.creatorId   |
+    |   - Backfill createdBy from artifact.creatorId   |
     | - Run in batches to avoid timeouts               |
     +-------------------------------------------------+
                           |
@@ -1099,7 +1103,7 @@ http.route({
     +-------------------------------------------------+
     | - Remove inline content from migrated versions   |
     | - Remove htmlContent/markdownContent from schema |
-    | - Make authorId required                         |
+    | - Make createdBy required                         |
     | - Remove dual-mode query logic                   |
     +-------------------------------------------------+
 ```
@@ -1151,7 +1155,7 @@ export const migrate = internalMutation({
         continue; // Already migrated
       }
 
-      // Get parent artifact for authorId backfill
+      // Get parent artifact for createdBy backfill
       const artifact = await ctx.db.get(version.artifactId);
       if (!artifact) {
         continue; // Orphaned version, skip
@@ -1193,7 +1197,7 @@ export const migrate = internalMutation({
       // Update version record
       await ctx.db.patch(version._id, {
         entryPoint: filePath,
-        authorId: version.authorId ?? artifact.creatorId,  // Backfill if needed
+        createdBy: version.createdBy ?? artifact.creatorId,  // Backfill if needed
         // Keep htmlContent/markdownContent for now (Phase 4 removes them)
       });
 
@@ -1324,7 +1328,7 @@ export const getVersionContent = query({
 Before removing inline fields (Phase 4):
 
 - [ ] All versions have corresponding artifactFiles records
-- [ ] All versions have authorId set
+- [ ] All versions have createdBy set
 - [ ] All versions have entryPoint set
 - [ ] Storage IDs are valid and files are accessible
 - [ ] HTTP serving works for all migrated artifacts
@@ -1375,11 +1379,11 @@ Before removing inline fields (Phase 4):
 ### Phase 1: Schema Preparation
 
 - [ ] Update `convex/schema.ts`:
-  - [ ] Add `authorId: v.optional(v.id("users"))` to artifactVersions
-  - [ ] Add `description: v.optional(v.string())` to artifactVersions
+  - [ ] Add `createdBy: v.optional(v.id("users"))` to artifactVersions
+  - [ ] Add `versionName: v.optional(v.string())` to artifactVersions
   - [ ] Change `entryPoint` from `v.optional(v.string())` to `v.string()`
   - [ ] Change `fileType` from `v.union(...)` to `v.string()`
-  - [ ] Add `.index("by_author", ["authorId"])` to artifactVersions
+  - [ ] Add `.index("by_author", ["createdBy"])` to artifactVersions
 - [ ] Create `convex/lib/fileTypes.ts` with validation helpers
 - [ ] Deploy schema changes
 
@@ -1413,7 +1417,7 @@ Before removing inline fields (Phase 4):
 
 - [ ] Remove `htmlContent` field from schema
 - [ ] Remove `markdownContent` field from schema
-- [ ] Change `authorId` from optional to required
+- [ ] Change `createdBy` from optional to required
 - [ ] Remove transitional query logic
 - [ ] Deploy final schema
 - [ ] Remove old mutation code
