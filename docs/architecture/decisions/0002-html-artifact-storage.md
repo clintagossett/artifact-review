@@ -3,7 +3,6 @@
 **Status:** Accepted
 **Date:** 2024-12-24
 **Decision Maker:** Clint Gossett
-**Updated:** 2024-12-24 (Revised: Access control requirements simplified the decision)
 
 ## TL;DR
 

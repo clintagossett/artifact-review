@@ -15,9 +15,9 @@ Record of significant architectural decisions made for this project.
 | [0007](./0007-logging-strategy.md) | Logging Strategy | Accepted | 2024-12-26 |
 | [0008](./0008-nextjs-app-router-for-routing.md) | Next.js App Router for Routing | Accepted | 2024-12-26 |
 | [0009](./0009-artifact-file-storage-structure.md) | Artifact File Storage Structure | Accepted | 2025-12-26 |
-| [0010](./0010-reviewer-invitation-account-linking.md) | Reviewer Invitation Account Linking | **Proposed** | 2025-12-27 |
+| [0010](./0010-reviewer-invitation-account-linking.md) | Reviewer Invitation Account Linking | Accepted | 2025-12-27 |
 | [0011](./0011-soft-delete-strategy.md) | Soft Delete Strategy | Accepted | 2025-12-28 |
-| [0013](./0013-naming-conventions.md) | Backend Naming Conventions | **Proposed** | 2025-12-31 |
+| [0012](./0012-naming-conventions.md) | Backend Naming Conventions | Accepted | 2025-12-31 |
 
 ---
 

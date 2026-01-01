@@ -29,7 +29,7 @@
 
 ## Executive Summary
 
-Reviewed 12 Architecture Decision Records (ADRs 0001-0013, excluding deleted 0012). Overall, the ADR collection is well-organized and follows consistent formatting. However, there are several areas requiring attention:
+Reviewed 11 Architecture Decision Records (ADRs 0001-0012, excluding deleted original 0012). Overall, the ADR collection is well-organized and follows consistent formatting. However, there are several areas requiring attention:
 
 1. **Redundancy issues:** ADRs 0002 and 0009 have some overlap regarding artifact storage (previously overlapped with deleted ADR 0012)
 2. **Transitional language:** Several ADRs contain "changed minds" language that will confuse future readers
@@ -52,8 +52,8 @@ Reviewed 12 Architecture Decision Records (ADRs 0001-0013, excluding deleted 001
 | 0009 | Artifact File Storage Structure | Accepted | Flat `artifactFiles` table with path strings for ZIP extraction |
 | 0010 | Reviewer Invitation Account Linking | Accepted | Link pending invitations at signup via auth hook |
 | 0011 | Soft Delete Strategy | Accepted | `isDeleted: boolean` + `deletedAt: number` for Convex index compatibility |
-| ~~0012~~ | ~~Unified Artifact Storage~~ | **DELETED** | Moved to Task 00018 documentation |
-| 0013 | Backend Naming Conventions | **Proposed** | Naming standards for Convex functions, tables, indexes, fields |
+| ~~0012 (original)~~ | ~~Unified Artifact Storage~~ | **DELETED** | Moved to Task 00018 documentation |
+| 0012 | Backend Naming Conventions | **Proposed** | Naming standards for Convex functions, tables, indexes, fields (renumbered from 0013) |
 
 ---
 
@@ -137,7 +137,7 @@ This ADR covers email invitations with "can-comment" permission.
 
 ---
 
-### ADR 0013: Backend Naming Conventions
+### ADR 0012: Backend Naming Conventions (renumbered from 0013)
 
 **Minor Issue:**
 
@@ -180,7 +180,7 @@ But the Decision Status section (lines 517-526) says:
 
 ---
 
-### ADR 0013: Status "Proposed" - Needs Resolution
+### ADR 0012: Status "Proposed" - Needs Resolution (renumbered from 0013)
 
 **Current Status:** Proposed
 
@@ -196,13 +196,13 @@ But the Decision Status section (lines 517-526) says:
 
 ### High Priority
 
-1. ~~**Resolve ADR 0012 status**~~ - ✅ **COMPLETED** - Deleted, documented in Task 00018
+1. ~~**Resolve original ADR 0012 status**~~ - ✅ **COMPLETED** - Deleted, documented in Task 00018
 2. **Remove transitional language from ADR 0010** - Rewrite scope section
 3. **Update ADR 0002** - Remove "Revised" note from header
 
 ### Medium Priority
 
-4. **Resolve ADR 0013 status** - Accept if conventions are established
+4. **Resolve ADR 0012 (Backend Naming Conventions) status** - Accept if conventions are established
 5. **Clean up ADR 0010** - Remove implementation tracking section after acceptance
 
 ### Low Priority
@@ -305,13 +305,13 @@ This ADR covers reviewer invitations via email with "can-comment" permission.
 
 | Category | Count |
 |----------|-------|
-| Total ADRs reviewed | 12 (excluding deleted 0012) |
+| Total ADRs reviewed | 11 (excluding deleted original 0012) |
 | Clean (no issues) | 9 |
-| With transitional language | 3 (0002, 0010, 0013) |
-| Deleted as task documentation | 1 (0012) |
-| Pending status resolution | 1 (0013) |
+| With transitional language | 3 (0002, 0010, 0012) |
+| Deleted as task documentation | 1 (original 0012) |
+| Pending status resolution | 1 (0012 - Backend Naming Conventions) |
 
 The ADR collection is healthy. The main areas for improvement are:
-1. ✅ **Storage ADR overlap resolved** - ADR 0012 deleted, documented in Task 00018
+1. ✅ **Storage ADR overlap resolved** - Original ADR 0012 deleted, documented in Task 00018
 2. Removing transitional language that will confuse future AI agents
-3. Finalizing the status of proposed ADR 0013
+3. Finalizing the status of proposed ADR 0012 (Backend Naming Conventions)

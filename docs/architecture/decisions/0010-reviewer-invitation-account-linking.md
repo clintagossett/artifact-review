@@ -500,33 +500,17 @@ describe("Post-auth deep linking", () => {
 
 ---
 
-## MVP Scope Simplification (2025-12-27)
+## Scope
 
-**After initial planning, scope was simplified to:**
-- ✅ Email invitations only (no public share links)
-- ✅ Single permission level: "can-comment" (no "view-only")
-- ✅ Email sending via Resend (not mocked)
-- ✅ Deep linking after authentication
-- ❌ Public share links → Deferred to Task 00013
-- ❌ "View-only" permission → Deferred to Task 00013
+This ADR covers reviewer invitations via email with "can-comment" permission.
 
-**This ADR covers the simplified MVP scope.**
+**Included:**
+- Email invitations (not public share links)
+- Single permission level: "can-comment"
+- Email sending via Resend
+- Deep linking after authentication
 
----
+**Out of scope (future consideration):**
+- Public share links
+- "View-only" permission level
 
-## Decision Status
-
-**Current Status:** Accepted ✅
-
-**Implementation Ready:**
-- ✅ Subtask 02 (Backend) - Ready for TDD agent
-- ✅ Subtask 03 (UI) - Needs architect refinement of Figma designs
-- ⏳ Subtask 04 (Integration) - Blocked by 02 & 03
-- ⏳ Subtask 05 (E2E) - Blocked by 04
-
-**Completed:**
-- ✅ Architecture reviewed and approved
-- ✅ Simplified for MVP (email-only)
-- ✅ Email sending approach approved
-- ✅ Deep linking security reviewed
-- ✅ All subtask READMEs updated
