@@ -120,7 +120,36 @@ This is faster and simpler than maintaining migration scripts.
 2. ✅ Review and approve implementation plan
 3. ✅ Implementation complete
 4. ✅ Tests passing
-5. 🎯 **Phase 1 COMPLETE** - Move to Phase 2 (Retrieval Operations)
+5. ✅ Frontend hook fixed (mutation → action) - 2025-12-31
+6. 🎯 **Phase 1 COMPLETE** - Move to Phase 2 (Retrieval Operations)
+
+## Frontend Fix (2025-12-31)
+
+**Issue:** Frontend was calling `artifacts.create` as a mutation, but Phase 1 implementation changed it to an action.
+
+**Error:**
+```
+Trying to execute artifacts.js:create as Mutation, but it is defined as Action.
+```
+
+**Fix Applied:**
+- Updated `app/src/hooks/useArtifactUpload.ts`:
+  - Changed `useMutation` → `useAction` (import and hook instantiation)
+  - Updated argument structure for HTML/Markdown uploads:
+    - Removed: `htmlContent`, `markdownContent` (deprecated fields)
+    - Added: `content` (unified field)
+    - Added: `originalFileName` (from file.name)
+    - Added: `versionName: undefined`
+  - Disabled ZIP uploads temporarily (out of scope for Phase 1)
+
+**Files Modified:**
+- `app/src/hooks/useArtifactUpload.ts`
+
+**Testing:**
+- E2E test created: `tests/e2e/file-upload.spec.ts`
+- Manual test guide: `tests/manual-upload-test.md`
+
+**Status:** ✅ Fix complete, ready for manual validation
 
 ---
 

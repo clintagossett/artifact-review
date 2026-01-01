@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useMutation } from "convex/react";
+import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -35,9 +35,10 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createArtifact = useMutation(api.artifacts.create);
-  const createArtifactWithZip = useMutation(api.zipUpload.createArtifactWithZip);
-  const triggerZipProcessing = useMutation(api.zipUpload.triggerZipProcessing);
+  const createArtifact = useAction(api.artifacts.create);
+  // Note: ZIP uploads are out of scope for Phase 1
+  // const createArtifactWithZip = useMutation(api.zipUpload.createArtifactWithZip);
+  // const triggerZipProcessing = useMutation(api.zipUpload.triggerZipProcessing);
 
   const reset = useCallback(() => {
     setUploadProgress(0);
@@ -96,10 +97,9 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
             title,
             description,
             fileType,
-            ...(fileType === "html"
-              ? { htmlContent: content }
-              : { markdownContent: content }),
-            fileSize: file.size,
+            content,  // Unified field for Phase 1
+            originalFileName: file.name,
+            versionName: undefined,
           });
 
           setUploadProgress(100);
@@ -109,21 +109,10 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
         }
 
         // Handle ZIP files
+        // TODO: ZIP upload is out of scope for Task 00018 Phase 1
+        // This code path is incomplete and will be fixed in a future task
         if (fileType === "zip") {
-          setUploadProgress(30);
-
-          const result = await createArtifact({
-            title,
-            description,
-            fileType: "zip",
-            entryPoint,
-            fileSize: file.size,
-          });
-
-          setUploadProgress(100);
-          setIsUploading(false);
-
-          return result;
+          throw new Error("ZIP uploads are not yet supported in Phase 1");
         }
 
         throw new Error("Unsupported file type");
