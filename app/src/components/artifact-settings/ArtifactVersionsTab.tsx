@@ -50,8 +50,8 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
   const addZipVersionMutation = useMutation(api.zipUpload.addZipVersion);
   const triggerZipProcessingAction = useAction(api.zipUpload.triggerZipProcessing);
 
-  // Transform backend data to component format
-  const versions: Version[] = backendVersions?.map(v => ({
+  // Transform backend data to component format and sort by version number (latest first)
+  const versions: Version[] = (backendVersions?.map(v => ({
     id: v._id,
     number: v.number,
     customName: v.name || `v${v.number}`,
@@ -65,7 +65,7 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
     }),
     uploadedBy: 'Owner', // TODO: Fetch user name from createdBy
     isLatest: v.isLatest,
-  })) ?? [];
+  })) ?? []).sort((a, b) => b.number - a.number);
 
   const handleRename = (versionId: string, currentName: string) => {
     setEditingId(versionId);
