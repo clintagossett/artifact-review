@@ -19,7 +19,6 @@ import {
   Edit3,
   Upload,
   History,
-  Star,
   MapPin,
   Settings,
   Trash2,
@@ -903,20 +902,6 @@ export function DocumentViewer({
                                 {version.uploadedAt} • {version.uploadedBy}
                               </div>
                             </div>
-                            {currentVersionId === version.id && version.id !== defaultVersionId && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-auto py-1 px-2 text-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDefaultVersionId(version.id);
-                                }}
-                              >
-                                <Star className="w-3 h-3 mr-1" />
-                                Set Default
-                              </Button>
-                            )}
                           </div>
                         </DropdownMenuItem>
                       ))}
