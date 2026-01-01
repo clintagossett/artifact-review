@@ -69,6 +69,7 @@ import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { useRouter } from 'next/navigation';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -101,6 +102,8 @@ export function DocumentViewer({
   artifactOwnerId,
   convexUrl
 }: DocumentViewerProps) {
+  const router = useRouter();
+
   // Get current user for permission checks
   const currentUser = useQuery(api.users.getCurrentUser);
   const currentUserId = currentUser?._id;
@@ -188,7 +191,12 @@ export function DocumentViewer({
   // Version management state
   // Use the real versionId prop instead of mock version IDs
   const [currentVersionId, setCurrentVersionId] = useState<string>(versionId);
-  
+
+  // Sync currentVersionId when versionId prop changes (e.g., user navigates to different version via URL)
+  useEffect(() => {
+    setCurrentVersionId(versionId);
+  }, [versionId]);
+
   // Presence states
   const [recentActivity, setRecentActivity] = useState<{
     message: string;
@@ -210,7 +218,19 @@ export function DocumentViewer({
   
   const currentVersion = versions.find(v => v._id === currentVersionId);
   const isViewingOldVersion = !currentVersion?.isLatest;
-  
+
+  // Calculate latest version number for navigation
+  const latestVersionNumber = Math.max(...versions.map((v) => v.number));
+
+  // Handle version change via URL navigation (ensures content + comments refresh)
+  const handleVersionChange = (newVersionNumber: number) => {
+    if (newVersionNumber === latestVersionNumber) {
+      router.push(`/a/${shareToken}`);
+    } else {
+      router.push(`/a/${shareToken}/v/${newVersionNumber}`);
+    }
+  };
+
   // Build URL to artifact HTML via Next.js proxy (same-origin to avoid CORS issues)
   // Format: /api/artifact/{shareToken}/v{versionNumber}/{page}
   // This proxies to Convex HTTP endpoint, allowing iframe.contentDocument access
@@ -888,7 +908,7 @@ export function DocumentViewer({
                       {[...versions].sort((a, b) => b.number - a.number).map((version) => (
                         <DropdownMenuItem
                           key={version._id}
-                          onClick={() => setCurrentVersionId(version._id)}
+                          onClick={() => handleVersionChange(version.number)}
                           className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
                         >
                           <div className="flex items-start justify-between w-full gap-2">
@@ -967,10 +987,7 @@ export function DocumentViewer({
         isViewingOldVersion={isViewingOldVersion}
         currentVersionNumber={currentVersion?.number}
         latestVersionNumber={versions.find(v => v.isLatest)?.number}
-        onSwitchToLatest={() => {
-          const latestVersion = versions.find(v => v.isLatest);
-          if (latestVersion) setCurrentVersionId(latestVersion._id);
-        }}
+        onSwitchToLatest={() => handleVersionChange(latestVersionNumber)}
       />
 
       {/* Main Content Area */}
