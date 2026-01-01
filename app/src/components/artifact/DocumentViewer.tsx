@@ -964,49 +964,19 @@ export function DocumentViewer({
         filter={filter}
         onFilterChange={setFilter}
         activeCount={filteredComments.filter(c => !c.resolved).length}
+        isViewingOldVersion={isViewingOldVersion}
+        currentVersionNumber={currentVersion?.number}
+        latestVersionNumber={versions.find(v => v.isLatest)?.number}
+        onSwitchToLatest={() => {
+          const latestVersion = versions.find(v => v.isLatest);
+          if (latestVersion) setCurrentVersionId(latestVersion._id);
+        }}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Document Display */}
         <div className="flex-1 overflow-auto bg-gray-50 p-8">
-          {/* Old Version Banner */}
-          {isViewingOldVersion && (
-            <div className="max-w-5xl mx-auto mb-4 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="bg-amber-200 text-amber-900">
-                  📜 Historical Version
-                </Badge>
-                <p className="text-amber-900">
-                  You're viewing <strong>v{currentVersion?.number}</strong> (read-only). 
-                  Comments are locked on old versions.
-                </p>
-              </div>
-              <Button
-                size="sm"
-                className="bg-purple-600 hover:bg-purple-700"
-                onClick={() => {
-                  const latestVersion = versions.find(v => v.isLatest);
-                  if (latestVersion) setCurrentVersionId(latestVersion._id);
-                }}
-              >
-                Switch to Latest (v{versions.find(v => v.isLatest)?.number})
-              </Button>
-            </div>
-          )}
-          
-          {/* Helpful Hint Banner - Only show on default version */}
-          {!isViewingOldVersion && (
-            <div className="max-w-5xl mx-auto mb-4 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 flex items-center gap-3">
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                💡 Tip
-              </Badge>
-              <p className="text-purple-900">
-                <strong>Select text</strong> to comment, or <strong>right-click images, buttons, or headings</strong> to add comments to them
-              </p>
-            </div>
-          )}
-
           <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
             <iframe
               ref={iframeRef}

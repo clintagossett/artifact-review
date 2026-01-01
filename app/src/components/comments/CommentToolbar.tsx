@@ -20,6 +20,11 @@ interface CommentToolbarProps {
   filter: 'all' | 'unresolved' | 'resolved';
   onFilterChange: (filter: 'all' | 'unresolved' | 'resolved') => void;
   activeCount: number; // Count of active (unresolved) items
+  // Version info for banners
+  isViewingOldVersion?: boolean;
+  currentVersionNumber?: number;
+  latestVersionNumber?: number;
+  onSwitchToLatest?: () => void;
 }
 
 export function CommentToolbar({
@@ -30,6 +35,10 @@ export function CommentToolbar({
   filter,
   onFilterChange,
   activeCount,
+  isViewingOldVersion = false,
+  currentVersionNumber,
+  latestVersionNumber,
+  onSwitchToLatest,
 }: CommentToolbarProps) {
   return (
     <div className="border-b border-gray-200 bg-white px-6 py-3">
@@ -81,10 +90,36 @@ export function CommentToolbar({
         </div>
       </div>
 
-      {/* Tool Description Hint */}
-      {activeToolMode === 'comment' && (
-        <div className="mt-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded">
-          <strong>Comment Mode:</strong> Click any element or select text to add a comment
+      {/* Version Banners */}
+      {isViewingOldVersion ? (
+        <div className="mt-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="bg-amber-200 text-amber-900">
+              📜 Historical Version
+            </Badge>
+            <p className="text-amber-900 text-sm">
+              You&apos;re viewing <strong>v{currentVersionNumber}</strong> (read-only).
+              Comments are locked on old versions.
+            </p>
+          </div>
+          {onSwitchToLatest && (
+            <Button
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700"
+              onClick={onSwitchToLatest}
+            >
+              Switch to Latest (v{latestVersionNumber})
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 flex items-center gap-3">
+          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+            💡 Tip
+          </Badge>
+          <p className="text-purple-900 text-sm">
+            <strong>Select text</strong> to comment, or <strong>right-click images, buttons, or headings</strong> to add comments to them
+          </p>
         </div>
       )}
     </div>
