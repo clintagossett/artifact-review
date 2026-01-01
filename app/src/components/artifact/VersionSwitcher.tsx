@@ -11,6 +11,8 @@ interface VersionSwitcherProps {
   versions: Array<{
     number: number;
     createdAt: number;
+    name?: string;
+    isLatest: boolean;
   }>;
   onVersionChange: (versionNumber: number) => void;
 }
@@ -43,7 +45,9 @@ export function VersionSwitcher({
             key={version.number}
             value={version.number.toString()}
           >
-            v{version.number} - {formatDate(version.createdAt)}
+            v{version.number}
+            {version.name && ` - ${version.name}`}
+            {version.isLatest ? " - Latest" : ` - ${formatDate(version.createdAt)}`}
           </SelectItem>
         ))}
       </SelectContent>

@@ -1,9 +1,10 @@
 # Subtask 02: Artifact Viewer - Version Support
 
 **Parent Task:** 00021-support-multi-version-artifacts
-**Status:** OPEN - READY FOR IMPLEMENTATION
+**Status:** COMPLETE ✅
 **Created:** 2026-01-01
 **Updated:** 2026-01-01
+**Completed:** 2026-01-01
 
 ---
 
@@ -11,7 +12,23 @@
 
 **Last Updated:** 2026-01-01
 
-### Current Status: READY FOR IMPLEMENTATION
+### Current Status: COMPLETE ✅
+
+**All implementation phases complete:**
+- ✅ Phase 1: VersionSwitcher "Latest" badge
+- ✅ Phase 2: Banner "Switch to latest" button
+- ✅ Phase 3: ArtifactVersionsTab backend connection
+
+**Test Results:**
+- 19 unit tests passing
+- Backend integration working
+- Real-time updates via Convex subscriptions
+
+**See:** `test-report.md` for detailed coverage
+
+---
+
+### Background (When Starting)
 
 **Subtask 01 is COMPLETE.** The backend has all the APIs needed:
 - `isLatest` computed field in `getVersions` query

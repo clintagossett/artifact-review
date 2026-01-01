@@ -1,5 +1,5 @@
-import { render, screen, cleanup } from "@testing-library/react";
-import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { ArtifactHeader } from "../ArtifactHeader";
 
 describe("ArtifactHeader", () => {
@@ -19,8 +19,8 @@ describe("ArtifactHeader", () => {
   };
 
   const mockVersions = [
-    { number: 1, createdAt: new Date("2024-12-25").getTime() },
-    { number: 2, createdAt: new Date("2024-12-26").getTime() },
+    { number: 1, createdAt: new Date("2024-12-25").getTime(), isLatest: false },
+    { number: 2, createdAt: new Date("2024-12-26").getTime(), isLatest: true },
   ];
 
   it("should display artifact title", () => {
@@ -110,5 +110,55 @@ describe("ArtifactHeader", () => {
     );
 
     expect(screen.queryByText(/read-only/i)).not.toBeInTheDocument();
+  });
+
+  it("should show switch to latest button when viewing old version", () => {
+    render(
+      <ArtifactHeader
+        artifact={mockArtifact}
+        version={{ ...mockVersion, number: 1 }}
+        versions={mockVersions}
+        isLatestVersion={false}
+        onVersionChange={() => {}}
+        latestVersionNumber={2}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /switch to latest/i })).toBeInTheDocument();
+  });
+
+  it("should call onVersionChange with latest version number when switch button clicked", () => {
+    const handleVersionChange = vi.fn();
+
+    render(
+      <ArtifactHeader
+        artifact={mockArtifact}
+        version={{ ...mockVersion, number: 1 }}
+        versions={mockVersions}
+        isLatestVersion={false}
+        onVersionChange={handleVersionChange}
+        latestVersionNumber={2}
+      />
+    );
+
+    const switchButton = screen.getByRole("button", { name: /switch to latest/i });
+    fireEvent.click(switchButton);
+
+    expect(handleVersionChange).toHaveBeenCalledWith(2);
+  });
+
+  it("should NOT show switch button when viewing latest version", () => {
+    render(
+      <ArtifactHeader
+        artifact={mockArtifact}
+        version={mockVersion}
+        versions={mockVersions}
+        isLatestVersion={true}
+        onVersionChange={() => {}}
+        latestVersionNumber={2}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /switch to latest/i })).not.toBeInTheDocument();
   });
 });

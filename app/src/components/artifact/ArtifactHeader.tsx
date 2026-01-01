@@ -22,9 +22,12 @@ interface ArtifactHeaderProps {
   versions: Array<{
     number: number;
     createdAt: number;
+    name?: string;
+    isLatest: boolean;
   }>;
   isLatestVersion: boolean;
   onVersionChange: (versionNumber: number) => void;
+  latestVersionNumber?: number;
   currentUser?: any;
   userPermission?: "owner" | "can-comment" | null;
 }
@@ -35,6 +38,7 @@ export function ArtifactHeader({
   versions,
   isLatestVersion,
   onVersionChange,
+  latestVersionNumber,
   currentUser,
   userPermission,
 }: ArtifactHeaderProps) {
@@ -54,11 +58,20 @@ export function ArtifactHeader({
     <div className="border-b border-gray-200 bg-white">
       {/* Read-only banner for old versions */}
       {!isLatestVersion && (
-        <div className="bg-yellow-50 border-b border-yellow-200 p-4">
+        <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex items-center justify-between">
           <p className="text-sm text-yellow-800">
             This is an old version (v{version.number}). This version is
             read-only. View the latest version to add comments.
           </p>
+          {latestVersionNumber && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onVersionChange(latestVersionNumber)}
+            >
+              Switch to latest
+            </Button>
+          )}
         </div>
       )}
 

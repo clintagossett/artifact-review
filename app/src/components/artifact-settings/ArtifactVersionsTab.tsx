@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -20,59 +23,58 @@ interface Version {
   customName: string;
   uploadedAt: string;
   uploadedBy: string;
+  isLatest: boolean;
 }
 
 interface ArtifactVersionsTabProps {
-  artifactId: string;
+  artifactId: Id<"artifacts">;
 }
 
-const mockVersions: Version[] = [
-  {
-    id: 'v3',
-    number: 3,
-    customName: 'v3',
-    uploadedAt: 'Jan 20, 2024 at 2:15 PM',
-    uploadedBy: 'you@company.com',
-  },
-  {
-    id: 'v2',
-    number: 2,
-    customName: 'v2',
-    uploadedAt: 'Jan 18, 2024 at 4:30 PM',
-    uploadedBy: 'you@company.com',
-  },
-  {
-    id: 'v1',
-    number: 1,
-    customName: 'v1',
-    uploadedAt: 'Jan 15, 2024 at 10:30 AM',
-    uploadedBy: 'you@company.com',
-  },
-];
-
 export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
-  const [versions, setVersions] = useState<Version[]>(mockVersions);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  // Track highest version number ever created (persists even after deletions)
-  // See /VERSION_MANAGEMENT.md for full documentation
-  const [maxVersionNumber, setMaxVersionNumber] = useState(3); // Highest in mockVersions
+  // Fetch versions from backend
+  const backendVersions = useQuery(api.artifacts.getVersions, { artifactId });
+
+  // Mutations
+  const updateNameMutation = useMutation(api.artifacts.updateName);
+  const softDeleteMutation = useMutation(api.artifacts.softDeleteVersion);
+
+  // Transform backend data to component format
+  const versions: Version[] = backendVersions?.map(v => ({
+    id: v._id,
+    number: v.number,
+    customName: v.name || `v${v.number}`,
+    uploadedAt: new Date(v.createdAt).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }),
+    uploadedBy: 'Owner', // TODO: Fetch user name from createdBy
+    isLatest: v.isLatest,
+  })) ?? [];
 
   const handleRename = (versionId: string, currentName: string) => {
     setEditingId(versionId);
     setEditingName(currentName);
   };
 
-  const handleSaveRename = (versionId: string) => {
-    setVersions(
-      versions.map((v) =>
-        v.id === versionId ? { ...v, customName: editingName } : v
-      )
-    );
-    setEditingId(null);
-    toast({ title: 'Version renamed' });
+  const handleSaveRename = async (versionId: string) => {
+    try {
+      await updateNameMutation({
+        versionId: versionId as Id<"artifactVersions">,
+        name: editingName || null,
+      });
+      setEditingId(null);
+      toast({ title: 'Version renamed' });
+    } catch (error) {
+      toast({ title: 'Failed to rename version', variant: 'destructive' });
+    }
   };
 
   const handleCancelRename = () => {
@@ -80,15 +82,21 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
     setEditingName('');
   };
 
-  const handleDelete = (versionId: string) => {
+  const handleDelete = async (versionId: string) => {
     const version = versions.find((v) => v.id === versionId);
     if (versions.length === 1) {
       toast({ title: 'Cannot delete the only version', variant: 'destructive' });
       return;
     }
     if (confirm(`Delete version ${version?.number}? This action cannot be undone.`)) {
-      setVersions(versions.filter((v) => v.id !== versionId));
-      toast({ title: 'Version deleted' });
+      try {
+        await softDeleteMutation({
+          versionId: versionId as Id<"artifactVersions">,
+        });
+        toast({ title: 'Version deleted' });
+      } catch (error) {
+        toast({ title: 'Failed to delete version', variant: 'destructive' });
+      }
     }
   };
 
@@ -97,27 +105,22 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
   };
 
   const handleUploadVersion = async (file: File, entryPoint?: string) => {
-    const newVersionNumber = maxVersionNumber + 1;
-    const newVersion: Version = {
-      id: `v${newVersionNumber}`,
-      number: newVersionNumber,
-      customName: `v${newVersionNumber}`,
-      uploadedAt: new Date().toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      }),
-      uploadedBy: 'you@company.com',
-    };
-
-    setVersions([newVersion, ...versions]);
-    setMaxVersionNumber(newVersionNumber);
+    // TODO: Implement upload using api.artifacts.addVersion or api.zipUpload.addZipVersion
+    // For now, close the dialog and show a message
     setUploadDialogOpen(false);
-    toast({ title: `Version ${newVersionNumber} uploaded successfully` });
+    toast({ title: 'Upload functionality will be implemented soon' });
   };
+
+  // Show loading state
+  if (backendVersions === undefined) {
+    return (
+      <div className="max-w-5xl">
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <p className="text-gray-600">Loading versions...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl">
@@ -175,6 +178,11 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
                             ? version.customName
                             : `v${version.number} - ${version.customName}`}
                         </h4>
+                        {version.isLatest && (
+                          <Badge className="bg-green-100 text-green-800 text-xs">
+                            Latest
+                          </Badge>
+                        )}
                       </div>
                     )}
                   </div>

@@ -23,6 +23,8 @@ interface ArtifactViewerProps {
   versions: Array<{
     number: number;
     createdAt: number;
+    name?: string;
+    isLatest: boolean;
   }>;
   isLatestVersion: boolean;
   onVersionChange: (versionNumber: number) => void;
@@ -71,6 +73,10 @@ export function ArtifactViewer({
     setCurrentPage(nextPage);
   };
 
+  // Calculate latest version number
+  const latestVersionNumber = versions.find(v => v.isLatest)?.number
+    ?? Math.max(...versions.map(v => v.number));
+
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
@@ -80,6 +86,7 @@ export function ArtifactViewer({
         versions={versions}
         isLatestVersion={isLatestVersion}
         onVersionChange={onVersionChange}
+        latestVersionNumber={latestVersionNumber}
         currentUser={currentUser}
         userPermission={userPermission}
       />
