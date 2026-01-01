@@ -3,12 +3,12 @@
 # Run from project root: ./scripts/start-dev-servers.sh
 #
 # Usage:
-#   ./scripts/start-dev-servers.sh           # Start servers (skip if already running)
-#   ./scripts/start-dev-servers.sh --restart # Kill existing and restart fresh
+#   ./scripts/start-dev-servers.sh                    # Start servers (skip if already running)
+#   ./scripts/start-dev-servers.sh --restart|--force  # Kill existing and restart fresh
 #
 # Features:
 # - Checks if ports are already in use before starting
-# - Skips starting a server if it's already running (unless --restart)
+# - Skips starting a server if it's already running (unless --restart/--force)
 # - Only kills processes it started on Ctrl+C
 # - Logs output to app/logs/ for AI agent access
 
@@ -19,7 +19,7 @@ set +e
 RESTART_MODE=false
 for arg in "$@"; do
     case $arg in
-        --restart|-r)
+        --restart|-r|--force|-f)
             RESTART_MODE=true
             shift
             ;;
@@ -167,7 +167,7 @@ if [ "$CONVEX_RUNNING" = true ] && [ "$NEXTJS_RUNNING" = true ]; then
     echo "Both servers were already running."
     echo "Nothing to do - exiting."
     echo ""
-    echo "Use --restart to force restart servers."
+    echo "Use --restart or --force to force restart servers."
     exit 0
 fi
 
