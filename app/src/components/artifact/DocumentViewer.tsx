@@ -885,7 +885,7 @@ export function DocumentViewer({
                                     : `v${version.number}`}
                                 </span>
                                 {index === 0 && (
-                                  <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                                  <Badge className="bg-green-100 text-green-800 text-xs">
                                     Latest
                                   </Badge>
                                 )}
