@@ -265,7 +265,6 @@ From `docs/architecture/convex-rules.md`:
 - **End-State Design:** `../END-STATE-DESIGN.md`
 - **Phase 1:** `../01-phase1-upload-write-permissions/`
 - **Convex Rules:** `docs/architecture/convex-rules.md`
-- **ADR 0012:** `docs/architecture/decisions/0012-unified-artifact-storage.md`
 
 ---
 

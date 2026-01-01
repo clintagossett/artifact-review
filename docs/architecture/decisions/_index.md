@@ -17,7 +17,6 @@ Record of significant architectural decisions made for this project.
 | [0009](./0009-artifact-file-storage-structure.md) | Artifact File Storage Structure | Accepted | 2025-12-26 |
 | [0010](./0010-reviewer-invitation-account-linking.md) | Reviewer Invitation Account Linking | **Proposed** | 2025-12-27 |
 | [0011](./0011-soft-delete-strategy.md) | Soft Delete Strategy | Accepted | 2025-12-28 |
-| [0012](./0012-unified-artifact-storage.md) | Unified Artifact Storage Strategy | **Proposed** | 2025-12-28 |
 | [0013](./0013-naming-conventions.md) | Backend Naming Conventions | **Proposed** | 2025-12-31 |
 
 ---

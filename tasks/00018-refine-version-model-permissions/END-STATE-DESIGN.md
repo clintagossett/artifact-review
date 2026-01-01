@@ -3,7 +3,6 @@
 **Task:** 00018 - Refine Single-File Artifact Upload and Versioning
 **Date:** 2025-12-31
 **Status:** Design Complete
-**Related ADR:** [0012 - Unified Artifact Storage Strategy](../../docs/architecture/decisions/0012-unified-artifact-storage.md)
 
 ---
 
@@ -1471,7 +1470,6 @@ const MIME_TYPES: Record<string, string> = {
 
 - [Task 00018 README](./README.md) - Task overview and problem statement
 - [Implementation Overview](./IMPLEMENTATION-OVERVIEW.md) - Current state analysis
-- [ADR 0012 - Unified Artifact Storage](../../docs/architecture/decisions/0012-unified-artifact-storage.md) - Architecture decision
 - [ADR 0002 - HTML Artifact Storage](../../docs/architecture/decisions/0002-html-artifact-storage.md) - Original storage decision
 - [ADR 0009 - Artifact File Storage Structure](../../docs/architecture/decisions/0009-artifact-file-storage-structure.md) - artifactFiles table design
 
