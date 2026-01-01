@@ -859,9 +859,9 @@ export function DocumentViewer({
                       <Button variant="outline" size="sm" className="gap-2">
                         <History className="w-4 h-4" />
                         v{currentVersion?.number || 1}
-                        {currentVersionId === defaultVersionId && (
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs ml-1">
-                            Default
+                        {currentVersion?.number === Math.max(...(project?.versions.map(v => v.number) || [1])) && (
+                          <Badge className="bg-green-100 text-green-800 text-xs ml-1">
+                            Latest
                           </Badge>
                         )}
                         <ChevronDown className="w-4 h-4" />
