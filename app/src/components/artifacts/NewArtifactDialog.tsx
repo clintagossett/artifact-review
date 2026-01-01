@@ -106,7 +106,7 @@ export function NewArtifactDialog({
             <div>
               <DialogTitle>Create New Artifact</DialogTitle>
               <DialogDescription>
-                Upload an HTML or Markdown file to start reviewing with your team.
+                Upload an HTML, Markdown, or ZIP file to start reviewing with your team.
               </DialogDescription>
             </div>
           </div>
@@ -120,7 +120,7 @@ export function NewArtifactDialog({
               onFileSelect={handleFileSelect}
               onRemoveFile={handleRemoveFile}
               selectedFile={selectedFile}
-              accept=".html,.htm,.md"
+              accept=".html,.htm,.md,.zip"
             />
           </div>
 

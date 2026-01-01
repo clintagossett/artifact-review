@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
@@ -36,9 +36,9 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
   const [error, setError] = useState<string | null>(null);
 
   const createArtifact = useAction(api.artifacts.create);
-  // Note: ZIP uploads are out of scope for Phase 1
-  // const createArtifactWithZip = useMutation(api.zipUpload.createArtifactWithZip);
-  // const triggerZipProcessing = useMutation(api.zipUpload.triggerZipProcessing);
+  // ZIP upload functions (Task 00019)
+  const createArtifactWithZip = useMutation(api.zipUpload.createArtifactWithZip);
+  const triggerZipProcessing = useAction(api.zipUpload.triggerZipProcessing);
 
   const reset = useCallback(() => {
     setUploadProgress(0);
@@ -108,11 +108,47 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
           return result;
         }
 
-        // Handle ZIP files
-        // TODO: ZIP upload is out of scope for Task 00018 Phase 1
-        // This code path is incomplete and will be fixed in a future task
+        // Handle ZIP files (Task 00019)
         if (fileType === "zip") {
-          throw new Error("ZIP uploads are not yet supported in Phase 1");
+          setUploadProgress(20);
+
+          // Step 1: Get upload URL and create artifact/version records
+          const { uploadUrl, artifactId, versionId, shareToken } =
+            await createArtifactWithZip({
+              title,
+              description,
+              fileSize: file.size,
+              entryPoint,
+            });
+
+          setUploadProgress(40);
+
+          // Step 2: Upload file to storage URL
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": file.type || "application/zip" },
+            body: file,
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error("Failed to upload ZIP file to storage");
+          }
+
+          const { storageId } = await uploadResponse.json();
+          setUploadProgress(70);
+
+          // Step 3: Trigger ZIP processing
+          await triggerZipProcessing({ versionId, storageId });
+
+          setUploadProgress(100);
+          setIsUploading(false);
+
+          return {
+            artifactId,
+            versionId,
+            versionNumber: 1,
+            shareToken,
+          };
         }
 
         throw new Error("Unsupported file type");
@@ -125,7 +161,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
         throw err;
       }
     },
-    [createArtifact]
+    [createArtifact, createArtifactWithZip, triggerZipProcessing]
   );
 
   return {

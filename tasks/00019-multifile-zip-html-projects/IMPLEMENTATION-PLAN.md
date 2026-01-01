@@ -1,9 +1,10 @@
 # Implementation Plan: Upload and View Multi-file HTML Projects via ZIP
 
 **Task:** 00019
-**Status:** Ready for Implementation
+**Status:** Phase 1 COMPLETE - Phase 2 Ready for Implementation
 **Author:** Claude (Software Architect Agent)
 **Created:** 2025-12-31
+**Updated:** 2025-12-31
 
 ---
 
@@ -11,8 +12,34 @@
 
 This plan extends the existing unified blob storage pattern (Task 18) to support multi-file HTML projects uploaded as ZIP files. The implementation is divided into two phases:
 
-- **Phase 1:** Storage and Write Permissions (ZIP upload, extraction, storage)
-- **Phase 2:** Retrieval and Viewing (HTTP serving, read permissions, frontend)
+- **Phase 1:** Storage and Write Permissions (ZIP upload, extraction, storage) - **COMPLETE**
+- **Phase 2:** Retrieval and Viewing (HTTP serving, read permissions, frontend) - **READY**
+
+---
+
+## Phase 1 Summary (COMPLETED)
+
+Phase 1 is complete with **28 passing tests**:
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| ZIP validation constants | DONE | `/app/convex/lib/fileTypes.ts` |
+| `createArtifactWithZip` mutation | DONE | `/app/convex/zipUpload.ts` |
+| `addZipVersion` mutation | DONE | `/app/convex/zipUpload.ts` |
+| `processZipFile` action | DONE | `/app/convex/zipProcessor.ts` |
+| `canWriteArtifact` helper | DONE | `/app/convex/lib/permissions.ts` |
+| `markProcessingError` mutation | DONE | `/app/convex/zipProcessorMutations.ts` |
+| Phase 1 backend tests | DONE | `/app/convex/__tests__/phase1-zip-storage.test.ts` |
+| Integration tests | DONE | `/app/convex/__tests__/zip-backend-integration.test.ts` |
+| E2E test scaffolding | READY | `tasks/00019-*/01-phase1-*/tests/e2e/` |
+
+**Tests:**
+```bash
+# Run Phase 1 tests
+cd app
+npm test -- --grep "ZIP"
+# Result: 28 passing tests
+```
 
 ---
 
@@ -724,13 +751,42 @@ describe("ZIP Processing", () => {
 
 ## Phase 2: Retrieval and Viewing
 
+**Status:** Ready for Implementation
+**Details:** See `02-phase2-retrieval-viewing/README.md` for complete implementation guide.
+
 ### Goal
 
-Enable HTTP serving of multi-file artifacts with proper MIME types, relative path resolution, and read permission checks.
+Enable HTTP serving of multi-file artifacts with proper MIME types, relative path resolution, caching headers, and read permission checks.
+
+### Current State
+
+The HTTP handler (`/app/convex/http.ts`) already exists and supports multi-file paths. Phase 2 focuses on:
+1. Verifying the existing implementation works
+2. Adding missing MIME types (optional)
+3. Writing backend tests for the query layer
+4. Writing E2E tests for full integration
+
+### Key Findings from Code Review
+
+**HTTP Handler (lines 23-163 in `/app/convex/http.ts`):**
+- URL pattern: `/artifact/{shareToken}/v{version}/{filePath}`
+- Nested path support: `pathSegments.slice(2).join("/")` (line 43)
+- Entry point fallback: Uses `version.entryPoint` when no filePath (lines 96-103)
+- URL decoding: `decodeURIComponent(filePathToServe)` (line 105)
+- CORS headers: Present (lines 147-149)
+- Cache-Control: `public, max-age=31536000` (line 150) - **add `immutable`**
+
+**MIME Types (`/app/convex/lib/mimeTypes.ts`):**
+- Covers: html, css, js, json, images (png, jpg, gif, svg, webp, ico), fonts (woff, woff2, ttf, eot)
+- Optional additions: avif, otf, csv, ts, map
+
+**Permissions (`/app/convex/lib/permissions.ts`):**
+- `canViewArtifact` and `canViewVersion` already exist
+- HTTP route uses internal queries (bypasses auth for public share token access)
 
 ---
 
-### Step 2.1: Update HTTP Handler for Multi-file Paths
+### Step 2.1: Verify HTTP Handler Multi-file Support
 
 **File:** `/app/convex/http.ts`
 
@@ -1243,19 +1299,38 @@ Use the centralized samples in `/samples/`:
 
 ## Handoff Checklist
 
-When implementation is complete:
+### Phase 1 (COMPLETE)
 
-- [ ] All Phase 1 tests pass
-- [ ] All Phase 2 tests pass
-- [ ] E2E tests pass with video recordings
-- [ ] Sample ZIP artifacts upload and display correctly
-- [ ] CSS, JS, and images work in viewer
-- [ ] Version switching works for ZIP artifacts
-- [ ] Error messages are user-friendly
-- [ ] Documentation updated (if needed)
+- [x] ZIP files validate size < 50MB
+- [x] ZIP files validate file count < 500
+- [x] Forbidden file extensions are rejected (.exe, .mov, .mp4, etc.)
+- [x] Artifacts and versions created correctly
+- [x] Entry point (index.html) detected
+- [x] All files extracted to artifactFiles
+- [x] MIME types assigned correctly
+- [x] Only owner can add versions (`canWriteArtifact`)
+- [x] Processing errors are handled gracefully (soft-delete)
+- [x] All Phase 1 tests pass (28 tests)
+
+### Phase 2 (Pending)
+
+- [ ] Entry point HTML loads correctly in viewer
+- [ ] CSS files load with correct MIME type
+- [ ] JavaScript executes in viewer
+- [ ] Images display correctly
+- [ ] Fonts load correctly
+- [ ] Nested paths resolve correctly
+- [ ] Relative paths in HTML work
+- [ ] 404 returned for missing files
+- [ ] Cache headers set (`max-age=31536000, immutable`)
+- [ ] CORS headers allow viewer access
+- [ ] Version switching loads correct files
+- [ ] All Phase 2 backend tests pass
+- [ ] All E2E tests pass with video recordings
 - [ ] `test-report.md` created in task folder
 
 ---
 
 **Author:** Claude (Software Architect Agent)
-**Last Updated:** 2025-12-31
+**Created:** 2025-12-31
+**Last Updated:** 2025-12-31 (Phase 1 complete, Phase 2 plan updated)

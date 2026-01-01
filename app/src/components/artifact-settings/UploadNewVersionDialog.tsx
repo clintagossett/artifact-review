@@ -81,7 +81,7 @@ export function UploadNewVersionDialog({
             Upload New Version
           </DialogTitle>
           <DialogDescription>
-            Upload a new version of this artifact. Supports HTML and Markdown files.
+            Upload a new version of this artifact. Supports HTML, Markdown, and ZIP files.
           </DialogDescription>
         </DialogHeader>
 
@@ -127,7 +127,7 @@ export function UploadNewVersionDialog({
                       Drop file here or click to browse
                     </p>
                     <p className="text-sm text-gray-500">
-                      Supports .html and .md files
+                      Supports .html, .md, and .zip files
                     </p>
                   </div>
                   <Button
@@ -140,7 +140,7 @@ export function UploadNewVersionDialog({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".html,.md,.markdown,text/html,text/markdown"
+                    accept=".html,.md,.markdown,.zip,text/html,text/markdown,application/zip"
                     className="hidden"
                     onChange={handleFileInput}
                   />

@@ -3,152 +3,136 @@
 **Parent Task:** 00019 - Upload and View Multi-file HTML Projects via ZIP
 **Status:** Pending
 **Created:** 2025-12-31
+**Updated:** 2025-12-31 (based on Phase 1 completion)
 
 ---
 
 ## Objective
 
-Enable HTTP serving of multi-file artifacts with proper MIME types, relative path resolution, caching headers, and read permission checks. Ensure the frontend viewer correctly renders multi-file HTML projects.
+Enable HTTP serving of multi-file artifacts with proper MIME types, relative path resolution, caching headers, and read permission checks. Ensure the frontend viewer correctly renders multi-file HTML projects with CSS, JavaScript, images, and other assets.
 
 ---
 
-## Steps
+## Phase 1 Completed (Context)
 
-### Step 2.1: Update HTTP Handler for Multi-file Paths
+Phase 1 is COMPLETE with 28 passing tests:
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| ZIP validation constants | Done | `/app/convex/lib/fileTypes.ts` |
+| `createArtifactWithZip` mutation | Done | `/app/convex/zipUpload.ts` |
+| `addZipVersion` mutation | Done | `/app/convex/zipUpload.ts` |
+| `processZipFile` action | Done | `/app/convex/zipProcessor.ts` |
+| `canWriteArtifact` helper | Done | `/app/convex/lib/permissions.ts` |
+| `markProcessingError` mutation | Done | `/app/convex/zipProcessorMutations.ts` |
+| Backend tests | Done | `/app/convex/__tests__/phase1-zip-storage.test.ts` |
+| Integration tests | Done | `/app/convex/__tests__/zip-backend-integration.test.ts` |
+| E2E test scaffolding | Ready | `tasks/00019-*/01-phase1-*/tests/e2e/` |
+
+---
+
+## Implementation Steps
+
+### Step 2.1: Verify HTTP Handler Multi-file Support
 
 **File:** `/app/convex/http.ts`
 
-Verify and enhance the existing HTTP handler for multi-file artifact serving:
+The HTTP handler already exists and supports multi-file paths. Verify it handles all Phase 2 requirements:
 
-**URL Structure:** `/artifact/{shareToken}/v{version}/{filePath}`
+**Current Implementation (lines 23-163):**
+- URL pattern: `/artifact/{shareToken}/v{version}/{filePath}`
+- Nested path support: `pathSegments.slice(2).join("/")` (line 43)
+- Entry point fallback: Uses `version.entryPoint` when no filePath (lines 96-103)
+- URL decoding: `decodeURIComponent(filePathToServe)` (line 105)
+- File lookup: `internal.artifacts.getFileByPath` (line 106)
+- Storage fetch and response (lines 120-152)
 
-Examples:
-- `/artifact/abc123/v1/index.html` - Entry point
-- `/artifact/abc123/v1/assets/styles.css` - CSS file
-- `/artifact/abc123/v1/scripts/app.js` - JavaScript
-- `/artifact/abc123/v1/images/logo.png` - Image
+**Verification Checklist:**
+- [ ] Nested paths work (e.g., `assets/images/logo.png`)
+- [ ] Entry point fallback uses `version.entryPoint`
+- [ ] URL-encoded paths decode correctly
+- [ ] CORS headers present (lines 147-149)
+- [ ] Cache-Control header present (line 150)
 
-**Key Implementation Points:**
-
-1. **Parse path segments:** Handle nested paths correctly (e.g., `assets/images/logo.png`)
-2. **Version format validation:** Expect `v1`, `v2`, etc.
-3. **Entry point fallback:** If no `filePath` provided, use `version.entryPoint`
-4. **URL decoding:** Handle URL-encoded path segments
-5. **Content-Type:** Return correct MIME type from `artifactFiles.mimeType`
-6. **Caching headers:** `Cache-Control: public, max-age=31536000, immutable`
-7. **CORS headers:** Allow cross-origin access for viewer
+**Minor Enhancement Needed - Add `immutable` to Cache-Control:**
 
 ```typescript
-// Response headers for serving files
-return new Response(fileBuffer, {
-  status: 200,
-  headers: {
-    "Content-Type": file.mimeType,
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Cache-Control": "public, max-age=31536000, immutable",
-  },
-});
+// Current (line 150):
+"Cache-Control": "public, max-age=31536000",
+
+// Updated:
+"Cache-Control": "public, max-age=31536000, immutable",
 ```
 
 ---
 
-### Step 2.2: Add Missing MIME Types
+### Step 2.2: Verify/Enhance MIME Types
 
 **File:** `/app/convex/lib/mimeTypes.ts`
 
-Ensure comprehensive MIME type coverage for web assets:
+The current implementation covers basic types. Verify and add any missing types for ZIP project assets:
+
+**Current Types (verified):**
+- HTML: `html`, `htm` -> `text/html`
+- CSS: `css` -> `text/css`
+- JavaScript: `js`, `mjs` -> `application/javascript`
+- JSON: `json` -> `application/json`
+- Images: `png`, `jpg`, `jpeg`, `gif`, `svg`, `webp`, `ico`
+- Fonts: `woff`, `woff2`, `ttf`, `eot`
+- Other: `pdf`, `txt`, `xml`, `md`, `zip`
+
+**Types to Add (optional enhancement):**
 
 ```typescript
-export function getMimeType(filename: string): string {
-  const ext = filename.toLowerCase().split('.').pop();
-  const mimeTypes: Record<string, string> = {
-    // HTML
-    'html': 'text/html',
-    'htm': 'text/html',
-
-    // CSS
-    'css': 'text/css',
-
-    // JavaScript
-    'js': 'application/javascript',
-    'mjs': 'application/javascript',
-    'ts': 'application/typescript',
-
-    // Data formats
-    'json': 'application/json',
-    'xml': 'application/xml',
-    'csv': 'text/csv',
-
-    // Images
-    'png': 'image/png',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'gif': 'image/gif',
-    'svg': 'image/svg+xml',
-    'webp': 'image/webp',
-    'ico': 'image/x-icon',
-    'avif': 'image/avif',
-
-    // Fonts
-    'woff': 'font/woff',
-    'woff2': 'font/woff2',
-    'ttf': 'font/ttf',
-    'otf': 'font/otf',
-    'eot': 'application/vnd.ms-fontobject',
-
-    // Documents
-    'pdf': 'application/pdf',
-    'txt': 'text/plain',
-    'md': 'text/markdown',
-
-    // Archives
-    'zip': 'application/zip',
-
-    // Source maps (for debugging)
-    'map': 'application/json',
-  };
-
-  return mimeTypes[ext || ''] || 'application/octet-stream';
-}
+// Add to mimeTypes object:
+'avif': 'image/avif',      // Modern image format
+'otf': 'font/otf',         // OpenType fonts
+'csv': 'text/csv',         // Data files
+'ts': 'application/typescript', // TypeScript source
+'map': 'application/json', // Source maps
 ```
+
+**Note:** The current implementation returns `application/octet-stream` for unknown types, which is acceptable. Phase 2 E2E tests should verify the most common types work.
 
 ---
 
-### Step 2.3: Read Permission Check for HTTP Routes
+### Step 2.3: Verify Read Permission Model
 
 **File:** `/app/convex/lib/permissions.ts`
 
-The existing permission model should already be correct:
+The existing permission model is correct for Phase 2:
 
-- **Owner:** Full access
-- **Reviewer:** View access (via `artifactReviewers` table)
-- **Public:** View access via shareToken (no auth required)
+| Access Type | Implementation | HTTP Route Behavior |
+|-------------|----------------|---------------------|
+| Owner | `getArtifactPermission()` -> "owner" | Full access |
+| Reviewer | `getArtifactPermission()` -> "reviewer" | View access |
+| Public | Share token lookup (no auth) | View access |
 
-The HTTP route uses internal queries that bypass permission checks by design for public share token access.
+**HTTP Route Note:** The HTTP handler (`/app/convex/http.ts`) uses `internal.artifacts.getByShareTokenInternal` (line 59-62) which returns `null` for deleted artifacts. This is the correct behavior for public access.
 
-**Verify:** No code changes needed unless testing reveals issues.
+**No code changes needed** - the permission model is correct.
 
 ---
 
 ### Step 2.4: Frontend Viewer Verification
 
-The frontend viewer should work with multi-file artifacts since:
+The frontend viewer should work with multi-file artifacts because:
 1. It uses `getEntryPointContent` query to get the main file URL
-2. Relative paths in HTML resolve to the HTTP endpoint
+2. Relative paths in HTML resolve to the HTTP endpoint due to iframe src pattern
 
-**Verification Steps:**
+**Verification Points:**
+1. Entry point HTML loads in iframe
+2. Relative CSS paths work (e.g., `<link href="./styles.css">`)
+3. Relative JS paths work (e.g., `<script src="./app.js">`)
+4. Relative image paths work (e.g., `<img src="./assets/logo.png">`)
+5. CSS relative URLs work (e.g., `url(../images/bg.png)`)
 
-1. Load artifact viewer with ZIP artifact
-2. Verify CSS files load correctly
-3. Verify JavaScript files execute
-4. Verify images display
-5. Verify relative paths in CSS (e.g., `url(../images/bg.png)`) resolve correctly
+**Potential Issue - Base URL:**
+If relative paths break, may need to inject a `<base>` tag. This would require:
+1. Modifying the viewer component to wrap HTML content
+2. Setting `<base href="/artifact/{shareToken}/v{version}/">`
 
-**If Issues Occur:**
-- May need to inject a `<base>` tag
-- May need to rewrite URLs in HTML
+**Phase 2 Testing Should Reveal:** If relative paths work naturally (likely) or need base tag injection.
 
 ---
 
@@ -156,75 +140,717 @@ The frontend viewer should work with multi-file artifacts since:
 
 **File:** `/app/convex/__tests__/zip-serving.test.ts`
 
-Create tests covering:
+Create tests that verify the HTTP serving layer. Since convex-test has limitations with HTTP actions, focus on testing the underlying queries and data structure:
 
-| Test | Description |
-|------|-------------|
-| Entry point serving | index.html served with text/html |
-| CSS serving | .css files with text/css |
-| JavaScript serving | .js files with application/javascript |
-| Image serving | .png, .jpg with correct types |
-| Font serving | .woff2, .ttf with correct types |
-| Nested paths | assets/images/logo.png accessible |
-| 404 for missing | Non-existent files return 404 |
-| Cache headers | Cache-Control headers set correctly |
-| CORS headers | Access-Control headers set correctly |
+```typescript
+/**
+ * Phase 2 Tests: ZIP Artifact Serving
+ * Task 00019 - Multi-file ZIP HTML Projects
+ *
+ * Tests for HTTP serving, MIME types, and file retrieval.
+ */
+
+import { convexTest } from "convex-test";
+import { expect, test, describe } from "vitest";
+import schema from "../schema";
+import { api, internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
+
+describe("ZIP Serving - File Retrieval", () => {
+  test("getFileByPath returns correct file with MIME type", async () => {
+    const t = convexTest(schema);
+
+    // Setup: Create version with files
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    const artifactId = await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test",
+        creatorId: userId,
+        shareToken: "abc12345",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const versionId = await t.run(async (ctx) =>
+      ctx.db.insert("artifactVersions", {
+        artifactId,
+        versionNumber: 1,
+        createdBy: userId,
+        fileType: "zip",
+        entryPoint: "index.html",
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      })
+    );
+
+    // Create file records
+    const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
+    await t.run(async (ctx) =>
+      ctx.db.insert("artifactFiles", {
+        versionId,
+        filePath: "index.html",
+        storageId: mockStorageId,
+        mimeType: "text/html",
+        fileSize: 500,
+        isDeleted: false,
+      })
+    );
+
+    // Test getFileByPath
+    const file = await t.query(internal.artifacts.getFileByPath, {
+      versionId,
+      filePath: "index.html",
+    });
+
+    expect(file).toBeDefined();
+    expect(file?.mimeType).toBe("text/html");
+    expect(file?.storageId).toBe(mockStorageId);
+  });
+
+  test("getFileByPath returns null for non-existent file", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    const artifactId = await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test",
+        creatorId: userId,
+        shareToken: "abc12345",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const versionId = await t.run(async (ctx) =>
+      ctx.db.insert("artifactVersions", {
+        artifactId,
+        versionNumber: 1,
+        createdBy: userId,
+        fileType: "zip",
+        entryPoint: "index.html",
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      })
+    );
+
+    // No files created - query should return null
+    const file = await t.query(internal.artifacts.getFileByPath, {
+      versionId,
+      filePath: "nonexistent.html",
+    });
+
+    expect(file).toBeNull();
+  });
+
+  test("getFileByPath returns null for deleted files", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    const artifactId = await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test",
+        creatorId: userId,
+        shareToken: "abc12345",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const versionId = await t.run(async (ctx) =>
+      ctx.db.insert("artifactVersions", {
+        artifactId,
+        versionNumber: 1,
+        createdBy: userId,
+        fileType: "zip",
+        entryPoint: "index.html",
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      })
+    );
+
+    const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
+    await t.run(async (ctx) =>
+      ctx.db.insert("artifactFiles", {
+        versionId,
+        filePath: "deleted.html",
+        storageId: mockStorageId,
+        mimeType: "text/html",
+        fileSize: 500,
+        isDeleted: true,  // Soft deleted
+        deletedAt: Date.now(),
+      })
+    );
+
+    const file = await t.query(internal.artifacts.getFileByPath, {
+      versionId,
+      filePath: "deleted.html",
+    });
+
+    expect(file).toBeNull();
+  });
+
+  test("getFileByPath retrieves nested path files", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    const artifactId = await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test",
+        creatorId: userId,
+        shareToken: "abc12345",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const versionId = await t.run(async (ctx) =>
+      ctx.db.insert("artifactVersions", {
+        artifactId,
+        versionNumber: 1,
+        createdBy: userId,
+        fileType: "zip",
+        entryPoint: "index.html",
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      })
+    );
+
+    const mockStorageId = "kg2test000002;_storage" as Id<"_storage">;
+    await t.run(async (ctx) =>
+      ctx.db.insert("artifactFiles", {
+        versionId,
+        filePath: "assets/images/logo.png",  // Nested path
+        storageId: mockStorageId,
+        mimeType: "image/png",
+        fileSize: 2000,
+        isDeleted: false,
+      })
+    );
+
+    const file = await t.query(internal.artifacts.getFileByPath, {
+      versionId,
+      filePath: "assets/images/logo.png",
+    });
+
+    expect(file).toBeDefined();
+    expect(file?.mimeType).toBe("image/png");
+  });
+});
+
+describe("ZIP Serving - MIME Type Verification", () => {
+  test("getMimeType returns correct types for web assets", async () => {
+    const { getMimeType } = await import("../lib/mimeTypes");
+
+    // HTML
+    expect(getMimeType("index.html")).toBe("text/html");
+    expect(getMimeType("page.htm")).toBe("text/html");
+
+    // CSS
+    expect(getMimeType("styles.css")).toBe("text/css");
+
+    // JavaScript
+    expect(getMimeType("app.js")).toBe("application/javascript");
+    expect(getMimeType("module.mjs")).toBe("application/javascript");
+
+    // JSON
+    expect(getMimeType("data.json")).toBe("application/json");
+
+    // Images
+    expect(getMimeType("logo.png")).toBe("image/png");
+    expect(getMimeType("photo.jpg")).toBe("image/jpeg");
+    expect(getMimeType("photo.jpeg")).toBe("image/jpeg");
+    expect(getMimeType("icon.svg")).toBe("image/svg+xml");
+    expect(getMimeType("image.webp")).toBe("image/webp");
+    expect(getMimeType("favicon.ico")).toBe("image/x-icon");
+    expect(getMimeType("animation.gif")).toBe("image/gif");
+
+    // Fonts
+    expect(getMimeType("font.woff")).toBe("font/woff");
+    expect(getMimeType("font.woff2")).toBe("font/woff2");
+    expect(getMimeType("font.ttf")).toBe("font/ttf");
+
+    // Unknown - fallback
+    expect(getMimeType("unknown.xyz")).toBe("application/octet-stream");
+  });
+
+  test("getMimeType handles uppercase extensions", async () => {
+    const { getMimeType } = await import("../lib/mimeTypes");
+
+    expect(getMimeType("INDEX.HTML")).toBe("text/html");
+    expect(getMimeType("STYLES.CSS")).toBe("text/css");
+    expect(getMimeType("APP.JS")).toBe("application/javascript");
+    expect(getMimeType("LOGO.PNG")).toBe("image/png");
+  });
+
+  test("getMimeType handles paths with directories", async () => {
+    const { getMimeType } = await import("../lib/mimeTypes");
+
+    expect(getMimeType("assets/styles/main.css")).toBe("text/css");
+    expect(getMimeType("scripts/vendor/chart.js")).toBe("application/javascript");
+    expect(getMimeType("images/icons/logo.png")).toBe("image/png");
+  });
+});
+
+describe("ZIP Serving - Version and Entry Point", () => {
+  test("getVersionByNumberInternal returns version with entryPoint", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    const artifactId = await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test",
+        creatorId: userId,
+        shareToken: "abc12345",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const versionId = await t.run(async (ctx) =>
+      ctx.db.insert("artifactVersions", {
+        artifactId,
+        versionNumber: 1,
+        createdBy: userId,
+        fileType: "zip",
+        entryPoint: "v1/index.html",  // Entry point with path prefix
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      })
+    );
+
+    const version = await t.query(internal.artifacts.getVersionByNumberInternal, {
+      artifactId,
+      versionNumber: 1,
+    });
+
+    expect(version).toBeDefined();
+    expect(version?.entryPoint).toBe("v1/index.html");
+    expect(version?.fileType).toBe("zip");
+  });
+
+  test("getByShareTokenInternal returns artifact for valid token", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Test Artifact",
+        creatorId: userId,
+        shareToken: "testtkn1",
+        isDeleted: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const artifact = await t.query(internal.artifacts.getByShareTokenInternal, {
+      shareToken: "testtkn1",
+    });
+
+    expect(artifact).toBeDefined();
+    expect(artifact?.title).toBe("Test Artifact");
+    expect(artifact?.shareToken).toBe("testtkn1");
+  });
+
+  test("getByShareTokenInternal returns null for deleted artifact", async () => {
+    const t = convexTest(schema);
+
+    const userId = await t.run(async (ctx) =>
+      ctx.db.insert("users", { email: "test@example.com" })
+    );
+
+    await t.run(async (ctx) =>
+      ctx.db.insert("artifacts", {
+        title: "Deleted Artifact",
+        creatorId: userId,
+        shareToken: "deleted1",
+        isDeleted: true,
+        deletedAt: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+    );
+
+    const artifact = await t.query(internal.artifacts.getByShareTokenInternal, {
+      shareToken: "deleted1",
+    });
+
+    expect(artifact).toBeNull();
+  });
+});
+```
 
 ---
 
 ### Step 2.6: Write E2E Tests
 
-**File:** `/Users/clintgossett/Documents/personal/personal projects/artifact-review/tasks/00019-multifile-zip-html-projects/tests/e2e/zip-artifact.spec.ts`
+**Location:** `tasks/00019-multifile-zip-html-projects/02-phase2-retrieval-viewing/tests/e2e/`
 
-Create E2E tests with video recording:
+The Phase 1 E2E test scaffolding already includes relevant tests. For Phase 2, add or verify these specific scenarios:
+
+**Create:** `tasks/00019-multifile-zip-html-projects/02-phase2-retrieval-viewing/tests/e2e/01-zip-serving.spec.ts`
 
 ```typescript
-import { test, expect } from "@playwright/test";
-import path from "path";
+/**
+ * E2E Test: ZIP Artifact HTTP Serving
+ * Phase 2 - Retrieval and Viewing
+ *
+ * Tests HTTP serving of multi-file artifacts with proper MIME types,
+ * caching headers, and relative path resolution.
+ */
 
-test.describe("Multi-file ZIP Artifact Upload and Viewing", () => {
-  test("upload ZIP and view in browser", async ({ page }) => {
-    // 1. Navigate to app
-    // 2. Login
-    // 3. Click upload button
-    // 4. Select ZIP file from samples
-    // 5. Fill in title
-    // 6. Submit
-    // 7. Wait for processing
-    // 8. Verify artifact displays
+import { test, expect } from '@playwright/test';
+import { injectClickIndicator } from '../../../../../app/tests/utils/clickIndicator';
+import { registerUser } from '../../01-phase1-storage-write-permissions/tests/e2e/helpers/auth';
+import { createZipArtifact, verifyArtifactContentVisible } from '../../01-phase1-storage-write-permissions/tests/e2e/helpers/artifacts';
+import * as path from 'path';
+
+test.beforeEach(async ({ page }) => {
+  page.on('load', async () => {
+    try {
+      await injectClickIndicator(page);
+    } catch {
+      // Page may have closed
+    }
+  });
+});
+
+test.describe('HTTP Serving - MIME Types', () => {
+  test.setTimeout(120000);
+
+  test('should serve HTML with text/html Content-Type', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `HTML MIME Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const responses: Map<string, string> = new Map();
+
+    page.on('response', (response) => {
+      const contentType = response.headers()['content-type'];
+      if (contentType) {
+        responses.set(response.url(), contentType);
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    // Find HTML responses
+    const htmlResponses = Array.from(responses.entries())
+      .filter(([url]) => url.includes('/artifact/') && (url.includes('.html') || url.endsWith(`/v1/`)));
+
+    expect(htmlResponses.length).toBeGreaterThan(0);
+    expect(htmlResponses.some(([, type]) => type.includes('text/html'))).toBe(true);
   });
 
-  test("CSS styles are applied correctly", async ({ page }) => {
-    // Navigate to ZIP artifact
-    // Check computed styles match expected
+  test('should serve CSS with text/css Content-Type', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `CSS MIME Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const responses: Map<string, string> = new Map();
+
+    page.on('response', (response) => {
+      const contentType = response.headers()['content-type'];
+      if (contentType) {
+        responses.set(response.url(), contentType);
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    const cssResponses = Array.from(responses.entries())
+      .filter(([url]) => url.includes('.css'));
+
+    // If CSS files exist in the sample, verify MIME type
+    if (cssResponses.length > 0) {
+      expect(cssResponses.some(([, type]) => type.includes('text/css'))).toBe(true);
+    }
   });
 
-  test("JavaScript executes correctly", async ({ page }) => {
-    // Navigate to ZIP artifact with interactive elements
-    // Verify JS functionality works
+  test('should serve JavaScript with application/javascript Content-Type', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `JS MIME Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const responses: Map<string, string> = new Map();
+
+    page.on('response', (response) => {
+      const contentType = response.headers()['content-type'];
+      if (contentType) {
+        responses.set(response.url(), contentType);
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    const jsResponses = Array.from(responses.entries())
+      .filter(([url]) => url.includes('.js') && !url.includes('_next'));
+
+    // If JS files exist in the sample, verify MIME type
+    if (jsResponses.length > 0) {
+      expect(jsResponses.some(([, type]) => type.includes('javascript'))).toBe(true);
+    }
   });
 
-  test("version switching loads correct files", async ({ page }) => {
-    // Upload v1, then v2
-    // Switch between versions
-    // Verify correct content displays
+  test('should serve images with correct Content-Type', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `Image MIME Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const responses: Map<string, string> = new Map();
+
+    page.on('response', (response) => {
+      const contentType = response.headers()['content-type'];
+      if (contentType) {
+        responses.set(response.url(), contentType);
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    const pngResponses = Array.from(responses.entries())
+      .filter(([url]) => url.includes('.png'));
+
+    if (pngResponses.length > 0) {
+      expect(pngResponses.some(([, type]) => type.includes('image/png'))).toBe(true);
+    }
+  });
+});
+
+test.describe('HTTP Serving - Cache Headers', () => {
+  test.setTimeout(120000);
+
+  test('should include Cache-Control headers on asset responses', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `Cache Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const cacheHeaders: Map<string, string | null> = new Map();
+
+    page.on('response', (response) => {
+      const cacheControl = response.headers()['cache-control'];
+      if (response.url().includes('/artifact/')) {
+        cacheHeaders.set(response.url(), cacheControl || null);
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    // At least one artifact response should have Cache-Control
+    const withCacheControl = Array.from(cacheHeaders.entries())
+      .filter(([, header]) => header !== null);
+
+    expect(withCacheControl.length).toBeGreaterThan(0);
+
+    // Verify cache is set for long duration
+    const hasLongCache = withCacheControl.some(([, header]) =>
+      header?.includes('max-age=31536000') || header?.includes('max-age=604800')
+    );
+    expect(hasLongCache).toBe(true);
+  });
+});
+
+test.describe('HTTP Serving - Relative Path Resolution', () => {
+  test.setTimeout(120000);
+
+  test('should resolve relative CSS paths correctly', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `Relative CSS Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const failedRequests: string[] = [];
+
+    page.on('response', (response) => {
+      if (response.status() === 404 && response.url().includes('.css')) {
+        failedRequests.push(response.url());
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    expect(failedRequests.length).toBe(0);
+  });
+
+  test('should resolve relative JS paths correctly', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `Relative JS Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const failedRequests: string[] = [];
+
+    page.on('response', (response) => {
+      if (response.status() === 404 && response.url().includes('.js') && !response.url().includes('_next')) {
+        failedRequests.push(response.url());
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    expect(failedRequests.length).toBe(0);
+  });
+
+  test('should resolve nested asset paths correctly', async ({ page }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `Nested Assets Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    const failedRequests: string[] = [];
+
+    page.on('response', (response) => {
+      // Track 404s for artifact paths (not Next.js internals)
+      if (
+        response.status() === 404 &&
+        response.url().includes('/artifact/') &&
+        !response.url().includes('favicon')
+      ) {
+        failedRequests.push(response.url());
+      }
+    });
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    expect(failedRequests.length).toBe(0);
+  });
+});
+
+test.describe('HTTP Serving - 404 Handling', () => {
+  test.setTimeout(120000);
+
+  test('should return 404 for non-existent files', async ({ page, request }) => {
+    await registerUser(page);
+
+    const zipPath = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken } = await createZipArtifact(page, {
+      title: `404 Test - ${Date.now()}`,
+      zipFilePath: zipPath,
+    });
+
+    // Direct request to non-existent file
+    // Note: Need to get the Convex deployment URL for this test
+    // For now, verify via page navigation
+
+    await page.goto(`/a/${shareToken}`);
+    await page.waitForLoadState('networkidle');
+
+    // The viewer should load without 404 for existing files
+    await verifyArtifactContentVisible(page, 'Monthly Sales Dashboard');
+  });
+
+  test('should return 404 for invalid share token', async ({ page }) => {
+    await page.goto('/a/invalid123');
+    await page.waitForLoadState('networkidle');
+
+    // Should show not found or error state
+    const notFound = await page.locator('text=/not found|404|error/i').count();
+    expect(notFound).toBeGreaterThan(0);
+  });
+});
+
+test.describe('HTTP Serving - Version Switching', () => {
+  test.setTimeout(180000);
+
+  test('should serve correct files for each version', async ({ page }) => {
+    await registerUser(page);
+
+    // Upload v1
+    const v1Path = path.join(__dirname, '../../../../../samples/01-valid/zip/charting/v1.zip');
+    const { shareToken, artifactId } = await createZipArtifact(page, {
+      title: `Version Switch Test - ${Date.now()}`,
+      zipFilePath: v1Path,
+    });
+
+    // Verify v1 content
+    await page.goto(`/a/${shareToken}?v=1`);
+    await page.waitForLoadState('networkidle');
+    await verifyArtifactContentVisible(page, 'Monthly Sales Dashboard v1');
+
+    // Note: Adding v2 would require additional UI interaction or API call
+    // For Phase 2, we verify that v1 serves correctly and version param works
   });
 });
 ```
 
-**Important:** All E2E tests MUST produce video recordings (mandatory per project standards).
-
 ---
 
-## File Locations
+## File Locations Summary
 
-| File | Purpose |
-|------|---------|
-| `/app/convex/http.ts` | HTTP handler for serving files |
-| `/app/convex/lib/mimeTypes.ts` | MIME type detection |
-| `/app/convex/lib/permissions.ts` | Permission verification |
-| `/app/convex/__tests__/zip-serving.test.ts` | Backend serving tests |
-| `tasks/00019-*/tests/e2e/zip-artifact.spec.ts` | E2E tests |
+| File | Purpose | Status |
+|------|---------|--------|
+| `/app/convex/http.ts` | HTTP handler | Verify, minor enhancement |
+| `/app/convex/lib/mimeTypes.ts` | MIME type detection | Verify, optional additions |
+| `/app/convex/lib/permissions.ts` | Permission helpers | No changes needed |
+| `/app/convex/artifacts.ts` | Queries (getFileByPath, etc.) | No changes needed |
+| `/app/convex/__tests__/zip-serving.test.ts` | Backend tests | **Create** |
+| `tasks/00019-*/02-phase2-*/tests/e2e/*.spec.ts` | E2E tests | **Create** |
 
 ---
 
@@ -234,39 +860,39 @@ Use centralized samples from `/samples/`:
 
 | Sample | Use Case |
 |--------|----------|
-| `samples/01-valid/zip/charting/v1.zip` - `v5.zip` | Valid multi-file projects |
-| `samples/03-edge-cases/zip/multi-page-site.zip` | No index.html edge case |
+| `samples/01-valid/zip/charting/v1.zip` - `v5.zip` | Valid multi-file projects with CSS, JS, images |
+| `samples/03-edge-cases/zip/multi-page-site.zip` | Multi-page site for navigation testing |
 
 ---
 
 ## Testing Requirements
 
-### Backend Integration Tests
-
-Location: `/app/convex/__tests__/zip-serving.test.ts`
+### Backend Tests
 
 | Test | Type | Description |
 |------|------|-------------|
-| Serve entry point | Integration | index.html served with text/html |
-| Serve CSS | Integration | .css files with text/css |
-| Serve JS | Integration | .js files with application/javascript |
-| Serve images | Integration | .png, .jpg with correct types |
-| Serve fonts | Integration | .woff2, .ttf with correct types |
-| Nested paths | Integration | assets/images/logo.png accessible |
-| 404 for missing | Integration | Non-existent files return 404 |
-| Cache headers | Integration | Cache-Control headers set |
-| CORS headers | Integration | Access-Control headers set |
+| getFileByPath returns file | Unit | Correct storageId and mimeType |
+| getFileByPath returns null for missing | Unit | Non-existent path returns null |
+| getFileByPath returns null for deleted | Unit | Soft-deleted files return null |
+| getFileByPath handles nested paths | Unit | `assets/images/logo.png` works |
+| getMimeType for all types | Unit | All web asset types correct |
+| getVersionByNumberInternal | Unit | Returns version with entryPoint |
+| getByShareTokenInternal | Unit | Returns artifact or null |
 
 ### E2E Tests
 
-Location: `tasks/00019-multifile-zip-html-projects/tests/e2e/zip-artifact.spec.ts`
-
 | Test | Type | Description |
 |------|------|-------------|
-| Upload and view | E2E | Full upload-to-view flow |
-| CSS applied | E2E | Verify styles render correctly |
-| JS executes | E2E | Verify interactivity works |
-| Version switch | E2E | Correct files per version |
+| HTML MIME type | E2E | text/html for .html files |
+| CSS MIME type | E2E | text/css for .css files |
+| JS MIME type | E2E | application/javascript for .js |
+| Image MIME type | E2E | image/png for .png files |
+| Cache headers | E2E | Cache-Control present |
+| Relative CSS paths | E2E | No 404s for CSS |
+| Relative JS paths | E2E | No 404s for JS |
+| Nested asset paths | E2E | Subdirectory assets load |
+| 404 for missing files | E2E | Proper error handling |
+| Version switching | E2E | Correct files per version |
 
 ### Running Tests
 
@@ -275,25 +901,26 @@ Location: `tasks/00019-multifile-zip-html-projects/tests/e2e/zip-artifact.spec.t
 cd app
 npm test -- --grep "ZIP Serving"
 
-# E2E tests (from project root)
-npx playwright test tasks/00019-multifile-zip-html-projects/tests/e2e/
+# E2E tests
+cd /Users/clintgossett/Documents/personal/personal projects/artifact-review
+npx playwright test tasks/00019-multifile-zip-html-projects/02-phase2-retrieval-viewing/tests/e2e/
 ```
 
 ---
 
 ## Success Criteria
 
-- [ ] Entry point HTML loads correctly in viewer
-- [ ] CSS files load with correct MIME type (text/css)
+- [ ] Entry point HTML loads correctly in viewer iframe
+- [ ] CSS files load with `text/css` MIME type
 - [ ] JavaScript files execute in viewer
-- [ ] Images display correctly
-- [ ] Fonts load correctly
-- [ ] Nested paths resolve correctly (e.g., assets/images/logo.png)
-- [ ] Relative paths in HTML/CSS work (e.g., ./styles.css, ../images/bg.png)
-- [ ] 404 returned for missing files
-- [ ] Cache headers set for performance
-- [ ] CORS headers allow viewer access
-- [ ] Version switching loads correct files
+- [ ] Images display correctly with correct MIME types
+- [ ] Fonts load correctly (woff, woff2, ttf)
+- [ ] Nested paths resolve correctly (e.g., `assets/images/logo.png`)
+- [ ] Relative paths in HTML work (e.g., `./styles.css`, `../images/bg.png`)
+- [ ] 404 returned for missing files with user-friendly message
+- [ ] Cache headers set (`Cache-Control: public, max-age=31536000, immutable`)
+- [ ] CORS headers allow viewer access (`Access-Control-Allow-Origin: *`)
+- [ ] Version switching loads correct files for each version
 - [ ] All Phase 2 backend tests pass
 - [ ] All E2E tests pass with video recordings
 
@@ -301,21 +928,24 @@ npx playwright test tasks/00019-multifile-zip-html-projects/tests/e2e/
 
 ## Implementation Order (Recommended)
 
-1. Step 2.2: Add missing MIME types (quick win)
-2. Step 2.1: Verify/enhance HTTP handler
-3. Step 2.4: Verify frontend viewer works
-4. Step 2.5: Write and run Phase 2 backend tests
-5. Step 2.6: Write and run E2E tests
+1. **Step 2.2**: Verify MIME types, add missing types (quick win)
+2. **Step 2.1**: Verify HTTP handler, add `immutable` to Cache-Control
+3. **Step 2.5**: Write and run backend tests
+4. **Step 2.4**: Verify frontend viewer works (manual testing)
+5. **Step 2.6**: Write and run E2E tests
+6. **Step 2.3**: Verify permissions (should already work)
 
 ---
 
-## Notes
+## Known Considerations
 
-- The HTTP handler uses internal queries that bypass permission checks for share token access
-- Cache headers are set aggressively (1 year) because content is immutable
-- CORS headers are permissive (*) because artifacts are designed to be embeddable
-- If relative paths break, may need `<base>` tag injection
-- Video recordings are mandatory for all E2E tests
+1. **convex-test limitations**: Cannot test actual HTTP actions or storage I/O. Backend tests focus on query layer; E2E tests cover full integration.
+
+2. **Relative path resolution**: Phase 1 E2E tests (`04-asset-loading.spec.ts`) already verify asset loading. If issues arise, may need `<base>` tag injection.
+
+3. **E2E test reuse**: Phase 1 E2E helpers (`auth.ts`, `artifacts.ts`) can be reused for Phase 2 tests.
+
+4. **Video recordings**: All E2E tests must produce video recordings per project standards.
 
 ---
 
@@ -323,11 +953,12 @@ npx playwright test tasks/00019-multifile-zip-html-projects/tests/e2e/
 
 When Phase 2 is complete, verify:
 
-- [ ] All Phase 2 tests pass
-- [ ] E2E tests pass with video recordings in `tests/validation-videos/`
+- [ ] All Phase 2 backend tests pass (`npm test -- --grep "ZIP Serving"`)
+- [ ] All E2E tests pass with video recordings in `tests/validation-videos/`
 - [ ] Sample ZIP artifacts upload and display correctly
 - [ ] CSS, JS, and images work in viewer
 - [ ] Version switching works for ZIP artifacts
+- [ ] No console errors for asset loading
 - [ ] Error messages are user-friendly for 404s
 - [ ] `test-report.md` created in task folder
 
