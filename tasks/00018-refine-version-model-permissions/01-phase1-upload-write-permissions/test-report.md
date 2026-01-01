@@ -16,6 +16,7 @@ Phase 1 implementation is **COMPLETE** with all backend tests passing. The unifi
 | Test Category | Status | Coverage |
 |---------------|--------|----------|
 | File Type Helpers | ✅ PASS | 100% (23/23 tests) |
+| Write Permissions Enforcement | ✅ PASS | 100% (18/18 tests) |
 | Create Artifact (Action) | ✅ DOCUMENTED | Behavior documented |
 | Add Version (Action) | ✅ DOCUMENTED | Behavior documented |
 | Update Version Name | ✅ DOCUMENTED | Behavior documented |
@@ -73,6 +74,60 @@ Test Files  1 passed (1)
 ✓ MAX_SINGLE_FILE_SIZE = 5MB
 ✓ MAX_VERSION_NAME_LENGTH = 100
 ```
+
+#### 1.5. Write Permissions Enforcement (`permissions.test.ts`)
+
+**Location:** `tasks/00018.../tests/convex/permissions.test.ts`
+**Status:** ✅ All 18 tests passing
+
+**Test Execution:**
+```bash
+npx vitest run convex/__tests__/temp-permissions.test.ts
+```
+
+**Result:** ✅ **18/18 tests passing**
+
+```
+✓ convex/__tests__/temp-permissions.test.ts (18 tests) 121ms
+
+Test Files  1 passed (1)
+     Tests  18 passed (18)
+  Duration  1.89s
+```
+
+**Coverage:**
+
+**updateVersionName Permissions (6 tests):**
+- ✅ Owner can update version name
+- ✅ Owner can clear version name by setting to null
+- ✅ Non-owner CANNOT update version name (throws "Not authorized")
+- ✅ Unauthenticated user CANNOT update (throws "Not authenticated")
+- ✅ Cannot update deleted version (throws "Version not found")
+- ✅ Validates name length max 100 chars
+
+**softDeleteVersion Permissions (5 tests):**
+- ✅ Owner can soft delete version
+- ✅ Non-owner CANNOT delete version (throws "Not authorized")
+- ✅ Unauthenticated user CANNOT delete
+- ✅ Cannot delete last active version
+- ✅ Soft delete sets deletedBy field
+
+**softDelete Artifact Permissions (4 tests):**
+- ✅ Owner can soft delete artifact
+- ✅ Non-owner CANNOT delete artifact
+- ✅ Unauthenticated user CANNOT delete artifact
+- ✅ Soft delete cascades to all versions with deletedBy
+
+**Error Messages (3 tests):**
+- ✅ updateVersionName returns clear error for non-owner
+- ✅ softDeleteVersion returns clear error for non-owner
+- ✅ All mutations return "Not authenticated" for unauthenticated users
+
+**Testing Approach:**
+- Tests create artifacts and versions directly in database (avoids action limitations)
+- Uses `withIdentity` to simulate multi-user scenarios
+- Verifies permission checks throw correct errors
+- Validates database state after operations
 
 #### 2. Create Artifact Action (`artifacts-create.test.ts`)
 
@@ -187,6 +242,7 @@ The frontend hook (`useArtifactUpload.ts`) can be updated when full integration 
 
 **Tier 1 (Backend):** COMPLETE
 - ✅ File type helper tests (23 tests passing)
+- ✅ **Write permissions enforcement tests (18 tests passing)**
 - ✅ Create action behavior documented
 - ✅ Add version action behavior documented
 - ✅ Update version name behavior documented
@@ -288,6 +344,7 @@ This is faster and simpler than maintaining migration scripts during rapid itera
 ### Tests Pass ✅
 
 - ✅ Unit tests pass (23/23 for file type helpers)
+- ✅ **Integration tests pass (18/18 for permission enforcement)**
 - ✅ Integration behavior documented for all features
 - ✅ Coverage meets requirements (Tier 1 complete)
 
@@ -390,6 +447,7 @@ This is faster and simpler than maintaining migration scripts during rapid itera
 | Test File | Location | Status |
 |-----------|----------|--------|
 | File Type Helpers | `tasks/00018.../tests/convex/fileTypes.test.ts` | ✅ 23 passing |
+| **Permissions Enforcement** | `tasks/00018.../tests/convex/permissions.test.ts` | ✅ **18 passing** |
 | Create Artifact | `app/convex/__tests__/artifacts-create.test.ts` | ✅ Documented |
 | Add Version | `tasks/00018.../tests/convex/addVersion.test.ts` | ✅ Documented |
 | Update Version Name | `tasks/00018.../tests/convex/updateVersionName.test.ts` | ✅ Documented |

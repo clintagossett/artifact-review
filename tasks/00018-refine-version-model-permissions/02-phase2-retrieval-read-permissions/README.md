@@ -1,160 +1,274 @@
 # Subtask 02: Phase 2 - Retrieval + Read Permissions
 
 **Parent Task:** 00018 - Refine Single-File Artifact Upload and Versioning
-**Status:** ⏳ Pending - Blocked on Phase 1 completion
+**Status:** Ready for Implementation
+**Created:** 2025-12-31
 
 ---
 
 ## Objective
 
-Update retrieval logic to read from blob storage and implement read permission checks for artifact viewing.
+Update retrieval logic to read from blob storage (unified pattern) and implement read permission checks for artifact viewing. Complete the unified storage migration by removing deprecated inline content fields.
 
 ---
 
-## Scope
+## Phase 1 Accomplishments (Prerequisites)
 
-**In Scope:**
-1. Update query operations to read from `artifactFiles` + blob storage
-2. Add permission checks to all read operations
-3. Update viewer UI to fetch content from blobs
-4. Backend tests for read permissions
+Phase 1 is complete with the following delivered:
 
-**Out of Scope:**
-- Upload/write operations (Phase 1)
-- Schema changes (Phase 1)
-- Migration (Phase 1)
+- **Unified blob storage** - New `create` and `addVersion` actions store all content in `artifactFiles` + `_storage`
+- **Upload mutations** - Using blob storage pattern (action + internal mutation)
+- **Write permissions** - Owner-only for add version, update name, delete
+- **Soft delete audit trail** - `deletedBy` field tracks who deleted
+- **File type helper module** - `/app/convex/lib/fileTypes.ts` with validation, defaults, MIME types
+- **Schema updates** - Added `createdBy`, `versionName`, `deletedBy` fields
+- **No migrations** - Using delete/reset approach in dev
 
----
-
-## Prerequisites
-
-**Must be completed first (Phase 1):**
-- ✅ Schema updated with unified storage
-- ✅ Upload mutations store files as blobs
-- ✅ Migration completed for existing data
-- ✅ All data in new format (`artifactFiles` + `_storage`)
+**Key files from Phase 1:**
+- `/app/convex/artifacts.ts` - Updated `create` and `addVersion` actions
+- `/app/convex/lib/fileTypes.ts` - File type validation helpers
+- `/app/convex/schema.ts` - Updated with new fields (optional for backward compat)
 
 ---
 
-## Core Changes
+## Phase 2 Scope
 
-### 1. Query Updates
+### In Scope
 
-**Update existing queries:**
-- `artifacts.getVersion` - Read from `artifactFiles` instead of inline fields
-- `artifacts.getVersionByNumber` - Read from `artifactFiles`
-- `artifacts.getLatestVersion` - Read from `artifactFiles`
-- `artifacts.getVersions` - List versions (no content changes)
+1. **Read permission helper module** - Centralized permission checking
+2. **Content retrieval queries** - Read from `artifactFiles` + blob storage
+3. **HTTP serving update** - Unified pattern for all file types
+4. **Viewer UI updates** - Fetch content from blob URLs
+5. **Version queries update** - Include new fields, exclude deprecated
+6. **Schema cleanup** - Remove `htmlContent`, `markdownContent`, make fields required
+7. **E2E tests** - Full flow from upload to viewing
 
-**Content retrieval pattern:**
+### Out of Scope
+
+- Upload/write operations (Phase 1 - complete)
+- Schema addition of new fields (Phase 1 - complete)
+- Multi-file ZIP artifact improvements (future task)
+
+---
+
+## Implementation Steps Summary
+
+| Step | Description | Location |
+|------|-------------|----------|
+| 1 | Create read permission helpers | `/app/convex/lib/permissions.ts` |
+| 2 | Create unified content retrieval queries | `/app/convex/artifacts.ts` |
+| 3 | Update HTTP serving for unified pattern | `/app/convex/http.ts` |
+| 4 | Update internal queries for HTTP actions | `/app/convex/artifacts.ts` |
+| 5 | Update viewer frontend | `/app/src/components/artifact/DocumentViewer.tsx` |
+| 6 | Update version queries for viewer | `/app/convex/artifacts.ts` |
+| 7 | Add read permission checks to all queries | `/app/convex/artifacts.ts` |
+| 8 | Schema cleanup - remove deprecated fields | `/app/convex/schema.ts` |
+| 9 | E2E tests for complete flow | `./tests/e2e/` |
+| 10 | Backend tests for read permissions | `./tests/convex/` |
+
+See `IMPLEMENTATION-PLAN.md` for detailed step-by-step instructions.
+
+---
+
+## Read Permission Model
+
+### Permission Levels
+
+| Level | Description | Grants |
+|-------|-------------|--------|
+| `owner` | Artifact creator | View, edit, delete, manage |
+| `reviewer` | Invited via `artifactReviewers` | View, comment |
+| `public` | Anyone with shareToken | View only |
+
+### Permission Rules
+
+| Operation | Owner | Reviewer | Public |
+|-----------|:-----:|:--------:|:------:|
+| View artifact | Y | Y | Y (via shareToken) |
+| View versions | Y | Y | Y |
+| View file content | Y | Y | Y |
+| See version metadata | Y | Y | Y |
+| Add comments | Y | Y | N |
+| Manage artifact | Y | N | N |
+
+### Permission Helper Functions
+
 ```typescript
-// 1. Get version from artifactVersions
-const version = await ctx.db.get(versionId);
+// convex/lib/permissions.ts
 
-// 2. Get file entry from artifactFiles
-const file = await ctx.db
-  .query("artifactFiles")
-  .withIndex("by_version_path", q =>
-    q.eq("versionId", versionId).eq("filePath", version.entryPoint)
-  )
-  .first();
+// Get permission level for artifact
+getArtifactPermission(ctx, artifactId): "owner" | "reviewer" | "public" | null
 
-// 3. Get signed URL for blob
-const url = await ctx.storage.getUrl(file.storageId);
+// Check if can view artifact
+canViewArtifact(ctx, artifactId): boolean
 
-// 4. Return URL to client
-return { ...version, contentUrl: url };
+// Check if can view version
+canViewVersion(ctx, versionId): boolean
+
+// Get artifact with permission check
+getArtifactByShareToken(ctx, shareToken): { artifact, permission } | null
 ```
 
-### 2. Read Permissions
+---
 
-**Permission checks needed:**
-- Check artifact access before returning version data
-- Validate shareToken for public users
-- Verify reviewer status for `can-comment` users
-- Confirm ownership for owner users
+## Key Changes
 
-**Implementation:**
-- Create `canViewArtifact()` helper function
-- Call in all query operations
-- Return 404/403 for unauthorized access
+### 1. HTTP Serving (Unified Pattern)
 
-### 3. Viewer UI Updates
+**Before (separate code paths):**
+```typescript
+if (version.fileType === "html" && version.htmlContent) {
+  // Serve inline HTML
+  return new Response(version.htmlContent, ...);
+}
 
-**Frontend changes:**
-- Fetch content from signed blob URL instead of inline field
-- Handle async blob loading
-- Show loading state while fetching
-- Error handling for failed blob fetches
+if (version.fileType === "zip") {
+  // Look up in artifactFiles
+  const file = await getFileByPath(...);
+  // Fetch from storage
+}
+```
 
-**Components to update:**
-- `DocumentViewer.tsx` - Main viewer component
-- Version switcher - Still works (no changes needed)
+**After (single code path):**
+```typescript
+// UNIFIED: All file types use same pattern
+const file = await getFileByPath(versionId, entryPoint);
+const url = await ctx.storage.getUrl(file.storageId);
+const response = await fetch(url);
+return new Response(await response.arrayBuffer(), ...);
+```
 
-### 4. Backend Tests
+### 2. Content Retrieval Queries
 
-**Test coverage:**
-- ✅ Owner can view all versions
-- ✅ Reviewers can view versions via shareToken
-- ✅ Public users can view via shareToken
-- ✅ Unauthorized users get 403/404
-- ✅ Deleted versions return 404
-- ✅ Invalid shareToken returns 404
+**New queries:**
+- `getEntryPointContent` - Get signed URL for main content
+- `getFileContent` - Get signed URL for any file path
+- `getFileTree` - List all files in a version
+
+### 3. Schema Cleanup
+
+**Fields to remove:**
+- `htmlContent` - No longer used
+- `markdownContent` - No longer used
+
+**Fields to make required:**
+- `entryPoint` - Always set for unified storage
+- `createdBy` - Track authorship
+
+---
+
+## Testing Strategy
+
+### Tier 1: Convex Backend Tests (MANDATORY)
+
+```
+tests/convex/
+├── permissions.test.ts     # Permission helper tests
+├── retrieval.test.ts       # Content retrieval tests
+└── versions.test.ts        # Version query tests
+```
+
+**Coverage requirements:**
+- All permission scenarios (owner, reviewer, public, unauthorized)
+- Content retrieval from blob storage
+- Version listing with new fields
+- Error cases (deleted, not found)
+
+### Tier 2: E2E Tests (RECOMMENDED)
+
+```
+tests/e2e/specs/
+├── view-artifact.spec.ts   # View HTML/Markdown artifacts
+├── permissions.spec.ts     # Permission enforcement
+└── version-switch.spec.ts  # Version switching
+```
+
+**Test scenarios:**
+- Owner views own artifact
+- Reviewer views invited artifact
+- Public user views via shareToken
+- Version switching loads correct content
+- Deleted artifact returns 404
 
 ---
 
 ## Success Criteria
 
-**Retrieval Works:**
-- ✅ Content loaded from blob storage
-- ✅ Signed URLs returned to client
-- ✅ Viewer displays HTML/Markdown correctly
-- ✅ No references to inline content fields
+### Retrieval Works
+- [ ] Content loaded from blob storage
+- [ ] Signed URLs returned to frontend
+- [ ] HTTP serving uses unified pattern
+- [ ] Viewer displays HTML correctly
+- [ ] Viewer displays Markdown correctly
 
-**Permissions Work:**
-- ✅ ShareToken grants public access
-- ✅ Reviewers can view artifacts they're invited to
-- ✅ Owners can view their artifacts
-- ✅ Unauthorized access blocked
+### Permissions Work
+- [ ] ShareToken grants public view access
+- [ ] Reviewers can view invited artifacts
+- [ ] Owners can view their artifacts
+- [ ] Unauthorized access returns null/404
 
-**UI Works:**
-- ✅ Viewer loads content from blob URLs
-- ✅ Loading states shown appropriately
-- ✅ Errors handled gracefully
-- ✅ No regressions in existing features
+### Cleanup Complete
+- [ ] `htmlContent` removed from schema
+- [ ] `markdownContent` removed from schema
+- [ ] `entryPoint` is required
+- [ ] `createdBy` is required
 
-**Tests Pass:**
-- ✅ All permission scenarios tested
-- ✅ Retrieval logic validated
-- ✅ Edge cases handled
+### Tests Pass
+- [ ] All backend tests pass
+- [ ] E2E tests pass (with video recordings)
+- [ ] Test report created
 
 ---
 
 ## Deliverables
 
-**To be created:**
-- Updated query operations (`app/convex/artifacts.ts`)
-- Permission helper functions (`app/convex/lib/permissions.ts`)
-- Updated viewer component (`app/src/components/viewer/DocumentViewer.tsx`)
-- Backend tests (`tasks/00018/.../tests/`)
-- `IMPLEMENTATION-PLAN.md` - Detailed implementation plan (when Phase 1 complete)
+| Deliverable | Location | Status |
+|-------------|----------|--------|
+| Implementation Plan | `./IMPLEMENTATION-PLAN.md` | Complete |
+| Permission helpers | `/app/convex/lib/permissions.ts` | Pending |
+| Updated artifacts.ts | `/app/convex/artifacts.ts` | Pending |
+| Updated http.ts | `/app/convex/http.ts` | Pending |
+| Updated viewer | `/app/src/components/artifact/DocumentViewer.tsx` | Pending |
+| Updated schema | `/app/convex/schema.ts` | Pending |
+| Backend tests | `./tests/convex/` | Pending |
+| E2E tests | `./tests/e2e/` | Pending |
+| Test report | `./test-report.md` | Pending |
 
 ---
 
-## Next Steps
+## Development Notes
 
-**When Phase 1 is complete:**
-1. Architect creates `IMPLEMENTATION-PLAN.md` for Phase 2
-2. Review and approve implementation plan
-3. Update query operations
-4. Update viewer UI
-5. Add permission checks
-6. Test thoroughly
-7. Deploy to production
+### Dev Environment Approach
+
+Per project guidelines, we're using **delete/reset approach** rather than migrations:
+1. Delete test data before schema changes
+2. Update schema
+3. Deploy
+4. Create fresh test data
+
+This is appropriate for development phase. Production migrations will be handled separately.
+
+### Important Convex Rules to Follow
+
+From `docs/architecture/convex-rules.md`:
+- Always use `args` and `returns` validators
+- Use `v.null()` for void returns
+- Use `withIndex` not `filter` for queries
+- Actions cannot use `ctx.db` (use internal mutations)
+- Include `"use node";` for Node.js modules
 
 ---
 
-**References:**
-- Parent task README: `../README.md`
-- End-state design: `../END-STATE-DESIGN.md`
-- Phase 1 subtask: `../01-phase1-upload-write-permissions/`
+## References
+
+- **Parent Task:** `../README.md`
+- **End-State Design:** `../END-STATE-DESIGN.md`
+- **Phase 1:** `../01-phase1-upload-write-permissions/`
+- **Convex Rules:** `docs/architecture/convex-rules.md`
+- **ADR 0012:** `docs/architecture/decisions/0012-unified-artifact-storage.md`
+
+---
+
+**Created:** 2025-12-31
+**Author:** Software Architect Agent
+**Version:** 1.0
