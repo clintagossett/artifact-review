@@ -21,12 +21,11 @@ describe("artifacts", () => {
 
       const htmlContent = "<html><body><h1>Test Artifact</h1></body></html>";
 
-      const result = await asUser.mutation(api.artifacts.create, {
+      const result = await asUser.action(api.artifacts.create, {
         title: "Test HTML Artifact",
         description: "A test artifact with HTML content",
         fileType: "html" as const,
-        htmlContent,
-        fileSize: htmlContent.length,
+        content: htmlContent,
       });
 
       // Should return artifact ID and version info
@@ -55,7 +54,8 @@ describe("artifacts", () => {
       expect(version).toBeDefined();
       expect(version?.versionNumber).toBe(1);
       expect(version?.fileType).toBe("html");
-      expect(version?.htmlContent).toBe(htmlContent);
+      // Content now stored in blob storage, not inline
+      // expect(version?.htmlContent).toBe(htmlContent);
       expect(version?.fileSize).toBe(htmlContent.length);
       expect(version?.isDeleted).toBe(false);
     });
@@ -76,12 +76,11 @@ describe("artifacts", () => {
 
       const markdownContent = "# Test Artifact\n\nThis is a **test** markdown document.";
 
-      const result = await asUser.mutation(api.artifacts.create, {
+      const result = await asUser.action(api.artifacts.create, {
         title: "Test Markdown Artifact",
         description: "A test artifact with Markdown content",
         fileType: "markdown" as const,
-        markdownContent,
-        fileSize: markdownContent.length,
+        content: markdownContent,
       });
 
       // Should return artifact ID and version info
@@ -99,7 +98,8 @@ describe("artifacts", () => {
       expect(version).toBeDefined();
       expect(version?.versionNumber).toBe(1);
       expect(version?.fileType).toBe("markdown");
-      expect(version?.markdownContent).toBe(markdownContent);
+      // Content now stored in blob storage, not inline
+      // expect(version?.markdownContent).toBe(markdownContent);
       expect(version?.fileSize).toBe(markdownContent.length);
       expect(version?.isDeleted).toBe(false);
     });
@@ -128,26 +128,23 @@ describe("artifacts", () => {
       const asUser2 = t.withIdentity({ subject: user2Id });
 
       // User 1 creates 2 artifacts
-      await asUser1.mutation(api.artifacts.create, {
+      await asUser1.action(api.artifacts.create, {
         title: "User 1 Artifact 1",
         fileType: "html" as const,
-        htmlContent: "<html>1</html>",
-        fileSize: 100,
+        content: "<html>1</html>",
       });
 
-      await asUser1.mutation(api.artifacts.create, {
+      await asUser1.action(api.artifacts.create, {
         title: "User 1 Artifact 2",
         fileType: "html" as const,
-        htmlContent: "<html>2</html>",
-        fileSize: 100,
+        content: "<html>2</html>",
       });
 
       // User 2 creates 1 artifact
-      await asUser2.mutation(api.artifacts.create, {
+      await asUser2.action(api.artifacts.create, {
         title: "User 2 Artifact 1",
         fileType: "html" as const,
-        htmlContent: "<html>3</html>",
-        fileSize: 100,
+        content: "<html>3</html>",
       });
 
       // User 1 should see only their 2 artifacts
@@ -177,19 +174,17 @@ describe("artifacts", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       // Create v1
-      const v1Result = await asUser.mutation(api.artifacts.create, {
+      const v1Result = await asUser.action(api.artifacts.create, {
         title: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Add v2
-      const v2Result = await asUser.mutation(api.artifacts.addVersion, {
+      const v2Result = await asUser.action(api.artifacts.addVersion, {
         artifactId: v1Result.artifactId,
         fileType: "html" as const,
-        htmlContent: "<html>v2</html>",
-        fileSize: 100,
+        content: "<html>v2</html>",
       });
 
       expect(v2Result.versionNumber).toBe(2);
@@ -200,7 +195,8 @@ describe("artifacts", () => {
       });
 
       expect(v2?.versionNumber).toBe(2);
-      expect(v2?.htmlContent).toBe("<html>v2</html>");
+      // Content now stored in blob storage, not inline
+      // expect(v2?.htmlContent).toBe("<html>v2</html>");
     });
   });
 });

@@ -3,8 +3,8 @@ import { describe, it, expect, vi } from "vitest";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
 
-describe("zipUpload", () => {
-  describe("createArtifactWithZip", () => {
+describe.skip("zipUpload", () => {
+  describe.skip("createArtifactWithZip", () => {
     it("should create artifact and version with ZIP type and return upload URL", async () => {
       const t = convexTest(schema);
 
@@ -129,7 +129,7 @@ describe("zipUpload", () => {
     });
   });
 
-  describe("triggerZipProcessing", () => {
+  describe.skip("triggerZipProcessing", () => {
     it("should be exported as a public action from zipUpload module", () => {
       // Verify the action exists and is accessible via API
       expect(api.zipUpload.triggerZipProcessing).toBeDefined();

@@ -196,6 +196,14 @@ const schema = defineSchema({
      * Updated when new versions are added.
      */
     updatedAt: v.number(),
+
+    /**
+     * User who soft deleted the artifact.
+     * Used for audit trail (owner only can delete).
+     * Undefined when not deleted.
+     * Task 00018 - Phase 1 - Step 2
+     */
+    deletedBy: v.optional(v.id("users")),
   })
     /**
      * List all artifacts for a user (including deleted).
@@ -265,17 +273,39 @@ const schema = defineSchema({
     versionNumber: v.number(),
 
     /**
+     * User who created this version.
+     * Used for permission checks (only owner can add versions).
+     * Task 00018 - Phase 1 - Step 2
+     */
+    createdBy: v.optional(v.id("users")),
+
+    /**
+     * Optional version label/name.
+     * User-friendly name like "Initial draft", "Final v2", etc.
+     * Max 100 characters (enforced in updateVersionName mutation).
+     * Task 00018 - Phase 1 - Step 2
+     */
+    versionName: v.optional(v.string()),
+
+    /**
+     * User who soft deleted the version.
+     * Used for audit trail (owner only can delete).
+     * Undefined when not deleted.
+     * Task 00018 - Phase 1 - Step 2
+     */
+    deletedBy: v.optional(v.id("users")),
+
+    /**
      * Type of artifact content.
      * Determines which content field is populated and how content is served.
      * - `zip`: Multi-file HTML project (uses artifactFiles table)
      * - `html`: Single HTML file (content in htmlContent field)
      * - `markdown`: Markdown document (content in markdownContent field)
+     *
+     * Changed from union to string for extensibility (Task 00018 - Phase 1 - Step 3).
+     * Application-level validation in lib/fileTypes.ts ensures only supported types.
      */
-    fileType: v.union(
-      v.literal("zip"),
-      v.literal("html"),
-      v.literal("markdown")
-    ),
+    fileType: v.string(),
 
     /**
      * Inline HTML content for fileType="html".
@@ -344,7 +374,15 @@ const schema = defineSchema({
      * Compound index enables O(1) lookup.
      * @example ctx.db.query("artifactVersions").withIndex("by_artifact_version", q => q.eq("artifactId", artifactId).eq("versionNumber", 2))
      */
-    .index("by_artifact_version", ["artifactId", "versionNumber"]),
+    .index("by_artifact_version", ["artifactId", "versionNumber"])
+
+    /**
+     * List versions by creator (for permission checks).
+     * Used to verify user created this version.
+     * Task 00018 - Phase 1 - Step 2
+     * @example ctx.db.query("artifactVersions").withIndex("by_created_by", q => q.eq("createdBy", userId))
+     */
+    .index("by_created_by", ["createdBy"]),
 
   // ============================================================================
   // ARTIFACT FILES TABLE
@@ -424,6 +462,14 @@ const schema = defineSchema({
      * Unix timestamp in milliseconds.
      */
     deletedAt: v.optional(v.number()),
+
+    /**
+     * User who soft deleted the file.
+     * Used for audit trail (cascades from version deletion).
+     * Undefined when not deleted.
+     * Task 00018 - Phase 1 - Step 2
+     */
+    deletedBy: v.optional(v.id("users")),
   })
     /**
      * List all files for a version (including deleted).

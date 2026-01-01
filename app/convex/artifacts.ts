@@ -1,24 +1,109 @@
-import { mutation, query, internalQuery } from "./_generated/server";
+import { mutation, query, internalQuery, action, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { nanoid } from "nanoid";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
+import {
+  isValidFileType,
+  isSingleFileType,
+  getDefaultFilePath,
+  getMimeType,
+  MAX_SINGLE_FILE_SIZE,
+  MAX_VERSION_NAME_LENGTH,
+} from "./lib/fileTypes";
 
 /**
- * Create a new artifact with version 1
+ * Create a new artifact with version 1 (Unified Storage Pattern)
+ * Task 00018 - Phase 1 - Step 4
+ *
+ * This is an action that validates, stores content, then calls mutation to create records.
  */
-export const create = mutation({
+export const create = action({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    fileType: v.union(
-      v.literal("zip"),
-      v.literal("html"),
-      v.literal("markdown")
-    ),
-    // Type-specific content
-    htmlContent: v.optional(v.string()),
-    markdownContent: v.optional(v.string()),
-    entryPoint: v.optional(v.string()),
+    fileType: v.string(),  // Validated at application level
+    content: v.string(),   // File content as text
+    originalFileName: v.optional(v.string()),
+    versionName: v.optional(v.string()),
+  },
+  returns: v.object({
+    artifactId: v.id("artifacts"),
+    versionId: v.id("artifactVersions"),
+    versionNumber: v.number(),
+    shareToken: v.string(),
+  }),
+  handler: async (ctx, args): Promise<{
+    artifactId: Id<"artifacts">;
+    versionId: Id<"artifactVersions">;
+    versionNumber: number;
+    shareToken: string;
+  }> => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Validate file type
+    if (!isValidFileType(args.fileType)) {
+      throw new Error(`Unsupported file type: ${args.fileType}`);
+    }
+    if (!isSingleFileType(args.fileType)) {
+      throw new Error(`Use ZIP upload for file type: ${args.fileType}`);
+    }
+
+    // 3. Calculate size and validate
+    const contentBlob = new Blob([args.content], { type: getMimeType(args.fileType) });
+    const fileSize = contentBlob.size;
+
+    if (fileSize > MAX_SINGLE_FILE_SIZE) {
+      throw new Error(`File too large. Maximum: 5MB, got: ${(fileSize / 1024 / 1024).toFixed(2)}MB`);
+    }
+
+    // 4. Determine file path and MIME type
+    const filePath = args.originalFileName || getDefaultFilePath(args.fileType);
+
+    // 5. Store content in Convex file storage (only available in actions)
+    const storageId = await ctx.storage.store(contentBlob);
+
+    // 6. Call mutation to create artifact, version, and file records
+    const result: {
+      artifactId: Id<"artifacts">;
+      versionId: Id<"artifactVersions">;
+      versionNumber: number;
+      shareToken: string;
+    } = await ctx.runMutation(internal.artifacts.createInternal, {
+      userId,
+      title: args.title,
+      description: args.description,
+      fileType: args.fileType,
+      versionName: args.versionName,
+      filePath,
+      storageId,
+      mimeType: getMimeType(args.fileType),
+      fileSize,
+    });
+
+    return result;
+  },
+});
+
+/**
+ * Internal mutation to create artifact, version, and file records
+ * Called by create action after storing file
+ */
+export const createInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    fileType: v.string(),
+    versionName: v.optional(v.string()),
+    filePath: v.string(),
+    storageId: v.id("_storage"),
+    mimeType: v.string(),
     fileSize: v.number(),
   },
   returns: v.object({
@@ -28,12 +113,6 @@ export const create = mutation({
     shareToken: v.string(),
   }),
   handler: async (ctx, args) => {
-    // Get authenticated user
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
     const now = Date.now();
     const shareToken = nanoid(8);
 
@@ -41,24 +120,35 @@ export const create = mutation({
     const artifactId = await ctx.db.insert("artifacts", {
       title: args.title,
       description: args.description,
-      creatorId: userId,
+      creatorId: args.userId,
       shareToken,
       isDeleted: false,
       createdAt: now,
       updatedAt: now,
     });
 
-    // Create version 1
+    // Create version record (unified storage)
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId,
       versionNumber: 1,
+      createdBy: args.userId,
+      versionName: args.versionName,
       fileType: args.fileType,
-      htmlContent: args.htmlContent,
-      markdownContent: args.markdownContent,
-      entryPoint: args.entryPoint,
+      entryPoint: args.filePath,
       fileSize: args.fileSize,
       isDeleted: false,
       createdAt: now,
+      // Keep inline content fields undefined (not used in new pattern)
+    });
+
+    // Create file record
+    await ctx.db.insert("artifactFiles", {
+      versionId,
+      filePath: args.filePath,
+      storageId: args.storageId,
+      mimeType: args.mimeType,
+      fileSize: args.fileSize,
+      isDeleted: false,
     });
 
     return {
@@ -110,11 +200,7 @@ export const getVersion = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.union(
-        v.literal("zip"),
-        v.literal("html"),
-        v.literal("markdown")
-      ),
+      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
       htmlContent: v.optional(v.string()),
       markdownContent: v.optional(v.string()),
       entryPoint: v.optional(v.string()),
@@ -235,20 +321,110 @@ export const list = query({
 });
 
 /**
- * Add a new version to an existing artifact
+ * Add a new version to an existing artifact (Unified Storage Pattern)
+ * Task 00018 - Phase 1 - Step 5
+ *
+ * This is an action that validates, stores content, then calls mutation to create records.
  */
-export const addVersion = mutation({
+export const addVersion = action({
   args: {
     artifactId: v.id("artifacts"),
-    fileType: v.union(
-      v.literal("zip"),
-      v.literal("html"),
-      v.literal("markdown")
-    ),
-    // Type-specific content
-    htmlContent: v.optional(v.string()),
-    markdownContent: v.optional(v.string()),
-    entryPoint: v.optional(v.string()),
+    fileType: v.string(),  // Validated at application level
+    content: v.string(),   // File content as text
+    originalFileName: v.optional(v.string()),
+    versionName: v.optional(v.string()),
+  },
+  returns: v.object({
+    versionId: v.id("artifactVersions"),
+    versionNumber: v.number(),
+  }),
+  handler: async (ctx, args): Promise<{
+    versionId: Id<"artifactVersions">;
+    versionNumber: number;
+  }> => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Verify artifact exists and user is owner
+    const artifact: {
+      _id: Id<"artifacts">;
+      _creationTime: number;
+      title: string;
+      description?: string;
+      creatorId: Id<"users">;
+      shareToken: string;
+      isDeleted: boolean;
+      deletedAt?: number;
+      deletedBy?: Id<"users">;
+      createdAt: number;
+      updatedAt: number;
+    } | null = await ctx.runQuery(internal.artifacts.getByIdInternal, {
+      artifactId: args.artifactId,
+    });
+    if (!artifact || artifact.isDeleted) {
+      throw new Error("Artifact not found");
+    }
+    if (artifact.creatorId !== userId) {
+      throw new Error("Not authorized: Only the owner can add versions");
+    }
+
+    // 3. Validate file type
+    if (!isValidFileType(args.fileType)) {
+      throw new Error(`Unsupported file type: ${args.fileType}`);
+    }
+    if (!isSingleFileType(args.fileType)) {
+      throw new Error(`Use ZIP upload for file type: ${args.fileType}`);
+    }
+
+    // 4. Calculate size and validate
+    const contentBlob = new Blob([args.content], { type: getMimeType(args.fileType) });
+    const fileSize = contentBlob.size;
+
+    if (fileSize > MAX_SINGLE_FILE_SIZE) {
+      throw new Error(`File too large. Maximum: 5MB`);
+    }
+
+    // 5. Prepare file metadata
+    const filePath = args.originalFileName || getDefaultFilePath(args.fileType);
+
+    // 6. Store content
+    const storageId = await ctx.storage.store(contentBlob);
+
+    // 7. Call mutation to create version and file records
+    const result: {
+      versionId: Id<"artifactVersions">;
+      versionNumber: number;
+    } = await ctx.runMutation(internal.artifacts.addVersionInternal, {
+      userId,
+      artifactId: args.artifactId,
+      fileType: args.fileType,
+      versionName: args.versionName,
+      filePath,
+      storageId,
+      mimeType: getMimeType(args.fileType),
+      fileSize,
+    });
+
+    return result;
+  },
+});
+
+/**
+ * Internal mutation to add version and file records
+ * Called by addVersion action after storing file
+ */
+export const addVersionInternal = internalMutation({
+  args: {
+    userId: v.id("users"),
+    artifactId: v.id("artifacts"),
+    fileType: v.string(),
+    versionName: v.optional(v.string()),
+    filePath: v.string(),
+    storageId: v.id("_storage"),
+    mimeType: v.string(),
     fileSize: v.number(),
   },
   returns: v.object({
@@ -256,21 +432,6 @@ export const addVersion = mutation({
     versionNumber: v.number(),
   }),
   handler: async (ctx, args) => {
-    // Get authenticated user
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
-    // Verify artifact exists and belongs to user
-    const artifact = await ctx.db.get(args.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
-    if (artifact.creatorId !== userId) {
-      throw new Error("Not authorized");
-    }
-
     // Get max version number for this artifact
     const versions = await ctx.db
       .query("artifactVersions")
@@ -282,20 +443,30 @@ export const addVersion = mutation({
 
     const now = Date.now();
 
-    // Create new version
+    // Create version record (unified storage)
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId: args.artifactId,
       versionNumber: newVersionNumber,
+      createdBy: args.userId,
+      versionName: args.versionName,
       fileType: args.fileType,
-      htmlContent: args.htmlContent,
-      markdownContent: args.markdownContent,
-      entryPoint: args.entryPoint,
+      entryPoint: args.filePath,
       fileSize: args.fileSize,
       isDeleted: false,
       createdAt: now,
     });
 
-    // Update artifact's updatedAt timestamp
+    // Create file record
+    await ctx.db.insert("artifactFiles", {
+      versionId,
+      filePath: args.filePath,
+      storageId: args.storageId,
+      mimeType: args.mimeType,
+      fileSize: args.fileSize,
+      isDeleted: false,
+    });
+
+    // Update artifact timestamp
     await ctx.db.patch(args.artifactId, {
       updatedAt: now,
     });
@@ -308,7 +479,54 @@ export const addVersion = mutation({
 });
 
 /**
+ * Update the name/label of a version (owner only)
+ * Task 00018 - Phase 1 - Step 6
+ */
+export const updateVersionName = mutation({
+  args: {
+    versionId: v.id("artifactVersions"),
+    versionName: v.union(v.string(), v.null()),  // null to clear
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Get version
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      throw new Error("Version not found");
+    }
+
+    // 3. Verify ownership
+    const artifact = await ctx.db.get(version.artifactId);
+    if (!artifact || artifact.isDeleted) {
+      throw new Error("Artifact not found");
+    }
+    if (artifact.creatorId !== userId) {
+      throw new Error("Not authorized: Only the owner can update version names");
+    }
+
+    // 4. Validate version name length
+    if (args.versionName !== null && args.versionName.length > MAX_VERSION_NAME_LENGTH) {
+      throw new Error(`Version name too long. Maximum: ${MAX_VERSION_NAME_LENGTH} characters`);
+    }
+
+    // 5. Update version name
+    await ctx.db.patch(args.versionId, {
+      versionName: args.versionName ?? undefined,
+    });
+
+    return null;
+  },
+});
+
+/**
  * Soft delete an artifact (cascades to all versions and files)
+ * Task 00018 - Phase 1 - Step 7: Added deletedBy audit trail
  */
 export const softDelete = mutation({
   args: {
@@ -333,10 +551,11 @@ export const softDelete = mutation({
 
     const now = Date.now();
 
-    // Soft delete artifact
+    // Soft delete artifact WITH deletedBy
     await ctx.db.patch(args.id, {
       isDeleted: true,
       deletedAt: now,
+      deletedBy: userId,  // NEW: Track who deleted
     });
 
     // Cascade: Soft delete all versions
@@ -350,6 +569,7 @@ export const softDelete = mutation({
         await ctx.db.patch(version._id, {
           isDeleted: true,
           deletedAt: now,
+          deletedBy: userId,  // NEW: Track who deleted
         });
 
         // Cascade: Soft delete all files for this version
@@ -363,6 +583,7 @@ export const softDelete = mutation({
             await ctx.db.patch(file._id, {
               isDeleted: true,
               deletedAt: now,
+              deletedBy: userId,  // NEW: Track who deleted
             });
           }
         }
@@ -375,6 +596,7 @@ export const softDelete = mutation({
 
 /**
  * Soft delete a specific version (and its files)
+ * Task 00018 - Phase 1 - Step 7: Added deletedBy audit trail
  */
 export const softDeleteVersion = mutation({
   args: {
@@ -417,13 +639,14 @@ export const softDeleteVersion = mutation({
 
     const now = Date.now();
 
-    // Soft delete version
+    // Soft delete version WITH deletedBy
     await ctx.db.patch(args.versionId, {
       isDeleted: true,
       deletedAt: now,
+      deletedBy: userId,  // NEW: Track who deleted
     });
 
-    // Cascade: Soft delete all files for this version
+    // Cascade: Soft delete all files for this version WITH deletedBy
     const files = await ctx.db
       .query("artifactFiles")
       .withIndex("by_version", (q) => q.eq("versionId", args.versionId))
@@ -434,6 +657,7 @@ export const softDeleteVersion = mutation({
         await ctx.db.patch(file._id, {
           isDeleted: true,
           deletedAt: now,
+          deletedBy: userId,  // NEW: Track who deleted
         });
       }
     }
@@ -455,11 +679,7 @@ export const getVersions = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.union(
-        v.literal("zip"),
-        v.literal("html"),
-        v.literal("markdown")
-      ),
+      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
       fileSize: v.number(),
       createdAt: v.number(),
     })
@@ -500,11 +720,7 @@ export const getVersionByNumber = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.union(
-        v.literal("zip"),
-        v.literal("html"),
-        v.literal("markdown")
-      ),
+      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
       htmlContent: v.optional(v.string()),
       markdownContent: v.optional(v.string()),
       entryPoint: v.optional(v.string()),
@@ -544,11 +760,7 @@ export const getLatestVersion = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.union(
-        v.literal("zip"),
-        v.literal("html"),
-        v.literal("markdown")
-      ),
+      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
       htmlContent: v.optional(v.string()),
       markdownContent: v.optional(v.string()),
       entryPoint: v.optional(v.string()),
@@ -653,11 +865,7 @@ export const getVersionByNumberInternal = internalQuery({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.union(
-        v.literal("zip"),
-        v.literal("html"),
-        v.literal("markdown")
-      ),
+      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
       htmlContent: v.optional(v.string()),
       markdownContent: v.optional(v.string()),
       entryPoint: v.optional(v.string()),
@@ -681,6 +889,34 @@ export const getVersionByNumberInternal = internalQuery({
     }
 
     return version;
+  },
+});
+
+/**
+ * Internal query: Get artifact by ID (for actions)
+ */
+export const getByIdInternal = internalQuery({
+  args: {
+    artifactId: v.id("artifacts"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("artifacts"),
+      _creationTime: v.number(),
+      title: v.string(),
+      description: v.optional(v.string()),
+      creatorId: v.id("users"),
+      shareToken: v.string(),
+      isDeleted: v.boolean(),
+      deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.artifactId);
   },
 });
 

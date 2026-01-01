@@ -19,19 +19,17 @@ describe("soft deletion", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1
-      const result = await asUser.mutation(api.artifacts.create, {
+      const result = await asUser.action(api.artifacts.create, {
         title: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Add v2
-      await asUser.mutation(api.artifacts.addVersion, {
+      await asUser.action(api.artifacts.addVersion, {
         artifactId: result.artifactId,
         fileType: "html" as const,
-        htmlContent: "<html>v2</html>",
-        fileSize: 100,
+        content: "<html>v2</html>",
       });
 
       // Soft delete the artifact
@@ -80,19 +78,17 @@ describe("soft deletion", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1
-      const v1Result = await asUser.mutation(api.artifacts.create, {
+      const v1Result = await asUser.action(api.artifacts.create, {
         title: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Add v2
-      const v2Result = await asUser.mutation(api.artifacts.addVersion, {
+      const v2Result = await asUser.action(api.artifacts.addVersion, {
         artifactId: v1Result.artifactId,
         fileType: "html" as const,
-        htmlContent: "<html>v2</html>",
-        fileSize: 100,
+        content: "<html>v2</html>",
       });
 
       // Soft delete v2 only
@@ -133,11 +129,10 @@ describe("soft deletion", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1 only
-      const v1Result = await asUser.mutation(api.artifacts.create, {
+      const v1Result = await asUser.action(api.artifacts.create, {
         title: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Try to delete the only version - should fail
