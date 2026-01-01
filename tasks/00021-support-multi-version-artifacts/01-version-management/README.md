@@ -8,11 +8,20 @@
 
 ## Objective
 
-Implement backend logic and UI for managing artifact versions: upload new versions, delete versions, and automatically control which version accepts comments.
+Implement backend logic and UI for managing artifact versions: upload new versions, delete versions, rename versions, and automatically control which version accepts comments.
 
 ---
 
 ## Requirements
+
+### Schema Change (Pre-requisite)
+
+**Rename `versionName` → `name`** in `artifactVersions` table:
+- Delete all existing data in `artifactVersions` table (dev environment)
+- Update schema: `versionName: v.optional(v.string())` → `name: v.optional(v.string())`
+- Update any existing code references
+
+This avoids redundancy (`version.name` vs `version.versionName`).
 
 ### Backend (Convex)
 
@@ -26,13 +35,18 @@ Implement backend logic and UI for managing artifact versions: upload new versio
 - When latest version deleted → previous version becomes latest
 - Previous version automatically reopens for commenting (no manual toggle)
 
-**3. Comment Control (Backend Enforced)**
+**3. Version Rename**
+- Update `name` field (optional string, max 100 chars)
+- Examples: "Initial draft", "Final v2", "After stakeholder feedback"
+- Empty string clears the name (displays version number only)
+
+**4. Comment Control (Backend Enforced)**
 - **CRITICAL:** Only latest version (highest non-deleted `versionNumber`) accepts comments
 - Enforce in `addComment` mutation - reject if not latest version
 - No frontend bypass possible
 - Error message: "Comments are only allowed on the latest version"
 
-**4. Get Latest Version**
+**5. Get Latest Version**
 ```typescript
 getLatestVersion(artifactId) {
   // Returns highest versionNumber where deleted = false
@@ -57,11 +71,17 @@ getLatestVersion(artifactId) {
 - Cannot delete if only one version exists
 - Success message
 
-**3. Version List Display**
+**3. Rename Version**
+- Inline edit or modal for version name
+- Max 100 characters validation
+- Shows placeholder if no name set (e.g., "Version 1")
+- Save on blur or Enter key
+
+**4. Version List Display**
 - Show all versions (exclude deleted)
 - Display version number, upload date, file size
 - Badge: "Latest" on highest non-deleted version
-- Actions: Download, Delete
+- Actions: Rename, Download, Delete
 
 ---
 
@@ -155,12 +175,15 @@ export const addComment = mutation({
 - ✅ Upload version increments versionNumber correctly
 - ✅ Delete version sets deleted flag
 - ✅ Cannot delete only version
+- ✅ Rename version updates name field
+- ✅ Rename version rejects names over 100 chars
 - ✅ getLatestVersion returns correct version after delete
 - ✅ addComment rejects on non-latest version
 
 ### E2E Tests
 - ✅ Upload new version flow
 - ✅ Delete version flow
+- ✅ Rename version flow
 - ✅ Try to comment on old version (should fail)
 - ✅ Delete latest, previous becomes latest and accepts comments
 
@@ -168,11 +191,13 @@ export const addComment = mutation({
 
 ## Deliverables
 
-- [ ] Backend mutations: `uploadVersion`, `deleteVersion`
+- [ ] Schema change: `versionName` → `name`
+- [ ] Backend mutations: `uploadVersion`, `deleteVersion`, `renameVersion`
 - [ ] Backend enforcement in `addComment` mutation
 - [ ] Helper: `getLatestVersion(artifactId)`
 - [ ] Frontend: Upload new version UI
 - [ ] Frontend: Delete version UI
+- [ ] Frontend: Rename version UI
 - [ ] Frontend: Version list with "Latest" badge
 - [ ] Tests: Unit + E2E
 - [ ] Validation video

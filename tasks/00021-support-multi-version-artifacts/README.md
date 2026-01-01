@@ -23,7 +23,7 @@
 ### Key Decisions Made
 
 **MVP Scope:**
-- ✅ IN: Multiple versions, upload, delete, view versions, latest-only commenting
+- ✅ IN: Multiple versions, upload, delete, rename, view versions, latest-only commenting
 - ❌ OUT: Version deep links, custom default version, manual comment controls
 
 **Comment Control Logic:**
@@ -122,6 +122,7 @@ This builds on the backend foundation from Task 18 (Refine Version Model Permiss
 - Multiple versions per artifact (backed by Task 18 schema)
 - Upload new versions (auto-increments versionNumber)
 - Delete versions (soft delete with `deleted` flag)
+- Rename versions (update `versionName` field, max 100 chars)
 - View any version in artifact viewer
 - Version dropdown selector in UI
 - Only latest version accepts comments (backend enforced)
@@ -145,10 +146,10 @@ _(To be filled in as implementation progresses)_
 ## Subtasks
 
 ### 01-version-management/
-Backend and UI for uploading new versions, deleting versions, and enforcing comment controls.
+Backend and UI for uploading new versions, deleting versions, renaming versions, and enforcing comment controls.
 
 **Deliverables:**
-- Convex mutations: `uploadVersion`, `deleteVersion`
+- Convex mutations: `uploadVersion`, `deleteVersion`, `renameVersion`
 - Backend enforcement in `addComment` mutation
 - Helper: `getLatestVersion(artifactId)`
 - Helper: `getVersionsByArtifact` with computed `isLatest`
