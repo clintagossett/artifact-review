@@ -14,13 +14,15 @@ import { Label } from '@/components/ui/label';
 interface UploadNewVersionDialogProps {
   open: boolean;
   onClose: () => void;
-  onUploadVersion: (file: File, entryPoint?: string) => void;
+  onUploadVersion: (file: File, entryPoint?: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 export function UploadNewVersionDialog({
   open,
   onClose,
   onUploadVersion,
+  isLoading = false,
 }: UploadNewVersionDialogProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -57,10 +59,10 @@ export function UploadNewVersionDialog({
     setUploadedFile(file);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!uploadedFile) return;
 
-    onUploadVersion(uploadedFile);
+    await onUploadVersion(uploadedFile);
 
     // Reset form
     setUploadedFile(null);
@@ -151,15 +153,15 @@ export function UploadNewVersionDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={!uploadedFile}
+            disabled={!uploadedFile || isLoading}
             className="bg-blue-600 hover:bg-blue-700"
           >
-            Upload Version
+            {isLoading ? 'Uploading...' : 'Upload Version'}
           </Button>
         </DialogFooter>
       </DialogContent>

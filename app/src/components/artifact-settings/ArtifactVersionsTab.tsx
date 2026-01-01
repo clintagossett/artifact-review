@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Fetch versions from backend
   const backendVersions = useQuery(api.artifacts.getVersions, { artifactId });
@@ -41,6 +42,13 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
   // Mutations
   const updateNameMutation = useMutation(api.artifacts.updateName);
   const softDeleteMutation = useMutation(api.artifacts.softDeleteVersion);
+
+  // Actions for upload
+  const addVersionAction = useAction(api.artifacts.addVersion);
+
+  // ZIP upload functions
+  const addZipVersionMutation = useMutation(api.zipUpload.addZipVersion);
+  const triggerZipProcessingAction = useAction(api.zipUpload.triggerZipProcessing);
 
   // Transform backend data to component format
   const versions: Version[] = backendVersions?.map(v => ({
@@ -105,10 +113,78 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
   };
 
   const handleUploadVersion = async (file: File, entryPoint?: string) => {
-    // TODO: Implement upload using api.artifacts.addVersion or api.zipUpload.addZipVersion
-    // For now, close the dialog and show a message
-    setUploadDialogOpen(false);
-    toast({ title: 'Upload functionality will be implemented soon' });
+    try {
+      setIsUploading(true);
+
+      // Determine file type from extension
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      let fileType: 'html' | 'markdown' | 'zip';
+
+      if (extension === 'html' || extension === 'htm') {
+        fileType = 'html';
+      } else if (extension === 'md') {
+        fileType = 'markdown';
+      } else if (extension === 'zip') {
+        fileType = 'zip';
+      } else {
+        throw new Error(`Unsupported file type: .${extension}`);
+      }
+
+      // Handle HTML and Markdown files
+      if (fileType === 'html' || fileType === 'markdown') {
+        // Read file content
+        const content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+
+        // Upload using addVersion action
+        await addVersionAction({
+          artifactId,
+          fileType,
+          content,
+          originalFileName: file.name,
+        });
+
+        setUploadDialogOpen(false);
+        setIsUploading(false);
+        toast({ title: 'Version uploaded successfully' });
+      }
+      // Handle ZIP files
+      else if (fileType === 'zip') {
+        // Step 1: Get upload URL and create version record
+        const { uploadUrl, versionId } = await addZipVersionMutation({
+          artifactId,
+          fileSize: file.size,
+        });
+
+        // Step 2: Upload file to storage URL
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': file.type || 'application/zip' },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload ZIP file to storage');
+        }
+
+        const { storageId } = await uploadResponse.json();
+
+        // Step 3: Trigger ZIP processing
+        await triggerZipProcessingAction({ versionId, storageId });
+
+        setUploadDialogOpen(false);
+        setIsUploading(false);
+        toast({ title: 'ZIP version uploaded and processing started' });
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+      setIsUploading(false);
+      toast({ title: 'Upload failed', description: errorMessage, variant: 'destructive' });
+    }
   };
 
   // Show loading state
@@ -230,8 +306,9 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
       {/* Upload New Version Dialog */}
       <UploadNewVersionDialog
         open={uploadDialogOpen}
-        onClose={() => setUploadDialogOpen(false)}
+        onClose={() => !isUploading && setUploadDialogOpen(false)}
         onUploadVersion={handleUploadVersion}
+        isLoading={isUploading}
       />
     </div>
   );
