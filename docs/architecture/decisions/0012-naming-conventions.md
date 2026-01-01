@@ -256,7 +256,11 @@ Use `_active` suffix as shorthand for `_and_is_deleted` when the index is used t
 **Naming Principles:**
 1. **Resource context from file name:** The file name provides the resource context (`artifacts.ts`, `commentReplies.ts`), so functions are named by their action, not `resourceAction`.
 2. **Keep functions generic:** Use `create`, `get`, `update`, `delete` - not `createArtifact`, `getReply`, etc.
-3. **Delete naming:** Per ADR 0011, all deletes are soft deletes using `isDeleted` + `deletedAt` fields. The function is simply named `delete` (not `softDelete`) because soft delete is the only delete strategy in this codebase.
+3. **Delete naming:** Per ADR 0011, all deletes are soft deletes using `isDeleted` + `deletedAt` fields. The function is simply named `delete` (not `softDelete`) because:
+   - Industry standard ([Google AIP-164](https://google.aip.dev/164)) uses `Delete` for soft delete operations
+   - From the user's perspective, the resource *is* deleted (gone from view)
+   - If hard delete is added later, use `purge` or `permanentlyDelete` for that privileged operation
+   - The pattern `delete` + `undelete` + `purge` is well-established
 
 ### CRUD Operations Pattern
 
