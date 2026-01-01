@@ -14,6 +14,7 @@ Establish consistent naming conventions for Convex backend code including functi
 |------|-----------|---------|
 | **Table Names** | Plural camelCase | `artifacts`, `artifactVersions` |
 | **Schema Fields** | camelCase | `createdAt`, `shareToken` |
+| **Property Names** | Avoid redundancy with table context | `path` not `filePath` in `artifactFiles` |
 | **Audit Timestamps** | `*At` suffix | `createdAt`, `deletedAt` |
 | **Audit User Refs** | `*By` suffix | `createdBy`, `deletedBy` |
 | **Boolean Fields** | `is*` prefix | `isDeleted`, `isUpdated` |
@@ -207,6 +208,73 @@ artifacts: defineTable({
   UserId: v.id("users"),         // PascalCase
 })
 ```
+
+### Property Name Redundancy
+
+**Convention: Avoid repeating type context in property names**
+
+The table name already provides context, so property names should not repeat it. This follows the principle of eliminating redundant information that adds noise without value.
+
+```typescript
+// Good - Table context is sufficient
+artifactFiles: defineTable({
+  path: v.string(),              // Not "filePath" - we're in artifactFiles
+  size: v.number(),              // Not "fileSize" - context is clear
+  name: v.string(),              // Not "fileName" - table implies it
+  mimeType: v.string(),          // Domain term that adds meaning
+  versionId: v.id("artifactVersions"),
+})
+
+artifactVersions: defineTable({
+  number: v.number(),            // Not "versionNumber" - we're in artifactVersions
+  artifactId: v.id("artifacts"), // FK keeps "Id" suffix - clarifies role
+  name: v.optional(v.string()),  // Not "versionName"
+})
+
+// Bad - Redundant with table context
+artifactFiles: defineTable({
+  filePath: v.string(),          // "file" already in table name
+  fileSize: v.number(),          // Redundant prefix
+  fileName: v.string(),          // Redundant prefix
+})
+
+artifactVersions: defineTable({
+  versionNumber: v.number(),     // "version" already in table name
+  versionName: v.string(),       // Redundant prefix
+})
+```
+
+**When redundancy IS acceptable:**
+
+| Scenario | Example | Reason |
+|----------|---------|--------|
+| Foreign keys | `artifactId`, `versionId` | Role clarification - distinguishes from other IDs |
+| Disambiguation | `sourcePath` vs `destinationPath` | Two properties of same type need distinction |
+| Domain terms | `mimeType` not just `type` | Technical term that adds meaning |
+| Cross-table clarity | `creatorId` not just `creator` | Consistent FK pattern across all tables |
+
+```typescript
+// Good - Redundancy serves a purpose
+artifactFiles: defineTable({
+  sourcePath: v.string(),        // Disambiguation: two paths
+  destinationPath: v.string(),
+  mimeType: v.string(),          // Domain term: "mime" adds meaning
+  versionId: v.id("artifactVersions"),  // FK role clarification
+})
+
+// Also good - Simple names when context is sufficient
+artifacts: defineTable({
+  type: v.string(),              // Only one "type" field, context is clear
+  status: v.string(),            // Generic enough, no qualifier needed
+})
+```
+
+**Authoritative Sources:**
+
+- [Google AIP-140](https://google.aip.dev/140) - Recommends avoiding redundant prefixes in field names
+- Clean Code (Robert C. Martin), Chapter 2 - "Avoid Disinformation" and "Make Meaningful Distinctions"
+- [Effective Go](https://go.dev/doc/effective_go#package-names) - Package name provides context for exported names
+- [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/) - "Omit needless words"
 
 ### Index Naming
 
@@ -481,6 +549,17 @@ user_id: v.id("users"),                  // Use userId
 isactive: v.boolean(),                   // Use isActive
 CreatedAt: v.number(),                   // Use camelCase: createdAt
 
+// Property Name Redundancy - Table context already provides meaning
+artifactFiles: defineTable({
+  filePath: v.string(),                  // "file" in table name - use "path"
+  fileSize: v.number(),                  // "file" in table name - use "size"
+  fileName: v.string(),                  // "file" in table name - use "name"
+})
+artifactVersions: defineTable({
+  versionNumber: v.number(),             // "version" in table name - use "number"
+  versionName: v.string(),               // "version" in table name - use "name"
+})
+
 // Index Naming
 .index("idx_creator", ["creatorId"])     // Use by_creator
 .index("byCreator", ["creatorId"])       // Use snake_case: by_creator
@@ -590,6 +669,7 @@ When modifying existing files:
 When writing Convex backend code, ask:
 - [ ] Table names: plural camelCase?
 - [ ] Schema fields: camelCase?
+- [ ] Property names: no redundancy with table context? (`path` not `filePath` in `artifactFiles`)
 - [ ] Audit fields: `createdAt`, `isDeleted`, `deletedAt`, etc.?
 - [ ] Booleans: `is*` prefix?
 - [ ] Foreign keys: `entityId` pattern?
