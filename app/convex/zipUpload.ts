@@ -3,10 +3,12 @@ import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { nanoid } from "nanoid";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { validateZipSize } from "./lib/fileTypes";
 
 /**
  * Create artifact with ZIP file type and generate upload URL
  * This is step 1 of the ZIP upload flow
+ * Task 00019 - Phase 1: Added size validation
  */
 export const createArtifactWithZip = mutation({
   args: {
@@ -27,6 +29,9 @@ export const createArtifactWithZip = mutation({
     if (!userId) {
       throw new Error("Not authenticated");
     }
+
+    // Validate ZIP size before creating records
+    validateZipSize(args.fileSize);
 
     const now = Date.now();
     const shareToken = nanoid(8);
@@ -63,6 +68,79 @@ export const createArtifactWithZip = mutation({
       artifactId,
       versionId,
       shareToken,
+    };
+  },
+});
+
+/**
+ * Add a ZIP version to an existing artifact
+ * Task 00019 - Phase 1: New function for ZIP versioning
+ */
+export const addZipVersion = mutation({
+  args: {
+    artifactId: v.id("artifacts"),
+    fileSize: v.number(),
+    versionName: v.optional(v.string()),
+  },
+  returns: v.object({
+    uploadUrl: v.string(),
+    versionId: v.id("artifactVersions"),
+    versionNumber: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Validate ZIP size
+    validateZipSize(args.fileSize);
+
+    // 3. Verify artifact exists and user is owner
+    const artifact = await ctx.db.get(args.artifactId);
+    if (!artifact || artifact.isDeleted) {
+      throw new Error("Artifact not found");
+    }
+    if (artifact.creatorId !== userId) {
+      throw new Error("Not authorized: Only the owner can add versions");
+    }
+
+    // 4. Get next version number (query existing versions)
+    const versions = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
+      .collect();
+    const maxVersionNumber = Math.max(...versions.map((v) => v.versionNumber), 0);
+    const newVersionNumber = maxVersionNumber + 1;
+
+    const now = Date.now();
+
+    // 5. Create version record with fileType: "zip"
+    const versionId = await ctx.db.insert("artifactVersions", {
+      artifactId: args.artifactId,
+      versionNumber: newVersionNumber,
+      createdBy: userId,
+      versionName: args.versionName,
+      fileType: "zip",
+      entryPoint: "index.html", // Updated after extraction
+      fileSize: args.fileSize,
+      isDeleted: false,
+      createdAt: now,
+    });
+
+    // 6. Update artifact timestamp
+    await ctx.db.patch(args.artifactId, {
+      updatedAt: now,
+    });
+
+    // 7. Generate and return upload URL
+    const uploadUrl = await ctx.storage.generateUploadUrl();
+
+    return {
+      uploadUrl,
+      versionId,
+      versionNumber: newVersionNumber,
     };
   },
 });

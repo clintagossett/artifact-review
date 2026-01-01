@@ -1,12 +1,13 @@
 /**
- * Read Permission Helpers (Phase 2 - Step 1)
- * Task 00018 - Refine Single-File Artifact Upload and Versioning
+ * Permission Helpers
+ * Task 00018 - Refine Single-File Artifact Upload and Versioning (Read permissions)
+ * Task 00019 - Multi-file ZIP Projects (Write permissions)
  *
  * Centralized permission checking for artifact and version access.
- * Used by queries to enforce read permissions.
+ * Used by queries and mutations to enforce permissions.
  */
 
-import { QueryCtx } from "../_generated/server";
+import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id, Doc } from "../_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -114,4 +115,26 @@ export async function getArtifactByShareToken(
   }
 
   return { artifact, permission };
+}
+
+/**
+ * Check if user can write/modify an artifact.
+ * Only the owner (creator) can upload new versions.
+ * Task: 00019 - Phase 1 - Write permission check
+ */
+export async function canWriteArtifact(
+  ctx: QueryCtx | MutationCtx,
+  artifactId: Id<"artifacts">
+): Promise<boolean> {
+  const artifact = await ctx.db.get(artifactId);
+  if (!artifact || artifact.isDeleted) {
+    return false;
+  }
+
+  const userId = await getAuthUserId(ctx);
+  if (!userId) {
+    return false;
+  }
+
+  return artifact.creatorId === userId;
 }

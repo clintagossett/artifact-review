@@ -78,7 +78,8 @@ export const markProcessingComplete = internalMutation({
 });
 
 /**
- * Mark ZIP processing as failed
+ * Mark ZIP processing as failed with error details
+ * Task 00019 - Phase 1: Soft-delete version on processing error
  */
 export const markProcessingError = internalMutation({
   args: {
@@ -87,9 +88,15 @@ export const markProcessingError = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // For now, just log the error
-    // In production, we might want to store this in the version record
     console.error(`ZIP processing error for version ${args.versionId}:`, args.error);
+
+    // Soft-delete the version on error to prevent partial artifacts
+    // This makes the version invisible to users
+    await ctx.db.patch(args.versionId, {
+      isDeleted: true,
+      deletedAt: Date.now(),
+    });
+
     return null;
   },
 });

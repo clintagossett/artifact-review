@@ -79,3 +79,52 @@ export const MAX_SINGLE_FILE_SIZE = 5 * 1024 * 1024;
  * Maximum characters for version name
  */
 export const MAX_VERSION_NAME_LENGTH = 100;
+
+/**
+ * Maximum ZIP file size (50MB)
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export const MAX_ZIP_FILE_SIZE = 50 * 1024 * 1024;
+
+/**
+ * Maximum files allowed in a ZIP
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export const MAX_ZIP_FILE_COUNT = 500;
+
+/**
+ * Maximum size per extracted file (5MB)
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export const MAX_EXTRACTED_FILE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * Forbidden file extensions in ZIP (security)
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export const FORBIDDEN_EXTENSIONS = [
+  '.exe', '.dll', '.bat', '.cmd', '.sh', '.ps1',  // Executables
+  '.mov', '.mp4', '.avi', '.mkv', '.wmv',         // Videos
+  '.doc', '.docx', '.xls', '.xlsx', '.ppt',       // Office (not needed)
+] as const;
+
+/**
+ * Validate ZIP file size before upload
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export function validateZipSize(sizeBytes: number): void {
+  if (sizeBytes > MAX_ZIP_FILE_SIZE) {
+    throw new Error(
+      `ZIP file too large. Maximum: 50MB, got: ${(sizeBytes / 1024 / 1024).toFixed(2)}MB`
+    );
+  }
+}
+
+/**
+ * Check if a file extension is forbidden
+ * Task: 00019 - Multi-file ZIP Projects - Phase 1
+ */
+export function isForbiddenExtension(filePath: string): boolean {
+  const ext = '.' + filePath.toLowerCase().split('.').pop();
+  return FORBIDDEN_EXTENSIONS.includes(ext as any);
+}

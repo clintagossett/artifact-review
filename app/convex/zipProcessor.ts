@@ -5,9 +5,15 @@ import { v } from "convex/values";
 import JSZip from "jszip";
 import { internal } from "./_generated/api";
 import { getMimeType } from "./lib/mimeTypes";
+import {
+  MAX_ZIP_FILE_COUNT,
+  MAX_EXTRACTED_FILE_SIZE,
+  isForbiddenExtension,
+} from "./lib/fileTypes";
 
 /**
- * Process a ZIP file: extract files, detect entry point, and store in database
+ * Process a ZIP file: validate, extract files, detect entry point, and store in database
+ * Task 00019 - Phase 1: Added validation for file count, size, and forbidden types
  */
 export const processZipFile = internalAction({
   args: {
@@ -30,64 +36,121 @@ export const processZipFile = internalAction({
       const zip = new JSZip();
       const zipContents = await zip.loadAsync(zipBuffer);
 
+      // VALIDATION PASS: Check constraints before extraction
+      const fileEntries = Object.entries(zipContents.files).filter(
+        ([_, entry]) => !entry.dir
+      );
+
+      // Check file count
+      if (fileEntries.length > MAX_ZIP_FILE_COUNT) {
+        throw new Error(
+          `ZIP contains too many files. Maximum: ${MAX_ZIP_FILE_COUNT}, found: ${fileEntries.length}`
+        );
+      }
+
+      // Check for forbidden file types
+      const forbiddenFiles: string[] = [];
+      for (const [path, _] of fileEntries) {
+        if (isForbiddenExtension(path)) {
+          forbiddenFiles.push(path);
+        }
+      }
+      if (forbiddenFiles.length > 0) {
+        const extensions = [...new Set(
+          forbiddenFiles.map((f) => '.' + f.split('.').pop()!.toLowerCase())
+        )].join(', ');
+        throw new Error(
+          `ZIP contains unsupported file types: ${extensions}`
+        );
+      }
+
       let entryPoint: string | null = null;
       const htmlFiles: string[] = [];
 
-      // First pass: find HTML files and detect entry point
-      for (const [relativePath, zipEntry] of Object.entries(zipContents.files)) {
-        if (zipEntry.dir) continue; // Skip directories
+      // ENTRY POINT DETECTION PASS
+      for (const [relativePath, zipEntry] of fileEntries) {
+        if (zipEntry.dir) continue;
 
-        // Check for HTML files
-        if (relativePath.toLowerCase().endsWith('.html') || relativePath.toLowerCase().endsWith('.htm')) {
-          htmlFiles.push(relativePath);
+        // Normalize path (remove leading ./ or /)
+        const normalizedPath = relativePath.replace(/^\.?\//, '');
 
-          // Auto-detect entry point: index.html (case-insensitive, any depth)
-          if (relativePath.toLowerCase() === 'index.html' || relativePath.toLowerCase().endsWith('/index.html')) {
-            entryPoint = relativePath;
+        if (
+          normalizedPath.toLowerCase().endsWith('.html') ||
+          normalizedPath.toLowerCase().endsWith('.htm')
+        ) {
+          htmlFiles.push(normalizedPath);
+
+          // Priority 1: index.html in root
+          if (normalizedPath.toLowerCase() === 'index.html') {
+            entryPoint = normalizedPath;
           }
-          // Else check for main.html
-          else if (!entryPoint && (relativePath.toLowerCase() === 'main.html' || relativePath.toLowerCase().endsWith('/main.html'))) {
-            entryPoint = relativePath;
+          // Priority 2: index.htm in root
+          else if (!entryPoint && normalizedPath.toLowerCase() === 'index.htm') {
+            entryPoint = normalizedPath;
+          }
+          // Priority 3: index.html in subdirectory
+          else if (!entryPoint && normalizedPath.toLowerCase().endsWith('/index.html')) {
+            entryPoint = normalizedPath;
           }
         }
       }
 
-      // If no index.html or main.html found, use the first HTML file
+      // Priority 4: First HTML file found
       if (!entryPoint && htmlFiles.length > 0) {
+        // Sort to get consistent ordering
+        htmlFiles.sort();
         entryPoint = htmlFiles[0];
       }
 
-      // Second pass: extract and store all files
-      for (const [relativePath, zipEntry] of Object.entries(zipContents.files)) {
-        if (zipEntry.dir) continue; // Skip directories
+      if (!entryPoint) {
+        throw new Error("No HTML file found in ZIP. At least one .html file is required.");
+      }
 
+      // EXTRACTION PASS: Extract and store all files
+      for (const [relativePath, zipEntry] of fileEntries) {
+        if (zipEntry.dir) continue;
+
+        const normalizedPath = relativePath.replace(/^\.?\//, '');
         const content = await zipEntry.async("arraybuffer");
-        const mimeType = getMimeType(relativePath);
 
-        // Store file using internal action (storage.store is only available in actions)
+        // Validate individual file size
+        if (content.byteLength > MAX_EXTRACTED_FILE_SIZE) {
+          throw new Error(
+            `File too large: ${normalizedPath} (${(content.byteLength / 1024 / 1024).toFixed(2)}MB). Maximum: 5MB per file.`
+          );
+        }
+
+        const mimeType = getMimeType(normalizedPath);
+
+        // Store file using internal action
         await ctx.runAction(internal.zipProcessorMutations.storeExtractedFile, {
           versionId: args.versionId,
-          filePath: relativePath,
+          filePath: normalizedPath,
           content: Array.from(new Uint8Array(content)),
           mimeType,
         });
       }
 
-      // Mark processing as complete with entry point
-      if (entryPoint) {
-        await ctx.runMutation(internal.zipProcessorMutations.markProcessingComplete, {
-          versionId: args.versionId,
-          entryPoint,
-        });
-      }
+      // Mark processing complete with detected entry point
+      await ctx.runMutation(internal.zipProcessorMutations.markProcessingComplete, {
+        versionId: args.versionId,
+        entryPoint,
+      });
+
+      // Delete the original ZIP from storage (files are extracted)
+      await ctx.storage.delete(args.storageId);
 
     } catch (error) {
       console.error("Error processing ZIP file:", error);
-      // Mark processing as failed
+
+      // Mark processing as failed with specific error
       await ctx.runMutation(internal.zipProcessorMutations.markProcessingError, {
         versionId: args.versionId,
         error: error instanceof Error ? error.message : "Unknown error",
       });
+
+      // Re-throw to propagate error to caller
+      throw error;
     }
 
     return null;
