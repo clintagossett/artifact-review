@@ -1,0 +1,15 @@
+# Playwright dependencies
+node_modules/
+
+# Test results
+test-results/
+playwright-report/
+
+# Validation videos (gitignored - not committed)
+validation-videos/
+
+# Screenshots
+screenshots/
+
+# Logs
+*.log
