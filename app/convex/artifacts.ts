@@ -12,6 +12,7 @@ import {
   MAX_SINGLE_FILE_SIZE,
   MAX_VERSION_NAME_LENGTH,
 } from "./lib/fileTypes";
+import { canViewVersion, canViewArtifact } from "./lib/permissions";
 
 /**
  * Create a new artifact with version 1 (Unified Storage Pattern)
@@ -189,6 +190,8 @@ export const get = query({
 
 /**
  * Get version by ID
+ * Task 00018 - Phase 2 - Step 6: Added permission check, removed inline content fields
+ * Task 00018 - Phase 2 - Step 8: Made entryPoint and createdBy required
  */
 export const getVersion = query({
   args: {
@@ -200,10 +203,10 @@ export const getVersion = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
-      htmlContent: v.optional(v.string()),
-      markdownContent: v.optional(v.string()),
-      entryPoint: v.optional(v.string()),
+      versionName: v.optional(v.string()),
+      createdBy: v.id("users"),
+      fileType: v.string(),
+      entryPoint: v.string(),
       fileSize: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
@@ -212,7 +215,32 @@ export const getVersion = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.versionId);
+    // Check permission
+    const hasPermission = await canViewVersion(ctx, args.versionId);
+    if (!hasPermission) {
+      return null;
+    }
+
+    const version = await ctx.db.get(args.versionId);
+    if (!version) {
+      return null;
+    }
+
+    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
+    return {
+      _id: version._id,
+      _creationTime: version._creationTime,
+      artifactId: version.artifactId,
+      versionNumber: version.versionNumber,
+      versionName: version.versionName,
+      createdBy: version.createdBy,
+      fileType: version.fileType,
+      entryPoint: version.entryPoint,
+      fileSize: version.fileSize,
+      isDeleted: version.isDeleted,
+      deletedAt: version.deletedAt,
+      createdAt: version.createdAt,
+    };
   },
 });
 
@@ -668,6 +696,8 @@ export const softDeleteVersion = mutation({
 
 /**
  * Get all versions for an artifact (for version switcher UI)
+ * Task 00018 - Phase 2 - Step 5: Added versionName, createdBy, and permission check
+ * Task 00018 - Phase 2 - Step 8: Made createdBy required
  */
 export const getVersions = query({
   args: {
@@ -679,12 +709,20 @@ export const getVersions = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
+      versionName: v.optional(v.string()),
+      createdBy: v.id("users"),
+      fileType: v.string(),
       fileSize: v.number(),
       createdAt: v.number(),
     })
   ),
   handler: async (ctx, args) => {
+    // Check permission to view artifact
+    const hasPermission = await canViewArtifact(ctx, args.artifactId);
+    if (!hasPermission) {
+      return [];
+    }
+
     const versions = await ctx.db
       .query("artifactVersions")
       .withIndex("by_artifact_active", (q) =>
@@ -693,12 +731,14 @@ export const getVersions = query({
       .order("desc")
       .collect();
 
-    // Project only the fields needed for the version switcher UI
+    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
     return versions.map((v) => ({
       _id: v._id,
       _creationTime: v._creationTime,
       artifactId: v.artifactId,
       versionNumber: v.versionNumber,
+      versionName: v.versionName,
+      createdBy: v.createdBy,
       fileType: v.fileType,
       fileSize: v.fileSize,
       createdAt: v.createdAt,
@@ -708,6 +748,8 @@ export const getVersions = query({
 
 /**
  * Get a specific version by artifact ID and version number
+ * Task 00018 - Phase 2 - Step 6: Added permission check, removed inline content fields
+ * Task 00018 - Phase 2 - Step 8: Made entryPoint and createdBy required
  */
 export const getVersionByNumber = query({
   args: {
@@ -720,10 +762,10 @@ export const getVersionByNumber = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
-      htmlContent: v.optional(v.string()),
-      markdownContent: v.optional(v.string()),
-      entryPoint: v.optional(v.string()),
+      versionName: v.optional(v.string()),
+      createdBy: v.id("users"),
+      fileType: v.string(),
+      entryPoint: v.string(),
       fileSize: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
@@ -732,6 +774,12 @@ export const getVersionByNumber = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    // Check permission to view artifact
+    const hasPermission = await canViewArtifact(ctx, args.artifactId);
+    if (!hasPermission) {
+      return null;
+    }
+
     const version = await ctx.db
       .query("artifactVersions")
       .withIndex("by_artifact_version", (q) =>
@@ -743,12 +791,28 @@ export const getVersionByNumber = query({
       return null;
     }
 
-    return version;
+    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
+    return {
+      _id: version._id,
+      _creationTime: version._creationTime,
+      artifactId: version.artifactId,
+      versionNumber: version.versionNumber,
+      versionName: version.versionName,
+      createdBy: version.createdBy,
+      fileType: version.fileType,
+      entryPoint: version.entryPoint,
+      fileSize: version.fileSize,
+      isDeleted: version.isDeleted,
+      deletedAt: version.deletedAt,
+      createdAt: version.createdAt,
+    };
   },
 });
 
 /**
  * Get the latest (highest version number) for an artifact
+ * Task 00018 - Phase 2 - Step 6: Added permission check, removed inline content fields
+ * Task 00018 - Phase 2 - Step 8: Made entryPoint and createdBy required
  */
 export const getLatestVersion = query({
   args: {
@@ -760,10 +824,10 @@ export const getLatestVersion = query({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
-      htmlContent: v.optional(v.string()),
-      markdownContent: v.optional(v.string()),
-      entryPoint: v.optional(v.string()),
+      versionName: v.optional(v.string()),
+      createdBy: v.id("users"),
+      fileType: v.string(),
+      entryPoint: v.string(),
       fileSize: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
@@ -772,6 +836,12 @@ export const getLatestVersion = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    // Check permission to view artifact
+    const hasPermission = await canViewArtifact(ctx, args.artifactId);
+    if (!hasPermission) {
+      return null;
+    }
+
     // Get all active versions, sorted descending
     const versions = await ctx.db
       .query("artifactVersions")
@@ -781,8 +851,26 @@ export const getLatestVersion = query({
       .order("desc")
       .collect();
 
-    // Return the first one (highest version number)
-    return versions[0] || null;
+    const latestVersion = versions[0] || null;
+    if (!latestVersion) {
+      return null;
+    }
+
+    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
+    return {
+      _id: latestVersion._id,
+      _creationTime: latestVersion._creationTime,
+      artifactId: latestVersion.artifactId,
+      versionNumber: latestVersion.versionNumber,
+      versionName: latestVersion.versionName,
+      createdBy: latestVersion.createdBy,
+      fileType: latestVersion.fileType,
+      entryPoint: latestVersion.entryPoint,
+      fileSize: latestVersion.fileSize,
+      isDeleted: latestVersion.isDeleted,
+      deletedAt: latestVersion.deletedAt,
+      createdAt: latestVersion.createdAt,
+    };
   },
 });
 
@@ -853,6 +941,8 @@ export const getFileByPath = internalQuery({
 
 /**
  * Internal query: Get version by artifact and version number (for HTTP actions)
+ * Task 00018 - Phase 2 - Step 6: Removed inline content fields
+ * Task 00018 - Phase 2 - Step 8: Made entryPoint and createdBy required
  */
 export const getVersionByNumberInternal = internalQuery({
   args: {
@@ -865,10 +955,10 @@ export const getVersionByNumberInternal = internalQuery({
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
       versionNumber: v.number(),
-      fileType: v.string(), // Task 00018 - Phase 1 - Step 3
-      htmlContent: v.optional(v.string()),
-      markdownContent: v.optional(v.string()),
-      entryPoint: v.optional(v.string()),
+      versionName: v.optional(v.string()),
+      createdBy: v.id("users"),
+      fileType: v.string(),
+      entryPoint: v.string(),
       fileSize: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
@@ -888,7 +978,21 @@ export const getVersionByNumberInternal = internalQuery({
       return null;
     }
 
-    return version;
+    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
+    return {
+      _id: version._id,
+      _creationTime: version._creationTime,
+      artifactId: version.artifactId,
+      versionNumber: version.versionNumber,
+      versionName: version.versionName,
+      createdBy: version.createdBy,
+      fileType: version.fileType,
+      entryPoint: version.entryPoint,
+      fileSize: version.fileSize,
+      isDeleted: version.isDeleted,
+      deletedAt: version.deletedAt,
+      createdAt: version.createdAt,
+    };
   },
 });
 
@@ -953,5 +1057,64 @@ export const getByShareTokenInternal = internalQuery({
     }
 
     return artifact;
+  },
+});
+
+/**
+ * Get entry point content with signed URL (Phase 2 - Step 2)
+ * Used by frontend to retrieve the main file content for viewing
+ */
+export const getEntryPointContent = query({
+  args: { versionId: v.id("artifactVersions") },
+  returns: v.union(
+    v.object({
+      url: v.union(v.string(), v.null()),
+      mimeType: v.string(),
+      fileSize: v.number(),
+      filePath: v.string(),
+      fileType: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // 1. Get version, check not deleted
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      return null;
+    }
+
+    // 2. Check permission with canViewVersion()
+    const hasPermission = await canViewVersion(ctx, args.versionId);
+    if (!hasPermission) {
+      return null;
+    }
+
+    // 3. Get file from artifactFiles where filePath === entryPoint
+    if (!version.entryPoint) {
+      return null;
+    }
+
+    const file = await ctx.db
+      .query("artifactFiles")
+      .withIndex("by_version_path", (q) =>
+        q.eq("versionId", args.versionId).eq("filePath", version.entryPoint!)
+      )
+      .first();
+
+    if (!file || file.isDeleted) {
+      return null;
+    }
+
+    // 4. Get signed URL from ctx.storage.getUrl(file.storageId)
+    const url = await ctx.storage.getUrl(file.storageId);
+
+    // 5. Return { url, mimeType, fileSize, filePath, fileType }
+    return {
+      url,
+      mimeType: file.mimeType,
+      fileSize: file.fileSize,
+      filePath: file.filePath,
+      fileType: version.fileType,
+    };
   },
 });

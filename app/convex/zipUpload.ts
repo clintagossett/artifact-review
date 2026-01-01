@@ -43,11 +43,13 @@ export const createArtifactWithZip = mutation({
     });
 
     // Create version 1 with ZIP type
+    // Note: entryPoint will be updated by zipProcessor after extraction
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId,
       versionNumber: 1,
+      createdBy: userId,
       fileType: "zip",
-      entryPoint: args.entryPoint,
+      entryPoint: args.entryPoint || "index.html", // Default, updated after ZIP processing
       fileSize: args.fileSize,
       isDeleted: false,
       createdAt: now,

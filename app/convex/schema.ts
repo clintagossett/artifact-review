@@ -235,19 +235,19 @@ const schema = defineSchema({
    *
    * ## Purpose
    * Tracks each iteration of an artifact. Supports version switching in the viewer.
-   * Different file types have different content storage patterns.
+   * All file content is now stored in artifactFiles table (unified storage pattern).
    *
    * ## Lifecycle
    * - **Created**: `artifacts.create` (version 1) or `artifacts.addVersion` (version N+1)
-   * - **Updated**: `zipProcessorMutations.markProcessingComplete` sets entryPoint for ZIPs
    * - **Deleted**: `artifacts.softDeleteVersion` or cascade from parent artifact deletion
    *
-   * ## File Type Storage Patterns
-   * | Type | Content Storage | Files |
-   * |------|-----------------|-------|
-   * | html | `htmlContent` field (inline) | None |
-   * | markdown | `markdownContent` field (inline) | None |
-   * | zip | `artifactFiles` table | 1-500 files |
+   * ## File Type Storage Pattern (Task 00018 - Phase 2)
+   * All content stored in `artifactFiles` table with storageId reference.
+   * | Type | Files | Entry Point |
+   * |------|-------|-------------|
+   * | html | 1 file | index.html (or custom) |
+   * | markdown | 1 file | document.md (or custom) |
+   * | zip | 1-500 files | Detected HTML file |
    *
    * ## Version Numbering
    * - Starts at 1, auto-increments per artifact
@@ -255,8 +255,7 @@ const schema = defineSchema({
    * - Displayed as "v1", "v2", etc. in UI
    *
    * @see convex/artifacts.ts - Version CRUD
-   * @see convex/zipProcessor.ts - ZIP extraction logic
-   * @see ADR 0009 - Artifact File Storage Structure
+   * @see Task 00018 - Unified Storage Pattern
    */
   artifactVersions: defineTable({
     /**
@@ -274,10 +273,10 @@ const schema = defineSchema({
 
     /**
      * User who created this version.
-     * Used for permission checks (only owner can add versions).
-     * Task 00018 - Phase 1 - Step 2
+     * Required for permission checks and audit trail.
+     * Task 00018 - Phase 2 - Step 8: Made required
      */
-    createdBy: v.optional(v.id("users")),
+    createdBy: v.id("users"),
 
     /**
      * Optional version label/name.
@@ -297,10 +296,10 @@ const schema = defineSchema({
 
     /**
      * Type of artifact content.
-     * Determines which content field is populated and how content is served.
-     * - `zip`: Multi-file HTML project (uses artifactFiles table)
-     * - `html`: Single HTML file (content in htmlContent field)
-     * - `markdown`: Markdown document (content in markdownContent field)
+     * Determines how content is served and which file is the entry point.
+     * - `html`: Single HTML file
+     * - `markdown`: Markdown document
+     * - `zip`: Multi-file HTML project (future)
      *
      * Changed from union to string for extensibility (Task 00018 - Phase 1 - Step 3).
      * Application-level validation in lib/fileTypes.ts ensures only supported types.
@@ -308,31 +307,18 @@ const schema = defineSchema({
     fileType: v.string(),
 
     /**
-     * Inline HTML content for fileType="html".
-     * Contains the full HTML document as a string.
-     * Undefined for zip/markdown types.
+     * Entry point file path (relative path within version).
+     * Points to the main file to serve for this version.
+     * Required - all versions must have an entry point.
+     * Examples: "index.html", "document.md", "src/main.html"
+     * Task 00018 - Phase 2 - Step 8: Made required
      */
-    htmlContent: v.optional(v.string()),
-
-    /**
-     * Inline Markdown content for fileType="markdown".
-     * Contains the full Markdown source as a string.
-     * Undefined for zip/html types.
-     */
-    markdownContent: v.optional(v.string()),
-
-    /**
-     * Entry point file path for fileType="zip".
-     * Relative path to the main HTML file (e.g., "index.html" or "src/index.html").
-     * Set after ZIP extraction by `zipProcessorMutations.markProcessingComplete`.
-     * Undefined until processing completes, and for html/markdown types.
-     */
-    entryPoint: v.optional(v.string()),
+    entryPoint: v.string(),
 
     /**
      * Total size of the version content in bytes.
+     * For single files: size of the file
      * For zip: size of original ZIP file
-     * For html/markdown: length of content string in bytes
      */
     fileSize: v.number(),
 

@@ -91,81 +91,65 @@ http.route({
         );
       }
 
-      // 4. Handle different file types
-      if (version.fileType === "html" && version.htmlContent) {
-        // Inline HTML - serve directly
-        return new Response(version.htmlContent, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/html; charset=utf-8",
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=31536000",
-          },
-        });
+      // 4. Unified pattern: Look up file in artifactFiles by path
+      // Determine which file to serve
+      let filePathToServe = filePath;
+
+      // For single-file artifacts (HTML, Markdown), use entry point if no path specified
+      if (!filePath || filePath === "index.html") {
+        if (version.entryPoint) {
+          filePathToServe = version.entryPoint;
+        }
       }
 
-      if (version.fileType === "zip") {
-        // ZIP file - look up individual file
-        const decodedPath = decodeURIComponent(filePath);
-        const file = await ctx.runQuery(internal.artifacts.getFileByPath, {
-          versionId: version._id,
-          filePath: decodedPath,
-        });
+      const decodedPath = decodeURIComponent(filePathToServe);
+      const file = await ctx.runQuery(internal.artifacts.getFileByPath, {
+        versionId: version._id,
+        filePath: decodedPath,
+      });
 
-        if (!file) {
-          return new Response(`File not found: ${decodedPath}`, {
-            status: 404,
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          });
-        }
-
-        // Fetch file from Convex storage
-        const fileUrl = await ctx.storage.getUrl(file.storageId);
-        if (!fileUrl) {
-          return new Response("File not accessible in storage", {
-            status: 500,
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          });
-        }
-
-        const fileResponse = await fetch(fileUrl);
-        if (!fileResponse.ok) {
-          return new Response("Failed to fetch file from storage", {
-            status: 500,
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          });
-        }
-
-        const fileBuffer = await fileResponse.arrayBuffer();
-
-        return new Response(fileBuffer, {
-          status: 200,
-          headers: {
-            "Content-Type": file.mimeType,
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "Content-Type",
-            "Cache-Control": "public, max-age=31536000",
-          },
-        });
-      }
-
-      // Unsupported file type
-      return new Response(
-        `Unsupported file type: ${version.fileType}. Only HTML and ZIP are supported.`,
-        {
-          status: 400,
+      if (!file) {
+        return new Response(`File not found: ${decodedPath}`, {
+          status: 404,
           headers: {
             "Content-Type": "text/plain",
           },
-        }
-      );
+        });
+      }
+
+      // Fetch file from Convex storage
+      const fileUrl = await ctx.storage.getUrl(file.storageId);
+      if (!fileUrl) {
+        return new Response("File not accessible in storage", {
+          status: 500,
+          headers: {
+            "Content-Type": "text/plain",
+          },
+        });
+      }
+
+      const fileResponse = await fetch(fileUrl);
+      if (!fileResponse.ok) {
+        return new Response("Failed to fetch file from storage", {
+          status: 500,
+          headers: {
+            "Content-Type": "text/plain",
+          },
+        });
+      }
+
+      const fileBuffer = await fileResponse.arrayBuffer();
+
+      return new Response(fileBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": file.mimeType,
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Cache-Control": "public, max-age=31536000",
+        },
+      });
     } catch (error) {
       console.error("Error serving artifact file:", error);
       return new Response("Internal server error", {
