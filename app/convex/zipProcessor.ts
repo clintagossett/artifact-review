@@ -41,6 +41,52 @@ export const processZipFile = internalAction({
         ([_, entry]) => !entry.dir
       );
 
+      // DETECT COMMON ROOT PATH
+      // Many ZIPs wrap all content in folder(s) (e.g., "project/src/index.html")
+      // We need to strip this so relative paths in HTML work correctly
+      const detectCommonRootPath = (paths: string[]): string => {
+        if (paths.length === 0) return '';
+
+        // Normalize paths first (remove leading ./ or /)
+        const normalized = paths.map(p => p.replace(/^\.?\//, ''));
+
+        // Get directory parts for each file (exclude the filename)
+        const dirParts = normalized.map(p => {
+          const parts = p.split('/');
+          return parts.slice(0, -1); // Remove filename, keep directories
+        });
+
+        // Find common prefix directories
+        if (dirParts.length === 0 || dirParts[0].length === 0) return '';
+
+        const commonParts: string[] = [];
+        const firstDirs = dirParts[0];
+
+        for (let i = 0; i < firstDirs.length; i++) {
+          const segment = firstDirs[i];
+          // Check if all paths have this segment at this position
+          if (dirParts.every(parts => parts[i] === segment)) {
+            commonParts.push(segment);
+          } else {
+            break;
+          }
+        }
+
+        return commonParts.length > 0 ? commonParts.join('/') + '/' : '';
+      };
+
+      const filePaths = fileEntries.map(([path]) => path);
+      const commonRoot = detectCommonRootPath(filePaths);
+
+      // Helper to strip the common root from a path
+      const stripRoot = (path: string): string => {
+        let normalized = path.replace(/^\.?\//, '');
+        if (commonRoot && normalized.startsWith(commonRoot)) {
+          normalized = normalized.slice(commonRoot.length);
+        }
+        return normalized;
+      };
+
       // Check file count
       if (fileEntries.length > MAX_ZIP_FILE_COUNT) {
         throw new Error(
@@ -71,8 +117,8 @@ export const processZipFile = internalAction({
       for (const [relativePath, zipEntry] of fileEntries) {
         if (zipEntry.dir) continue;
 
-        // Normalize path (remove leading ./ or /)
-        const normalizedPath = relativePath.replace(/^\.?\//, '');
+        // Normalize path and strip common root folder
+        const normalizedPath = stripRoot(relativePath);
 
         if (
           normalizedPath.toLowerCase().endsWith('.html') ||
@@ -110,7 +156,7 @@ export const processZipFile = internalAction({
       for (const [relativePath, zipEntry] of fileEntries) {
         if (zipEntry.dir) continue;
 
-        const normalizedPath = relativePath.replace(/^\.?\//, '');
+        const normalizedPath = stripRoot(relativePath);
         const content = await zipEntry.async("arraybuffer");
 
         // Validate individual file size

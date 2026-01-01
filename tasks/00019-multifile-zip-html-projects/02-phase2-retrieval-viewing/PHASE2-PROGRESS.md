@@ -1,173 +1,57 @@
-# Phase 2 Progress Update: E2E Testing Integration
+# Phase 2 Progress Update: Retrieval and Viewing
 
 **Date:** 2026-01-01
-**Status:** In Progress - Upload Integration Blocked
-**Previous Status:** Backend Complete (from test-report.md)
+**Status:** In Progress - Upload Complete, Viewing Next
+**Previous Status:** Upload Integration Blocked (now resolved)
 
 ---
 
-## What Was Attempted Today
+## Current Status
 
-### Goal
-Complete Phase 2 with true E2E tests that upload real ZIP files and verify viewing works end-to-end.
+### ZIP Upload ✅ COMPLETE
 
-### Work Completed ✅
+ZIP file upload is fully working end-to-end:
+- Frontend accepts `.zip` files in NewArtifactDialog and UploadNewVersionDialog
+- `useArtifactUpload` hook correctly calls `createArtifactWithZip` mutation
+- ZIP files are uploaded to Convex storage
+- `triggerZipProcessing` action extracts files and stores them
+- Entry point detection works correctly
+- Artifacts are created with proper metadata
 
-1. **E2E Test Organization**
-   - Moved all E2E tests from Phase 1 to Phase 2 directory
-   - Location: `tasks/00019-.../02-phase2-.../tests/e2e/`
-   - Includes 5 test files + helpers
+### Remaining Work: File Viewing
 
-2. **Frontend File Input Updates**
-   - `/app/src/components/artifacts/NewArtifactDialog.tsx` - Now accepts `.zip` files
-   - `/app/src/components/artifact-settings/UploadNewVersionDialog.tsx` - Now accepts `.zip` files
-   - Updated UI text to mention ZIP support
-
-3. **E2E Test Import Path Fixes**
-   - Fixed all relative paths for new Phase 2 location
-   - Click indicator: `../../../../../app/tests/utils/clickIndicator`
-   - Samples: `../../../../../samples`
-   - Fixed helper selectors (`#artifact-name`, button text)
-
-4. **ZIP Upload Hook Implementation**
-   - `/app/src/hooks/useArtifactUpload.ts` - Enabled ZIP upload
-   - Integrated `api.zipProcessor.uploadZipAndProcess`
-   - Removed "ZIP uploads not supported" error
-
-### Current Blocker ⚠️
-
-**Issue:** E2E tests fail because dialog doesn't close after clicking "Create Artifact"
-
-**Symptoms:**
-- File selected correctly (v1.zip, 3.9 KB)
-- Form filled in correctly (title, description)
-- Button clicks successfully
-- Dialog stays open for 30 seconds → timeout
-- No Convex logs showing upload attempts
-
-**Root Cause (Suspected):**
-The `useArtifactUpload` hook calls `api.zipProcessor.uploadZipAndProcess`, but this may not be the correct Convex action name or signature. The upload silently fails, leaving the dialog open.
-
-**Evidence:**
-```
-Error: expect(locator).toBeHidden() failed
-Locator: locator('[role="dialog"]')
-Expected: hidden
-Received: visible
-Timeout: 30000ms
-```
+Need to verify/complete the viewing flow for ZIP artifacts:
+1. HTTP serving of extracted files (`/artifact/{shareToken}/v{version}/{filePath}`)
+2. Frontend viewer loads and displays ZIP content correctly
+3. Relative paths resolve (CSS, JS, images)
+4. MIME types served correctly
 
 ---
 
-## Test Status
+## Completed Components
 
-| Test File | Tests | Status |
-|-----------|-------|--------|
-| 01-zip-upload.spec.ts | 4 | ❌ All fail (dialog not closing) |
-| 02-zip-versioning.spec.ts | - | ⚠️ Not attempted (blocked) |
-| 03-share-token-access.spec.ts | - | ⚠️ Not attempted (blocked) |
-| 04-asset-loading.spec.ts | - | ⚠️ Not attempted (blocked) |
-| 05-error-handling.spec.ts | - | ⚠️ Not attempted (blocked) |
-
-**Backend tests:** ✅ Still passing (38/38 from Phase 1)
-
----
-
-## Next Steps to Unblock
-
-### 1. Verify Convex Action Exists
-```bash
-cd /Users/clintgossett/Documents/personal/personal\ projects/artifact-review/app/convex
-grep -n "export const uploadZipAndProcess" zipProcessor.ts
-```
-
-**Expected:** Should find an action that accepts `{ title, description, zipFile }`
-
-### 2. Check Action Signature
-The hook calls:
-```typescript
-const result = await createArtifactWithZip({
-  title,
-  description,
-  zipFile: file,  // Browser File object
-});
-```
-
-Need to verify `zipProcessor.ts` has this exact action and parameter shape.
-
-### 3. Debug Upload Flow
-Add logging to `useArtifactUpload.ts`:
-```typescript
-if (fileType === "zip") {
-  console.log("[ZIP Upload] Starting upload:", { title, fileSize: file.size });
-  setUploadProgress(30);
-
-  try {
-    const result = await createArtifactWithZip({
-      title,
-      description,
-      zipFile: file,
-    });
-    console.log("[ZIP Upload] Success:", result);
-    // ...
-  } catch (error) {
-    console.error("[ZIP Upload] Failed:", error);
-    throw error;
-  }
-}
-```
-
-### 4. Manual Browser Test
-1. Open `http://localhost:3000` in browser
-2. Register/login
-3. Click "Create Artifact"
-4. Upload a ZIP file from `/samples/01-valid/zip/charting/v1.zip`
-5. Check browser DevTools console for errors
-
-### 5. Fix Action Integration
-Once the correct action is identified, update the hook to use it correctly.
+| Component | Status | Location |
+|-----------|--------|----------|
+| ZIP validation constants | ✅ Done | `/app/convex/lib/fileTypes.ts` |
+| `createArtifactWithZip` mutation | ✅ Done | `/app/convex/zipUpload.ts` |
+| `addZipVersion` mutation | ✅ Done | `/app/convex/zipUpload.ts` |
+| `triggerZipProcessing` action | ✅ Done | `/app/convex/zipUpload.ts` |
+| `processZipFile` action | ✅ Done | `/app/convex/zipProcessor.ts` |
+| `useArtifactUpload` hook | ✅ Done | `/app/src/hooks/useArtifactUpload.ts` |
+| Frontend file input (ZIP) | ✅ Done | NewArtifactDialog, UploadNewVersionDialog |
+| HTTP serving endpoint | ✅ Done | `/app/convex/http.ts` |
+| Backend tests | ✅ Done | Phase 1 tests passing |
 
 ---
 
-## Files Modified
+## Next Steps: Viewing Verification
 
-### Frontend
-- ✅ `/app/src/components/artifacts/NewArtifactDialog.tsx`
-- ✅ `/app/src/components/artifact-settings/UploadNewVersionDialog.tsx`
-- ⚠️ `/app/src/hooks/useArtifactUpload.ts` (needs debugging)
-
-### Tests
-- ✅ `tasks/00019-.../02-phase2-.../tests/e2e/*.spec.ts` (5 files)
-- ✅ `tasks/00019-.../02-phase2-.../tests/e2e/helpers/*.ts` (2 files)
-- ✅ `tasks/00019-.../02-phase2-.../tests/package.json`
-- ✅ `tasks/00019-.../02-phase2-.../tests/playwright.config.ts`
+1. **Manual Test** - Upload a ZIP and verify it displays in the viewer
+2. **Check Relative Paths** - Ensure CSS, JS, images load correctly
+3. **E2E Tests** - Run viewing-related E2E tests
+4. **Fix Issues** - Address any viewing problems found
 
 ---
 
-## Recommendations
-
-1. **Immediate:** Debug the Convex action integration (2-4 hours)
-2. **Then:** Get one E2E test passing
-3. **Then:** Run full test suite and generate videos
-4. **Finally:** Update `test-report.md` with E2E results
-
----
-
-## Progress Summary
-
-**Overall Phase 2:** 80% Complete
-
-- ✅ Backend tests passing (10/10)
-- ✅ HTTP serving verified
-- ✅ MIME types comprehensive
-- ✅ Frontend accepts ZIP files
-- ✅ E2E tests organized and fixed
-- ⚠️ Frontend-backend integration blocked
-- ⚠️ E2E validation blocked
-
-**Estimated Time to Complete:** 2-4 hours (debug upload integration)
-
----
-
-**Updated:** 2026-01-01 08:05 AM
-**Next Action:** Verify `api.zipProcessor.uploadZipAndProcess` exists and fix hook
+**Updated:** 2026-01-01
+**Next Action:** Verify ZIP artifact viewing works correctly
