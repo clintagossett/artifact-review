@@ -870,7 +870,7 @@ export function DocumentViewer({
                     <DropdownMenuContent align="start" className="w-80">
                       <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
                       <DropdownMenuSeparator />
-                      {project.versions.slice().reverse().map((version) => (
+                      {[...project.versions].sort((a, b) => b.number - a.number).map((version, index) => (
                         <DropdownMenuItem
                           key={version.id}
                           onClick={() => setCurrentVersionId(version.id)}
@@ -879,15 +879,14 @@ export function DocumentViewer({
                           <div className="flex items-start justify-between w-full gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium">v{version.number}</span>
-                                {version.label && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {version.label}
-                                  </Badge>
-                                )}
-                                {version.id === defaultVersionId && (
-                                  <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
-                                    👁️ Default
+                                <span className="font-medium">
+                                  {version.label && version.label !== `v${version.number}`
+                                    ? `v${version.number} - ${version.label}`
+                                    : `v${version.number}`}
+                                </span>
+                                {index === 0 && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                                    Latest
                                   </Badge>
                                 )}
                                 {currentVersionId === version.id && (
