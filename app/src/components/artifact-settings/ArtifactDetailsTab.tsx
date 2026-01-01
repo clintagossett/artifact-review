@@ -5,9 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, User, FileText, HardDrive } from 'lucide-react';
+import { Id } from '../../../../convex/_generated/dataModel';
 
 interface ArtifactDetailsTabProps {
-  artifactId: string;
+  artifactId: Id<"artifacts">;
 }
 
 export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {

@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { ArtifactDetailsTab } from './artifact-settings/ArtifactDetailsTab';
 import { ArtifactVersionsTab } from './artifact-settings/ArtifactVersionsTab';
 import { ArtifactAccessTab } from './artifact-settings/ArtifactAccessTab';
+import { Id } from '../../convex/_generated/dataModel';
 
 interface ArtifactSettingsProps {
   onBack: () => void;
-  artifactId: string;
+  artifactId: Id<"artifacts">;
   artifactName: string;
   isOwner: boolean;
   initialTab?: TabType;

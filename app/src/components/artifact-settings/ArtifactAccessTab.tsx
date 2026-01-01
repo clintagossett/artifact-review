@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Send,
 } from 'lucide-react';
+import { Id } from '../../../../convex/_generated/dataModel';
 
 type InvitationStatus = 'accepted' | 'pending';
 
@@ -28,7 +29,7 @@ interface Reviewer {
 }
 
 interface ArtifactAccessTabProps {
-  artifactId: string;
+  artifactId: Id<"artifacts">;
 }
 
 const mockReviewers: Reviewer[] = [
