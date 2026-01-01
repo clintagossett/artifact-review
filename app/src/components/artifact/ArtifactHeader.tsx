@@ -15,12 +15,12 @@ interface ArtifactHeaderProps {
     shareToken: string;
   };
   version: {
-    versionNumber: number;
+    number: number;
     fileSize: number;
     createdAt: number;
   };
   versions: Array<{
-    versionNumber: number;
+    number: number;
     createdAt: number;
   }>;
   isLatestVersion: boolean;
@@ -56,7 +56,7 @@ export function ArtifactHeader({
       {!isLatestVersion && (
         <div className="bg-yellow-50 border-b border-yellow-200 p-4">
           <p className="text-sm text-yellow-800">
-            This is an old version (v{version.versionNumber}). This version is
+            This is an old version (v{version.number}). This version is
             read-only. View the latest version to add comments.
           </p>
         </div>
@@ -70,7 +70,7 @@ export function ArtifactHeader({
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-gray-900">{artifact.title}</h1>
               <Badge className="px-2 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded">
-                v{version.versionNumber}
+                v{version.number}
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-600">
@@ -95,7 +95,7 @@ export function ArtifactHeader({
 
             {/* Version switcher */}
             <VersionSwitcher
-              currentVersion={version.versionNumber}
+              currentVersion={version.number}
               versions={versions}
               onVersionChange={onVersionChange}
             />

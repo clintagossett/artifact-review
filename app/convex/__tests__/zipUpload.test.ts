@@ -53,7 +53,7 @@ describe.skip("zipUpload", () => {
 
       expect(version).toBeDefined();
       expect(version?.artifactId).toBe(result.artifactId);
-      expect(version?.versionNumber).toBe(1);
+      expect(version?.number).toBe(1);
       expect(version?.fileType).toBe("zip");
       expect(version?.entryPoint).toBe("index.html");
       expect(version?.fileSize).toBe(12345);

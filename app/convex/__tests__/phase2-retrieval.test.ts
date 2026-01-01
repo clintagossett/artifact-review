@@ -52,7 +52,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       const versionId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifactVersions", {
           artifactId,
-          versionNumber: 1,
+          number: 1,
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
@@ -103,7 +103,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       const versionId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifactVersions", {
           artifactId,
-          versionNumber: 1,
+          number: 1,
           createdBy: ownerId,
           fileType: "html",
           entryPoint: "index.html",
@@ -146,7 +146,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       const versionId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifactVersions", {
           artifactId,
-          versionNumber: 1,
+          number: 1,
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",

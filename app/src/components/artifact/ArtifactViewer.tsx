@@ -14,14 +14,14 @@ interface ArtifactViewerProps {
   };
   version: {
     _id: Id<"artifactVersions">;
-    versionNumber: number;
+    number: number;
     fileType: "html" | "zip" | "markdown";
     entryPoint?: string;
     fileSize: number;
     createdAt: number;
   };
   versions: Array<{
-    versionNumber: number;
+    number: number;
     createdAt: number;
   }>;
   isLatestVersion: boolean;
@@ -51,7 +51,7 @@ export function ArtifactViewer({
     ".cloud",
     ".site"
   );
-  const iframeSrc = `${convexUrl}/artifact/${artifact.shareToken}/v${version.versionNumber}/${currentPage}`;
+  const iframeSrc = `${convexUrl}/artifact/${artifact.shareToken}/v${version.number}/${currentPage}`;
 
   const handleBack = () => {
     if (history.length === 0) return;

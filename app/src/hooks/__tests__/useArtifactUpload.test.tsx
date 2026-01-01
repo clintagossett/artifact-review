@@ -43,7 +43,7 @@ describe("useArtifactUpload", () => {
       mockMutation.mockResolvedValueOnce({
         artifactId: mockArtifactId,
         versionId: mockVersionId,
-        versionNumber: 1,
+        number: 1,
         shareToken: mockShareToken,
       });
 
@@ -75,7 +75,7 @@ describe("useArtifactUpload", () => {
       expect(uploadResult).toEqual({
         artifactId: mockArtifactId,
         versionId: mockVersionId,
-        versionNumber: 1,
+        number: 1,
         shareToken: mockShareToken,
       });
     });
@@ -112,7 +112,7 @@ describe("useArtifactUpload", () => {
       mockMutation.mockResolvedValueOnce({
         artifactId: "id1" as unknown,
         versionId: "v1" as unknown,
-        versionNumber: 1,
+        number: 1,
         shareToken: "token1",
       });
 
@@ -146,7 +146,7 @@ describe("useArtifactUpload", () => {
       mockMutation.mockResolvedValueOnce({
         artifactId: mockArtifactId,
         versionId: mockVersionId,
-        versionNumber: 1,
+        number: 1,
         shareToken: "token",
       });
 
@@ -182,7 +182,7 @@ describe("useArtifactUpload", () => {
       mockMutation.mockResolvedValueOnce({
         artifactId: mockArtifactId,
         versionId: mockVersionId,
-        versionNumber: 1,
+        number: 1,
         shareToken: "token",
       });
 
@@ -284,7 +284,7 @@ describe("useArtifactUpload", () => {
       mockMutation.mockResolvedValueOnce({
         artifactId: "id" as unknown,
         versionId: "v1" as unknown,
-        versionNumber: 1,
+        number: 1,
         shareToken: "token",
       });
 

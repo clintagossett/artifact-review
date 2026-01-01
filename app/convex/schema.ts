@@ -268,8 +268,9 @@ const schema = defineSchema({
      * Sequential version number within the artifact.
      * Starts at 1, increments by 1 for each new version.
      * Unique per artifact (enforced by application logic, not DB constraint).
+     * Renamed from versionNumber in Task 00021 for cleaner API (version.number vs version.versionNumber).
      */
-    versionNumber: v.number(),
+    number: v.number(),
 
     /**
      * User who created this version.
@@ -281,10 +282,10 @@ const schema = defineSchema({
     /**
      * Optional version label/name.
      * User-friendly name like "Initial draft", "Final v2", etc.
-     * Max 100 characters (enforced in updateVersionName mutation).
-     * Task 00018 - Phase 1 - Step 2
+     * Max 100 characters (enforced in updateName mutation).
+     * Renamed from versionName in Task 00021 for cleaner API (version.name vs version.versionName).
      */
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
 
     /**
      * User who soft deleted the version.
@@ -358,9 +359,9 @@ const schema = defineSchema({
      * Lookup specific version by number.
      * Used for deep links like `/a/{token}/v2`.
      * Compound index enables O(1) lookup.
-     * @example ctx.db.query("artifactVersions").withIndex("by_artifact_version", q => q.eq("artifactId", artifactId).eq("versionNumber", 2))
+     * @example ctx.db.query("artifactVersions").withIndex("by_artifact_version", q => q.eq("artifactId", artifactId).eq("number", 2))
      */
-    .index("by_artifact_version", ["artifactId", "versionNumber"])
+    .index("by_artifact_version", ["artifactId", "number"])
 
     /**
      * List versions by creator (for permission checks).

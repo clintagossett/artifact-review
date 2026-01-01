@@ -13,14 +13,14 @@ describe("ArtifactHeader", () => {
   };
 
   const mockVersion = {
-    versionNumber: 2,
+    number: 2,
     fileSize: 1024000, // 1000 KB
     createdAt: new Date("2024-12-26").getTime(),
   };
 
   const mockVersions = [
-    { versionNumber: 1, createdAt: new Date("2024-12-25").getTime() },
-    { versionNumber: 2, createdAt: new Date("2024-12-26").getTime() },
+    { number: 1, createdAt: new Date("2024-12-25").getTime() },
+    { number: 2, createdAt: new Date("2024-12-26").getTime() },
   ];
 
   it("should display artifact title", () => {

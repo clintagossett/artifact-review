@@ -122,9 +122,9 @@ describe("Artifact Viewing Queries", () => {
       });
 
       expect(versions).toHaveLength(3);
-      expect(versions[0].versionNumber).toBe(3); // Descending order
-      expect(versions[1].versionNumber).toBe(2);
-      expect(versions[2].versionNumber).toBe(1);
+      expect(versions[0].number).toBe(3); // Descending order
+      expect(versions[1].number).toBe(2);
+      expect(versions[2].number).toBe(1);
     });
 
     it("should not return deleted versions", async () => {
@@ -156,7 +156,7 @@ describe("Artifact Viewing Queries", () => {
       });
 
       expect(versions).toHaveLength(1);
-      expect(versions[0].versionNumber).toBe(1);
+      expect(versions[0].number).toBe(1);
     });
   });
 
@@ -182,11 +182,11 @@ describe("Artifact Viewing Queries", () => {
       // Get version 2 specifically
       const version = await t.query(api.artifacts.getVersionByNumber, {
         artifactId: result.artifactId,
-        versionNumber: 2,
+        number: 2,
       });
 
       expect(version).toBeDefined();
-      expect(version?.versionNumber).toBe(2);
+      expect(version?.number).toBe(2);
       // TODO: Phase 2 - Content is now in blob storage, not inline
       // expect(version?.htmlContent).toBe("<h1>V2</h1>");
     });
@@ -204,7 +204,7 @@ describe("Artifact Viewing Queries", () => {
 
       const version = await t.query(api.artifacts.getVersionByNumber, {
         artifactId: result.artifactId,
-        versionNumber: 99,
+        number: 99,
       });
 
       expect(version).toBeNull();
@@ -236,7 +236,7 @@ describe("Artifact Viewing Queries", () => {
       // Should return null
       const version = await t.query(api.artifacts.getVersionByNumber, {
         artifactId: result.artifactId,
-        versionNumber: 2,
+        number: 2,
       });
 
       expect(version).toBeNull();
@@ -272,7 +272,7 @@ describe("Artifact Viewing Queries", () => {
       });
 
       expect(latest).toBeDefined();
-      expect(latest?.versionNumber).toBe(3);
+      expect(latest?.number).toBe(3);
       // TODO: Phase 2 - Content is now in blob storage, not inline
       // expect(latest?.htmlContent).toBe("<h1>V3</h1>");
     });
@@ -310,7 +310,7 @@ describe("Artifact Viewing Queries", () => {
         artifactId: result.artifactId,
       });
 
-      expect(latest?.versionNumber).toBe(2);
+      expect(latest?.number).toBe(2);
     });
   });
 

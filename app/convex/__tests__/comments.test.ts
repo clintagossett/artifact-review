@@ -99,7 +99,7 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
   const versionId = await asOwner.run(async (ctx) =>
     await ctx.db.insert("artifactVersions", {
       artifactId,
-      versionNumber: 1,
+      number: 1,
       fileType: "html" as const,
       htmlContent: "<html><body>Test</body></html>",
       fileSize: 100,

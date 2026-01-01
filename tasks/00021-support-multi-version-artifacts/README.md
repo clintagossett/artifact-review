@@ -6,19 +6,53 @@
 
 ## Resume (Start Here)
 
-**Last Updated:** 2026-01-01 (Session 1)
+**Last Updated:** 2026-01-01 (Session 2 - Architect Review)
 
-### Current Status: ✅ SCOPED & READY FOR IMPLEMENTATION
+### Current Status: ✅ SCOPED & REVIEWED - READY FOR IMPLEMENTATION
 
-**Phase:** MVP scope defined, subtasks created, ready to begin implementation.
+**Phase:** MVP scope defined, architect review complete, corrected plan ready.
 
-### What We Did This Session (Session 1)
+### What We Did This Session (Session 2 - Architect Review)
 
-1. **Created task** - Set up GitHub issue #21 and task folder structure
-2. **Defined MVP scope** - Decided what's in/out for first release
-3. **Defined comment control logic** - Only latest version accepts comments (auto-enforced)
-4. **Defined terminology** - "Latest Version" for UI labeling
-5. **Created subtasks** - Two implementation phases documented
+1. **Analyzed existing code** - Found most backend functionality already exists from Tasks 18/19
+2. **Identified field renames needed** - `versionName` → `name`, `versionNumber` → `number`
+3. **Corrected implementation plan** - Removed "delete all data" approach, added migration script
+4. **Updated subtask README** - Reflects actual work needed vs what exists
+5. **Created plan-review.md** - Detailed analysis document
+
+### Schema Field Renames Required
+
+For cleaner API (`version.name` instead of `version.versionName`):
+
+| Current Field | New Field | Rationale |
+|---------------|-----------|-----------|
+| `versionName` | `name` | `version.name` is cleaner |
+| `versionNumber` | `number` | `version.number` is cleaner |
+
+**Migration required:** Cannot delete data (active agents), need one-time migration script.
+
+### What Already Exists (from Tasks 18/19)
+
+| Functionality | Status |
+|---------------|--------|
+| Upload new version (single file) | EXISTS - `artifacts.addVersion` |
+| Upload new version (ZIP) | EXISTS - `zipUpload.addZipVersion` |
+| Delete version (soft delete) | EXISTS - `artifacts.softDeleteVersion` |
+| Rename version | EXISTS - `artifacts.updateVersionName` |
+| Get latest version | EXISTS - `artifacts.getLatestVersion` |
+| Cannot delete last version | EXISTS - already enforced |
+
+### What Still Needs to Be Built
+
+| Functionality | Subtask | Notes |
+|---------------|---------|-------|
+| Schema field renames | 01 | `versionName` → `name`, `versionNumber` → `number` |
+| Data migration script | 01 | Copy old field values to new fields |
+| `isLatest` computed flag | 01 | Add to getVersions response |
+| Comment enforcement | 01 | Add to comments.create |
+| Frontend: "Latest" badge | 01/02 | Use isLatest from query |
+| Frontend: Version dropdown | 02 | New component |
+| Frontend: Old version banner | 02 | New component |
 
 ### Key Decisions Made
 
@@ -29,7 +63,7 @@
 **Comment Control Logic:**
 - Only latest version (highest non-deleted) accepts comments
 - Automatic: new upload closes previous versions for commenting
-- Backend enforced in `addComment` mutation (security)
+- Backend enforced in `comments.create` mutation (security)
 - Frontend shows UI state via computed `isLatest` flag (UX)
 
 **UI Terminology:**
@@ -40,14 +74,21 @@
 **Technical Approach:**
 - `isLatest` is **computed** at query time, not stored in database
 - Delete latest → previous automatically becomes latest
-- Single source of truth: `versionNumber + deleted` fields
+- Single source of truth: `number + isDeleted` fields (after rename)
 
 ### Next Steps
 
-1. **Implement Subtask 01** - Version management (upload, delete, backend enforcement)
+1. **Implement Subtask 01** - Schema renames, migration script, isLatest computation, comment enforcement
 2. **Implement Subtask 02** - Artifact viewer (dropdown, banner, conditional comment UI)
 3. **Write tests** - Unit + E2E with validation videos
 4. **Integration testing** - Ensure frontend + backend work together
+
+### Estimated Effort (Revised)
+
+| Subtask | Original Estimate | Revised Estimate | Notes |
+|---------|-------------------|------------------|-------|
+| 01 - Version Management | Full rebuild | 8-10 hours | Most backend exists |
+| 02 - Artifact Viewer | TBD | TBD | Needs review |
 
 ---
 
@@ -146,19 +187,28 @@ _(To be filled in as implementation progresses)_
 ## Subtasks
 
 ### 01-version-management/
-Backend and UI for uploading new versions, deleting versions, renaming versions, and enforcing comment controls.
+Code alignment, backend enhancements, and frontend verification for version management.
 
-**Deliverables:**
-- Convex mutations: `uploadVersion`, `deleteVersion`, `renameVersion`
-- Backend enforcement in `addComment` mutation
-- Helper: `getLatestVersion(artifactId)`
-- Helper: `getVersionsByArtifact` with computed `isLatest`
-- Frontend: Upload new version UI
-- Frontend: Delete version UI
+**What Already Exists (from Tasks 18/19):**
+- `addVersion` action (single file upload)
+- `addZipVersion` mutation (ZIP upload)
+- `softDeleteVersion` mutation with cascade
+- `updateVersionName` mutation
+- `getLatestVersion` query
+- "Cannot delete last version" enforcement
+
+**What Needs to Be Built:**
+- Schema renames: `versionName` → `name`, `versionNumber` → `number`
+- Data migration script (copy old field values to new)
+- Update all code references to use new field names
+- Computed `isLatest` flag in `getVersions` response
+- Comment enforcement in `comments.create` mutation
 - Frontend: Version list with "Latest" badge
 - Tests: Unit + E2E with validation videos
 
-See: `01-version-management/README.md`
+**Estimated Effort:** 8-10 hours (revised from full rebuild)
+
+See: `01-version-management/README.md` and `01-version-management/plan-review.md`
 
 ### 02-artifact-viewer-versions/
 Update artifact viewer to support version switching, show banners, and conditionally enable/disable comment UI.

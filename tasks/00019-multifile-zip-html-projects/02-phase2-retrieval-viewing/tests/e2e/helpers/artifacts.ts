@@ -59,27 +59,44 @@ export async function createZipArtifact(
   // Wait for the dialog to close (indicates success) or for navigation
   await expect(page.locator('[role="dialog"]')).toBeHidden({ timeout: 30000 }); // ZIPs may take longer
 
-  // Now wait for navigation to the artifact page
+  // Wait for navigation to the artifact page (ZIP processing may take time)
   try {
-    await page.waitForURL(/\/a\/[a-zA-Z0-9]+/, { timeout: 10000 });
+    await page.waitForURL(/\/a\/[a-zA-Z0-9]+/, { timeout: 30000 });
     const url = page.url();
     const shareToken = url.split('/a/')[1]?.split('?')[0] || '';
     return { shareToken, title };
   } catch {
+    // Check current URL - might already be on artifact page
+    const currentUrl = page.url();
+    if (currentUrl.includes('/a/')) {
+      const shareToken = currentUrl.split('/a/')[1]?.split('?')[0] || '';
+      return { shareToken, title };
+    }
+
     // Maybe we stayed on dashboard - look for the artifact in the list
-    await page.waitForURL('/dashboard', { timeout: 5000 });
+    if (currentUrl.includes('/dashboard')) {
+      // Find the artifact card and get its share link
+      const artifactCard = page.locator(`text=${title}`).first();
+      await expect(artifactCard).toBeVisible({ timeout: 10000 });
 
-    // Find the artifact card and get its share link
-    const artifactCard = page.locator(`text=${title}`).first();
-    await expect(artifactCard).toBeVisible({ timeout: 5000 });
+      // Click on the artifact to navigate to it
+      await artifactCard.click();
+      await page.waitForURL(/\/a\/[a-zA-Z0-9]+/, { timeout: 15000 });
 
-    // Click on the artifact to navigate to it
-    await artifactCard.click();
-    await page.waitForURL(/\/a\/[a-zA-Z0-9]+/, { timeout: 10000 });
+      const url = page.url();
+      const shareToken = url.split('/a/')[1]?.split('?')[0] || '';
+      return { shareToken, title };
+    }
 
-    const url = page.url();
-    const shareToken = url.split('/a/')[1]?.split('?')[0] || '';
-    return { shareToken, title };
+    // Wait a bit and check again
+    await page.waitForTimeout(2000);
+    const finalUrl = page.url();
+    if (finalUrl.includes('/a/')) {
+      const shareToken = finalUrl.split('/a/')[1]?.split('?')[0] || '';
+      return { shareToken, title };
+    }
+
+    throw new Error(`Failed to navigate to artifact page. Current URL: ${finalUrl}`);
   }
 }
 

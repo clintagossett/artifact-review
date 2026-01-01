@@ -31,7 +31,7 @@ describe("artifacts", () => {
       // Should return artifact ID and version info
       expect(result.artifactId).toBeDefined();
       expect(result.versionId).toBeDefined();
-      expect(result.versionNumber).toBe(1);
+      expect(result.number).toBe(1);
       expect(result.shareToken).toBeDefined();
       expect(result.shareToken).toHaveLength(8);
 
@@ -52,7 +52,7 @@ describe("artifacts", () => {
       });
 
       expect(version).toBeDefined();
-      expect(version?.versionNumber).toBe(1);
+      expect(version?.number).toBe(1);
       expect(version?.fileType).toBe("html");
       // Content now stored in blob storage, not inline
       // expect(version?.htmlContent).toBe(htmlContent);
@@ -86,7 +86,7 @@ describe("artifacts", () => {
       // Should return artifact ID and version info
       expect(result.artifactId).toBeDefined();
       expect(result.versionId).toBeDefined();
-      expect(result.versionNumber).toBe(1);
+      expect(result.number).toBe(1);
       expect(result.shareToken).toBeDefined();
       expect(result.shareToken).toHaveLength(8);
 
@@ -96,7 +96,7 @@ describe("artifacts", () => {
       });
 
       expect(version).toBeDefined();
-      expect(version?.versionNumber).toBe(1);
+      expect(version?.number).toBe(1);
       expect(version?.fileType).toBe("markdown");
       // Content now stored in blob storage, not inline
       // expect(version?.markdownContent).toBe(markdownContent);
@@ -187,14 +187,14 @@ describe("artifacts", () => {
         content: "<html>v2</html>",
       });
 
-      expect(v2Result.versionNumber).toBe(2);
+      expect(v2Result.number).toBe(2);
 
       // Verify v2 exists
       const v2 = await asUser.query(api.artifacts.getVersion, {
         versionId: v2Result.versionId,
       });
 
-      expect(v2?.versionNumber).toBe(2);
+      expect(v2?.number).toBe(2);
       // Content now stored in blob storage, not inline
       // expect(v2?.htmlContent).toBe("<html>v2</html>");
     });

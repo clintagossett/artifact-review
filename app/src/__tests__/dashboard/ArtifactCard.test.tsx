@@ -15,9 +15,9 @@ describe("ArtifactCard", () => {
   };
 
   const mockVersions = [
-    { versionNumber: 1, fileType: "html" as const },
-    { versionNumber: 2, fileType: "html" as const },
-    { versionNumber: 3, fileType: "html" as const },
+    { number: 1, fileType: "html" as const },
+    { number: 2, fileType: "html" as const },
+    { number: 3, fileType: "html" as const },
   ];
 
   it("should render artifact title", () => {

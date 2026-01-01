@@ -15,7 +15,7 @@ export interface ArtifactListProps {
   versionsMap: Record<
     string,
     Array<{
-      versionNumber: number;
+      number: number;
       fileType: "html" | "markdown" | "zip";
     }>
   >;

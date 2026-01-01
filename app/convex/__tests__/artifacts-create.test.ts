@@ -157,9 +157,9 @@ describe("artifacts.create - Unified Storage", () => {
       // The createInternal mutation:
       // 1. Inserts into artifactVersions table with:
       //    - artifactId (from artifact creation)
-      //    - versionNumber: 1
+      //    - number: 1
       //    - createdBy: userId (NEW - Phase 1 requirement)
-      //    - versionName: optional (NEW - Phase 1 requirement)
+      //    - name: optional (NEW - Phase 1 requirement)
       //    - fileType, entryPoint, fileSize (from args)
       //    - isDeleted: false, createdAt: now
       // 2. Does NOT set htmlContent/markdownContent (deprecated inline fields)
@@ -182,7 +182,7 @@ describe("artifacts.create - Unified Storage", () => {
       // {
       //   artifactId: Id<"artifacts">,
       //   versionId: Id<"artifactVersions">,
-      //   versionNumber: 1,
+      //   number: 1,
       //   shareToken: string (8 char nanoid)
       // }
       expect(true).toBe(true);

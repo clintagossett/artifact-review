@@ -27,18 +27,18 @@ export const create = action({
     fileType: v.string(),  // Validated at application level
     content: v.string(),   // File content as text
     originalFileName: v.optional(v.string()),
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
     versionId: v.id("artifactVersions"),
-    versionNumber: v.number(),
+    number: v.number(),
     shareToken: v.string(),
   }),
   handler: async (ctx, args): Promise<{
     artifactId: Id<"artifacts">;
     versionId: Id<"artifactVersions">;
-    versionNumber: number;
+    number: number;
     shareToken: string;
   }> => {
     // 1. Authenticate
@@ -73,14 +73,14 @@ export const create = action({
     const result: {
       artifactId: Id<"artifacts">;
       versionId: Id<"artifactVersions">;
-      versionNumber: number;
+      number: number;
       shareToken: string;
     } = await ctx.runMutation(internal.artifacts.createInternal, {
       userId,
       title: args.title,
       description: args.description,
       fileType: args.fileType,
-      versionName: args.versionName,
+      name: args.name,
       filePath,
       storageId,
       mimeType: getMimeType(args.fileType),
@@ -101,7 +101,7 @@ export const createInternal = internalMutation({
     title: v.string(),
     description: v.optional(v.string()),
     fileType: v.string(),
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
     filePath: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
@@ -110,7 +110,7 @@ export const createInternal = internalMutation({
   returns: v.object({
     artifactId: v.id("artifacts"),
     versionId: v.id("artifactVersions"),
-    versionNumber: v.number(),
+    number: v.number(),
     shareToken: v.string(),
   }),
   handler: async (ctx, args) => {
@@ -131,9 +131,9 @@ export const createInternal = internalMutation({
     // Create version record (unified storage)
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId,
-      versionNumber: 1,
+      number: 1,
       createdBy: args.userId,
-      versionName: args.versionName,
+      name: args.name,
       fileType: args.fileType,
       entryPoint: args.filePath,
       fileSize: args.fileSize,
@@ -155,7 +155,7 @@ export const createInternal = internalMutation({
     return {
       artifactId,
       versionId,
-      versionNumber: 1,
+      number: 1,
       shareToken,
     };
   },
@@ -202,8 +202,8 @@ export const getVersion = query({
       _id: v.id("artifactVersions"),
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
-      versionNumber: v.number(),
-      versionName: v.optional(v.string()),
+      number: v.number(),
+      name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
@@ -231,8 +231,8 @@ export const getVersion = query({
       _id: version._id,
       _creationTime: version._creationTime,
       artifactId: version.artifactId,
-      versionNumber: version.versionNumber,
-      versionName: version.versionName,
+      number: version.number,
+      name: version.name,
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,
@@ -360,15 +360,15 @@ export const addVersion = action({
     fileType: v.string(),  // Validated at application level
     content: v.string(),   // File content as text
     originalFileName: v.optional(v.string()),
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
-    versionNumber: v.number(),
+    number: v.number(),
   }),
   handler: async (ctx, args): Promise<{
     versionId: Id<"artifactVersions">;
-    versionNumber: number;
+    number: number;
   }> => {
     // 1. Authenticate
     const userId = await getAuthUserId(ctx);
@@ -424,12 +424,12 @@ export const addVersion = action({
     // 7. Call mutation to create version and file records
     const result: {
       versionId: Id<"artifactVersions">;
-      versionNumber: number;
+      number: number;
     } = await ctx.runMutation(internal.artifacts.addVersionInternal, {
       userId,
       artifactId: args.artifactId,
       fileType: args.fileType,
-      versionName: args.versionName,
+      name: args.name,
       filePath,
       storageId,
       mimeType: getMimeType(args.fileType),
@@ -449,7 +449,7 @@ export const addVersionInternal = internalMutation({
     userId: v.id("users"),
     artifactId: v.id("artifacts"),
     fileType: v.string(),
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
     filePath: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
@@ -457,7 +457,7 @@ export const addVersionInternal = internalMutation({
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
-    versionNumber: v.number(),
+    number: v.number(),
   }),
   handler: async (ctx, args) => {
     // Get max version number for this artifact
@@ -466,7 +466,7 @@ export const addVersionInternal = internalMutation({
       .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
       .collect();
 
-    const maxVersionNumber = Math.max(...versions.map((v) => v.versionNumber), 0);
+    const maxVersionNumber = Math.max(...versions.map((v) => v.number), 0);
     const newVersionNumber = maxVersionNumber + 1;
 
     const now = Date.now();
@@ -474,9 +474,9 @@ export const addVersionInternal = internalMutation({
     // Create version record (unified storage)
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId: args.artifactId,
-      versionNumber: newVersionNumber,
+      number: newVersionNumber,
       createdBy: args.userId,
-      versionName: args.versionName,
+      name: args.name,
       fileType: args.fileType,
       entryPoint: args.filePath,
       fileSize: args.fileSize,
@@ -501,7 +501,7 @@ export const addVersionInternal = internalMutation({
 
     return {
       versionId,
-      versionNumber: newVersionNumber,
+      number: newVersionNumber,
     };
   },
 });
@@ -509,11 +509,12 @@ export const addVersionInternal = internalMutation({
 /**
  * Update the name/label of a version (owner only)
  * Task 00018 - Phase 1 - Step 6
+ * Task 00021 - Subtask 01: Renamed from updateVersionName, field versionName -> name
  */
-export const updateVersionName = mutation({
+export const updateName = mutation({
   args: {
     versionId: v.id("artifactVersions"),
-    versionName: v.union(v.string(), v.null()),  // null to clear
+    name: v.union(v.string(), v.null()),  // null to clear
   },
   returns: v.null(),
   handler: async (ctx, args) => {
@@ -539,13 +540,13 @@ export const updateVersionName = mutation({
     }
 
     // 4. Validate version name length
-    if (args.versionName !== null && args.versionName.length > MAX_VERSION_NAME_LENGTH) {
+    if (args.name !== null && args.name.length > MAX_VERSION_NAME_LENGTH) {
       throw new Error(`Version name too long. Maximum: ${MAX_VERSION_NAME_LENGTH} characters`);
     }
 
     // 5. Update version name
     await ctx.db.patch(args.versionId, {
-      versionName: args.versionName ?? undefined,
+      name: args.name ?? undefined,
     });
 
     return null;
@@ -698,6 +699,7 @@ export const softDeleteVersion = mutation({
  * Get all versions for an artifact (for version switcher UI)
  * Task 00018 - Phase 2 - Step 5: Added versionName, createdBy, and permission check
  * Task 00018 - Phase 2 - Step 8: Made createdBy required
+ * Task 00021 - Subtask 01: Added isLatest computed field
  */
 export const getVersions = query({
   args: {
@@ -708,12 +710,13 @@ export const getVersions = query({
       _id: v.id("artifactVersions"),
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
-      versionNumber: v.number(),
-      versionName: v.optional(v.string()),
+      number: v.number(),
+      name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
       fileSize: v.number(),
       createdAt: v.number(),
+      isLatest: v.boolean(),
     })
   ),
   handler: async (ctx, args) => {
@@ -731,17 +734,21 @@ export const getVersions = query({
       .order("desc")
       .collect();
 
-    // Project only needed fields (exclude deprecated htmlContent/markdownContent)
+    // The first version (highest number) is the latest since we're ordered desc
+    const latestId = versions[0]?._id;
+
+    // Project only needed fields and add isLatest computed field
     return versions.map((v) => ({
       _id: v._id,
       _creationTime: v._creationTime,
       artifactId: v.artifactId,
-      versionNumber: v.versionNumber,
-      versionName: v.versionName,
+      number: v.number,
+      name: v.name,
       createdBy: v.createdBy,
       fileType: v.fileType,
       fileSize: v.fileSize,
       createdAt: v.createdAt,
+      isLatest: v._id === latestId,
     }));
   },
 });
@@ -754,15 +761,15 @@ export const getVersions = query({
 export const getVersionByNumber = query({
   args: {
     artifactId: v.id("artifacts"),
-    versionNumber: v.number(),
+    number: v.number(),
   },
   returns: v.union(
     v.object({
       _id: v.id("artifactVersions"),
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
-      versionNumber: v.number(),
-      versionName: v.optional(v.string()),
+      number: v.number(),
+      name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
@@ -783,7 +790,7 @@ export const getVersionByNumber = query({
     const version = await ctx.db
       .query("artifactVersions")
       .withIndex("by_artifact_version", (q) =>
-        q.eq("artifactId", args.artifactId).eq("versionNumber", args.versionNumber)
+        q.eq("artifactId", args.artifactId).eq("number", args.number)
       )
       .first();
 
@@ -796,8 +803,8 @@ export const getVersionByNumber = query({
       _id: version._id,
       _creationTime: version._creationTime,
       artifactId: version.artifactId,
-      versionNumber: version.versionNumber,
-      versionName: version.versionName,
+      number: version.number,
+      name: version.name,
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,
@@ -823,8 +830,8 @@ export const getLatestVersion = query({
       _id: v.id("artifactVersions"),
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
-      versionNumber: v.number(),
-      versionName: v.optional(v.string()),
+      number: v.number(),
+      name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
@@ -861,8 +868,8 @@ export const getLatestVersion = query({
       _id: latestVersion._id,
       _creationTime: latestVersion._creationTime,
       artifactId: latestVersion.artifactId,
-      versionNumber: latestVersion.versionNumber,
-      versionName: latestVersion.versionName,
+      number: latestVersion.number,
+      name: latestVersion.name,
       createdBy: latestVersion.createdBy,
       fileType: latestVersion.fileType,
       entryPoint: latestVersion.entryPoint,
@@ -947,15 +954,15 @@ export const getFileByPath = internalQuery({
 export const getVersionByNumberInternal = internalQuery({
   args: {
     artifactId: v.id("artifacts"),
-    versionNumber: v.number(),
+    number: v.number(),
   },
   returns: v.union(
     v.object({
       _id: v.id("artifactVersions"),
       _creationTime: v.number(),
       artifactId: v.id("artifacts"),
-      versionNumber: v.number(),
-      versionName: v.optional(v.string()),
+      number: v.number(),
+      name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
@@ -970,7 +977,7 @@ export const getVersionByNumberInternal = internalQuery({
     const version = await ctx.db
       .query("artifactVersions")
       .withIndex("by_artifact_version", (q) =>
-        q.eq("artifactId", args.artifactId).eq("versionNumber", args.versionNumber)
+        q.eq("artifactId", args.artifactId).eq("number", args.number)
       )
       .first();
 
@@ -983,8 +990,8 @@ export const getVersionByNumberInternal = internalQuery({
       _id: version._id,
       _creationTime: version._creationTime,
       artifactId: version.artifactId,
-      versionNumber: version.versionNumber,
-      versionName: version.versionName,
+      number: version.number,
+      name: version.name,
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,

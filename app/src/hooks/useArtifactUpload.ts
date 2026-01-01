@@ -15,7 +15,7 @@ export interface CreateArtifactData {
 export interface UploadResult {
   artifactId: Id<"artifacts">;
   versionId: Id<"artifactVersions">;
-  versionNumber: number;
+  number: number;
   shareToken: string;
 }
 
@@ -99,7 +99,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
             fileType,
             content,  // Unified field for Phase 1
             originalFileName: file.name,
-            versionName: undefined,
+            name: undefined,
           });
 
           setUploadProgress(100);
@@ -146,7 +146,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
           return {
             artifactId,
             versionId,
-            versionNumber: 1,
+            number: 1,
             shareToken,
           };
         }

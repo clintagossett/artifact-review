@@ -94,6 +94,7 @@ export const getByVersion = query({
  *
  * Requires owner or reviewer permission.
  * Content is validated and trimmed before storage.
+ * Task 00021 - Subtask 01: Only allow comments on the latest version
  */
 export const create = mutation({
   args: {
@@ -108,6 +109,23 @@ export const create = mutation({
 
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
+
+    // Get the version being commented on
+    const version = await ctx.db.get(args.versionId);
+    if (!version) throw new Error("Version not found");
+
+    // Check if this version is the latest (Task 00021 - Subtask 01)
+    const latestVersion = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifact_active", (q) =>
+        q.eq("artifactId", version.artifactId).eq("isDeleted", false)
+      )
+      .order("desc")
+      .first();
+
+    if (!latestVersion || version._id !== latestVersion._id) {
+      throw new Error("Comments are only allowed on the latest version");
+    }
 
     // Validate content
     const trimmedContent = args.content.trim();

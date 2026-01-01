@@ -240,12 +240,12 @@ describe("Backend Integration: Real ZIP Extraction", () => {
       });
 
     // Add v2 as new version
-    const { versionId: v2Id, versionNumber } = await t
+    const { versionId: v2Id, number: versionNumber } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
         fileSize: 6000,
-        versionName: "Updated charts",
+        name: "Updated charts",
       });
 
     expect(versionNumber).toBe(2);
@@ -291,7 +291,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
 
     // Verify version 2 has its own entry point
     const version = await t.run(async (ctx) => ctx.db.get(v2Id));
-    expect(version?.versionNumber).toBe(2);
+    expect(version?.number).toBe(2);
     expect(version?.entryPoint).toBe(entryPoint);
   });
 
@@ -455,12 +455,12 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     });
 
     // Version 2
-    const { versionId: v2Id, versionNumber: v2Num } = await t
+    const { versionId: v2Id, number: v2Num } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
         fileSize: 6000,
-        versionName: "Version 2",
+        name: "Version 2",
       });
 
     expect(v2Num).toBe(2);
@@ -482,12 +482,12 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     });
 
     // Version 3
-    const { versionId: v3Id, versionNumber: v3Num } = await t
+    const { versionId: v3Id, number: v3Num } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
         fileSize: 7000,
-        versionName: "Version 3",
+        name: "Version 3",
       });
 
     expect(v3Num).toBe(3);
@@ -517,7 +517,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     );
 
     expect(versions).toHaveLength(3);
-    expect(versions.map((v) => v.versionNumber).sort()).toEqual([1, 2, 3]);
+    expect(versions.map((v) => v.number).sort()).toEqual([1, 2, 3]);
 
     // Verify each version has its own files
     for (const version of versions) {

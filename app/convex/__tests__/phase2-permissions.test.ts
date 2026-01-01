@@ -313,7 +313,7 @@ describe("Read Permission Helpers", () => {
       const versionId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifactVersions", {
           artifactId,
-          versionNumber: 1,
+          number: 1,
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
@@ -357,7 +357,7 @@ describe("Read Permission Helpers", () => {
       const versionId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifactVersions", {
           artifactId,
-          versionNumber: 1,
+          number: 1,
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",

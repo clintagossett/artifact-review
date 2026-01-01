@@ -26,11 +26,11 @@ describe("ArtifactList", () => {
 
   const mockVersionsMap = {
     "test-id-1": [
-      { versionNumber: 1, fileType: "html" as const },
-      { versionNumber: 2, fileType: "html" as const },
-      { versionNumber: 3, fileType: "html" as const },
+      { number: 1, fileType: "html" as const },
+      { number: 2, fileType: "html" as const },
+      { number: 3, fileType: "html" as const },
     ],
-    "test-id-2": [{ versionNumber: 1, fileType: "html" as const }],
+    "test-id-2": [{ number: 1, fileType: "html" as const }],
   };
 
   it("should render section header", () => {

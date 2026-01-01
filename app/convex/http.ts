@@ -75,7 +75,7 @@ http.route({
         internal.artifacts.getVersionByNumberInternal,
         {
           artifactId: artifact._id,
-          versionNumber,
+          number: versionNumber,
         }
       );
 

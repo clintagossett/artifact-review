@@ -43,7 +43,7 @@ export function ArtifactViewerPage({
   const specificVersion = useQuery(
     api.artifacts.getVersionByNumber,
     artifact && versionNumber
-      ? { artifactId: artifact._id, versionNumber }
+      ? { artifactId: artifact._id, number: versionNumber }
       : "skip"
   );
 
@@ -118,8 +118,8 @@ export function ArtifactViewerPage({
   }
 
   // Determine if this is the latest version
-  const latestVersionNumber = Math.max(...versions.map((v) => v.versionNumber));
-  const isLatestVersion = targetVersion.versionNumber === latestVersionNumber;
+  const latestVersionNumber = Math.max(...versions.map((v) => v.number));
+  const isLatestVersion = targetVersion.number === latestVersionNumber;
 
   // Handle version change
   const handleVersionChange = (newVersionNumber: number) => {
@@ -138,8 +138,8 @@ export function ArtifactViewerPage({
     name: artifact.title,
     description: "",
     versions: versions.map((v) => ({
-      id: `v${v.versionNumber}`,
-      number: v.versionNumber,
+      id: `v${v.number}`,
+      number: v.number,
       fileName: artifact.title,
       uploadedAt: new Date(v._creationTime).toLocaleDateString(),
       uploadedBy: currentUser?.name || "Unknown",
@@ -163,7 +163,7 @@ export function ArtifactViewerPage({
         onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
         onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
         shareToken={shareToken}
-        versionNumber={targetVersion.versionNumber}
+        versionNumber={targetVersion.number}
         versionId={targetVersion._id}
         artifactOwnerId={artifact.creatorId}
         convexUrl={convexUrl}

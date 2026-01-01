@@ -8,9 +8,9 @@ describe("VersionSwitcher", () => {
   });
 
   const mockVersions = [
-    { versionNumber: 1, createdAt: new Date("2024-12-25").getTime() },
-    { versionNumber: 2, createdAt: new Date("2024-12-26").getTime() },
-    { versionNumber: 3, createdAt: new Date("2024-12-27").getTime() },
+    { number: 1, createdAt: new Date("2024-12-25").getTime() },
+    { number: 2, createdAt: new Date("2024-12-26").getTime() },
+    { number: 3, createdAt: new Date("2024-12-27").getTime() },
   ];
 
   it("should render version selector dropdown", () => {

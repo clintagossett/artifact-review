@@ -117,7 +117,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     const version = await t.run(async (ctx) => ctx.db.get(result.versionId));
     expect(version).toBeDefined();
     expect(version?.fileType).toBe("zip");
-    expect(version?.versionNumber).toBe(1);
+    expect(version?.number).toBe(1);
     expect(version?.fileSize).toBe(10000);
   });
 
@@ -155,19 +155,19 @@ describe("ZIP Upload - Add Version Flow", () => {
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
         fileSize: 2000,
-        versionName: "Second iteration",
+        name: "Second iteration",
       });
 
     expect(result.versionId).toBeDefined();
-    expect(result.versionNumber).toBe(2);
+    expect(result.number).toBe(2);
     expect(result.uploadUrl).toContain("http");
 
     // Verify version was created
     const version = await t.run(async (ctx) => ctx.db.get(result.versionId));
     expect(version).toBeDefined();
     expect(version?.fileType).toBe("zip");
-    expect(version?.versionNumber).toBe(2);
-    expect(version?.versionName).toBe("Second iteration");
+    expect(version?.number).toBe(2);
+    expect(version?.name).toBe("Second iteration");
     expect(version?.fileSize).toBe(2000);
 
     // Verify artifact timestamp was updated
@@ -412,7 +412,7 @@ describe("ZIP Processing Error Handling", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",

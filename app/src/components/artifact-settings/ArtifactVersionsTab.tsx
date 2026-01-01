@@ -16,7 +16,7 @@ import { UploadNewVersionDialog } from './UploadNewVersionDialog';
 
 interface Version {
   id: string;
-  versionNumber: number;
+  number: number;
   customName: string;
   uploadedAt: string;
   uploadedBy: string;
@@ -29,21 +29,21 @@ interface ArtifactVersionsTabProps {
 const mockVersions: Version[] = [
   {
     id: 'v3',
-    versionNumber: 3,
+    number: 3,
     customName: 'v3',
     uploadedAt: 'Jan 20, 2024 at 2:15 PM',
     uploadedBy: 'you@company.com',
   },
   {
     id: 'v2',
-    versionNumber: 2,
+    number: 2,
     customName: 'v2',
     uploadedAt: 'Jan 18, 2024 at 4:30 PM',
     uploadedBy: 'you@company.com',
   },
   {
     id: 'v1',
-    versionNumber: 1,
+    number: 1,
     customName: 'v1',
     uploadedAt: 'Jan 15, 2024 at 10:30 AM',
     uploadedBy: 'you@company.com',
@@ -86,7 +86,7 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
       toast({ title: 'Cannot delete the only version', variant: 'destructive' });
       return;
     }
-    if (confirm(`Delete version ${version?.versionNumber}? This action cannot be undone.`)) {
+    if (confirm(`Delete version ${version?.number}? This action cannot be undone.`)) {
       setVersions(versions.filter((v) => v.id !== versionId));
       toast({ title: 'Version deleted' });
     }
@@ -100,7 +100,7 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
     const newVersionNumber = maxVersionNumber + 1;
     const newVersion: Version = {
       id: `v${newVersionNumber}`,
-      versionNumber: newVersionNumber,
+      number: newVersionNumber,
       customName: `v${newVersionNumber}`,
       uploadedAt: new Date().toLocaleString('en-US', {
         month: 'short',
@@ -171,9 +171,9 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
                     ) : (
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium text-gray-900">
-                          {version.customName === `v${version.versionNumber}`
+                          {version.customName === `v${version.number}`
                             ? version.customName
-                            : `v${version.versionNumber} - ${version.customName}`}
+                            : `v${version.number} - ${version.customName}`}
                         </h4>
                       </div>
                     )}

@@ -34,7 +34,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
@@ -89,7 +89,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
@@ -129,7 +129,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
@@ -181,7 +181,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
@@ -297,7 +297,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
         artifactId,
-        versionNumber: 1,
+        number: 1,
         createdBy: userId,
         fileType: "zip",
         entryPoint: "v1/index.html",
@@ -309,7 +309,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
 
     const version = await t.query(internal.artifacts.getVersionByNumberInternal, {
       artifactId,
-      versionNumber: 1,
+      number: 1,
     });
 
     expect(version).toBeDefined();

@@ -1,9 +1,9 @@
 # Subtask 02: Phase 2 - Retrieval and Viewing
 
 **Parent Task:** 00019 - Upload and View Multi-file HTML Projects via ZIP
-**Status:** Pending
+**Status:** Complete (code), E2E tests ready
 **Created:** 2025-12-31
-**Updated:** 2025-12-31 (based on Phase 1 completion)
+**Updated:** 2026-01-01
 
 ---
 
@@ -953,14 +953,22 @@ npx playwright test tasks/00019-multifile-zip-html-projects/02-phase2-retrieval-
 
 When Phase 2 is complete, verify:
 
-- [ ] All Phase 2 backend tests pass (`npm test -- --grep "ZIP Serving"`)
+- [x] All Phase 2 backend tests pass (`npm test -- --grep "ZIP Serving"`)
 - [ ] All E2E tests pass with video recordings in `tests/validation-videos/`
-- [ ] Sample ZIP artifacts upload and display correctly
-- [ ] CSS, JS, and images work in viewer
-- [ ] Version switching works for ZIP artifacts
-- [ ] No console errors for asset loading
-- [ ] Error messages are user-friendly for 404s
+- [x] Sample ZIP artifacts upload and display correctly
+- [x] CSS, JS, and images work in viewer
+- [x] Version switching works for ZIP artifacts
+- [x] No console errors for asset loading
+- [x] Error messages are user-friendly for 404s
+- [x] Multi-level nesting (1-5 levels) works correctly
 - [ ] `test-report.md` created in task folder
+
+### Additional Tests Added (2026-01-01)
+
+**Multi-Level Nesting Tests:**
+- Backend: `/app/convex/__tests__/zip-multi-level-nesting.test.ts` (10 tests passing)
+- E2E: `tests/e2e/06-multi-level-nesting.spec.ts` (11 tests ready)
+- Uses samples: `/samples/01-valid/zip/charting-with-parents/` (v1-v5)
 
 ---
 

@@ -13,7 +13,7 @@ export interface ArtifactCardProps {
     updatedAt: number;
   };
   versions: Array<{
-    versionNumber: number;
+    number: number;
     fileType: "html" | "markdown" | "zip";
   }>;
   fileCount?: number; // For ZIP artifacts
@@ -85,11 +85,11 @@ export function ArtifactCard({
         <div className="mb-4 flex flex-wrap gap-2">
           {versions.map((version) => (
             <Badge
-              key={version.versionNumber}
+              key={version.number}
               variant="secondary"
               className="bg-purple-100 text-purple-700 hover:bg-purple-100"
             >
-              v{version.versionNumber}
+              v{version.number}
             </Badge>
           ))}
         </div>

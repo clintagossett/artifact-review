@@ -9,7 +9,7 @@ import {
 interface VersionSwitcherProps {
   currentVersion: number;
   versions: Array<{
-    versionNumber: number;
+    number: number;
     createdAt: number;
   }>;
   onVersionChange: (versionNumber: number) => void;
@@ -26,7 +26,7 @@ export function VersionSwitcher({
 
   // Sort versions in descending order (newest first)
   const sortedVersions = [...versions].sort(
-    (a, b) => b.versionNumber - a.versionNumber
+    (a, b) => b.number - a.number
   );
 
   return (
@@ -40,10 +40,10 @@ export function VersionSwitcher({
       <SelectContent>
         {sortedVersions.map((version) => (
           <SelectItem
-            key={version.versionNumber}
-            value={version.versionNumber.toString()}
+            key={version.number}
+            value={version.number.toString()}
           >
-            v{version.versionNumber} - {formatDate(version.createdAt)}
+            v{version.number} - {formatDate(version.createdAt)}
           </SelectItem>
         ))}
       </SelectContent>

@@ -51,7 +51,7 @@ export const createArtifactWithZip = mutation({
     // Note: entryPoint will be updated by zipProcessor after extraction
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId,
-      versionNumber: 1,
+      number: 1,
       createdBy: userId,
       fileType: "zip",
       entryPoint: args.entryPoint || "index.html", // Default, updated after ZIP processing
@@ -80,12 +80,12 @@ export const addZipVersion = mutation({
   args: {
     artifactId: v.id("artifacts"),
     fileSize: v.number(),
-    versionName: v.optional(v.string()),
+    name: v.optional(v.string()),
   },
   returns: v.object({
     uploadUrl: v.string(),
     versionId: v.id("artifactVersions"),
-    versionNumber: v.number(),
+    number: v.number(),
   }),
   handler: async (ctx, args) => {
     // 1. Authenticate
@@ -111,7 +111,7 @@ export const addZipVersion = mutation({
       .query("artifactVersions")
       .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
       .collect();
-    const maxVersionNumber = Math.max(...versions.map((v) => v.versionNumber), 0);
+    const maxVersionNumber = Math.max(...versions.map((v) => v.number), 0);
     const newVersionNumber = maxVersionNumber + 1;
 
     const now = Date.now();
@@ -119,9 +119,9 @@ export const addZipVersion = mutation({
     // 5. Create version record with fileType: "zip"
     const versionId = await ctx.db.insert("artifactVersions", {
       artifactId: args.artifactId,
-      versionNumber: newVersionNumber,
+      number: newVersionNumber,
       createdBy: userId,
-      versionName: args.versionName,
+      name: args.name,
       fileType: "zip",
       entryPoint: "index.html", // Updated after extraction
       fileSize: args.fileSize,
@@ -140,7 +140,7 @@ export const addZipVersion = mutation({
     return {
       uploadUrl,
       versionId,
-      versionNumber: newVersionNumber,
+      number: newVersionNumber,
     };
   },
 });
