@@ -132,33 +132,17 @@ export function ArtifactViewerPage({
     }
   };
 
-  // Create mock project data for DocumentViewer (Phase 1)
-  const mockProject = {
-    id: artifact._id,
-    name: artifact.title,
-    description: "",
-    versions: versions.map((v) => ({
-      id: `v${v.number}`,
-      number: v.number,
-      fileName: artifact.title,
-      uploadedAt: new Date(v._creationTime).toLocaleDateString(),
-      uploadedBy: currentUser?.name || "Unknown",
-    })),
-    members: [],
-    lastActivity: new Date().toISOString(),
-    status: "active" as const,
-  };
-
   // Get Convex HTTP URL from environment (for serving artifact files)
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "";
 
-  // Show DocumentViewer for users with permission (Phase 1)
+  // Show DocumentViewer for users with permission
   return (
     <>
       <DocumentViewer
         documentId={artifact._id}
         onBack={() => router.push("/dashboard")}
-        project={mockProject}
+        artifactTitle={artifact.title}
+        versions={versions}
         onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
         onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
         onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}

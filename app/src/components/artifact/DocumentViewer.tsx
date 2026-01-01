@@ -48,10 +48,22 @@ import type {
   Comment,
   ToolMode,
   ToolBadge,
-  Version,
-  Project
 } from '@/components/comments/types';
 import { Id } from '@/convex/_generated/dataModel';
+
+// Real version data from backend (from api.artifacts.getVersions)
+interface BackendVersion {
+  _id: Id<"artifactVersions">;
+  _creationTime: number;
+  artifactId: Id<"artifacts">;
+  number: number;
+  name?: string;
+  createdBy: Id<"users">;
+  fileType: string;
+  fileSize: number;
+  createdAt: number;
+  isLatest: boolean;
+}
 import { useComments } from '@/hooks/useComments';
 import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
@@ -61,11 +73,12 @@ import { api } from '../../../convex/_generated/api';
 interface DocumentViewerProps {
   documentId: string;
   onBack: () => void;
-  project?: Project;
+  // Real artifact data (replacing mock project)
+  artifactTitle: string;
+  versions: BackendVersion[];
   onNavigateToSettings?: () => void;
   onNavigateToShare?: () => void;
   onNavigateToVersions?: () => void;
-  // Real artifact data
   shareToken: string;
   versionNumber: number;
   versionId: Id<"artifactVersions">;
@@ -77,7 +90,8 @@ interface DocumentViewerProps {
 export function DocumentViewer({
   documentId,
   onBack,
-  project,
+  artifactTitle,
+  versions,
   onNavigateToSettings,
   onNavigateToShare,
   onNavigateToVersions,
@@ -171,10 +185,9 @@ export function DocumentViewer({
     commentBadgeRef.current = commentBadge;
   }, [commentBadge]);
   
-  // Version management states
+  // Version management state
   // Use the real versionId prop instead of mock version IDs
   const [currentVersionId, setCurrentVersionId] = useState<string>(versionId);
-  const [defaultVersionId, setDefaultVersionId] = useState<string>(versionId);
   
   // Presence states
   const [recentActivity, setRecentActivity] = useState<{
@@ -195,8 +208,8 @@ export function DocumentViewer({
       (!comment.page || comment.page === currentPage) // Filter by page if specified
   );
   
-  const currentVersion = project?.versions.find(v => v.id === currentVersionId);
-  const isViewingOldVersion = currentVersionId !== defaultVersionId;
+  const currentVersion = versions.find(v => v._id === currentVersionId);
+  const isViewingOldVersion = !currentVersion?.isLatest;
   
   // Build URL to artifact HTML via Next.js proxy (same-origin to avoid CORS issues)
   // Format: /api/artifact/{shareToken}/v{versionNumber}/{page}
@@ -850,16 +863,18 @@ export function DocumentViewer({
             <div className="h-6 w-px bg-gray-300" />
             
             {/* Version Selector */}
-            {project && project.versions.length > 0 && (
+            {versions.length > 0 && (
               <>
                 <div className="flex items-center gap-3">
-                  <h1 className="font-semibold text-gray-900">{project.name}</h1>
+                  <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-2">
                         <History className="w-4 h-4" />
-                        v{currentVersion?.number || 1}
-                        {currentVersion?.number === Math.max(...(project?.versions.map(v => v.number) || [1])) && (
+                        {currentVersion?.name && currentVersion.name !== `v${currentVersion.number}`
+                          ? `v${currentVersion?.number || 1} - ${currentVersion.name}`
+                          : `v${currentVersion?.number || 1}`}
+                        {currentVersion?.isLatest && (
                           <Badge className="bg-green-100 text-green-800 text-xs ml-1">
                             Latest
                           </Badge>
@@ -870,35 +885,31 @@ export function DocumentViewer({
                     <DropdownMenuContent align="start" className="w-80">
                       <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
                       <DropdownMenuSeparator />
-                      {[...project.versions].sort((a, b) => b.number - a.number).map((version, index) => (
+                      {[...versions].sort((a, b) => b.number - a.number).map((version) => (
                         <DropdownMenuItem
-                          key={version.id}
-                          onClick={() => setCurrentVersionId(version.id)}
-                          className={`${currentVersionId === version.id ? 'bg-purple-50' : ''}`}
+                          key={version._id}
+                          onClick={() => setCurrentVersionId(version._id)}
+                          className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
                         >
                           <div className="flex items-start justify-between w-full gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">
-                                  {version.label && version.label !== `v${version.number}`
-                                    ? `v${version.number} - ${version.label}`
+                                  {version.name && version.name !== `v${version.number}`
+                                    ? `v${version.number} - ${version.name}`
                                     : `v${version.number}`}
                                 </span>
-                                {index === 0 && (
+                                {version.isLatest && (
                                   <Badge className="bg-green-100 text-green-800 text-xs">
                                     Latest
                                   </Badge>
                                 )}
-                                {currentVersionId === version.id && (
+                                {currentVersionId === version._id && (
                                   <Check className="w-4 h-4 text-purple-600" />
                                 )}
                               </div>
-                              <div className="text-xs text-gray-600 mt-0.5">
-                                {version.fileName}
-                                {version.entryPoint && ` → ${version.entryPoint}`}
-                              </div>
                               <div className="text-xs text-gray-500 mt-0.5">
-                                {version.uploadedAt} • {version.uploadedBy}
+                                {new Date(version.createdAt).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
@@ -918,7 +929,7 @@ export function DocumentViewer({
               </>
             )}
             
-            {!project && <h1 className="font-semibold text-gray-900">homepage-v2.html</h1>}
+            {versions.length === 0 && <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>}
             
             <Badge className={getStatusColor(status)}>
               {status === 'in-review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -971,12 +982,15 @@ export function DocumentViewer({
                   Comments are locked on old versions.
                 </p>
               </div>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 className="bg-purple-600 hover:bg-purple-700"
-                onClick={() => setCurrentVersionId(defaultVersionId)}
+                onClick={() => {
+                  const latestVersion = versions.find(v => v.isLatest);
+                  if (latestVersion) setCurrentVersionId(latestVersion._id);
+                }}
               >
-                Switch to Default (v{project?.versions.find(v => v.id === defaultVersionId)?.number})
+                Switch to Latest (v{versions.find(v => v.isLatest)?.number})
               </Button>
             </div>
           )}
