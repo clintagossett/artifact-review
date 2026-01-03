@@ -735,7 +735,22 @@ export const getAccessById = internalQuery({
     v.null()
   ),
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.accessId);
+    const access = await ctx.db.get(args.accessId);
+    if (!access) return null;
+
+    return {
+      _id: access._id,
+      artifactId: access.artifactId,
+      userId: access.userId,
+      userInviteId: access.userInviteId,
+      createdBy: access.createdBy,
+      lastSentAt: access.lastSentAt,
+      sendCount: access.sendCount,
+      firstViewedAt: access.firstViewedAt,
+      lastViewedAt: access.lastViewedAt,
+      isDeleted: access.isDeleted,
+      deletedAt: access.deletedAt,
+    };
   },
 });
 
