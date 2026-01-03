@@ -2,129 +2,165 @@
 
 **GitHub Issue:** #29
 
-**Goal:** Investigate existing HTML/JS commenting libraries that could be used in Artifact Review for adding comments to HTML and Markdown files rendered in React.
+**Goal:** Investigate existing HTML/JS commenting libraries that could be used in Artifact Review for adding comments to complex HTML artifacts with text, images, charts, SVGs, and Mermaid diagrams.
+
+---
 
 ## Research Summary
 
-A comprehensive research agent reviewed 20+ commenting and annotation libraries across 6 categories:
-
-### Categories Researched
-
-1. **Specialized Annotation & Commenting Libraries** (Hypothesis, Genius, Annotator.js, Recogito)
-2. **Blog/Forum-Style Comment Systems** (Utterances, Commento, Disqus, react-comments-section)
-3. **Rich Text Editors with Commenting** (Tiptap, Slate, Quill, Lexical)
-4. **Real-Time Collaboration** (Liveblocks, Yjs)
-5. **Medium-Like Side Comments** (Side Comments, comment-on-highlight)
-6. **Document Review Specific** (Review Board, doc-review)
+Comprehensive research of 20+ commenting and annotation libraries resulted in narrowing to **4 final options** that meet constraints:
+- ✅ 100% open source (no vendor lock-in)
+- ✅ Own your data (no external services)
+- ✅ W3C Web Annotation compliant
+- ✅ Support mixed content (text, images, SVGs)
+- ✅ React compatible
 
 ---
 
-## Key Findings: Common Features Across Libraries
+## Final Four Options
 
-### Universal Features
-- **Text Highlighting/Selection** - Most libraries support selecting text and adding comments
-- **Threading/Replies** - Many support nested/threaded discussions (though some require custom implementation)
-- **User Attribution** - Author name and avatar support
-- **Timestamps** - When comments were created/modified
-- **Persistence** - Most assume backend storage (database)
+**Your artifact type:** Complex HTML with text, images, charts, tables, SVG/Mermaid diagrams
+**Primary requirement:** Strong text annotation with image/SVG region support
 
-### Advanced Features (Varying Support)
-- **Markdown Support** - Tiptap, Lexical, Quill (Delta), Genius, Utterances excel here
-- **Real-Time Sync** - Liveblocks, Yjs, Lexical, Tiptap have built-in collaboration
-- **Mentions (@notifications)** - Liveblocks has this natively
-- **Rich Text Formatting** - Tiptap, Quill, Lexical support WYSIWYG
-- **Side Margin Comments** - Recogito, Side Comments, Hypothesis feature this
-- **React Integration** - Tiptap, Lexical, Liveblocks have native React components
+**Critical Context:** You already have threading and comment display built. You need the **annotation/selection layer** (selecting text/regions in HTML and associating them with existing comments).
+
+| Tool | Purpose | What You Build | Complexity | Time | Best For |
+|------|---------|---|---|---|---|
+| **Apache Annotator** | Core selector logic | UI, storage, display, threading | Medium | 2-3 weeks | Mixed content, modern React |
+| **Annotator.js** | Complete solution | Minimal—just Convex backend | Low | 1-2 weeks | Text-focused, quick launch |
+| **Annotorious** | Image annotation | Unified UI for text+images | Medium | 2-3 weeks | SVG/image-primary projects |
+| **Custom React** | Build from scratch | Everything from the ground up | High | 3-4 weeks | Maximum control, no constraints |
 
 ---
 
-## Top 3 Recommendations for Artifact Review
+## Option Details
 
-### 🥇 **Best Match: Tiptap + Liveblocks**
-- **Tiptap:** Modern editor framework with native Markdown and HTML support
-- **Liveblocks:** Production-ready comment components with threading, mentions, real-time sync
-- **Pros:** Complete solution, excellent React integration, scalable
-- **Cons:** External service dependency (Liveblocks), higher complexity
-- **Best for:** Full-featured artifact review with multiplayer support
+### 🥇 Apache Annotator
+**Core selector logic framework**
 
-### 🥈 **Alternative: Recogito + Custom Backend**
-- **Recogito:** Purpose-built for text annotation with React components
-- **Backend:** Custom Convex implementation for comments
-- **Pros:** Lighter weight, lower cost, W3C standards-based
-- **Cons:** Need to build threading and persistence
-- **Best for:** Focused annotation workflow without real-time collaboration
+What you get:
+- Proven algorithms for creating and anchoring selectors
+- Handles TextQuoteSelector, SVGSelector, RangeSelector, FragmentSelector
+- Works with mixed content (text, images, SVGs)
+- Modern JavaScript/TypeScript
+- No jQuery dependencies
 
-### 🥉 **Lightweight: comment-on-highlight + Custom Backend**
-- **Library:** Pure React, no dependencies, Medium-like UX
-- **Backend:** Custom Convex implementation
-- **Pros:** Minimal complexity, full control, lightweight
-- **Cons:** Basic feature set, need custom threading/persistence
-- **Best for:** MVP or simple review workflow
+What you build:
+- React UI components
+- Comment display/threading
+- Storage layer (Convex mutations)
+- Integration glue code
+
+**Good for:** You want modern tech stack + full control + mixed content support
+**Risk:** More code to write, more to maintain
 
 ---
 
-## Common Features Needed for Artifact Review
+### 🥈 Annotator.js
+**Complete annotation application**
 
-### Must-Haves
-- ✅ Text selection and commenting
-- ✅ Thread/reply support
-- ✅ User attribution (author, avatar)
-- ✅ Timestamps
-- ✅ Edit/delete capability
-- ✅ Both HTML and Markdown support
+What you get:
+- Full UI out-of-the-box
+- Comment display, threading, user management
+- Works with text and DOM
+- 10+ years of production use (MIT, Harvard, edX, Hypothes.is with 5M+ annotations)
+- W3C compliant
+- Battle-tested reliability
 
-### Nice-to-Haves
-- ⭐ Real-time multiplayer
-- ⭐ Mentions/notifications
-- ⭐ Side margin indicators
-- ⭐ Rich text formatting in comments
-- ⭐ Emoji reactions
+What you build:
+- Just custom Convex backend integration
+- Styling/theming to match your design
+
+**Good for:** You want to move fast, proven reliability, text is primary
+**Risk:** jQuery dependency (legacy), less ideal for SVG regions
 
 ---
 
-## Filtering by Your Constraints
+### 🥉 Annotorious
+**Complete image/SVG annotation**
 
-### Open Source Only (No Vendor Lock-In)
-❌ Disqualified: Liveblocks (SaaS), Disqus (proprietary)
-✅ Qualified: Recogito, Annotator.js, Tiptap, Slate, Quill, Lexical, Apache Annotator, Hypothes.is
+What you get:
+- Full image annotation UI
+- SVG region selection and highlighting
+- Works with high-resolution images via IIIF
+- React components available
+- W3C compliant
+- Part of same ecosystem as Annotator.js
 
-### Own Your Data (No External Backend)
-❌ Disqualified: Liveblocks (requires service), Utterances (GitHub-dependent)
-✅ Qualified: All open-source options that let you build custom Convex backend
+What you build:
+- Text annotation layer (use Annotator.js or custom)
+- Unified comment UI for both text and images
+- Convex backend integration
 
-### Recommended Approach with Your Constraints
+**Good for:** SVG/image regions are primary need, complex diagrams
+**Risk:** Opposite problem—text annotation not as strong
 
-**🥇 Best Match: Recogito + W3C Web Annotation Standard**
-- **Recogito:** Pure React, open-source, built for text annotation
-- **Standard:** Follow W3C Web Annotation Data Model for portable data
-- **Backend:** Build custom Convex API following W3C Protocol spec
-- **Licensing:** Open source (no dependencies on proprietary libraries)
-- **Data:** 100% owned, stored in your Convex database
-- **Portability:** W3C standard means annotations can move to other systems
+---
 
-**🥈 Alternative: Apache Annotator + Custom UI**
-- **Apache Annotator:** Framework for selector logic (don't reinvent)
-- **Custom UI:** Build comment components in React
-- **Standard:** W3C Web Annotation format
-- **Backend:** Custom Convex backend with W3C Protocol support
-- **Advantage:** Maximum control, reuse proven selector algorithms
+### Custom React + W3C
+**Build from scratch**
 
-**🥉 Lightweight: Custom React Component + W3C Standard**
-- **Base:** comment-on-highlight style with W3C data model
-- **Format:** Store annotations as W3C JSON-LD
-- **Backend:** Custom Convex implementation
-- **Advantage:** Smallest library footprint, full control
+What you get:
+- Absolute flexibility
+- No library constraints
+- Modern JavaScript throughout
+- Full control of UX/DX
 
-## Key W3C Adoption Points
+What you build:
+- Text selection handler
+- SVG/image region selection
+- Comment UI and display
+- Threading logic
+- Convex backend
+- Selector anchoring (text relocation)
 
-1. **Use JSON-LD format** - Standard, semantic, future-proof
-2. **Implement Selectors** - TextQuoteSelector (text), SVG Selector (highlights)
-3. **Core Metadata** - creator, created, modified, purpose properties
-4. **Threading** - Add `inReplyTo` property for reply relationships
-5. **Data Portability** - Annotations stay separate from documents, exportable
+**Good for:** No constraints fit, you need completely custom behavior
+**Risk:** Significant development effort, selector logic is hard to get right
 
-See `research-output.md` for:
-- Detailed W3C Web Annotation standard overview
-- List of open-source W3C implementations
-- Data portability and interoperability benefits
-- Production examples (Hypothes.is, IIIF Consortium, etc.)
+---
+
+## Key W3C Web Annotation Benefits
+
+All four options support W3C standard for future-proofing:
+
+1. **Data Portability** - Annotations can move to other systems
+2. **Interoperability** - Different tools can read the same data
+3. **Standards Compliance** - Neutral standard maintained by W3C
+4. **Industry Adoption** - 40+ cultural heritage institutions (IIIF), MIT, Harvard, etc.
+
+**Data format (JSON-LD):**
+```json
+{
+  "@context": "http://www.w3.org/ns/anno.jsonld",
+  "id": "anno1",
+  "type": "Annotation",
+  "created": "2024-01-03T12:30:00Z",
+  "creator": { "id": "user1", "name": "Alice" },
+  "body": { "type": "TextualBody", "value": "Comment text" },
+  "target": {
+    "source": "artifact-id",
+    "selector": {
+      "type": "TextQuoteSelector",
+      "exact": "highlighted text",
+      "prefix": "before ",
+      "suffix": " after"
+    }
+  },
+  "inReplyTo": "anno0" // for threading
+}
+```
+
+---
+
+## Next Steps
+
+1. **Decision task** - Research and evaluate these 4 options specifically
+2. **Prototype spikes** - Test 2-3 approaches with real artifacts
+3. **Make decision** - Choose based on tradeoffs
+4. **Start implementation** - Create follow-up task
+
+See `research-output.md` for detailed information on:
+- W3C Web Annotation standard deep dive
+- Each library's features and architecture
+- Production examples and use cases
+- Implementation guidance
