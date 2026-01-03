@@ -52,17 +52,14 @@ export async function requireCommentPermission(
   }
 
   // Check if user is an invited reviewer
-  // NOTE: We use withIndex + .some() because there's no index on userId
-  // The by_artifact_active index narrows the search first
-  const reviewers = await ctx.db
-    .query("artifactReviewers")
-    .withIndex("by_artifactId_active", (q) =>
-      q.eq("artifactId", artifact._id).eq("isDeleted", false)
+  const access = await ctx.db
+    .query("artifactAccess")
+    .withIndex("by_artifactId_userId", (q) =>
+      q.eq("artifactId", artifact._id).eq("userId", userId)
     )
-    .collect();
+    .unique();
 
-  const isReviewer = reviewers.some((r) => r.userId === userId);
-  if (isReviewer) {
+  if (access && !access.isDeleted) {
     return "can-comment";
   }
 

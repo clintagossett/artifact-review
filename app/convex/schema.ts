@@ -16,7 +16,7 @@ import { v } from "convex/values";
  *   └── artifacts (1:N - user creates many artifacts)
  *         ├── artifactVersions (1:N - artifact has many versions)
  *         │     └── artifactFiles (1:N - version has many files, for ZIP type only)
- *         └── artifactReviewers (1:N - artifact has many invited reviewers)
+ *         └── artifactAccess (1:N - artifact has many access grants for reviewers)
  * ```
  *
  * ## Key Design Decisions
@@ -54,8 +54,8 @@ const schema = defineSchema({
    *
    * ## Relationships
    * - `artifacts.createdBy` -> users._id (1:N - user owns many artifacts)
-   * - `artifactReviewers.invitedBy` -> users._id (1:N - user invites reviewers)
-   * - `artifactReviewers.userId` -> users._id (1:N - user is invited to artifacts)
+   * - `artifactAccess.createdBy` -> users._id (1:N - user grants access to reviewers)
+   * - `artifactAccess.userId` -> users._id (1:N - user has access to artifacts)
    *
    * @see convex/auth.ts - Authentication configuration
    * @see convex/users.ts - User queries and mutations
@@ -131,14 +131,14 @@ const schema = defineSchema({
    *
    * ## Access Model
    * - **Owner**: Full control (creatorId matches authenticated user)
-   * - **Reviewer**: Can view/comment (invited via artifactReviewers)
+   * - **Reviewer**: Can view/comment (invited via artifactAccess)
    * - **Public**: Can view via shareToken URL (no auth required)
    *
    * ## URL Pattern
    * Artifacts are accessed at `/a/{shareToken}` (e.g., `/a/abc123xy`)
    *
    * @see convex/artifacts.ts - CRUD operations
-   * @see convex/sharing.ts - Reviewer invitations and permissions
+   * @see convex/access.ts - Access grants and permissions
    */
   artifacts: defineTable({
     /**
@@ -482,125 +482,6 @@ const schema = defineSchema({
      * @example ctx.db.query("artifactFiles").withIndex("by_versionId_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
      */
     .index("by_versionId_active", ["versionId", "isDeleted"]),
-
-  // ============================================================================
-  // ARTIFACT REVIEWERS TABLE
-  // ============================================================================
-  /**
-   * Email invitations for artifact collaboration.
-   *
-   * ## Purpose
-   * Tracks who has been invited to review/comment on artifacts.
-   * Supports invite-before-signup pattern where invitees may not have accounts yet.
-   *
-   * ## Lifecycle
-   * - **Created**: `sharing.inviteReviewer` mutation (triggers email via Resend)
-   * - **Updated**: `sharing.linkPendingInvitations` links userId when invitee signs up
-   * - **Deleted**: `sharing.removeReviewer` soft-deletes the invitation
-   *
-   * ## Invitation Flow (ADR 0010)
-   * 1. Owner invites `reviewer@email.com` -> record created with `userId: null`, `status: "pending"`
-   * 2. Email sent via Resend with artifact link
-   * 3. If invitee already has account -> `userId` set immediately, `status: "accepted"`
-   * 4. If invitee signs up later -> auth callback links via `linkPendingInvitations`
-   *
-   * ## Permission Levels
-   * Currently only one level exists:
-   * - `can-comment`: Can view artifact and add comments (future feature)
-   *
-   * @see convex/sharing.ts - Invitation CRUD and permission checks
-   * @see convex/auth.ts - Account linking callback
-   * @see ADR 0010 - Reviewer Invitation Account Linking
-   */
-  artifactReviewers: defineTable({
-    /**
-     * Reference to the artifact being shared.
-     * One artifact can have many reviewers.
-     */
-    artifactId: v.id("artifacts"),
-
-    /**
-     * Invitee's email address.
-     * Normalized to lowercase for consistent matching.
-     * Primary identifier before user account exists.
-     */
-    email: v.string(),
-
-    /**
-     * Reference to user account, if invitee has signed up.
-     * Null when invitation is pending (user hasn't created account yet).
-     * Linked automatically when user signs up with matching email.
-     */
-    userId: v.union(v.id("users"), v.null()),
-
-    /**
-     * Reference to user who sent the invitation.
-     * Always the artifact owner (enforced by mutation).
-     */
-    invitedBy: v.id("users"),
-
-    /**
-     * Timestamp when invitation was created/sent.
-     * Unix timestamp in milliseconds.
-     */
-    invitedAt: v.number(),
-
-    /**
-     * Invitation status.
-     * - `pending`: Email sent, waiting for user to sign up or click link
-     * - `accepted`: User has account and can access artifact
-     *
-     * Note: Status changes from pending to accepted when userId is linked.
-     */
-    status: v.union(v.literal("pending"), v.literal("accepted")),
-
-    /**
-     * Soft deletion flag.
-     * When true, invitation is revoked (reviewer loses access).
-     * @see ADR 0011 - Soft Delete Strategy
-     */
-    isDeleted: v.boolean(),
-
-    /**
-     * Timestamp when invitation was revoked.
-     * Unix timestamp in milliseconds.
-     */
-    deletedAt: v.optional(v.number()),
-  })
-    /**
-     * List all reviewers for an artifact (including deleted).
-     * Used for admin views and debugging.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId", q => q.eq("artifactId", artifactId))
-     */
-    .index("by_artifactId", ["artifactId"])
-
-    /**
-     * List active reviewers for artifact settings UI.
-     * Excludes revoked invitations.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
-     */
-    .index("by_artifactId_active", ["artifactId", "isDeleted"])
-
-    /**
-     * Check if email is already invited to artifact.
-     * Used to prevent duplicate invitations.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId_email", q => q.eq("artifactId", artifactId).eq("email", "user@example.com"))
-     */
-    .index("by_artifactId_email", ["artifactId", "email"])
-
-    /**
-     * Find pending invitations for an email address.
-     * Used by auth callback to link invitations when user signs up.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_email", q => q.eq("email", "user@example.com"))
-     */
-    .index("by_email", ["email"])
-
-    /**
-     * List artifacts a user has been invited to.
-     * Used for "Shared with me" view (future feature).
-     * @example ctx.db.query("artifactReviewers").withIndex("by_userId", q => q.eq("userId", userId))
-     */
-    .index("by_userId", ["userId"]),
 
   // ============================================================================
   // COMMENTS

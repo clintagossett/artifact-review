@@ -29,7 +29,7 @@ export function ArtifactViewerPage({
   // Check user authentication and permission
   const currentUser = useQuery(api.users.getCurrentUser);
   const userPermission = useQuery(
-    api.sharing.getUserPermission,
+    api.access.getPermission,
     artifact ? { artifactId: artifact._id } : "skip"
   );
 
@@ -151,6 +151,7 @@ export function ArtifactViewerPage({
         versionId={targetVersion._id}
         artifactOwnerId={artifact.createdBy}
         convexUrl={convexUrl}
+        userPermission={userPermission}
       />
 
       <ShareModal

@@ -183,7 +183,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       // 2. Returns null if: !hasPermission
       // 3. Permission check includes:
       //    - Owner: artifact.creatorId === userId
-      //    - Reviewer: user in artifactReviewers
+      //    - Reviewer: user in artifactAccess
       //    - Public: artifact exists and not deleted (shareToken)
       expect(true).toBe(true);
     });

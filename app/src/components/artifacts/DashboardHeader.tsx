@@ -14,7 +14,6 @@ import { useAuthActions } from "@convex-dev/auth/react";
 
 export interface DashboardHeaderProps {
   onUploadClick: () => void;
-  onInviteClick?: () => void;
   userEmail?: string;
   userName?: string;
 }
@@ -24,7 +23,6 @@ export interface DashboardHeaderProps {
  */
 export function DashboardHeader({
   onUploadClick,
-  onInviteClick,
   userEmail,
   userName,
 }: DashboardHeaderProps) {
@@ -45,19 +43,6 @@ export function DashboardHeader({
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          {/* Invite Team - Hidden on small screens */}
-          {onInviteClick && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onInviteClick}
-              className="hidden md:flex"
-            >
-              <User className="mr-1 h-4 w-4" />
-              Invite Team
-            </Button>
-          )}
-
           {/* Upload Button */}
           <Button
             size="sm"

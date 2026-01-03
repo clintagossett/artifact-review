@@ -47,16 +47,24 @@ export function ShareModal({ isOpen, onClose, artifact, initialReviewers }: Shar
 
   // Query reviewers from backend - skip when modal is closed
   const backendReviewers = useQuery(
-    api.sharing.getReviewers,
+    api.access.listReviewers,
     isOpen ? { artifactId: artifact._id } : "skip"
   );
 
-  // Use backend data if available, otherwise fall back to mock data
-  const reviewers = backendReviewers ?? initialReviewers ?? [];
+  // Map access.listReviewers response to expected Reviewer shape
+  const reviewers = backendReviewers
+    ? backendReviewers.map((access) => ({
+        _id: access.accessId,
+        email: access.email,
+        status: access.status,
+        invitedAt: access.lastSentAt, // Use lastSentAt as closest to invitedAt
+        user: { name: access.displayName !== access.email ? access.displayName : undefined },
+      }))
+    : initialReviewers ?? [];
 
   // Mutations
-  const inviteReviewer = useMutation(api.sharing.inviteReviewer);
-  const removeReviewer = useMutation(api.sharing.removeReviewer);
+  const inviteReviewer = useMutation(api.access.grant);
+  const removeReviewer = useMutation(api.access.revoke);
 
   // Loading states
   const isLoadingReviewers = backendReviewers === undefined && !initialReviewers;
@@ -95,7 +103,7 @@ export function ShareModal({ isOpen, onClose, artifact, initialReviewers }: Shar
 
     try {
       await removeReviewer({
-        reviewerId: id as Id<"artifactReviewers">,
+        accessId: id as Id<"artifactAccess">,
       });
 
       toast({

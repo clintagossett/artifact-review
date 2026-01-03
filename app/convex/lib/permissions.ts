@@ -45,15 +45,14 @@ export async function getArtifactPermission(
 
   // Reviewer check
   if (userId) {
-    const reviewer = await ctx.db
-      .query("artifactReviewers")
-      .withIndex("by_artifactId_active", (q) =>
-        q.eq("artifactId", artifactId).eq("isDeleted", false)
+    const access = await ctx.db
+      .query("artifactAccess")
+      .withIndex("by_artifactId_userId", (q) =>
+        q.eq("artifactId", artifactId).eq("userId", userId)
       )
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .first();
+      .unique();
 
-    if (reviewer) {
+    if (access && !access.isDeleted) {
       return "reviewer";
     }
   }

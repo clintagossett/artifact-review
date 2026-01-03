@@ -85,6 +85,7 @@ interface DocumentViewerProps {
   versionId: Id<"artifactVersions">;
   artifactOwnerId: Id<"users">; // For delete permissions
   convexUrl: string;
+  userPermission?: "owner" | "can-comment" | null;
 }
 
 
@@ -100,13 +101,29 @@ export function DocumentViewer({
   versionNumber,
   versionId,
   artifactOwnerId,
-  convexUrl
+  convexUrl,
+  userPermission
 }: DocumentViewerProps) {
   const router = useRouter();
 
   // Get current user for permission checks
   const currentUser = useQuery(api.users.getCurrentUser);
   const currentUserId = currentUser?._id;
+
+  // Determine if current user is owner
+  const isOwner = userPermission === "owner";
+
+  /**
+   * Show browser alert for permission-restricted actions
+   */
+  const showPermissionModal = (action: 'upload' | 'share' | 'manage') => {
+    const messages = {
+      upload: 'Only the artifact owner can upload a new version.',
+      share: 'Only the artifact owner can share this artifact.',
+      manage: 'Only the artifact owner can manage this artifact.',
+    };
+    window.alert(messages[action]);
+  };
 
   // Fetch comments from backend
   const backendComments = useComments(versionId);
@@ -938,7 +955,13 @@ export function DocumentViewer({
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-purple-600"
-                        onClick={onNavigateToVersions}
+                        onClick={() => {
+                          if (!isOwner) {
+                            showPermissionModal('upload');
+                            return;
+                          }
+                          onNavigateToVersions?.();
+                        }}
                       >
                         <Upload className="w-4 h-4 mr-2" />
                         Upload New Version
@@ -959,13 +982,33 @@ export function DocumentViewer({
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               {onNavigateToShare && (
-                <Button variant="outline" size="sm" onClick={onNavigateToShare}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!isOwner) {
+                      showPermissionModal('share');
+                      return;
+                    }
+                    onNavigateToShare();
+                  }}
+                >
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
               )}
               {onNavigateToSettings && (
-                <Button variant="outline" size="sm" onClick={onNavigateToSettings}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!isOwner) {
+                      showPermissionModal('manage');
+                      return;
+                    }
+                    onNavigateToSettings();
+                  }}
+                >
                   <Settings className="w-4 h-4 mr-2" />
                   Manage
                 </Button>

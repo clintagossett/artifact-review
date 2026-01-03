@@ -81,15 +81,14 @@ describe("Read Permission Helpers", () => {
         });
       });
 
-      // Invite reviewer
+      // Invite reviewer (Path A: existing user, no userInvite needed)
       await t.run(async (ctx) => {
-        return await ctx.db.insert("artifactReviewers", {
+        return await ctx.db.insert("artifactAccess", {
           artifactId,
-          email: "reviewer@example.com",
           userId: reviewerId,
-          invitedBy: ownerId,
-          invitedAt: Date.now(),
-          status: "accepted",
+          createdBy: ownerId,
+          lastSentAt: Date.now(),
+          sendCount: 1,
           isDeleted: false,
         });
       });

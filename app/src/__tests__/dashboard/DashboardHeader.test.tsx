@@ -13,7 +13,6 @@ vi.mock("@convex-dev/auth/react", () => ({
 describe("DashboardHeader", () => {
   const defaultProps = {
     onUploadClick: vi.fn(),
-    onInviteClick: vi.fn(),
     userEmail: "user@example.com",
     userName: "John Doe",
   };
@@ -48,38 +47,6 @@ describe("DashboardHeader", () => {
     await user.click(uploadButton);
 
     expect(handleUpload).toHaveBeenCalledTimes(1);
-  });
-
-  it("should render invite team button on desktop", () => {
-    render(<DashboardHeader {...defaultProps} />);
-
-    const inviteButton = screen.getByRole("button", { name: /invite team/i });
-    expect(inviteButton).toBeInTheDocument();
-  });
-
-  it("should call onInviteClick when invite button clicked", async () => {
-    const user = userEvent.setup();
-    const handleInvite = vi.fn();
-
-    render(<DashboardHeader {...defaultProps} onInviteClick={handleInvite} />);
-
-    const inviteButton = screen.getByRole("button", { name: /invite team/i });
-    await user.click(inviteButton);
-
-    expect(handleInvite).toHaveBeenCalledTimes(1);
-  });
-
-  it("should not render invite button when onInviteClick not provided", () => {
-    render(
-      <DashboardHeader
-        onUploadClick={defaultProps.onUploadClick}
-        userEmail={defaultProps.userEmail}
-        userName={defaultProps.userName}
-      />
-    );
-
-    const inviteButton = screen.queryByRole("button", { name: /invite team/i });
-    expect(inviteButton).not.toBeInTheDocument();
   });
 
   it("should render user menu trigger", () => {

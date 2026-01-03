@@ -126,18 +126,17 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
     })
   );
 
-  // Add Bob as reviewer (accepted status)
-  await asOwner.run(async (ctx) =>
-    await ctx.db.insert("artifactReviewers", {
+  // Add Bob as reviewer (Path A: existing user, no userInvite needed)
+  await asOwner.run(async (ctx) => {
+    await ctx.db.insert("artifactAccess", {
       artifactId,
-      email: "bob@example.com",
       userId: reviewerId,
-      invitedBy: ownerId,
-      invitedAt: now,
-      status: "accepted" as const,
+      createdBy: ownerId,
+      lastSentAt: now,
+      sendCount: 1,
       isDeleted: false,
-    })
-  );
+    });
+  });
 
   return { ownerId, reviewerId, outsiderId, artifactId, versionId };
 }
@@ -346,17 +345,19 @@ describe.skip("Permission Helpers", () => {
       );
 
       const asOwner = t.withIdentity({ subject: ownerId });
-      await asOwner.run(async (ctx) =>
-        await ctx.db.insert("artifactReviewers", {
-          artifactId: (await ctx.db.get(versionId))!.artifactId,
-          email: "reviewer2@example.com",
+      await asOwner.run(async (ctx) => {
+        const artifactId = (await ctx.db.get(versionId))!.artifactId;
+
+        // Add reviewer2 (Path A: existing user, no userInvite needed)
+        await ctx.db.insert("artifactAccess", {
+          artifactId,
           userId: reviewer2Id,
-          invitedBy: ownerId,
-          invitedAt: Date.now(),
-          status: "accepted" as const,
+          createdBy: ownerId,
+          lastSentAt: Date.now(),
+          sendCount: 1,
           isDeleted: false,
-        })
-      );
+        });
+      });
 
       // Create a comment by reviewer 1
       const asReviewer = t.withIdentity({ subject: reviewerId });
