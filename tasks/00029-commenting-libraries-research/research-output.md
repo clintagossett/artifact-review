@@ -1,5 +1,118 @@
 # Comprehensive Research: HTML & JavaScript Commenting Libraries for Artifact Review
 
+---
+
+# 🎯 W3C WEB ANNOTATION STANDARD
+
+## Overview: The Open Standard for Portable Annotations
+
+The **Web Annotation Data Model** is a W3C Recommendation (published 2017) that provides a universal, standardized format for describing annotations. It solves the data portability and vendor lock-in problem that has plagued annotation systems.
+
+### What Problems Does It Solve?
+
+- **Vendor Lock-In:** Before W3C, each platform used proprietary formats → comments trapped in one system
+- **Data Portability:** Annotations can't move between platforms or devices
+- **Interoperability:** Different tools can't read each other's annotations
+- **User Control:** Publishers control annotation data, not users
+
+The W3C standard enables: **portable data, interoperability, and user control**.
+
+### Core Data Structure (JSON-LD Format)
+
+```json
+{
+  "@context": "http://www.w3.org/ns/anno.jsonld",
+  "id": "http://example.org/anno1",
+  "type": "Annotation",
+  "created": "2024-01-03T12:30:00Z",
+  "creator": {
+    "id": "http://example.org/user1",
+    "name": "Alice"
+  },
+  "body": {
+    "type": "TextualBody",
+    "value": "This is a comment",
+    "format": "text/plain",
+    "purpose": "commenting"
+  },
+  "target": {
+    "source": "http://example.org/artifact",
+    "selector": {
+      "type": "TextQuoteSelector",
+      "exact": "highlighted text",
+      "prefix": "context before ",
+      "suffix": " context after"
+    }
+  }
+}
+```
+
+### Key Components
+
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| **Annotation** | Root resource with id, metadata | Each comment is one Annotation |
+| **Creator** | User/machine that created it | { id, name } |
+| **Created/Modified** | ISO 8601 timestamps | "2024-01-03T12:30:00Z" |
+| **Body** | The comment content | TextualBody, ImageBody, etc. |
+| **Target** | What's being annotated | Resource URI + Selector |
+| **Selector** | Exactly which part is annotated | TextQuoteSelector, SVGSelector, etc. |
+| **Purpose** | Why annotation was created | "commenting", "highlighting", "tagging" |
+
+### Key Selectors for Your Use Case
+
+**TextQuoteSelector** - For text fragments:
+- `exact`: The exact text being highlighted
+- `prefix`/`suffix`: Context (before/after) for robustness when text changes
+- Perfect for comments on HTML/Markdown content
+
+**SVGSelector** - For visual highlights:
+- Rectangular regions, non-rectangular shapes
+- Works with image content and rendered pages
+
+**FragmentSelector** - For media:
+- Time ranges in audio/video
+- Page numbers in PDFs
+
+### Threading & Replies
+
+W3C doesn't formally standardize threading, but implementations use:
+- `inReplyTo` property: Links reply to parent annotation
+- `motivation: "replying"` for explicit reply purpose
+- Array of replies as custom property
+
+### Why This Matters for Artifact Review
+
+1. **Future-Proof:** W3C is neutral, maintained by standards body
+2. **Data Ownership:** Annotations stored in your Convex database, no external service
+3. **Interoperability:** Users can export annotations and use them elsewhere
+4. **No Vendor Lock-In:** Multiple tools can read W3C-compliant annotations
+5. **Industry Support:** 40+ cultural heritage institutions use it (IIIF), MIT, Harvard, etc.
+
+### Open Source Implementations Using W3C
+
+| Library | Language | Purpose | React Support | Status |
+|---------|----------|---------|---------------|--------|
+| **Recogito** | JS | Text annotation | Native | Active ✅ |
+| **Annotator.js** | JS | General annotation | Via wrapper | Mature ✅ |
+| **Annotorious** | JS/React | Image annotation | Native | Active ✅ |
+| **Apache Annotator** | JS/TS | Selector framework | Yes | Incubating ✅ |
+| **Hypothes.is** | JS/Python | Production platform | Internal | Active ✅ |
+| **Anno4j** | Java | Backend services | No | Active ✅ |
+
+### Recommended W3C Implementation for Your Case
+
+**Don't build from scratch.** Use Apache Annotator for selector logic (proven, battle-tested), wrap with custom React UI, store in Convex using W3C JSON-LD format.
+
+Benefits:
+- Reuse proven selector algorithms
+- Standard format means future flexibility
+- Community ecosystem (MIT, Harvard, cultural heritage)
+- Can migrate to other W3C tools if needed
+- Annotations remain useful 10+ years from now
+
+---
+
 ## 1. SPECIALIZED ANNOTATION & COMMENTING LIBRARIES
 
 ### **Hypothesis (hypothes.is)**
@@ -201,70 +314,95 @@
 
 ---
 
-## TOP 3 RECOMMENDATIONS
+## TOP RECOMMENDATIONS (Open Source + Data Ownership)
 
-### 🥇 **Tiptap + Liveblocks** (Best for Full-Featured Review)
+### 🥇 **Recogito + Apache Annotator + W3C Standard** (Best Match)
 **Why:**
-- Tiptap: Modern, native Markdown/HTML, extensible
-- Liveblocks: Production-ready comments, threading, mentions
-- Both: Excellent React integration, actively maintained
+- ✅ 100% open source, no vendor lock-in
+- ✅ Own your data, all in Convex
+- ✅ Recogito: React-native, text annotation focused
+- ✅ Apache Annotator: Proven selector logic, don't reinvent
+- ✅ W3C Standard: Portable, interoperable, future-proof
+- ✅ Production-proven: Used by MIT, Harvard, IIIF Consortium
+
+**Data Model:**
+- Store comments as W3C JSON-LD in Convex
+- TextQuoteSelector for precise text references
+- inReplyTo property for threading
 
 **Architecture:**
 ```
-Artifact (HTML/MD) → Tiptap Viewer
-                  → Liveblocks Comments Component
-                  → Convex Backend
+Artifact (HTML/MD)
+    ↓
+Recogito Text Annotator (React component)
+    ↓
+Custom Convex mutations for W3C storage
+    ↓
+Custom React UI for comment display/threading
 ```
 
-**Complexity:** High | **Cost:** Medium-High | **Time:** 3-4 weeks
+**Complexity:** Medium | **Cost:** None (all open source) | **Time:** 2-3 weeks
 
 ---
 
-### 🥈 **Recogito + Custom Backend** (Best for Annotation Focus)
+### 🥈 **Custom React Component + W3C Standard** (Lightweight MVP)
 **Why:**
-- Lightweight, annotation-first design
-- Native React, standards-based
-- Lower cost, full control
+- ✅ Minimal dependencies, maximum control
+- ✅ Pure open source, no external libraries required
+- ✅ 100% data ownership
+- ✅ Medium-like UX (familiar to users)
+- ✅ Easiest to customize for your brand
+
+**Data Model:**
+- W3C JSON-LD for annotations
+- TextQuoteSelector with prefix/suffix for robustness
+- Custom inReplyTo threading
 
 **Architecture:**
 ```
-Artifact → Recogito Text Annotator
-        → Custom React Comment Threading
-        → Convex Backend
+Artifact (rendered as HTML)
+    ↓
+Custom React selection handler
+    ↓
+Comment UI (custom React)
+    ↓
+Convex backend (W3C JSON-LD storage)
 ```
 
-**Complexity:** Medium | **Cost:** Low | **Time:** 2-3 weeks
+**Complexity:** Medium | **Cost:** None | **Time:** 1-2 weeks
 
 ---
 
-### 🥉 **comment-on-highlight + Custom Backend** (Best for MVP)
+### 🥉 **Annotator.js + W3C Standard** (Most Mature)
 **Why:**
-- Zero dependencies, pure React
-- Medium-like UX familiar to users
-- Fastest to implement
+- ✅ Open source, battle-tested
+- ✅ Already W3C compliant
+- ✅ 10+ year track record (Hypothes.is, edX, MIT)
+- ✅ Works with HTML, text, images
+- ⚠️ jQuery dependency (legacy, but works)
 
-**Architecture:**
-```
-Artifact (rendered HTML) → comment-on-highlight Component
-                        → Custom Threading UI
-                        → Convex Backend
-```
+**Data Model:**
+- Native W3C Web Annotation support
+- Can use with Convex backend
 
-**Complexity:** Medium (transparent) | **Cost:** Minimal | **Time:** 1-2 weeks
+**Complexity:** Medium-High | **Cost:** None | **Time:** 2-3 weeks
 
 ---
 
-## DECISION MATRIX
+## DECISION MATRIX (Open Source + Data Ownership)
 
-| Criteria | Tiptap+Liveblocks | Recogito+Custom | comment-on-highlight+Custom |
-|----------|-------------------|-----------------|------------------------------|
-| Feature Completeness | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| React Integration | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| Real-time Multiplayer | ⭐⭐⭐⭐⭐ | ❌ | ❌ |
-| Implementation Speed | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| Total Cost | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| Learning Curve | ⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Long-term Maintainability | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| Criteria | Recogito+Apache Annotator | Custom React+W3C | Annotator.js+W3C |
+|----------|--------------------------|------------------|------------------|
+| Open Source | ✅ | ✅ | ✅ |
+| Data Ownership | ✅ | ✅ | ✅ |
+| No External Backend | ✅ | ✅ | ✅ |
+| React Integration | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ (custom wrapper) |
+| Feature Completeness | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| Implementation Speed | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
+| Total Cost | Free | Free | Free |
+| Learning Curve | Medium | Easy | Steep (jQuery) |
+| W3C Compliance | Native | Custom | Native |
+| Long-term Maintainability | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ (battle-tested) |
 
 ---
 
@@ -297,18 +435,86 @@ Once you decide, you'll need:
 
 ---
 
-## PROTOTYPE RECOMMENDATION
+## PROTOTYPE RECOMMENDATION (Spike Strategy)
 
-Before final decision, I recommend:
+Before committing to implementation, prototype both approaches to feel which is best:
 
-1. **Time-box each approach:** 1-2 day spike
-2. **Test with real artifact:** Use HTML and Markdown samples
-3. **Evaluate:**
-   - Developer experience (how intuitive is the API?)
-   - Component styling (how easy to match Artifact Review design?)
-   - Convex integration (how natural is data model?)
-   - Performance (load time, interaction latency)
-4. **Vote:** Which felt most natural to work with?
+### Prototype 1: Recogito + Apache Annotator (4-6 hours)
+- Set up Recogito in React component
+- Test text selection with real artifact
+- Mock comment storage in Convex
+- Evaluate: Does Recogito UX feel right? Easy to integrate?
 
-This will give you empirical data for the decision vs. just theory.
+### Prototype 2: Custom React (2-4 hours)
+- Build basic text selection handler
+- Display comment list
+- Test W3C JSON-LD structure
+- Evaluate: How much code needed? Maintainability?
+
+### Evaluation Criteria
+- Developer experience (intuitive APIs?)
+- Styling ease (match your design system?)
+- W3C compliance (future-proof data format?)
+- Performance with real artifacts
+- Threading simplicity
+
+### Recommendation
+Start with **Recogito** prototype first (less code) to feel how it works. If you want maximum control and simplicity, do the **Custom React** prototype. Pick whichever feels more natural.
+
+---
+
+## W3C DATA SCHEMA FOR ARTIFACT REVIEW
+
+Use this structure in your Convex database for comments:
+
+```typescript
+// In convex/schema.ts
+export default defineSchema({
+  comments: defineTable({
+    // W3C Annotation ID (use artifact + comment hash)
+    annotationId: v.string(),
+
+    // Basic metadata
+    created: v.number(), // timestamp
+    modified: v.number(),
+    creator: v.object({
+      id: v.string(), // user ID
+      name: v.string(),
+    }),
+
+    // Comment body (the actual text)
+    body: v.object({
+      type: v.literal("TextualBody"),
+      value: v.string(), // the comment text
+      format: v.string(), // "text/plain" or "text/html"
+    }),
+
+    // What's being annotated
+    target: v.object({
+      source: v.string(), // artifact ID
+      selector: v.object({
+        type: v.literal("TextQuoteSelector"),
+        exact: v.string(), // exact text selected
+        prefix: v.string(), // context before
+        suffix: v.string(), // context after
+      }),
+    }),
+
+    // Threading
+    inReplyTo: v.optional(v.string()), // parent comment ID
+
+    // Artifact relationship
+    artifactId: v.string(),
+  })
+  .index("by_artifact", ["artifactId"])
+  .index("by_annotation_id", ["annotationId"]),
+});
+```
+
+This structure:
+- Follows W3C standard
+- Supports threading via inReplyTo
+- Indexes for efficient queries
+- Stores exact text + context for robustness
+- Ready to export as JSON-LD
 

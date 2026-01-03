@@ -82,16 +82,49 @@ A comprehensive research agent reviewed 20+ commenting and annotation libraries 
 
 ---
 
-## Next Steps
+## Filtering by Your Constraints
 
-1. **Review recommendations** with product/design team
-2. **Clarify feature priorities:**
-   - Do you need real-time multiplayer commenting?
-   - Side margin vs inline comments preference?
-   - Threading complexity level?
-3. **Prototype evaluation** - Try 2-3 libraries with sample artifacts
-4. **Feature priority** - Decide on must-haves
-5. **Integration path** - Plan Convex backend integration
-6. **Create implementation task** for chosen approach
+### Open Source Only (No Vendor Lock-In)
+❌ Disqualified: Liveblocks (SaaS), Disqus (proprietary)
+✅ Qualified: Recogito, Annotator.js, Tiptap, Slate, Quill, Lexical, Apache Annotator, Hypothes.is
 
-See `research-output.md` for detailed analysis of all 20+ libraries.
+### Own Your Data (No External Backend)
+❌ Disqualified: Liveblocks (requires service), Utterances (GitHub-dependent)
+✅ Qualified: All open-source options that let you build custom Convex backend
+
+### Recommended Approach with Your Constraints
+
+**🥇 Best Match: Recogito + W3C Web Annotation Standard**
+- **Recogito:** Pure React, open-source, built for text annotation
+- **Standard:** Follow W3C Web Annotation Data Model for portable data
+- **Backend:** Build custom Convex API following W3C Protocol spec
+- **Licensing:** Open source (no dependencies on proprietary libraries)
+- **Data:** 100% owned, stored in your Convex database
+- **Portability:** W3C standard means annotations can move to other systems
+
+**🥈 Alternative: Apache Annotator + Custom UI**
+- **Apache Annotator:** Framework for selector logic (don't reinvent)
+- **Custom UI:** Build comment components in React
+- **Standard:** W3C Web Annotation format
+- **Backend:** Custom Convex backend with W3C Protocol support
+- **Advantage:** Maximum control, reuse proven selector algorithms
+
+**🥉 Lightweight: Custom React Component + W3C Standard**
+- **Base:** comment-on-highlight style with W3C data model
+- **Format:** Store annotations as W3C JSON-LD
+- **Backend:** Custom Convex implementation
+- **Advantage:** Smallest library footprint, full control
+
+## Key W3C Adoption Points
+
+1. **Use JSON-LD format** - Standard, semantic, future-proof
+2. **Implement Selectors** - TextQuoteSelector (text), SVG Selector (highlights)
+3. **Core Metadata** - creator, created, modified, purpose properties
+4. **Threading** - Add `inReplyTo` property for reply relationships
+5. **Data Portability** - Annotations stay separate from documents, exportable
+
+See `research-output.md` for:
+- Detailed W3C Web Annotation standard overview
+- List of open-source W3C implementations
+- Data portability and interoperability benefits
+- Production examples (Hypothes.is, IIIF Consortium, etc.)
