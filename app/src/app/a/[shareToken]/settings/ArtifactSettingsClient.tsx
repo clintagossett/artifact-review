@@ -19,10 +19,11 @@ export function ArtifactSettingsClient({ shareToken }: Props) {
   // Fetch real artifact data
   const artifact = useQuery(api.artifacts.getByShareToken, { shareToken });
 
-  // Check user permission
-  const permission = artifact
-    ? useQuery(api.access.getPermission, { artifactId: artifact._id })
-    : undefined;
+  // Check user permission - pass "skip" when artifact is not loaded yet
+  const permission = useQuery(
+    api.access.getPermission,
+    artifact ? { artifactId: artifact._id } : "skip"
+  );
 
   // Read hash fragment and set initial tab
   useEffect(() => {
