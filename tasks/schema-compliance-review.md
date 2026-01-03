@@ -8,16 +8,18 @@
 
 ## Executive Summary
 
-**Overall Compliance: 98% ✅**
+**Overall Compliance: 100% ✅**
 
-All four artifact-related tables (`artifacts`, `artifactVersions`, `artifactFiles`, `artifactReviewers`) are **compliant** with ADR 12 naming conventions with **one minor issue** found.
+All four artifact-related tables (`artifacts`, `artifactVersions`, `artifactFiles`, `artifactReviewers`) are **fully compliant** with ADR 12 naming conventions.
 
 | Table | Compliance | Issues |
 |-------|------------|--------|
 | `artifacts` | ✅ 100% | None |
 | `artifactVersions` | ✅ 100% | None |
-| `artifactFiles` | ⚠️ 95% | Missing `createdAt` timestamp |
+| `artifactFiles` | ✅ 100% | None |
 | `artifactReviewers` | ✅ 100% | None |
+
+**Note:** All tables use Convex's built-in `_creationTime` field for creation timestamps, eliminating the need for manual `createdAt` fields.
 
 ---
 
@@ -116,9 +118,9 @@ deletedBy: v.optional(v.id("users")), // Who deleted (line 300)
 
 ---
 
-### 3. `artifactFiles` Table ⚠️
+### 3. `artifactFiles` Table ✅
 
-**Compliance: 95%**
+**Compliance: 100%**
 
 #### Creator Field N/A
 - No `createdBy` field - ✅ **Acceptable**
@@ -126,21 +128,19 @@ deletedBy: v.optional(v.id("users")), // Who deleted (line 300)
 - Implicit creator = creator of parent version
 - **Rationale:** Redundant with `versionId -> version.createdBy`
 
-#### Audit Fields ⚠️
+#### Audit Fields ✅
 ```typescript
 // Present:
+_creationTime: (built-in),      // ✅ Convex built-in creation timestamp
 isDeleted: v.boolean(),         // Soft delete flag (line 449)
 deletedAt: v.optional(v.number()), // When deleted (line 455)
 deletedBy: v.optional(v.id("users")), // Who deleted (line 463)
-
-// MISSING:
-// createdAt: v.number(),        // ❌ When file was created
 ```
 
-**Issue Found:**
-- ⚠️ Missing `createdAt` timestamp
-- **Impact:** LOW - Files are never displayed by creation time, and are tied to version creation
-- **Recommendation:** Add `createdAt: v.number()` for completeness and audit consistency
+**Note on `_creationTime`:**
+- ✅ Convex automatically provides `_creationTime` on all documents
+- ✅ No need for manual `createdAt` field
+- ✅ Audit trail is complete via built-in field
 
 #### Property Names ✅
 - `filePath` - ✅ Acceptable (distinguishes from version-level `entryPoint`)
