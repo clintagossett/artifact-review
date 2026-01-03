@@ -7,7 +7,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 
 export interface CreateArtifactData {
   file: File;
-  title: string;
+  name: string;
   description?: string;
   entryPoint?: string; // For ZIP files
 }
@@ -64,7 +64,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
 
   const uploadFile = useCallback(
     async (data: CreateArtifactData): Promise<UploadResult> => {
-      const { file, title, description, entryPoint } = data;
+      const { file, name, description, entryPoint } = data;
 
       setIsUploading(true);
       setError(null);
@@ -94,12 +94,11 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
           setUploadProgress(50);
 
           const result = await createArtifact({
-            title,
+            name,
             description,
             fileType,
             content,  // Unified field for Phase 1
             originalFileName: file.name,
-            name: undefined,
           });
 
           setUploadProgress(100);
@@ -115,7 +114,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
           // Step 1: Get upload URL and create artifact/version records
           const { uploadUrl, artifactId, versionId, shareToken } =
             await createArtifactWithZip({
-              title,
+              name,
               description,
               fileSize: file.size,
               entryPoint,

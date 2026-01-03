@@ -22,12 +22,12 @@ import { canViewVersion, canViewArtifact } from "./lib/permissions";
  */
 export const create = action({
   args: {
-    title: v.string(),
+    name: v.string(),
     description: v.optional(v.string()),
     fileType: v.string(),  // Validated at application level
     content: v.string(),   // File content as text
     originalFileName: v.optional(v.string()),
-    name: v.optional(v.string()),
+    versionName: v.optional(v.string()),
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -77,10 +77,10 @@ export const create = action({
       shareToken: string;
     } = await ctx.runMutation(internal.artifacts.createInternal, {
       userId,
-      title: args.title,
+      name: args.name,
       description: args.description,
       fileType: args.fileType,
-      name: args.name,
+      versionName: args.versionName,
       filePath,
       storageId,
       mimeType: getMimeType(args.fileType),
@@ -98,10 +98,10 @@ export const create = action({
 export const createInternal = internalMutation({
   args: {
     userId: v.id("users"),
-    title: v.string(),
+    name: v.string(),
     description: v.optional(v.string()),
     fileType: v.string(),
-    name: v.optional(v.string()),
+    versionName: v.optional(v.string()),
     filePath: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
@@ -119,9 +119,9 @@ export const createInternal = internalMutation({
 
     // Create artifact
     const artifactId = await ctx.db.insert("artifacts", {
-      title: args.title,
+      name: args.name,
       description: args.description,
-      creatorId: args.userId,
+      createdBy: args.userId,
       shareToken,
       isDeleted: false,
       createdAt: now,
@@ -133,7 +133,7 @@ export const createInternal = internalMutation({
       artifactId,
       number: 1,
       createdBy: args.userId,
-      name: args.name,
+      name: args.versionName,
       fileType: args.fileType,
       entryPoint: args.filePath,
       fileSize: args.fileSize,
@@ -172,12 +172,13 @@ export const get = query({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -285,12 +286,13 @@ export const getByShareToken = query({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -321,12 +323,13 @@ export const list = query({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.number(),
     })
@@ -341,8 +344,8 @@ export const list = query({
     // Get user's active artifacts
     return await ctx.db
       .query("artifacts")
-      .withIndex("by_creator_active", (q) =>
-        q.eq("creatorId", userId).eq("isDeleted", false)
+      .withIndex("by_created_by_active", (q) =>
+        q.eq("createdBy", userId).eq("isDeleted", false)
       )
       .collect();
   },
@@ -380,9 +383,9 @@ export const addVersion = action({
     const artifact: {
       _id: Id<"artifacts">;
       _creationTime: number;
-      title: string;
+      name: string;
       description?: string;
-      creatorId: Id<"users">;
+      createdBy: Id<"users">;
       shareToken: string;
       isDeleted: boolean;
       deletedAt?: number;
@@ -395,7 +398,7 @@ export const addVersion = action({
     if (!artifact || artifact.isDeleted) {
       throw new Error("Artifact not found");
     }
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized: Only the owner can add versions");
     }
 
@@ -535,7 +538,7 @@ export const updateName = mutation({
     if (!artifact || artifact.isDeleted) {
       throw new Error("Artifact not found");
     }
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized: Only the owner can update version names");
     }
 
@@ -574,7 +577,7 @@ export const softDelete = mutation({
     if (!artifact) {
       throw new Error("Artifact not found");
     }
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized");
     }
 
@@ -650,7 +653,7 @@ export const softDeleteVersion = mutation({
     if (!artifact) {
       throw new Error("Artifact not found");
     }
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized");
     }
 
@@ -1014,9 +1017,9 @@ export const getByIdInternal = internalQuery({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
@@ -1042,12 +1045,13 @@ export const getByShareTokenInternal = internalQuery({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -1122,6 +1126,152 @@ export const getEntryPointContent = query({
       fileSize: file.fileSize,
       filePath: file.filePath,
       fileType: version.fileType,
+    };
+  },
+});
+
+/**
+ * Update artifact name and description (owner only)
+ * Task 00022 - Subtask 03
+ *
+ * @throws "Not authenticated" - No user session
+ * @throws "Artifact not found" - Does not exist or is deleted
+ * @throws "Not authorized" - User is not the owner
+ * @throws "Name cannot be empty" - Empty after trim
+ * @throws "Name too long (max 100 characters)" - Exceeds limit
+ * @throws "Description too long (max 500 characters)" - Exceeds limit
+ */
+export const updateDetails = mutation({
+  args: {
+    artifactId: v.id("artifacts"),
+    name: v.string(),
+    description: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Get artifact
+    const artifact = await ctx.db.get(args.artifactId);
+    if (!artifact || artifact.isDeleted) {
+      throw new Error("Artifact not found");
+    }
+
+    // 3. Verify ownership
+    if (artifact.createdBy !== userId) {
+      throw new Error("Not authorized: Only the owner can update details");
+    }
+
+    // 4. Validate name
+    const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new Error("Name cannot be empty");
+    }
+    if (trimmedName.length > 100) {
+      throw new Error("Name too long (max 100 characters)");
+    }
+
+    // 5. Validate description
+    let trimmedDescription: string | undefined = undefined;
+    if (args.description !== undefined) {
+      trimmedDescription = args.description.trim();
+      if (trimmedDescription.length > 500) {
+        throw new Error("Description too long (max 500 characters)");
+      }
+      // Allow empty string to clear description
+      if (trimmedDescription === "") {
+        trimmedDescription = undefined;
+      }
+    }
+
+    // 6. Update artifact
+    await ctx.db.patch(args.artifactId, {
+      name: trimmedName,
+      description: trimmedDescription,
+      updatedAt: Date.now(),
+    });
+
+    return null;
+  },
+});
+
+/**
+ * Get artifact details for settings page (owner only)
+ * Task 00022 - Subtask 04
+ *
+ * Includes enriched fields:
+ * - creatorEmail: Email of the user who created the artifact
+ * - versionCount: Number of active (non-deleted) versions
+ * - totalFileSize: Sum of file sizes from all active versions
+ *
+ * @returns Enriched artifact data or null if not found/deleted
+ * @throws "Not authenticated" - No user session
+ * @throws "Not authorized" - User is not the owner
+ */
+export const getDetailsForSettings = query({
+  args: {
+    artifactId: v.id("artifacts"),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id("artifacts"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+      creatorEmail: v.optional(v.string()),
+      versionCount: v.number(),
+      totalFileSize: v.number(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // 1. Authenticate
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    // 2. Get artifact
+    const artifact = await ctx.db.get(args.artifactId);
+    if (!artifact || artifact.isDeleted) {
+      return null;
+    }
+
+    // 3. Verify ownership (only owner can access settings)
+    if (artifact.createdBy !== userId) {
+      throw new Error("Not authorized: Only the owner can access settings");
+    }
+
+    // 4. Get creator email
+    const creator = await ctx.db.get(artifact.createdBy);
+    const creatorEmail = creator?.email;
+
+    // 5. Count active versions and sum file sizes
+    const versions = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifact_active", (q) =>
+        q.eq("artifactId", args.artifactId).eq("isDeleted", false)
+      )
+      .collect();
+
+    const versionCount = versions.length;
+    const totalFileSize = versions.reduce((sum, v) => sum + v.fileSize, 0);
+
+    // 6. Return enriched data
+    return {
+      _id: artifact._id,
+      name: artifact.name,
+      description: artifact.description,
+      createdAt: artifact.createdAt,
+      updatedAt: artifact.updatedAt,
+      creatorEmail,
+      versionCount,
+      totalFileSize,
     };
   },
 });

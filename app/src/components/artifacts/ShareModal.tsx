@@ -19,7 +19,7 @@ export interface ShareModalProps {
   onOpenChange: (open: boolean) => void;
   artifact: {
     _id: Id<"artifacts">;
-    title: string;
+    name: string;
     shareToken: string;
   };
 }
@@ -55,7 +55,7 @@ export function ShareModal({ open, onOpenChange, artifact }: ShareModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Share &quot;{artifact.title}&quot;</DialogTitle>
+          <DialogTitle>Share &quot;{artifact.name}&quot;</DialogTitle>
           <DialogDescription>
             Share this artifact with your team or stakeholders.
           </DialogDescription>

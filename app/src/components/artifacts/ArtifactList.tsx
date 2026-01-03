@@ -6,7 +6,7 @@ import type { Id } from "@/../../convex/_generated/dataModel";
 export interface ArtifactListProps {
   artifacts: Array<{
     _id: Id<"artifacts">;
-    title: string;
+    name: string;
     description?: string;
     shareToken: string;
     createdAt: number;

@@ -76,7 +76,7 @@ export function ArtifactSettingsClient({ shareToken }: Props) {
     <ArtifactSettings
       onBack={handleBack}
       artifactId={artifact._id}
-      artifactName={artifact.title}
+      artifactName={artifact.name}
       isOwner={isOwner}
       initialTab={initialTab}
     />

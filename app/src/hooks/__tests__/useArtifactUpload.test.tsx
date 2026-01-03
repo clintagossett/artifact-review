@@ -59,17 +59,17 @@ describe("useArtifactUpload", () => {
       await act(async () => {
         uploadResult = await result.current.uploadFile({
           file,
-          title: "Test Artifact",
+          name: "Test Artifact",
           description: "Test description",
         });
       });
 
       expect(mockMutation).toHaveBeenCalledWith({
-        title: "Test Artifact",
+        name: "Test Artifact",
         description: "Test description",
         fileType: "html",
-        htmlContent: "<html><body>Test</body></html>",
-        fileSize: file.size,
+        content: "<html><body>Test</body></html>",
+        originalFileName: "test.html",
       });
 
       expect(uploadResult).toEqual({
@@ -96,7 +96,7 @@ describe("useArtifactUpload", () => {
       act(() => {
         result.current.uploadFile({
           file,
-          title: "Test",
+          name: "Test",
         });
       });
 
@@ -127,7 +127,7 @@ describe("useArtifactUpload", () => {
       await act(async () => {
         await result.current.uploadFile({
           file,
-          title: "Test",
+          name: "Test",
         });
       });
 
@@ -161,15 +161,15 @@ describe("useArtifactUpload", () => {
       await act(async () => {
         await result.current.uploadFile({
           file,
-          title: "Test MD",
+          name: "Test MD",
         });
       });
 
       expect(mockMutation).toHaveBeenCalledWith({
-        title: "Test MD",
+        name: "Test MD",
         fileType: "markdown",
-        markdownContent: "# Test Markdown",
-        fileSize: file.size,
+        content: "# Test Markdown",
+        originalFileName: "test.md",
       });
     });
   });
@@ -197,16 +197,16 @@ describe("useArtifactUpload", () => {
       await act(async () => {
         await result.current.uploadFile({
           file,
-          title: "Test ZIP",
+          name: "Test ZIP",
           entryPoint: "index.html",
         });
       });
 
       expect(mockMutation).toHaveBeenCalledWith({
-        title: "Test ZIP",
-        fileType: "zip",
-        entryPoint: "index.html",
+        name: "Test ZIP",
+        description: undefined,
         fileSize: file.size,
+        entryPoint: "index.html",
       });
     });
   });
@@ -228,7 +228,7 @@ describe("useArtifactUpload", () => {
         try {
           await result.current.uploadFile({
             file,
-            title: "Test",
+            name: "Test",
           });
         } catch {
           // Expected to throw
@@ -265,7 +265,7 @@ describe("useArtifactUpload", () => {
         try {
           await result.current.uploadFile({
             file,
-            title: "Test",
+            name: "Test",
           });
         } catch {
           // Expected to throw
@@ -299,7 +299,7 @@ describe("useArtifactUpload", () => {
       await act(async () => {
         await result.current.uploadFile({
           file,
-          title: "Test",
+          name: "Test",
         });
       });
 
@@ -329,7 +329,7 @@ describe("useArtifactUpload", () => {
         try {
           await result.current.uploadFile({
             file,
-            title: "Test",
+            name: "Test",
           });
         } catch {
           // Expected

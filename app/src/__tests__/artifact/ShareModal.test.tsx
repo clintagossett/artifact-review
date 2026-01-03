@@ -19,7 +19,7 @@ vi.mock("@/hooks/use-toast", () => ({
 describe("ShareModal", () => {
   const mockArtifact = {
     _id: "art1" as any,
-    title: "Test Artifact",
+    name: "Test Artifact",
     shareToken: "abc123",
   };
 

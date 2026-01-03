@@ -47,7 +47,7 @@ export async function requireCommentPermission(
   }
 
   // Check if user is owner
-  if (artifact.creatorId === userId) {
+  if (artifact.createdBy === userId) {
     return "owner";
   }
 
@@ -111,7 +111,7 @@ export async function canDeleteComment(
   const artifact = await ctx.db.get(version.artifactId);
   if (!artifact) return false;
 
-  return artifact.creatorId === userId;
+  return artifact.createdBy === userId;
 }
 
 /**
@@ -158,5 +158,5 @@ export async function canDeleteReply(
   const artifact = await ctx.db.get(version.artifactId);
   if (!artifact) return false;
 
-  return artifact.creatorId === userId;
+  return artifact.createdBy === userId;
 }

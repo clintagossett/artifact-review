@@ -49,7 +49,7 @@ export const inviteReviewer = mutation({
       throw new Error("Artifact not found");
     }
 
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Only the artifact owner can invite reviewers");
     }
 
@@ -141,7 +141,7 @@ export const getReviewers = query({
       throw new Error("Artifact not found");
     }
 
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Only the artifact owner can view reviewers");
     }
 
@@ -205,7 +205,7 @@ export const removeReviewer = mutation({
       throw new Error("Artifact not found");
     }
 
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Only the artifact owner can remove reviewers");
     }
 
@@ -248,7 +248,7 @@ export const getUserPermission = query({
     }
 
     // Check if user is owner
-    if (artifact.creatorId === userId) {
+    if (artifact.createdBy === userId) {
       return "owner";
     }
 
@@ -343,12 +343,13 @@ export const getArtifactById = internalQuery({
     v.object({
       _id: v.id("artifacts"),
       _creationTime: v.number(),
-      title: v.string(),
+      name: v.string(),
       description: v.optional(v.string()),
-      creatorId: v.id("users"),
+      createdBy: v.id("users"),
       shareToken: v.string(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.number(),
     }),
@@ -511,9 +512,9 @@ export const sendInvitationEmail = internalAction({
       await resend.emails.send({
         from: fromEmail,
         to: reviewer.email,
-        subject: `You've been invited to review "${artifact.title}"`,
+        subject: `You've been invited to review "${artifact.name}"`,
         html: renderInvitationEmail({
-          artifactTitle: artifact.title,
+          artifactTitle: artifact.name,
           inviterName,
           shareToken: artifact.shareToken,
           recipientEmail: reviewer.email,
@@ -522,7 +523,7 @@ export const sendInvitationEmail = internalAction({
 
       console.log("Invitation email sent:", {
         to: reviewer.email,
-        artifact: artifact.title,
+        artifact: artifact.name,
         inviter: inviterName,
       });
     } catch (error) {

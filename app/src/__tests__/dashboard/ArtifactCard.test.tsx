@@ -7,7 +7,7 @@ import type { Id } from "@/../../convex/_generated/dataModel";
 describe("ArtifactCard", () => {
   const mockArtifact = {
     _id: "test-id" as Id<"artifacts">,
-    title: "Product Landing Pages",
+    name: "Product Landing Pages",
     description: "AI-generated landing page reviews for Q4 2024",
     shareToken: "abc12345",
     createdAt: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
@@ -20,7 +20,7 @@ describe("ArtifactCard", () => {
     { number: 3, fileType: "html" as const },
   ];
 
-  it("should render artifact title", () => {
+  it("should render artifact name", () => {
     render(
       <ArtifactCard
         artifact={mockArtifact}
@@ -120,7 +120,7 @@ describe("ArtifactCard", () => {
       />
     );
 
-    // Title should still render
+    // Name should still render
     expect(screen.getByText("Product Landing Pages")).toBeInTheDocument();
   });
 

@@ -33,7 +33,7 @@ interface ShareModalProps {
   onClose: () => void;
   artifact: {
     _id: Id<"artifacts">;
-    title: string;
+    name: string;
     shareToken: string;
   };
   // For mock mode - backward compatible

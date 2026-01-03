@@ -1,0 +1,7 @@
+{
+  "name": "task-00022-tests",
+  "private": true,
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}

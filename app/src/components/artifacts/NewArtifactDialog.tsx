@@ -47,15 +47,15 @@ export function NewArtifactDialog({
   onCreateArtifact,
 }: NewArtifactDialogProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [title, setTitle] = useState("");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
-    // Auto-suggest title if title is empty
-    if (!title) {
-      setTitle(suggestTitleFromFilename(file.name));
+    // Auto-suggest name if name is empty
+    if (!name) {
+      setName(suggestTitleFromFilename(file.name));
     }
   };
 
@@ -64,19 +64,19 @@ export function NewArtifactDialog({
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile || !title.trim()) return;
+    if (!selectedFile || !name.trim()) return;
 
     setIsSubmitting(true);
     try {
       await onCreateArtifact({
         file: selectedFile,
-        title: title.trim(),
+        name: name.trim(),
         description: description.trim() || undefined,
       });
 
       // Reset form
       setSelectedFile(null);
-      setTitle("");
+      setName("");
       setDescription("");
       onOpenChange(false);
     } catch (error) {
@@ -88,12 +88,12 @@ export function NewArtifactDialog({
 
   const handleCancel = () => {
     setSelectedFile(null);
-    setTitle("");
+    setName("");
     setDescription("");
     onOpenChange(false);
   };
 
-  const isValid = selectedFile && title.trim().length > 0;
+  const isValid = selectedFile && name.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -131,8 +131,8 @@ export function NewArtifactDialog({
             </Label>
             <Input
               id="artifact-name"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="e.g., June Earnings by Region"
               disabled={isSubmitting}
             />

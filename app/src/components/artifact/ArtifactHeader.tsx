@@ -11,7 +11,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 interface ArtifactHeaderProps {
   artifact: {
     _id?: Id<"artifacts">;
-    title: string;
+    name: string;
     shareToken: string;
   };
   version: {
@@ -81,7 +81,7 @@ export function ArtifactHeader({
           {/* Title and metadata */}
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-gray-900">{artifact.title}</h1>
+              <h1 className="text-gray-900">{artifact.name}</h1>
               <Badge className="px-2 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded">
                 v{version.number}
               </Badge>
@@ -123,7 +123,7 @@ export function ArtifactHeader({
           onClose={() => setIsShareModalOpen(false)}
           artifact={{
             _id: artifact._id,
-            title: artifact.title,
+            name: artifact.name,
             shareToken: artifact.shareToken,
           }}
         />

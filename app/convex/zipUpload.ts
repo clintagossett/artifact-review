@@ -12,7 +12,7 @@ import { validateZipSize } from "./lib/fileTypes";
  */
 export const createArtifactWithZip = mutation({
   args: {
-    title: v.string(),
+    name: v.string(),
     description: v.optional(v.string()),
     fileSize: v.number(),
     entryPoint: v.optional(v.string()),
@@ -38,9 +38,9 @@ export const createArtifactWithZip = mutation({
 
     // Create artifact
     const artifactId = await ctx.db.insert("artifacts", {
-      title: args.title,
+      name: args.name,
       description: args.description,
-      creatorId: userId,
+      createdBy: userId,
       shareToken,
       isDeleted: false,
       createdAt: now,
@@ -102,7 +102,7 @@ export const addZipVersion = mutation({
     if (!artifact || artifact.isDeleted) {
       throw new Error("Artifact not found");
     }
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized: Only the owner can add versions");
     }
 

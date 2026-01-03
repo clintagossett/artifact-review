@@ -39,7 +39,7 @@ export async function getArtifactPermission(
   const userId = await getAuthUserId(ctx);
 
   // Owner check
-  if (userId && artifact.creatorId === userId) {
+  if (userId && artifact.createdBy === userId) {
     return "owner";
   }
 
@@ -136,5 +136,5 @@ export async function canWriteArtifact(
     return false;
   }
 
-  return artifact.creatorId === userId;
+  return artifact.createdBy === userId;
 }

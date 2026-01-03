@@ -53,7 +53,7 @@ const schema = defineSchema({
    * - Password (with email as identifier)
    *
    * ## Relationships
-   * - `artifacts.creatorId` -> users._id (1:N - user owns many artifacts)
+   * - `artifacts.createdBy` -> users._id (1:N - user owns many artifacts)
    * - `artifactReviewers.invitedBy` -> users._id (1:N - user invites reviewers)
    * - `artifactReviewers.userId` -> users._id (1:N - user is invited to artifacts)
    *
@@ -142,24 +142,28 @@ const schema = defineSchema({
    */
   artifacts: defineTable({
     /**
-     * Display title for the artifact.
+     * Display name for the artifact.
      * Required. Shown in dashboard, share emails, and viewer header.
+     * Renamed from title (ADR 12: avoid redundancy with table context).
+     * Max length: 100 characters (enforced in mutations).
      */
-    title: v.string(),
+    name: v.string(),
 
     /**
      * Optional description of the artifact.
      * For user's own reference. Not prominently displayed in current UI.
+     * Max length: 500 characters (enforced in mutations).
      */
     description: v.optional(v.string()),
 
     /**
      * Reference to the user who created this artifact.
      * Determines ownership and edit permissions.
+     * Renamed from creatorId (ADR 12: standard creator field across all tables).
      * @see artifacts.softDelete - Only creator can delete
      * @see artifacts.addVersion - Only creator can add versions
      */
-    creatorId: v.id("users"),
+    createdBy: v.id("users"),
 
     /**
      * Unique URL-safe token for public sharing.
@@ -208,16 +212,16 @@ const schema = defineSchema({
     /**
      * List all artifacts for a user (including deleted).
      * Used for admin/debug views.
-     * @example ctx.db.query("artifacts").withIndex("by_creator", q => q.eq("creatorId", userId))
+     * @example ctx.db.query("artifacts").withIndex("by_created_by", q => q.eq("createdBy", userId))
      */
-    .index("by_creator", ["creatorId"])
+    .index("by_created_by", ["createdBy"])
 
     /**
      * List active artifacts for a user's dashboard.
      * Primary query pattern for artifact listing.
-     * @example ctx.db.query("artifacts").withIndex("by_creator_active", q => q.eq("creatorId", userId).eq("isDeleted", false))
+     * @example ctx.db.query("artifacts").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_creator_active", ["creatorId", "isDeleted"])
+    .index("by_created_by_active", ["createdBy", "isDeleted"])
 
     /**
      * Lookup artifact by share token for public access.

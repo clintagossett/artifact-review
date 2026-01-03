@@ -6,7 +6,7 @@ import type { Id } from "@/../../convex/_generated/dataModel";
 export interface ArtifactCardProps {
   artifact: {
     _id: Id<"artifacts">;
-    title: string;
+    name: string;
     description?: string;
     shareToken: string;
     createdAt: number;
@@ -69,7 +69,7 @@ export function ArtifactCard({
       <div className="mb-3 flex items-start gap-3">
         <FolderOpen className="mt-1 h-5 w-5 flex-shrink-0 text-purple-600" />
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900">{artifact.title}</h3>
+          <h3 className="font-semibold text-gray-900">{artifact.name}</h3>
         </div>
       </div>
 

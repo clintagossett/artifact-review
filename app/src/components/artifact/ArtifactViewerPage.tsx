@@ -114,7 +114,7 @@ export function ArtifactViewerPage({
 
   // Show AccessDeniedMessage for logged-in users without permission
   if (isAuthenticated && !hasPermission) {
-    return <AccessDeniedMessage artifactTitle={artifact.title} />;
+    return <AccessDeniedMessage artifactTitle={artifact.name} />;
   }
 
   // Determine if this is the latest version
@@ -141,7 +141,7 @@ export function ArtifactViewerPage({
       <DocumentViewer
         documentId={artifact._id}
         onBack={() => router.push("/dashboard")}
-        artifactTitle={artifact.title}
+        artifactTitle={artifact.name}
         versions={versions}
         onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
         onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
@@ -149,7 +149,7 @@ export function ArtifactViewerPage({
         shareToken={shareToken}
         versionNumber={targetVersion.number}
         versionId={targetVersion._id}
-        artifactOwnerId={artifact.creatorId}
+        artifactOwnerId={artifact.createdBy}
         convexUrl={convexUrl}
       />
 
@@ -158,7 +158,7 @@ export function ArtifactViewerPage({
         onClose={() => setShareModalOpen(false)}
         artifact={{
           _id: artifact._id,
-          title: artifact.title,
+          name: artifact.name,
           shareToken: artifact.shareToken,
         }}
       />
