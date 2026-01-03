@@ -75,7 +75,7 @@ export function CommentCard({
   // Transform backend replies to frontend format
   const replies = backendReplies?.map((br) => ({
     id: br._id,
-    authorId: br.authorId,
+    createdBy: br.createdBy,
     author: {
       name: br.author.name || 'Anonymous',
       avatar: (br.author.name || 'A').substring(0, 2).toUpperCase(),
@@ -84,24 +84,24 @@ export function CommentCard({
     timestamp: new Date(br.createdAt).toLocaleString(),
   })) || [];
 
-  const canEditComment = (authorId: string) => {
+  const canEditComment = (createdBy: string) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId;
+    return currentUserId === createdBy;
   };
 
-  const canDeleteComment = (authorId: string) => {
+  const canDeleteComment = (createdBy: string) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId || currentUserId === artifactOwnerId;
+    return currentUserId === createdBy || currentUserId === artifactOwnerId;
   };
 
-  const canEditReply = (authorId: Id<"users">) => {
+  const canEditReply = (createdBy: Id<"users">) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId;
+    return currentUserId === createdBy;
   };
 
-  const canDeleteReply = (authorId: Id<"users">) => {
+  const canDeleteReply = (createdBy: Id<"users">) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId || currentUserId === artifactOwnerId;
+    return currentUserId === createdBy || currentUserId === artifactOwnerId;
   };
 
   const handleAddReply = async () => {
@@ -289,7 +289,7 @@ export function CommentCard({
                       <p className="text-gray-700 mb-2">{reply.content}</p>
                       <div className="flex gap-2">
                         {/* Edit button - only for reply author */}
-                        {canEditReply(reply.authorId) && (
+                        {canEditReply(reply.createdBy) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -302,7 +302,7 @@ export function CommentCard({
                           </Button>
                         )}
                         {/* Delete button - for author or artifact owner */}
-                        {canDeleteReply(reply.authorId) && (
+                        {canDeleteReply(reply.createdBy) && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -371,7 +371,7 @@ export function CommentCard({
             )}
           </Button>
           {/* Show edit button if user is the author */}
-          {comment.authorId && canEditComment(comment.authorId) && (
+          {comment.createdBy && canEditComment(comment.createdBy) && (
             <Button
               variant="ghost"
               size="sm"
@@ -386,7 +386,7 @@ export function CommentCard({
             </Button>
           )}
           {/* Show delete button if user can delete */}
-          {comment.authorId && canDeleteComment(comment.authorId) && (
+          {comment.createdBy && canDeleteComment(comment.createdBy) && (
             <Button
               variant="ghost"
               size="sm"

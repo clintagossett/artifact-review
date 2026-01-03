@@ -7,6 +7,7 @@ export interface Author {
 
 export interface Reply {
   id: string;
+  createdBy?: string; // For permission checks (creator ID)
   author: Author;
   content: string;
   timestamp: string;
@@ -15,7 +16,7 @@ export interface Reply {
 export interface Comment {
   id: string;
   versionId: string;
-  authorId?: string; // For permission checks (optional for mock comments)
+  createdBy?: string; // For permission checks (creator ID from backend)
   author: Author;
   content: string;
   timestamp: string;

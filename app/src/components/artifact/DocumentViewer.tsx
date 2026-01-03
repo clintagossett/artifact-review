@@ -113,16 +113,16 @@ export function DocumentViewer({
   const { createComment, updateContent, toggleResolved, softDelete } = useCommentActions();
   const { createReply } = useReplyActions();
 
-  // Check if user can delete a comment (author or owner)
-  const canDeleteComment = (authorId: string) => {
+  // Check if user can delete a comment (creator or owner)
+  const canDeleteComment = (createdBy: string) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId || currentUserId === artifactOwnerId;
+    return currentUserId === createdBy || currentUserId === artifactOwnerId;
   };
 
-  // Check if user can edit a comment (only author)
-  const canEditComment = (authorId: string) => {
+  // Check if user can edit a comment (only creator)
+  const canEditComment = (createdBy: string) => {
     if (!currentUserId) return false;
-    return currentUserId === authorId;
+    return currentUserId === createdBy;
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -135,7 +135,7 @@ export function DocumentViewer({
       const transformedComments: Comment[] = backendComments.map((bc) => ({
         id: bc._id,
         versionId: bc.versionId,
-        authorId: bc.authorId, // Keep authorId for permission checks
+        createdBy: bc.createdBy, // Creator ID for permission checks
         author: {
           name: bc.author.name || 'Anonymous',
           avatar: (bc.author.name || 'A').substring(0, 2).toUpperCase(),
