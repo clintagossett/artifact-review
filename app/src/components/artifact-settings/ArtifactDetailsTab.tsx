@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../../convex/_generated/api';
+import { api } from '../../../convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, User, FileText, HardDrive } from 'lucide-react';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { Id } from '../../../convex/_generated/dataModel';
 
 interface ArtifactDetailsTabProps {
   artifactId: Id<"artifacts">;
