@@ -47,7 +47,10 @@ export const getReplies = query({
     // Get parent comment to verify permission
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
-    if (comment.isDeleted) throw new Error("Comment has been deleted");
+
+    // If comment is deleted, return empty array (graceful degradation)
+    // This prevents errors when browser subscriptions are still active after deletion
+    if (comment.isDeleted) return [];
 
     // Verify permission on the version
     await requireCommentPermission(ctx, comment.versionId);
