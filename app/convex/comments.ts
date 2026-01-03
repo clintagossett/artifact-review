@@ -29,7 +29,7 @@ export const getByVersion = query({
       _id: v.id("comments"),
       _creationTime: v.number(),
       versionId: v.id("artifactVersions"),
-      authorId: v.id("users"),
+      createdBy: v.id("users"),
       content: v.string(),
       resolved: v.boolean(),
       resolvedChangedBy: v.optional(v.id("users")),
@@ -64,7 +64,7 @@ export const getByVersion = query({
     // Enrich with author data and reply counts
     const enriched = await Promise.all(
       comments.map(async (comment) => {
-        const author = await ctx.db.get(comment.authorId);
+        const author = await ctx.db.get(comment.createdBy);
 
         // Count active replies
         const replies = await ctx.db
@@ -141,7 +141,7 @@ export const create = mutation({
     // Create comment
     const commentId = await ctx.db.insert("comments", {
       versionId: args.versionId,
-      authorId: userId,
+      createdBy: userId,
       content: trimmedContent,
       resolved: false,
       target: args.target,
@@ -178,8 +178,8 @@ export const updateContent = mutation({
     // Verify user has permission to view this version
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can edit this comment (must be author)
-    if (!canEditComment(comment.authorId, userId)) {
+    // Check if user can edit this comment (must be creator)
+    if (!canEditComment(comment.createdBy, userId)) {
       throw new Error("Only the comment author can edit");
     }
 

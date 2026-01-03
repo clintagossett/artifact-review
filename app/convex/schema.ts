@@ -638,9 +638,9 @@ const schema = defineSchema({
 
     /**
      * Reference to user who created the comment.
-     * Determines edit permissions (only author can edit content).
+     * Determines edit permissions (only creator can edit content).
      */
-    authorId: v.id("users"),
+    createdBy: v.id("users"),
 
     /**
      * Comment text content.
@@ -733,18 +733,18 @@ const schema = defineSchema({
     .index("by_version", ["versionId"])
 
     /**
-     * List comments by author (all artifacts).
+     * List comments by creator (all artifacts).
      * Used for user comment history.
-     * @example ctx.db.query("comments").withIndex("by_author", q => q.eq("authorId", userId))
+     * @example ctx.db.query("comments").withIndex("by_created_by", q => q.eq("createdBy", userId))
      */
-    .index("by_author", ["authorId"])
+    .index("by_created_by", ["createdBy"])
 
     /**
-     * List active comments by author.
+     * List active comments by creator.
      * Used for user dashboard.
-     * @example ctx.db.query("comments").withIndex("by_author_active", q => q.eq("authorId", userId).eq("isDeleted", false))
+     * @example ctx.db.query("comments").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_author_active", ["authorId", "isDeleted"]),
+    .index("by_created_by_active", ["createdBy", "isDeleted"]),
 
   // ============================================================================
   // COMMENT REPLIES
@@ -778,9 +778,9 @@ const schema = defineSchema({
 
     /**
      * Reference to user who created the reply.
-     * Determines edit permissions (only author can edit content).
+     * Determines edit permissions (only creator can edit content).
      */
-    authorId: v.id("users"),
+    createdBy: v.id("users"),
 
     /**
      * Reply text content.
@@ -843,18 +843,18 @@ const schema = defineSchema({
     .index("by_comment", ["commentId"])
 
     /**
-     * List replies by author (all comments).
+     * List replies by creator (all comments).
      * Used for user reply history.
-     * @example ctx.db.query("commentReplies").withIndex("by_author", q => q.eq("authorId", userId))
+     * @example ctx.db.query("commentReplies").withIndex("by_created_by", q => q.eq("createdBy", userId))
      */
-    .index("by_author", ["authorId"])
+    .index("by_created_by", ["createdBy"])
 
     /**
-     * List active replies by author.
+     * List active replies by creator.
      * Used for user dashboard.
-     * @example ctx.db.query("commentReplies").withIndex("by_author_active", q => q.eq("authorId", userId).eq("isDeleted", false))
+     * @example ctx.db.query("commentReplies").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_author_active", ["authorId", "isDeleted"]),
+    .index("by_created_by_active", ["createdBy", "isDeleted"]),
 });
 
 export default schema;

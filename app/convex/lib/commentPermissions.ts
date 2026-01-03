@@ -71,22 +71,22 @@ export async function requireCommentPermission(
 
 /**
  * Check if user can edit a comment.
- * Only the author can edit their own comment.
+ * Only the creator can edit their own comment.
  *
- * @param authorId - The comment's author
+ * @param createdBy - The comment's creator
  * @param userId - The user attempting to edit
  * @returns true if user can edit
  */
 export function canEditComment(
-  authorId: Id<"users">,
+  createdBy: Id<"users">,
   userId: Id<"users">
 ): boolean {
-  return authorId === userId;
+  return createdBy === userId;
 }
 
 /**
  * Check if user can delete a comment.
- * Author can delete their own comment.
+ * Creator can delete their own comment.
  * Artifact owner can delete any comment (moderation).
  *
  * @param ctx - Query or Mutation context
@@ -99,8 +99,8 @@ export async function canDeleteComment(
   comment: Doc<"comments">,
   userId: Id<"users">
 ): Promise<boolean> {
-  // Author can always delete their own
-  if (comment.authorId === userId) {
+  // Creator can always delete their own
+  if (comment.createdBy === userId) {
     return true;
   }
 
@@ -116,38 +116,38 @@ export async function canDeleteComment(
 
 /**
  * Check if user can edit a reply.
- * Only the author can edit their own reply.
+ * Only the creator can edit their own reply.
  *
- * @param authorId - The reply's author
+ * @param createdBy - The reply's creator
  * @param userId - The user attempting to edit
  * @returns true if user can edit
  */
 export function canEditReply(
-  authorId: Id<"users">,
+  createdBy: Id<"users">,
   userId: Id<"users">
 ): boolean {
-  return authorId === userId;
+  return createdBy === userId;
 }
 
 /**
  * Check if user can delete a reply.
- * Author can delete their own reply.
+ * Creator can delete their own reply.
  * Artifact owner can delete any reply (moderation).
  *
  * @param ctx - Query or Mutation context
  * @param versionId - The artifact version (for owner lookup)
- * @param authorId - The reply's author
+ * @param createdBy - The reply's creator
  * @param userId - The user attempting to delete
  * @returns true if user can delete
  */
 export async function canDeleteReply(
   ctx: QueryCtx | MutationCtx,
   versionId: Id<"artifactVersions">,
-  authorId: Id<"users">,
+  createdBy: Id<"users">,
   userId: Id<"users">
 ): Promise<boolean> {
-  // Author can always delete their own
-  if (authorId === userId) {
+  // Creator can always delete their own
+  if (createdBy === userId) {
     return true;
   }
 

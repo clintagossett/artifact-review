@@ -29,7 +29,7 @@ export const getReplies = query({
       _id: v.id("commentReplies"),
       _creationTime: v.number(),
       commentId: v.id("comments"),
-      authorId: v.id("users"),
+      createdBy: v.id("users"),
       content: v.string(),
       isEdited: v.boolean(),
       editedAt: v.optional(v.number()),
@@ -64,7 +64,7 @@ export const getReplies = query({
     // Enrich with author data
     const enriched = await Promise.all(
       replies.map(async (reply) => {
-        const author = await ctx.db.get(reply.authorId);
+        const author = await ctx.db.get(reply.createdBy);
         return {
           ...reply,
           author: {
@@ -117,7 +117,7 @@ export const createReply = mutation({
     // Create reply
     const replyId = await ctx.db.insert("commentReplies", {
       commentId: args.commentId,
-      authorId: userId,
+      createdBy: userId,
       content: trimmedContent,
       isEdited: false,
       isDeleted: false,
@@ -158,8 +158,8 @@ export const updateReply = mutation({
     // Verify permission on the version
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can edit this reply (must be author)
-    if (!canEditReply(reply.authorId, userId)) {
+    // Check if user can edit this reply (must be creator)
+    if (!canEditReply(reply.createdBy, userId)) {
       throw new Error("Only the reply author can edit");
     }
 
@@ -217,8 +217,8 @@ export const softDeleteReply = mutation({
     // DEFENSE-IN-DEPTH: Verify user has access to this artifact first
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can delete (author or artifact owner)
-    const canDelete = await canDeleteReply(ctx, comment.versionId, reply.authorId, userId);
+    // Check if user can delete (creator or artifact owner)
+    const canDelete = await canDeleteReply(ctx, comment.versionId, reply.createdBy, userId);
     if (!canDelete) {
       throw new Error("Only the reply author or artifact owner can delete");
     }

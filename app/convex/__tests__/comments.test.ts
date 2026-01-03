@@ -86,8 +86,8 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
   const now = Date.now();
   const artifactId = await asOwner.run(async (ctx) =>
     await ctx.db.insert("artifacts", {
-      title: "Test Artifact",
-      creatorId: ownerId,
+      name: "Test Artifact",
+      createdBy: ownerId,
       shareToken: "test1234",
       isDeleted: false,
       createdAt: now,
@@ -95,16 +95,34 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
     })
   );
 
-  // Create version
+  // Create version with storage
+  const storageId = await asOwner.run(async (ctx) => {
+    // Create a mock storage ID by uploading a small blob
+    return await ctx.storage.store(new Blob(["<html><body>Test</body></html>"]));
+  });
+
   const versionId = await asOwner.run(async (ctx) =>
     await ctx.db.insert("artifactVersions", {
       artifactId,
       number: 1,
-      fileType: "html" as const,
-      htmlContent: "<html><body>Test</body></html>",
+      createdBy: ownerId,
+      fileType: "html",
+      entryPoint: "index.html",
       fileSize: 100,
       isDeleted: false,
       createdAt: now,
+    })
+  );
+
+  // Create artifact file for the version
+  await asOwner.run(async (ctx) =>
+    await ctx.db.insert("artifactFiles", {
+      versionId,
+      filePath: "index.html",
+      storageId,
+      mimeType: "text/html",
+      fileSize: 100,
+      isDeleted: false,
     })
   );
 
@@ -262,7 +280,7 @@ describe.skip("Permission Helpers", () => {
       const commentId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "Test comment",
           resolved: false,
           target: sampleTarget,
@@ -292,7 +310,7 @@ describe.skip("Permission Helpers", () => {
       const commentId = await asReviewer.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: reviewerId,
+          createdBy: reviewerId,
           content: "Test comment",
           resolved: false,
           target: sampleTarget,
@@ -345,7 +363,7 @@ describe.skip("Permission Helpers", () => {
       const commentId = await asReviewer.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: reviewerId,
+          createdBy: reviewerId,
           content: "Test comment",
           resolved: false,
           target: sampleTarget,
@@ -781,7 +799,7 @@ describe.skip("Comment Operations", () => {
       const tempId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "temp",
           resolved: false,
           target: {},
@@ -922,7 +940,7 @@ describe.skip("Comment Operations", () => {
       const tempId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "temp",
           resolved: false,
           target: {},
@@ -1055,7 +1073,7 @@ describe.skip("Comment Operations", () => {
       const tempId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("comments", {
           versionId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "temp",
           resolved: false,
           target: {},
@@ -1702,7 +1720,7 @@ describe.skip("Reply Operations", () => {
       const tempId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("commentReplies", {
           commentId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "temp",
           isEdited: false,
           isDeleted: false,
@@ -1903,7 +1921,7 @@ describe.skip("Reply Operations", () => {
       const tempId = await asOwner.run(async (ctx) =>
         await ctx.db.insert("commentReplies", {
           commentId,
-          authorId: ownerId,
+          createdBy: ownerId,
           content: "temp",
           isEdited: false,
           isDeleted: false,
