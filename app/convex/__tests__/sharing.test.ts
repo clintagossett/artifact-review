@@ -17,8 +17,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -66,8 +66,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -97,8 +97,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -135,8 +135,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -175,8 +175,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -211,8 +211,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -244,8 +244,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -274,8 +274,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -327,8 +327,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -386,8 +386,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -421,8 +421,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -465,8 +465,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -511,8 +511,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -554,8 +554,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -604,8 +604,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -644,8 +644,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -690,8 +690,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -725,8 +725,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -770,8 +770,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -800,8 +800,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -835,8 +835,8 @@ describe.skip("sharing", () => {
           });
 
         const artifact1Id = await ctx.db.insert("artifacts", {
-          title: "Artifact 1",
-          creatorId: ownerId,
+          name: "Artifact 1",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -844,8 +844,8 @@ describe.skip("sharing", () => {
         });
 
         const artifact2Id = await ctx.db.insert("artifacts", {
-          title: "Artifact 2",
-          creatorId: ownerId,
+          name: "Artifact 2",
+          createdBy: ownerId,
           shareToken: "def456",
           isDeleted: false,
           createdAt: Date.now(),
@@ -910,8 +910,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -961,8 +961,8 @@ describe.skip("sharing", () => {
         // Create 3 artifacts with invitations
         for (let i = 0; i < 3; i++) {
           const artifactId = await ctx.db.insert("artifacts", {
-            title: `Artifact ${i}`,
-            creatorId: ownerId,
+            name: `Artifact ${i}`,
+            createdBy: ownerId,
             shareToken: `token${i}`,
             isDeleted: false,
             createdAt: Date.now(),
@@ -1017,8 +1017,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -1069,8 +1069,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -1134,8 +1134,8 @@ describe.skip("sharing", () => {
           });
 
         const artifactId = await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "abc123",
           isDeleted: false,
           createdAt: Date.now(),

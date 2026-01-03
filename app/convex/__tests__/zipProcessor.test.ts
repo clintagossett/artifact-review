@@ -23,7 +23,7 @@ describe("zipProcessor", () => {
 
       // Create artifact and version - Note: create action rejects ZIP, use zipUpload instead
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test ZIP Artifact",
+        name: "Test ZIP Artifact",
         description: "A test artifact with ZIP content",
         fileType: "html" as const, // Changed from zip since create rejects ZIP
         content: "<html><body>Test</body></html>",

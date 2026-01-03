@@ -20,7 +20,7 @@ describe.skip("zipUpload", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       const result = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test ZIP Artifact",
+        name: "Test ZIP Artifact",
         description: "A test artifact with ZIP file",
         fileSize: 12345,
         entryPoint: "index.html",
@@ -40,9 +40,9 @@ describe.skip("zipUpload", () => {
       });
 
       expect(artifact).toBeDefined();
-      expect(artifact?.title).toBe("Test ZIP Artifact");
+      expect(artifact?.name).toBe("Test ZIP Artifact");
       expect(artifact?.description).toBe("A test artifact with ZIP file");
-      expect(artifact?.creatorId).toBe(userId);
+      expect(artifact?.createdBy).toBe(userId);
       expect(artifact?.shareToken).toBe(result.shareToken);
       expect(artifact?.isDeleted).toBe(false);
 
@@ -73,7 +73,7 @@ describe.skip("zipUpload", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       const result = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
-        title: "ZIP without entry point",
+        name: "ZIP without entry point",
         fileSize: 5000,
       });
 
@@ -95,7 +95,7 @@ describe.skip("zipUpload", () => {
       // Try to create without authentication
       await expect(
         t.mutation(api.zipUpload.createArtifactWithZip, {
-          title: "Test ZIP",
+          name: "Test ZIP",
           fileSize: 1000,
         })
       ).rejects.toThrow("Not authenticated");
@@ -115,12 +115,12 @@ describe.skip("zipUpload", () => {
 
       // Create two artifacts
       const result1 = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
-        title: "ZIP 1",
+        name: "ZIP 1",
         fileSize: 1000,
       });
 
       const result2 = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
-        title: "ZIP 2",
+        name: "ZIP 2",
         fileSize: 2000,
       });
 
