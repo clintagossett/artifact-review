@@ -2,6 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2025-12-31
+**Last Updated:** 2026-01-02 (Simplified creator field convention - use `createdBy` for all)
 **Decision Maker:** Clint Gossett
 
 ## TL;DR
@@ -16,10 +17,10 @@ Establish consistent naming conventions for Convex backend code including functi
 | **Schema Fields** | camelCase | `createdAt`, `shareToken` |
 | **Property Names** | Avoid redundancy with table context | `path` not `filePath` in `artifactFiles` |
 | **Audit Timestamps** | `*At` suffix | `createdAt`, `deletedAt` |
-| **Audit User Refs** | `*By` suffix | `createdBy`, `deletedBy` |
+| **Record Creator** | `createdBy` | All tables - who created this record |
 | **Boolean Fields** | `is*` prefix | `isDeleted`, `isUpdated` |
-| **Foreign Keys** | `entityId` | `artifactId`, `creatorId` |
-| **Index Names** | `by_field` (snake_case) | `by_creator`, `by_artifact_active` |
+| **Foreign Keys** | `entityId` | `artifactId`, `versionId` |
+| **Index Names** | `by_field` (snake_case) | `by_created_by`, `by_artifact_active` |
 | **Query Functions** | `get*`, `list*`, `getBy*` | `get`, `list`, `getByShareToken` |
 | **Mutation Functions** | verb | `create`, `delete`, `updateContent` |
 | **Internal Functions** | `*Internal` suffix | `createInternal`, `getByIdInternal` |
@@ -118,7 +119,7 @@ artifacts: defineTable({
 | Field | Type | Purpose | Required? |
 |-------|------|---------|-----------|
 | `createdAt` | `v.number()` | Creation timestamp (ms) | Yes for all |
-| `createdBy` | `v.optional(v.id("users"))` | Who created | When authorship matters |
+| `createdBy` | `v.optional(v.id("users"))` | Who triggered record creation | For audit trail |
 | `updatedAt` | `v.number()` | Last modification timestamp | When tracking edits |
 | `updatedBy` | `v.optional(v.id("users"))` | Who last modified | Rare - usually overkill |
 | `isDeleted` | `v.boolean()` | Soft delete flag (for indexing) | Yes for soft-deletable |
@@ -159,6 +160,95 @@ artifacts: defineTable({
   deletionTime: v.number(),      // Use deletedAt
 })
 ```
+
+### Record Creator: `createdBy`
+
+**Use `createdBy` for all tables.** This field answers one question: "Who initiated this record's creation?"
+
+```typescript
+// Good - createdBy for ALL tables
+artifacts: defineTable({
+  createdBy: v.id("users"),      // Who created this artifact
+  title: v.string(),
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+
+artifactVersions: defineTable({
+  createdBy: v.id("users"),      // Who created this version
+  fileType: v.string(),
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+
+comments: defineTable({
+  createdBy: v.id("users"),      // Who created this comment
+  content: v.string(),
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+
+commentReplies: defineTable({
+  createdBy: v.id("users"),      // Who created this reply
+  content: v.string(),
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+```
+
+**Why `createdBy`?**
+
+1. **Pairs with `createdAt`** - Both describe the creation event
+2. **Industry aligned** - Microsoft REST API Guidelines, Notion API, Django all use `created_by`/`createdBy`
+3. **One field to remember** - No cognitive overhead deciding which variant to use
+4. **Consistent indexes** - All tables use `by_created_by` pattern
+5. **Future-proof** - If ownership transfer is needed later, add `ownerId` separately
+
+**Industry Context:**
+
+Research of major SaaS APIs shows most platforms use ONE field for "who made this":
+
+| Platform | Field Used | Pattern |
+|----------|-----------|---------|
+| Notion API | `created_by` | Consistent across all resources |
+| Microsoft REST | `createdBy` | Standard audit field |
+| Django | `created_by` | Via auditing packages |
+| GitHub API | `user` | Single field per resource |
+| Slack API | `user` | Single field per resource |
+
+**Permission Check Examples:**
+
+```typescript
+// All permission checks use the same field
+if (artifact.createdBy === userId) { /* owner */ }
+if (comment.createdBy === userId) { /* can edit */ }
+if (version.createdBy === userId) { /* can delete */ }
+
+// Consistent query pattern
+const userArtifacts = await ctx.db
+  .query("artifacts")
+  .withIndex("by_created_by", q => q.eq("createdBy", userId))
+  .collect();
+
+const userComments = await ctx.db
+  .query("comments")
+  .withIndex("by_created_by", q => q.eq("createdBy", userId))
+  .collect();
+```
+
+**Future Ownership Transfer:**
+
+If/when we need to transfer ownership of artifacts:
+
+```typescript
+artifacts: defineTable({
+  createdBy: v.id("users"),  // Immutable - original creator (audit)
+  ownerId: v.id("users"),    // Mutable - current owner (permissions)
+  // ...
+})
+```
+
+Until then, `createdBy` serves as both audit trail AND permission check. YAGNI.
 
 ### Boolean Field Naming
 
@@ -501,12 +591,10 @@ tableNamePlural: defineTable({
 
   // ---- Foreign Keys ----
   parentId: v.id("parentTable"),        // Reference to parent
-  creatorId: v.id("users"),             // Owner/creator
-  authorId: v.id("users"),              // Author (for content)
 
   // ---- Creation Audit ----
-  createdAt: v.number(),                 // Required: Unix timestamp (ms)
-  createdBy: v.optional(v.id("users")), // Optional: Who created
+  createdBy: v.id("users"),              // Who created this record (required)
+  createdAt: v.number(),                 // When created: Unix timestamp (ms)
 
   // ---- Update Audit (if needed) ----
   updatedAt: v.number(),                 // Last modification time
@@ -529,8 +617,8 @@ tableNamePlural: defineTable({
   // ---- Indexes ----
   .index("by_parent", ["parentId"])
   .index("by_parent_active", ["parentId", "isDeleted"])
-  .index("by_creator", ["creatorId"])
-  .index("by_creator_active", ["creatorId", "isDeleted"])
+  .index("by_created_by", ["createdBy"])
+  .index("by_created_by_active", ["createdBy", "isDeleted"])
 ```
 
 ---
@@ -548,6 +636,22 @@ created_at: v.number(),                  // Use createdAt
 user_id: v.id("users"),                  // Use userId
 isactive: v.boolean(),                   // Use isActive
 CreatedAt: v.number(),                   // Use camelCase: createdAt
+
+// Non-standard creator field names (always use createdBy)
+comments: defineTable({
+  authorId: v.id("users"),               // Use createdBy
+  madeBy: v.id("users"),                 // Use createdBy
+  writtenBy: v.id("users"),              // Use createdBy
+  postedBy: v.id("users"),               // Use createdBy
+})
+artifacts: defineTable({
+  creatorId: v.id("users"),              // Use createdBy
+  ownerId: v.id("users"),                // Use createdBy (until ownership transfer is needed)
+})
+artifactVersions: defineTable({
+  uploadedBy: v.id("users"),             // Use createdBy
+  addedBy: v.id("users"),                // Use createdBy
+})
 
 // Property Name Redundancy - Table context already provides meaning
 artifactFiles: defineTable({
@@ -671,6 +775,7 @@ When writing Convex backend code, ask:
 - [ ] Schema fields: camelCase?
 - [ ] Property names: no redundancy with table context? (`path` not `filePath` in `artifactFiles`)
 - [ ] Audit fields: `createdAt`, `isDeleted`, `deletedAt`, etc.?
+- [ ] Creator field: `createdBy` for who created this record?
 - [ ] Booleans: `is*` prefix?
 - [ ] Foreign keys: `entityId` pattern?
 - [ ] Indexes: `by_field` and all fields in name?
@@ -743,3 +848,322 @@ When writing Convex backend code, ask:
 ### Community Standards
 - [TypeScript Naming Conventions](https://typescript-eslint.io/rules/naming-convention/)
 - [Convex Stack Templates](https://stack.convex.dev/)
+
+---
+
+## References & Industry Standards
+
+This section documents industry research conducted to validate and contextualize our naming conventions.
+
+### Google API Improvement Proposals (AIPs)
+
+| AIP | Topic | Relevance to Our Conventions |
+|-----|-------|------------------------------|
+| [AIP-140](https://google.aip.dev/140) | Field Names | Supports avoiding redundant prefixes (`path` not `filePath`). Google uses snake_case; we use camelCase per TypeScript conventions. |
+| [AIP-148](https://google.aip.dev/148) | Standard Fields | Defines `create_time`, `update_time`, `delete_time`. No author/creator distinction. |
+| [AIP-164](https://google.aip.dev/164) | Soft Delete | Uses `delete_time` timestamp, not boolean flag. Our `isDeleted` + `deletedAt` pattern differs for index efficiency in Convex. |
+| [AIP-203](https://google.aip.dev/203) | Field Behavior | Defines OUTPUT_ONLY for computed fields. No authorship guidance. |
+
+**Key insight:** Google AIPs do not distinguish between `author` and `creator`. Our semantic distinction is project-specific.
+
+### Major Framework Conventions
+
+| Framework | Timestamp Fields | User Reference Fields | Notes |
+|-----------|-----------------|----------------------|-------|
+| **Rails/ActiveRecord** | `created_at`, `updated_at` | `user_id`, `author_id` (domain-specific) | snake_case, no formal author/creator distinction |
+| **Django** | `created_at`, `modified_at` | `created_by`, `modified_by` | Uses `*_by` pattern for audit |
+| **Laravel** | `created_at`, `updated_at` | `created_by`, `user_id` | Via auditing packages |
+
+**Key insight:** Frameworks use snake_case and do not enforce author/creator distinction at the ORM level.
+
+### REST API Guidelines
+
+| Standard | Recommendation | Our Alignment |
+|----------|---------------|---------------|
+| **Microsoft REST API Guidelines** | `createdBy`, `lastModifiedBy` | Aligned on `*By` pattern |
+| **Zalando API Guidelines** | `created_at`, `created_by` | Aligned on audit fields |
+| **JSON:API** | No field naming prescription | N/A |
+
+### Notable SaaS Platform APIs
+
+#### GitHub API (v3 REST and v4 GraphQL)
+- **Commits:** `author` and `committer` (the canonical author/committer distinction)
+- **Comments:** `user` (NOT `author`)
+- **Issues/PRs:** `user` for creator
+- **Repositories:** `owner`
+
+**Key insight:** GitHub only uses `author` for commits. Comments use `user`. This is more limited than our Git-inspired pattern.
+
+**References:**
+- [GitHub REST API - Commits](https://docs.github.com/en/rest/commits/commits)
+- [GitHub REST API - Issue Comments](https://docs.github.com/en/rest/issues/comments)
+
+#### Slack API
+- **Messages:** `user` field for message author
+- No `author` or `creator` terminology
+
+**Reference:** [Slack API - Message Object](https://api.slack.com/types/message)
+
+#### Notion API
+- **All objects:** `created_by`, `last_edited_by` (nested user objects)
+- Consistent `*_by` pattern across all resources
+
+**Reference:** [Notion API - Working with Databases](https://developers.notion.com/docs/working-with-databases)
+
+#### Linear API (GraphQL)
+- **Issues:** `creator`, `assignee`
+- No `author` field
+
+**Reference:** [Linear API Documentation](https://developers.linear.app/docs/graphql/working-with-the-graphql-api)
+
+#### Jira API
+- **Issues:** `creator`, `reporter`
+- **Comments:** `author`
+- Closest to our semantic distinction (uses `author` for comments, `creator` for issues)
+
+**Reference:** [Jira Cloud REST API - Issue Fields](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/)
+
+#### Stripe API
+- No explicit creator fields
+- Uses implicit context (authenticated user)
+- Audit via event logs
+
+**Reference:** [Stripe API Reference](https://stripe.com/docs/api)
+
+### Field Name Pattern Summary
+
+| Pattern | Used By | Our Usage |
+|---------|---------|-----------|
+| `user` | GitHub (comments), Slack | Not used |
+| `author` / `authorId` | Jira (comments), GitHub (commits) | Not used (use `createdBy`) |
+| `creator` / `creatorId` | Linear, Jira (issues) | Not used (use `createdBy`) |
+| `created_by` / `createdBy` | Notion, Microsoft, Django | **All tables** |
+| `owner` | GitHub (repos) | Not used (future: `ownerId` if needed) |
+
+### Research Conclusion
+
+Our choice of `createdBy` for all tables is **industry-aligned**:
+
+1. **Matches Notion API** - uses `created_by` consistently
+2. **Matches Microsoft REST API Guidelines** - uses `createdBy`
+3. **Matches Django patterns** - uses `created_by` via auditing packages
+4. **Simpler than alternatives** - one field to remember, consistent indexes
+
+**Benefits:**
+- (+) Industry-standard naming
+- (+) One pattern for all tables
+- (+) Pairs naturally with `createdAt`
+- (+) Future-proof for ownership transfer (add `ownerId` later if needed)
+
+---
+
+## Field Length Guidelines
+
+This section documents validated field length limits for all text fields in our schema, with industry research and rationale.
+
+### Quick Reference
+
+| Field Type | Limit | Location | Rationale |
+|------------|-------|----------|-----------|
+| User names | 100 chars | `users.updateName` | Industry standard range (50-100) |
+| Artifact name | 100 chars | `artifacts.updateDetails` (Task 22) | Matches file name conventions |
+| Artifact description | 500 chars | `artifacts.updateDetails` (Task 22) | Short-form description standard |
+| Version names | 100 chars | `artifacts.updateVersionName` | Matches artifact name pattern |
+| Comments | 10,000 chars | `comments.create` | Long-form collaborative content |
+| Comment replies | 5,000 chars | `commentReplies.create` | Shorter than parent comments |
+
+### Industry Standards Research
+
+#### User Names / Display Names
+
+| Platform | Limit | Notes |
+|----------|-------|-------|
+| Twitter/X | 50 chars | Display name |
+| GitHub | 39 chars | Username (technical constraint) |
+| Slack | 80 chars | Display name |
+| Discord | 32 chars | Username |
+| LinkedIn | 100 chars | Combined first + last name |
+| Google | 100 chars | Account name |
+| Microsoft | 64 chars | Display name |
+
+**Our choice: 100 characters**
+- Accommodates international names with multiple parts
+- Matches Google/LinkedIn upper bound
+- Allows for organization prefixes or suffixes
+- Simple, memorable limit
+
+#### Project/Resource Names
+
+| Platform | Field | Limit | Notes |
+|----------|-------|-------|-------|
+| GitHub | Repository name | 100 chars | URL-safe constraint |
+| Jira | Project name | 80 chars | |
+| Notion | Page title | 250 chars | Very permissive |
+| Asana | Project name | 255 chars | |
+| Trello | Board name | 16,384 chars | Essentially unlimited |
+| Figma | File name | 255 chars | Filesystem compatibility |
+| Google Drive | File name | 255 chars | Filesystem compatibility |
+
+**Our choice: 100 characters**
+- Practical for UI display without truncation
+- Matches GitHub repository convention
+- Fits comfortably in browser tabs, email subjects
+- Figma designs show character counter at 100
+
+#### Description Fields
+
+| Platform | Field | Limit | Notes |
+|----------|-------|-------|-------|
+| GitHub | Repository description | 350 chars | Short summary |
+| GitHub | Issue body | 65,536 chars | Long-form |
+| Jira | Description | 32,767 chars | Long-form |
+| Notion | Page content | Unlimited | |
+| Slack | Channel description | 250 chars | |
+| Twitter/X | Post | 280 chars | Very short |
+| LinkedIn | Post | 3,000 chars | Medium-form |
+
+**Our choice: 500 characters**
+- Short-form summary (like GitHub repo description, but more generous)
+- Encourages concise, useful descriptions
+- Fits in preview cards without excessive truncation
+- Figma designs show character counter at 500
+- Sufficient for 2-3 sentences of context
+
+#### Comment/Message Content
+
+| Platform | Field | Limit | Notes |
+|----------|-------|-------|-------|
+| GitHub | Comment | 65,536 chars | Very generous |
+| Jira | Comment | 32,767 chars | |
+| Slack | Message | 40,000 chars | |
+| Discord | Message | 2,000 chars | Relatively short |
+| Twitter/X | Reply | 280 chars | Very short |
+| Linear | Comment | 10,000 chars | |
+| Notion | Block | Unlimited | |
+
+**Our choice: 10,000 chars (comments), 5,000 chars (replies)**
+- Comments: Generous for detailed feedback with code snippets
+- Replies: Shorter since replies are responses, not primary content
+- Matches Linear's approach for similar use case
+- Prevents abuse while allowing substantive discussion
+- UTF-8 consideration: 10,000 chars = up to 40KB (acceptable)
+
+### Technical Constraints
+
+#### Database Considerations
+
+Convex uses document storage with no VARCHAR limits, but we enforce limits for:
+
+1. **Performance**: Large text fields slow down queries and indexing
+2. **UI/UX**: Prevents rendering issues and poor user experience
+3. **Security**: Prevents denial-of-service via excessive data
+4. **Cost**: Convex charges by data stored and transferred
+
+#### UTF-8 Multi-Byte Considerations
+
+| Character Type | Bytes | Impact |
+|----------------|-------|--------|
+| ASCII (a-z, 0-9) | 1 byte | Standard |
+| Accented Latin (e, u, n) | 2 bytes | Common in European names |
+| CJK (Chinese, Japanese, Korean) | 3 bytes | Full character = 3 bytes |
+| Emoji | 4 bytes | Single emoji = 4 bytes |
+
+**Storage estimate for max limits:**
+- User name (100 chars): up to 400 bytes
+- Artifact name (100 chars): up to 400 bytes
+- Artifact description (500 chars): up to 2KB
+- Comment (10,000 chars): up to 40KB
+- Reply (5,000 chars): up to 20KB
+
+All limits are well within acceptable ranges for modern applications.
+
+### UX/Usability Guidelines
+
+#### Character Count Display Thresholds
+
+Show character count when:
+1. User is within 20% of limit (e.g., at 80/100)
+2. Field is focused (always show for description/comment fields)
+3. User exceeds limit (prevent submission, show error)
+
+#### Input Type by Length
+
+| Content Length | Recommended Input | Notes |
+|----------------|-------------------|-------|
+| < 50 chars | Single-line input | Simple text |
+| 50-200 chars | Single-line with counter | Names, titles |
+| 200-1000 chars | Textarea (auto-grow) | Descriptions |
+| > 1000 chars | Textarea (fixed height, scrollable) | Comments |
+
+#### Truncation Patterns
+
+| Display Context | Max Display | Truncation |
+|-----------------|-------------|------------|
+| Browser tab title | 50 chars | Ellipsis |
+| List/card view | 60-80 chars | Ellipsis |
+| Full view | Full length | Scroll/expand |
+| Email subject | 78 chars | RFC 5322 limit |
+
+### Validation Implementation
+
+All field length validation is enforced at the **backend mutation level**, not just the frontend:
+
+```typescript
+// Pattern for field validation
+const trimmedName = args.name.trim();
+if (!trimmedName) {
+  throw new Error("Name cannot be empty");
+}
+if (trimmedName.length > 100) {
+  throw new Error("Name too long (max 100 characters)");
+}
+```
+
+**Centralized constants** are defined in `convex/lib/fileTypes.ts`:
+
+```typescript
+export const MAX_VERSION_NAME_LENGTH = 100;
+// Add additional constants as needed:
+// export const MAX_ARTIFACT_NAME_LENGTH = 100;
+// export const MAX_ARTIFACT_DESCRIPTION_LENGTH = 500;
+// export const MAX_COMMENT_LENGTH = 10000;
+// export const MAX_REPLY_LENGTH = 5000;
+```
+
+### Recommendations for Task 22
+
+The proposed limits in Task 22 design document are **validated and approved**:
+
+| Field | Proposed Limit | Status | Notes |
+|-------|----------------|--------|-------|
+| Artifact name | 100 chars | **Approved** | Matches industry standards and Figma design |
+| Artifact description | 500 chars | **Approved** | Good balance for short-form description |
+
+**Implementation note**: Create centralized constants for these limits alongside `MAX_VERSION_NAME_LENGTH` in `convex/lib/fileTypes.ts`.
+
+### Future Considerations
+
+Fields that may need limits in the future:
+
+| Field | Suggested Limit | Notes |
+|-------|----------------|-------|
+| Version tags | 50 chars each | If implementing tagging per ARTIFACT_SETTINGS.md |
+| Email subject (invites) | 78 chars | RFC 5322 email subject limit |
+| Share link custom slug | 50 chars | If implementing custom URLs |
+
+### References
+
+#### Formal Standards
+- [RFC 5322](https://www.rfc-editor.org/rfc/rfc5322) - Email format (78 char subject recommended)
+- [W3C HTML5](https://html.spec.whatwg.org/multipage/input.html#attr-input-maxlength) - maxlength attribute specification
+- [Unicode UTF-8](https://www.unicode.org/versions/Unicode15.0.0/) - Multi-byte encoding reference
+
+#### Platform Documentation
+- [GitHub API Limits](https://docs.github.com/en/rest/overview/resources-in-the-rest-api)
+- [Slack Message Guidelines](https://api.slack.com/reference/surfaces/formatting)
+- [Twitter Developer Docs](https://developer.twitter.com/en/docs/counting-characters)
+
+#### UX Research
+- [Nielsen Norman Group: Text Fields](https://www.nngroup.com/articles/form-design-placeholders/)
+- [Material Design: Text Fields](https://material.io/components/text-fields)
+- [Apple HIG: Text Input](https://developer.apple.com/design/human-interface-guidelines/text-fields)

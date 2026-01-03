@@ -29,8 +29,9 @@ const metadata = {
 ### Goals
 
 1. **Rename `title` to `name`** in artifacts table (per ADR 12 naming conventions)
-2. Create `updateDetails` mutation for editing name/description
-3. Create enriched query with computed fields (creator email, version count, total file size)
+2. **Rename `creatorId` to `createdBy`** in artifacts table (per ADR 12 creator field standard)
+3. Create `updateDetails` mutation for editing name/description
+4. Create enriched query with computed fields (creator email, version count, total file size)
 
 ---
 
@@ -64,12 +65,41 @@ artifacts: defineTable({
 })
 ```
 
+### Field Rename Required: `creatorId` -> `createdBy`
+
+Per ADR 12 "Record Creator: `createdBy`" section:
+
+> Use `createdBy` for all tables. This field answers one question: "Who initiated this record's creation?"
+
+The field `creatorId` in the `artifacts` table should be renamed to `createdBy` for consistency:
+- `artifacts.createdBy` (not `artifacts.creatorId`)
+- Pairs with `createdAt` timestamp
+- Matches industry standards (Notion, Microsoft REST API)
+- Future-proof for ownership transfer (add `ownerId` separately later if needed)
+
+**Current schema:**
+```typescript
+artifacts: defineTable({
+  creatorId: v.id("users"),  // <-- Should be "createdBy"
+  // ...
+})
+  .index("by_creator", ["creatorId"])
+```
+
+**Target schema:**
+```typescript
+artifacts: defineTable({
+  createdBy: v.id("users"),  // <-- Renamed from "creatorId"
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+```
+
 ### Other Fields - Already Compliant
 
 | Field | Status | Notes |
 |-------|--------|-------|
 | `description` | OK | Optional string, no redundancy |
-| `creatorId` | OK | FK pattern correct |
 | `shareToken` | OK | Domain term adds meaning |
 | `isDeleted` | OK | Boolean prefix pattern |
 | `deletedAt` | OK | Audit timestamp pattern |
@@ -81,14 +111,14 @@ artifacts: defineTable({
 
 ## Schema Changes
 
-### Migration: Rename `title` to `name`
+### Migration 1: Rename `title` to `name`
 
 **File:** `app/convex/schema.ts`
 
-**Before (line 143-228):**
+**Before (line 148):**
 ```typescript
 artifacts: defineTable({
-  title: v.string(),  // Line 148
+  title: v.string(),
   // ...
 })
 ```
@@ -99,6 +129,30 @@ artifacts: defineTable({
   name: v.string(),  // Renamed from title
   // ...
 })
+```
+
+### Migration 2: Rename `creatorId` to `createdBy`
+
+**File:** `app/convex/schema.ts`
+
+**Before (line 162):**
+```typescript
+artifacts: defineTable({
+  creatorId: v.id("users"),
+  // ...
+})
+  .index("by_creator", ["creatorId"])
+  .index("by_creator_active", ["creatorId", "isDeleted"])
+```
+
+**After:**
+```typescript
+artifacts: defineTable({
+  createdBy: v.id("users"),  // Renamed from creatorId
+  // ...
+})
+  .index("by_created_by", ["createdBy"])
+  .index("by_created_by_active", ["createdBy", "isDeleted"])
 ```
 
 ### Migration Strategy
@@ -143,7 +197,7 @@ export const updateDetails = mutation({
 **Behavior:**
 1. Authenticate user (required)
 2. Validate artifact exists and is not deleted
-3. Verify user is owner (`creatorId === userId`)
+3. Verify user is owner (`createdBy === userId`)
 4. Validate `name`:
    - Trim whitespace
    - Non-empty (throw if empty after trim)
@@ -210,7 +264,7 @@ export const getDetailsForSettings = query({
 
 | Field | Source | Calculation |
 |-------|--------|-------------|
-| `creatorEmail` | `users.email` | Join on `artifact.creatorId` |
+| `creatorEmail` | `users.email` | Join on `artifact.createdBy` |
 | `versionCount` | `artifactVersions` | Count where `artifactId` matches and `isDeleted=false` |
 | `totalFileSize` | `artifactVersions` | Sum of `fileSize` where `artifactId` matches and `isDeleted=false` |
 
@@ -222,10 +276,12 @@ export const getDetailsForSettings = query({
 
 | File | Changes |
 |------|---------|
-| `app/convex/schema.ts` | Rename `title` to `name` in artifacts table (line 148) |
-| `app/convex/artifacts.ts` | Update all references from `title` to `name`, add `updateDetails` mutation, add `getDetailsForSettings` query |
+| `app/convex/schema.ts` | Rename `title` to `name` (line 148), rename `creatorId` to `createdBy` (line 162), update indexes |
+| `app/convex/artifacts.ts` | Update all references from `title` to `name` and `creatorId` to `createdBy`, add `updateDetails` mutation, add `getDetailsForSettings` query |
 
 ### Specific Code Changes in `artifacts.ts`
+
+**Field Renames (title → name, creatorId → createdBy):**
 
 1. **`create` action** (line 23-92)
    - Change `args.title` to `args.name`
@@ -233,72 +289,98 @@ export const getDetailsForSettings = query({
 2. **`createInternal` mutation** (line 98-162)
    - Change `args.title` to `args.name`
    - Change insert: `title: args.title` to `name: args.name`
+   - Change insert: `creatorId: args.userId` to `createdBy: args.userId`
 
 3. **`get` query** (line 167-189)
    - Change return validator: `title: v.string()` to `name: v.string()`
+   - Change return validator: `creatorId: v.id("users")` to `createdBy: v.id("users")`
 
 4. **`getByShareToken` query** (line 280-313)
    - Change return validator: `title: v.string()` to `name: v.string()`
+   - Change return validator: `creatorId: v.id("users")` to `createdBy: v.id("users")`
 
 5. **`list` query** (line 318-349)
    - Change return validator: `title: v.string()` to `name: v.string()`
+   - Change return validator: `creatorId: v.id("users")` to `createdBy: v.id("users")`
 
-6. **`getByIdInternal` query** (line 1009-1032)
+6. **`softDelete` mutation** (line 391-447)
+   - Change permission check: `artifact.creatorId !== userId` to `artifact.createdBy !== userId`
+
+7. **`getByIdInternal` query** (line 1009-1032)
    - Change return validator: `title: v.string()` to `name: v.string()`
+   - Change return validator: `creatorId: v.id("users")` to `createdBy: v.id("users")`
 
-7. **`getByShareTokenInternal` query** (line 1037-1068)
+8. **`getByShareTokenInternal` query** (line 1037-1068)
    - Change return validator: `title: v.string()` to `name: v.string()`
+   - Change return validator: `creatorId: v.id("users")` to `createdBy: v.id("users")`
 
-8. **Add new mutation: `updateDetails`** (after line 554)
+**New Functions:**
 
-9. **Add new query: `getDetailsForSettings`** (after new mutation)
+9. **Add new mutation: `updateDetails`** (after line 554)
 
-### Files to Check for `title` References
+10. **Add new query: `getDetailsForSettings`** (after new mutation)
 
-Other files that may reference artifact `title`:
+### Files to Check for Field References
+
+Other files that may reference artifact `title` or `creatorId`:
 
 ```bash
+# Find title references
 grep -r "\.title" app/convex/
 grep -r "title:" app/convex/
+
+# Find creatorId references
+grep -r "\.creatorId" app/convex/
+grep -r "creatorId:" app/convex/
+grep -r "by_creator" app/convex/
 ```
 
 Likely files:
-- `app/convex/sharing.ts` - May reference artifact title in email templates
+- `app/convex/sharing.ts` - May reference artifact title in email templates and creatorId for permissions
+- `app/convex/lib/permissions.ts` - May check artifact.creatorId for ownership
 - Any other files that fetch artifacts
 
 ---
 
 ## Subtask Breakdown
 
-### Subtask 01: Schema Migration (title -> name)
+### Subtask 01: Schema Migrations (title -> name, creatorId -> createdBy)
 
 **Status:** Pending
 
 **Steps:**
 1. Update `app/convex/schema.ts` line 148: `title: v.string()` -> `name: v.string()`
-2. Update schema documentation comment if it mentions "title"
-3. Run `npx convex dev` to verify schema pushes successfully
+2. Update `app/convex/schema.ts` line 162: `creatorId: v.id("users")` -> `createdBy: v.id("users")`
+3. Update `app/convex/schema.ts` index names:
+   - `by_creator` -> `by_created_by`
+   - `by_creator_active` -> `by_created_by_active`
+4. Update schema documentation comments if they mention "title" or "creatorId"
+5. Run `npx convex dev` to verify schema pushes successfully
 
 **Acceptance:**
 - Schema compiles without errors
 - Existing data remains accessible
+- All indexes renamed correctly
 
 ### Subtask 02: Update Existing Queries/Mutations
 
 **Status:** Pending
 
 **Steps:**
-1. Update `create` action args and internal call
-2. Update `createInternal` mutation args and insert
-3. Update all return validators from `title` to `name`
-4. Update `getByIdInternal` return validator
-5. Update `getByShareTokenInternal` return validator
-6. Search for any other `title` references in `app/convex/`
+1. Update `create` action args: `title` -> `name`
+2. Update `createInternal` mutation args and insert: `title` -> `name`, `creatorId` -> `createdBy`
+3. Update all return validators: `title` -> `name`, `creatorId` -> `createdBy`
+4. Update `softDelete` permission check: `artifact.creatorId` -> `artifact.createdBy`
+5. Update `getByIdInternal` return validator
+6. Update `getByShareTokenInternal` return validator
+7. Search for any other `title` or `creatorId` references in `app/convex/`
+8. Update any references in `sharing.ts` and `lib/permissions.ts`
 
 **Acceptance:**
 - All queries/mutations compile
 - Tests pass (if any exist)
 - Dev server runs without type errors
+- Permission checks work correctly with `createdBy`
 
 ### Subtask 03: Add `updateDetails` Mutation
 
@@ -330,7 +412,7 @@ export const updateDetails = mutation({
     }
 
     // 3. Verify ownership
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized: Only the owner can update details");
     }
 
@@ -415,12 +497,12 @@ export const getDetailsForSettings = query({
     }
 
     // 3. Verify ownership (only owner can access settings)
-    if (artifact.creatorId !== userId) {
+    if (artifact.createdBy !== userId) {
       throw new Error("Not authorized: Only the owner can access settings");
     }
 
     // 4. Get creator email
-    const creator = await ctx.db.get(artifact.creatorId);
+    const creator = await ctx.db.get(artifact.createdBy);
     const creatorEmail = creator?.email;
 
     // 5. Count active versions and sum file sizes
@@ -562,11 +644,12 @@ Expected files with `title`:
 
 | Item | Description |
 |------|-------------|
-| **Schema Change** | Rename `artifacts.title` to `artifacts.name` |
+| **Schema Changes** | Rename `artifacts.title` to `artifacts.name`, rename `artifacts.creatorId` to `artifacts.createdBy` |
+| **Index Updates** | Rename `by_creator` to `by_created_by`, `by_creator_active` to `by_created_by_active` |
 | **New Mutation** | `updateDetails(artifactId, name, description)` |
 | **New Query** | `getDetailsForSettings(artifactId)` with enriched fields |
-| **Files Changed** | `schema.ts`, `artifacts.ts` |
-| **Estimated Effort** | 2-3 hours |
+| **Files Changed** | `schema.ts`, `artifacts.ts`, possibly `sharing.ts` and `lib/permissions.ts` |
+| **Estimated Effort** | 3-4 hours (increased due to additional field rename) |
 | **Dependencies** | None |
 | **Blocked By** | Nothing |
 | **Blocks** | Phase 2 (frontend wiring) |

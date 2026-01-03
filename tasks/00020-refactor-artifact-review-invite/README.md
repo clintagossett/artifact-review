@@ -1,229 +1,158 @@
 # Task 00020: Refactor and Artifact Review Invite
 
 **GitHub Issue:** [#20](https://github.com/clintagossett/artifact-review/issues/20)
-**Status:** Planning
+**Status:** Design Complete - Ready for Implementation
 **Created:** 2025-12-31
 
 ---
 
 ## Resume (Start Here)
 
-**Last Updated:** 2025-12-31 (Session 1)
+**Last Updated:** 2026-01-01 (Session 2)
 
-### Current Status: 📋 Design Complete - Ready for Decision
+### Current Status: Ready for Implementation
 
-**Phase:** Architecture design complete. Need to review and approve before implementation.
+**Phase:** Design complete, implementation architecture defined. Ready to build.
 
-### What We Did This Session (Session 1)
+### What We Did This Session (Session 2)
 
-1. **Created GitHub Issue #20** - Issue assigned, tracking established
-2. **Defined scope** - Clarified the extensibility problems with current invite system:
-   - System invites (join platform) conflated with document invites (review artifact)
-   - Can't track multiple invitations per person properly
-   - No re-send capability
-   - No clear "viewed" tracking
-   - Existing users still need to "accept" by viewing
+1. **Simplified design** - Challenged the three-table architecture
+   - Removed `systemInvites` table (not needed)
+   - Landed on cleaner two-table model
+   - Focus on PII isolation
 
-3. **Architect designed solution** - Comprehensive design proposal created
-   - Researched patterns from Slack, Google Docs, GitHub, Figma
-   - Proposed three-table architecture (systemInvites, artifactReviewers, reviewInvites)
-   - Designed state machines for invitation lifecycle
-   - Created UX flows and API surface
-   - Planned migration path
-   - Document: `design-proposal.md`
+2. **Finalized two-table architecture:**
+   ```
+   userInvites     → Pending users (PII: email, name)
+   artifactAccess  → Access grants (no PII, just IDs)
+   ```
 
-4. **Challenged design** - User questioned need for both artifactReviewers + reviewInvites
-   - Architect analyzed single-table alternative
-   - Found critical performance issues with single-table approach
-   - Permission checks would require post-fetch filtering (violates Convex rules)
-   - "Shared with me" query becomes impossible to optimize
-   - Recommendation: Stick with three-table design
-   - Document: `design-challenge-single-table.md`
+3. **Created diagrams** - Visual flows for:
+   - Invite existing user
+   - Invite new user
+   - Signup linking
+   - Resend invitation
+   - Revoke & re-invite
+   - Document: `diagrams.md`
 
-### Design Decision Needed
+4. **Architect review** - Fixed issues:
+   - Clarified re-invite lookup flow
+   - Fixed ER diagram (missing fields)
+   - Standardized state naming
+   - Resolved open questions
 
-**Three-Table Architecture (Recommended):**
-```
-systemInvites      → Platform signup invitations
-artifactReviewers  → Active permissions (userId required)
-reviewInvites      → Invitation lifecycle tracking
-```
+5. **Implementation architecture** - Created full implementation plan:
+   - Schema additions
+   - Backend functions (queries, mutations)
+   - Frontend components and hooks
+   - Validation checklist (13 scenarios)
+   - Document: `implementation-architecture.md`
 
-**Why separate artifactReviewers from reviewInvites:**
-- Permission checks are O(1) with simple index (critical path)
-- Email-based invites vs userId-based permissions are different concerns
-- "Shared with me" query needs efficient userId index
-- Revoke/re-invite creates multiple records, ambiguous in single-table
-
-### Next Steps
-
-1. **Review design documents** - Read both design docs thoroughly:
-   - `design-proposal.md` (main proposal)
-   - `design-challenge-single-table.md` (tradeoff analysis)
-
-2. **Make final decision** - Approve three-table design or request modifications
-
-3. **Begin implementation** - Once approved:
-   - Phase 1: Schema changes (new tables, new fields)
-   - Phase 2: Internal mutations (linking logic)
-   - Phase 3: Public API (inviteReviewer, resendInvitation, etc.)
-   - Phase 4: Frontend (ShareModal updates)
-   - Phase 5: Migration (backfill existing data)
-
-4. **Estimated effort:** 6-9 days across 5 phases
-
----
-
-## Objective
-
-Refactor the artifact review invite functionality to improve code quality, maintainability, and user experience.
-
----
-
-## Scope
-
-### Problems with Current System
-
-The current `artifactReviewers` table conflates two distinct concepts:
-1. **System invitations** - inviting someone to join the platform
-2. **Document review invitations** - inviting someone to review a specific artifact
-
-**Current limitations:**
-- Single email can only be invited once per artifact (no revoke/re-invite)
-- Status field conflates "no account yet" with "hasn't viewed artifact"
-- No re-send tracking (when was invite last sent? how many times?)
-- No first-view tracking (has reviewer actually engaged?)
-- Can't tell difference between "user hasn't signed up" vs "user hasn't viewed"
-
-### In Scope
-
-- Separate system invites from document invites
-- Track multiple invitations per person per artifact
-- Re-send capability with send history
-- "Viewed" tracking for engagement metrics
-- Support for both existing users and new users
-- Migration from current schema to new schema
-
-### Out of Scope
-
-- Changing permission model (still "can-comment" only)
-- Email template redesign
-- Notification preferences
-- Invitation expiration (optional in design, not MVP)
-
----
-
-## Current State
-
-**Current Schema:**
-```typescript
-artifactReviewers: {
-  artifactId: Id<"artifacts">,
-  email: string,
-  userId: Id<"users"> | null,  // null = pending system invite
-  status: "pending" | "accepted",  // Conflates system + doc invite
-  invitedBy: Id<"users">,
-  invitedAt: number,
-}
-```
-
-**Issues:**
-- `userId: null` means "no account" but permission checks need userId
-- `status: "pending"` is ambiguous (pending account? pending view?)
-- No re-send tracking
-- Can't distinguish existing user invites from new user invites
-
-## Options Considered
-
-See detailed documents:
-- `design-proposal.md` - Full three-table architecture
-- `design-challenge-single-table.md` - Analysis of single-table alternative
-
-### Option A: Three-Table Architecture (Recommended)
-
-**Tables:**
-- `systemInvites` - Platform signup tracking
-- `artifactReviewers` - Active permissions (always has userId)
-- `reviewInvites` - Invitation lifecycle
-
-**Pros:**
-- Clear separation of concerns
-- O(1) permission checks
-- Efficient "shared with me" queries
-- No post-fetch filtering needed
-
-**Cons:**
-- More tables to understand
-- More writes when inviting new users
-- Requires careful linking logic
-
-### Option B: Single-Table with Permissions
-
-**One table:** `reviewInvites` with embedded permissions
-
-**Pros:**
-- Simpler mental model
-- Fewer joins
-- Atomic updates
-
-**Cons:**
-- Permission checks require post-fetch filtering (violates Convex best practices)
-- "Shared with me" query can't use indexes efficiently
-- Revoke/re-invite creates ambiguous state
-- Table serves 6+ concerns (violates SRP)
-
-## Decision
-
-**Proceed with Option A (Three-Table Architecture)**
-
-**Rationale:**
-- Permission checks are on the critical path (every view, comment, file serve)
-- Must be O(1) with simple indexes
-- Separation of concerns improves long-term maintainability
-- The architect's analysis shows single-table creates query performance issues
-
-## Changes Made
-
-**Planning Phase (Session 1):**
-- Created GitHub Issue #20
-- Created task folder structure
-- Architect researched invitation patterns
-- Created comprehensive design proposal
-- Challenged design with single-table alternative
-- Documented tradeoff analysis
-
-**Implementation Phase:**
-_(To be updated as work progresses)_
-
-## Output
+6. **Added reactive permissions** - Real-time permission revocation
+   - Reviewer kicked out immediately when access revoked
+   - Graceful UX (toast + redirect)
 
 ### Design Documents
 
 | Document | Description |
 |----------|-------------|
-| `design-proposal.md` | Full three-table architecture proposal with data models, state machines, UX flows, API surface, migration plan, and implementation phases (6-9 day estimate) |
-| `design-challenge-single-table.md` | Detailed analysis challenging the three-table approach with single-table alternative, including query performance comparisons and recommendation |
+| `design-revised.md` | Two-table architecture, data model, lifecycle flows, validation scenarios |
+| `diagrams.md` | Mermaid diagrams for all flows (ER, sequence, flowcharts) |
+| `implementation-architecture.md` | Schema, backend functions, frontend components, implementation order |
 
-### Implementation Artifacts
+### Next Steps
 
-_(To be added during implementation)_
-- Schema changes
-- Convex mutations/queries
-- Frontend components
-- Migration scripts
-- Tests
+1. **Implement schema** - Add `userInvites` and `artifactAccess` tables
+2. **Build backend** - Create `convex/access.ts` with queries/mutations
+3. **Update auth** - Wire up signup linking
+4. **Build frontend** - Components, hooks, ShareModal integration
+5. **Test** - Validate all 13 scenarios
+6. **Cleanup** - Remove old `artifactReviewers` table
 
-## Testing
+---
 
-**Planning Phase:**
-- No tests yet (design only)
+## Architecture Summary
 
-**Implementation Phase:**
-_(To be defined once implementation begins)_
+### Two-Table Model
 
-Planned test coverage:
-- Unit tests for invitation state machine
-- Unit tests for linking logic
-- Integration tests for API surface
-- E2E tests for full invitation flows
-- Migration validation tests
+| Table | Purpose | PII? |
+|-------|---------|------|
+| `userInvites` | Pending users (no account yet) | Yes (email, name) |
+| `artifactAccess` | Access grants linking artifacts to users | No (IDs only) |
+
+### Key Design Decisions
+
+1. **PII Isolation** - Email/name only in `userInvites`, not in access table
+2. **Privacy between inviters** - `userInvites` unique by (email, createdBy)
+3. **No status enum** - State derived from data (userId, isDeleted, firstViewedAt)
+4. **Reactive permissions** - Real-time revocation via Convex subscriptions
+5. **Re-invite = un-delete** - Don't create new records, restore existing
+
+### State Derivation
+
+```typescript
+function deriveStatus(access) {
+  if (access.isDeleted) return "removed";
+  if (!access.userId) return "pending";
+  if (access.firstViewedAt) return "viewed";
+  return "added";
+}
+```
+
+---
+
+## Scope
+
+### In Scope
+
+- Two-table architecture (userInvites + artifactAccess)
+- Invite existing users and new users
+- Re-send capability with tracking (lastSentAt, sendCount)
+- View tracking (firstViewedAt, lastViewedAt)
+- Revoke and re-invite flows
+- Real-time permission revocation
+- Signup linking (auth callback)
+
+### Out of Scope
+
+- Permission levels beyond "can-comment"
+- Email template redesign
+- Invitation expiration
+- Bulk invite optimization
+
+---
+
+## Output
+
+### Documents Created
+
+- `design-revised.md` - Full design specification
+- `diagrams.md` - Visual diagrams (Mermaid)
+- `implementation-architecture.md` - Implementation plan
+
+### Documents Deleted (superseded)
+
+- `design-proposal.md` - Old three-table design
+- `design-challenge-single-table.md` - Old analysis
+
+---
+
+## Validation Checklist
+
+13 scenarios that must pass:
+
+| # | Scenario |
+|---|----------|
+| 1 | Invite existing user |
+| 2 | Invite new user |
+| 3 | Same owner invites same email to multiple artifacts |
+| 4 | Different owners invite same email (privacy) |
+| 5 | Pending user signs up (linking) |
+| 6 | Resend invitation |
+| 7 | Revoke access (existing user) |
+| 8 | Revoke access (pending user) |
+| 9 | Re-invite after revocation |
+| 10 | Permission check (O(1) critical path) |
+| 11 | "Shared with me" query |
+| 12 | Owner views reviewer list |
+| 13 | Real-time revocation (reactive) |

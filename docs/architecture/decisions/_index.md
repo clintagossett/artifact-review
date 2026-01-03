@@ -18,6 +18,7 @@ Record of significant architectural decisions made for this project.
 | [0010](./0010-reviewer-invitation-account-linking.md) | Reviewer Invitation Account Linking | Accepted | 2025-12-27 |
 | [0011](./0011-soft-delete-strategy.md) | Soft Delete Strategy | Accepted | 2025-12-28 |
 | [0012](./0012-naming-conventions.md) | Backend Naming Conventions | Accepted | 2025-12-31 |
+| [0013](./0013-comment-character-limits.md) | Comment Character Limits | Accepted | 2026-01-02 |
 
 ---
 

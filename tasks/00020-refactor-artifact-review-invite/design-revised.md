@@ -155,10 +155,17 @@ When a new user signs up, the auth callback triggers linking:
 
 ```
 1. Owner invites previously-revoked email
-2. Lookup existing artifactAccess for (artifact, email)
+
+2. Lookup existing artifactAccess:
+   - For pending users: Lookup userInvites by (email, createdBy),
+     then artifactAccess by (artifactId, userInviteId)
+   - For linked users: Lookup user by email,
+     then artifactAccess by (artifactId, userId)
+
 3. If found and isDeleted = true:
    - Un-delete: isDeleted = false, deletedAt = null
    - Update: lastSentAt = now, sendCount += 1
+
 4. Send invitation email
 ```
 
@@ -245,7 +252,7 @@ Expected:
 - userInvites: ALL records with email=luke@... get convertedToUserId set
 - artifactAccess: ALL records with those userInviteIds get:
   - userId = Luke's new ID
-  - userInviteId = cleared (or kept for audit?)
+  - userInviteId = cleared (null)
 ```
 
 ### Scenario 6: Resend Invitation
@@ -286,9 +293,10 @@ Expected:
 Input: Owner previously revoked luke@..., now invites again
 
 Expected:
-- Option A: Un-delete existing artifactAccess record
-- Option B: Create new artifactAccess record
-- (Need to decide which approach)
+- Find existing artifactAccess record (isDeleted = true)
+- Un-delete: isDeleted = false, deletedAt = null
+- Update: lastSentAt = now, sendCount += 1
+- Send invitation email
 ```
 
 ### Scenario 10: Permission Check (Critical Path)
@@ -334,9 +342,11 @@ Expected: Combined list of pending + active reviewers
 1. **Re-invite after revoke:** Un-delete existing record (update lastSentAt, sendCount)
 2. **On linking:** Clear `userInviteId`, set `userId` (clean state, no ambiguity)
 
-## Open Questions
+## Deferred Decisions
 
 1. **View tracking:** How/when do we call the mutation to record firstViewedAt/lastViewedAt?
+   - Deferred to implementation phase
+   - Likely: mutation called when artifact viewer component mounts
 
 ---
 
