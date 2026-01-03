@@ -199,7 +199,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const storedFiles = await t.run(async (ctx) =>
       ctx.db
         .query("artifactFiles")
-        .withIndex("by_version_active", (q) =>
+        .withIndex("by_versionId_active", (q) =>
           q.eq("versionId", versionId).eq("isDeleted", false)
         )
         .collect()
@@ -281,7 +281,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const v2Files = await t.run(async (ctx) =>
       ctx.db
         .query("artifactFiles")
-        .withIndex("by_version_active", (q) =>
+        .withIndex("by_versionId_active", (q) =>
           q.eq("versionId", v2Id).eq("isDeleted", false)
         )
         .collect()
@@ -345,7 +345,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const storedFiles = await t.run(async (ctx) =>
       ctx.db
         .query("artifactFiles")
-        .withIndex("by_version_active", (q) =>
+        .withIndex("by_versionId_active", (q) =>
           q.eq("versionId", versionId).eq("isDeleted", false)
         )
         .collect()
@@ -512,7 +512,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     const versions = await t.run(async (ctx) =>
       ctx.db
         .query("artifactVersions")
-        .withIndex("by_artifact", (q) => q.eq("artifactId", artifactId))
+        .withIndex("by_artifactId", (q) => q.eq("artifactId", artifactId))
         .collect()
     );
 
@@ -524,7 +524,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       const versionFiles = await t.run(async (ctx) =>
         ctx.db
           .query("artifactFiles")
-          .withIndex("by_version_active", (q) =>
+          .withIndex("by_versionId_active", (q) =>
             q.eq("versionId", version._id).eq("isDeleted", false)
           )
           .collect()

@@ -212,24 +212,24 @@ const schema = defineSchema({
     /**
      * List all artifacts for a user (including deleted).
      * Used for admin/debug views.
-     * @example ctx.db.query("artifacts").withIndex("by_created_by", q => q.eq("createdBy", userId))
+     * @example ctx.db.query("artifacts").withIndex("by_createdBy", q => q.eq("createdBy", userId))
      */
-    .index("by_created_by", ["createdBy"])
+    .index("by_createdBy", ["createdBy"])
 
     /**
      * List active artifacts for a user's dashboard.
      * Primary query pattern for artifact listing.
-     * @example ctx.db.query("artifacts").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
+     * @example ctx.db.query("artifacts").withIndex("by_createdBy_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_created_by_active", ["createdBy", "isDeleted"])
+    .index("by_createdBy_active", ["createdBy", "isDeleted"])
 
     /**
      * Lookup artifact by share token for public access.
      * Used by viewer page and HTTP file serving.
      * Token is unique across all artifacts.
-     * @example ctx.db.query("artifacts").withIndex("by_share_token", q => q.eq("shareToken", "abc123xy"))
+     * @example ctx.db.query("artifacts").withIndex("by_shareToken", q => q.eq("shareToken", "abc123xy"))
      */
-    .index("by_share_token", ["shareToken"]),
+    .index("by_shareToken", ["shareToken"]),
 
   // ============================================================================
   // ARTIFACT VERSIONS TABLE
@@ -348,32 +348,32 @@ const schema = defineSchema({
     /**
      * List all versions for an artifact (including deleted).
      * Used for calculating next version number.
-     * @example ctx.db.query("artifactVersions").withIndex("by_artifact", q => q.eq("artifactId", artifactId))
+     * @example ctx.db.query("artifactVersions").withIndex("by_artifactId", q => q.eq("artifactId", artifactId))
      */
-    .index("by_artifact", ["artifactId"])
+    .index("by_artifactId", ["artifactId"])
 
     /**
      * List active versions for version switcher UI.
      * Primary query pattern for version listing.
-     * @example ctx.db.query("artifactVersions").withIndex("by_artifact_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
+     * @example ctx.db.query("artifactVersions").withIndex("by_artifactId_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
      */
-    .index("by_artifact_active", ["artifactId", "isDeleted"])
+    .index("by_artifactId_active", ["artifactId", "isDeleted"])
 
     /**
      * Lookup specific version by number.
      * Used for deep links like `/a/{token}/v2`.
      * Compound index enables O(1) lookup.
-     * @example ctx.db.query("artifactVersions").withIndex("by_artifact_version", q => q.eq("artifactId", artifactId).eq("number", 2))
+     * @example ctx.db.query("artifactVersions").withIndex("by_artifactId_number", q => q.eq("artifactId", artifactId).eq("number", 2))
      */
-    .index("by_artifact_version", ["artifactId", "number"])
+    .index("by_artifactId_number", ["artifactId", "number"])
 
     /**
      * List versions by creator (for permission checks).
      * Used to verify user created this version.
      * Task 00018 - Phase 1 - Step 2
-     * @example ctx.db.query("artifactVersions").withIndex("by_created_by", q => q.eq("createdBy", userId))
+     * @example ctx.db.query("artifactVersions").withIndex("by_createdBy", q => q.eq("createdBy", userId))
      */
-    .index("by_created_by", ["createdBy"]),
+    .index("by_createdBy", ["createdBy"]),
 
   // ============================================================================
   // ARTIFACT FILES TABLE
@@ -465,23 +465,23 @@ const schema = defineSchema({
     /**
      * List all files for a version (including deleted).
      * Used for soft-delete cascade operations.
-     * @example ctx.db.query("artifactFiles").withIndex("by_version", q => q.eq("versionId", versionId))
+     * @example ctx.db.query("artifactFiles").withIndex("by_versionId", q => q.eq("versionId", versionId))
      */
-    .index("by_version", ["versionId"])
+    .index("by_versionId", ["versionId"])
 
     /**
      * O(1) file lookup by path for HTTP serving.
      * Critical for performance - enables instant file resolution.
-     * @example ctx.db.query("artifactFiles").withIndex("by_version_path", q => q.eq("versionId", versionId).eq("filePath", "assets/logo.png"))
+     * @example ctx.db.query("artifactFiles").withIndex("by_versionId_filePath", q => q.eq("versionId", versionId).eq("filePath", "assets/logo.png"))
      */
-    .index("by_version_path", ["versionId", "filePath"])
+    .index("by_versionId_filePath", ["versionId", "filePath"])
 
     /**
      * List active files for a version (for viewer UI).
      * Excludes soft-deleted files.
-     * @example ctx.db.query("artifactFiles").withIndex("by_version_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
+     * @example ctx.db.query("artifactFiles").withIndex("by_versionId_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
      */
-    .index("by_version_active", ["versionId", "isDeleted"]),
+    .index("by_versionId_active", ["versionId", "isDeleted"]),
 
   // ============================================================================
   // ARTIFACT REVIEWERS TABLE
@@ -570,23 +570,23 @@ const schema = defineSchema({
     /**
      * List all reviewers for an artifact (including deleted).
      * Used for admin views and debugging.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifact", q => q.eq("artifactId", artifactId))
+     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId", q => q.eq("artifactId", artifactId))
      */
-    .index("by_artifact", ["artifactId"])
+    .index("by_artifactId", ["artifactId"])
 
     /**
      * List active reviewers for artifact settings UI.
      * Excludes revoked invitations.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifact_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
+     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
      */
-    .index("by_artifact_active", ["artifactId", "isDeleted"])
+    .index("by_artifactId_active", ["artifactId", "isDeleted"])
 
     /**
      * Check if email is already invited to artifact.
      * Used to prevent duplicate invitations.
-     * @example ctx.db.query("artifactReviewers").withIndex("by_artifact_email", q => q.eq("artifactId", artifactId).eq("email", "user@example.com"))
+     * @example ctx.db.query("artifactReviewers").withIndex("by_artifactId_email", q => q.eq("artifactId", artifactId).eq("email", "user@example.com"))
      */
-    .index("by_artifact_email", ["artifactId", "email"])
+    .index("by_artifactId_email", ["artifactId", "email"])
 
     /**
      * Find pending invitations for an email address.
@@ -598,9 +598,9 @@ const schema = defineSchema({
     /**
      * List artifacts a user has been invited to.
      * Used for "Shared with me" view (future feature).
-     * @example ctx.db.query("artifactReviewers").withIndex("by_user", q => q.eq("userId", userId))
+     * @example ctx.db.query("artifactReviewers").withIndex("by_userId", q => q.eq("userId", userId))
      */
-    .index("by_user", ["userId"]),
+    .index("by_userId", ["userId"]),
 
   // ============================================================================
   // COMMENTS
@@ -721,30 +721,30 @@ const schema = defineSchema({
     /**
      * List active comments for a version (primary query).
      * Used by viewer to display comments.
-     * @example ctx.db.query("comments").withIndex("by_version_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
+     * @example ctx.db.query("comments").withIndex("by_versionId_active", q => q.eq("versionId", versionId).eq("isDeleted", false))
      */
-    .index("by_version_active", ["versionId", "isDeleted"])
+    .index("by_versionId_active", ["versionId", "isDeleted"])
 
     /**
      * List all comments for a version (including deleted).
      * Used for cascade soft delete operations.
-     * @example ctx.db.query("comments").withIndex("by_version", q => q.eq("versionId", versionId))
+     * @example ctx.db.query("comments").withIndex("by_versionId", q => q.eq("versionId", versionId))
      */
-    .index("by_version", ["versionId"])
+    .index("by_versionId", ["versionId"])
 
     /**
      * List comments by creator (all artifacts).
      * Used for user comment history.
-     * @example ctx.db.query("comments").withIndex("by_created_by", q => q.eq("createdBy", userId))
+     * @example ctx.db.query("comments").withIndex("by_createdBy", q => q.eq("createdBy", userId))
      */
-    .index("by_created_by", ["createdBy"])
+    .index("by_createdBy", ["createdBy"])
 
     /**
      * List active comments by creator.
      * Used for user dashboard.
-     * @example ctx.db.query("comments").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
+     * @example ctx.db.query("comments").withIndex("by_createdBy_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_created_by_active", ["createdBy", "isDeleted"]),
+    .index("by_createdBy_active", ["createdBy", "isDeleted"]),
 
   // ============================================================================
   // COMMENT REPLIES
@@ -831,30 +831,30 @@ const schema = defineSchema({
     /**
      * List active replies for a comment (primary query).
      * Used by viewer to display reply threads.
-     * @example ctx.db.query("commentReplies").withIndex("by_comment_active", q => q.eq("commentId", commentId).eq("isDeleted", false))
+     * @example ctx.db.query("commentReplies").withIndex("by_commentId_active", q => q.eq("commentId", commentId).eq("isDeleted", false))
      */
-    .index("by_comment_active", ["commentId", "isDeleted"])
+    .index("by_commentId_active", ["commentId", "isDeleted"])
 
     /**
      * List all replies for a comment (including deleted).
      * Used for cascade soft delete operations.
-     * @example ctx.db.query("commentReplies").withIndex("by_comment", q => q.eq("commentId", commentId))
+     * @example ctx.db.query("commentReplies").withIndex("by_commentId", q => q.eq("commentId", commentId))
      */
-    .index("by_comment", ["commentId"])
+    .index("by_commentId", ["commentId"])
 
     /**
      * List replies by creator (all comments).
      * Used for user reply history.
-     * @example ctx.db.query("commentReplies").withIndex("by_created_by", q => q.eq("createdBy", userId))
+     * @example ctx.db.query("commentReplies").withIndex("by_createdBy", q => q.eq("createdBy", userId))
      */
-    .index("by_created_by", ["createdBy"])
+    .index("by_createdBy", ["createdBy"])
 
     /**
      * List active replies by creator.
      * Used for user dashboard.
-     * @example ctx.db.query("commentReplies").withIndex("by_created_by_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
+     * @example ctx.db.query("commentReplies").withIndex("by_createdBy_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
-    .index("by_created_by_active", ["createdBy", "isDeleted"]),
+    .index("by_createdBy_active", ["createdBy", "isDeleted"]),
 });
 
 export default schema;

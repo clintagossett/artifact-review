@@ -268,7 +268,7 @@ export const getFilesByVersion = query({
   handler: async (ctx, args) => {
     return await ctx.db
       .query("artifactFiles")
-      .withIndex("by_version_active", (q) =>
+      .withIndex("by_versionId_active", (q) =>
         q.eq("versionId", args.versionId).eq("isDeleted", false)
       )
       .collect();
@@ -302,7 +302,7 @@ export const getByShareToken = query({
     // No authentication required - public access via share token
     const artifact = await ctx.db
       .query("artifacts")
-      .withIndex("by_share_token", (q) => q.eq("shareToken", args.shareToken))
+      .withIndex("by_shareToken", (q) => q.eq("shareToken", args.shareToken))
       .first();
 
     // Return null if not found or deleted
@@ -344,7 +344,7 @@ export const list = query({
     // Get user's active artifacts
     return await ctx.db
       .query("artifacts")
-      .withIndex("by_created_by_active", (q) =>
+      .withIndex("by_createdBy_active", (q) =>
         q.eq("createdBy", userId).eq("isDeleted", false)
       )
       .collect();
@@ -466,7 +466,7 @@ export const addVersionInternal = internalMutation({
     // Get max version number for this artifact
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
+      .withIndex("by_artifactId", (q) => q.eq("artifactId", args.artifactId))
       .collect();
 
     const maxVersionNumber = Math.max(...versions.map((v) => v.number), 0);
@@ -593,7 +593,7 @@ export const softDelete = mutation({
     // Cascade: Soft delete all versions
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact", (q) => q.eq("artifactId", args.id))
+      .withIndex("by_artifactId", (q) => q.eq("artifactId", args.id))
       .collect();
 
     for (const version of versions) {
@@ -607,7 +607,7 @@ export const softDelete = mutation({
         // Cascade: Soft delete all files for this version
         const files = await ctx.db
           .query("artifactFiles")
-          .withIndex("by_version", (q) => q.eq("versionId", version._id))
+          .withIndex("by_versionId", (q) => q.eq("versionId", version._id))
           .collect();
 
         for (const file of files) {
@@ -660,7 +660,7 @@ export const softDeleteVersion = mutation({
     // Check if this is the last active version
     const activeVersions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", version.artifactId).eq("isDeleted", false)
       )
       .collect();
@@ -681,7 +681,7 @@ export const softDeleteVersion = mutation({
     // Cascade: Soft delete all files for this version WITH deletedBy
     const files = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_version", (q) => q.eq("versionId", args.versionId))
+      .withIndex("by_versionId", (q) => q.eq("versionId", args.versionId))
       .collect();
 
     for (const file of files) {
@@ -731,7 +731,7 @@ export const getVersions = query({
 
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .order("desc")
@@ -792,7 +792,7 @@ export const getVersionByNumber = query({
 
     const version = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_version", (q) =>
+      .withIndex("by_artifactId_number", (q) =>
         q.eq("artifactId", args.artifactId).eq("number", args.number)
       )
       .first();
@@ -855,7 +855,7 @@ export const getLatestVersion = query({
     // Get all active versions, sorted descending
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .order("desc")
@@ -900,7 +900,7 @@ export const listHtmlFiles = query({
   handler: async (ctx, args) => {
     const files = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_version_active", (q) =>
+      .withIndex("by_versionId_active", (q) =>
         q.eq("versionId", args.versionId).eq("isDeleted", false)
       )
       .collect();
@@ -933,7 +933,7 @@ export const getFileByPath = internalQuery({
   handler: async (ctx, args) => {
     const file = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_version_path", (q) =>
+      .withIndex("by_versionId_filePath", (q) =>
         q.eq("versionId", args.versionId).eq("filePath", args.filePath)
       )
       .unique();
@@ -979,7 +979,7 @@ export const getVersionByNumberInternal = internalQuery({
   handler: async (ctx, args) => {
     const version = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_version", (q) =>
+      .withIndex("by_artifactId_number", (q) =>
         q.eq("artifactId", args.artifactId).eq("number", args.number)
       )
       .first();
@@ -1060,7 +1060,7 @@ export const getByShareTokenInternal = internalQuery({
   handler: async (ctx, args) => {
     const artifact = await ctx.db
       .query("artifacts")
-      .withIndex("by_share_token", (q) => q.eq("shareToken", args.shareToken))
+      .withIndex("by_shareToken", (q) => q.eq("shareToken", args.shareToken))
       .first();
 
     if (!artifact || artifact.isDeleted) {
@@ -1107,7 +1107,7 @@ export const getEntryPointContent = query({
 
     const file = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_version_path", (q) =>
+      .withIndex("by_versionId_filePath", (q) =>
         q.eq("versionId", args.versionId).eq("filePath", version.entryPoint!)
       )
       .first();
@@ -1254,7 +1254,7 @@ export const getDetailsForSettings = query({
     // 5. Count active versions and sum file sizes
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .collect();

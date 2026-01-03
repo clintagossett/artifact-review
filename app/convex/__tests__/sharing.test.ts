@@ -886,7 +886,7 @@ describe.skip("sharing", () => {
       const linkedInvitations = await t.run(async (ctx) => {
         return await ctx.db
           .query("artifactReviewers")
-          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
           .collect();
       });
 
@@ -991,7 +991,7 @@ describe.skip("sharing", () => {
       const linkedInvitations = await t.run(async (ctx) => {
         return await ctx.db
           .query("artifactReviewers")
-          .withIndex("by_user", (q) => q.eq("userId", userId))
+          .withIndex("by_userId", (q) => q.eq("userId", userId))
           .collect();
       });
 

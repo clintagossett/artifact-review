@@ -20,7 +20,7 @@ Establish consistent naming conventions for Convex backend code including functi
 | **Record Creator** | `createdBy` | All tables - who created this record |
 | **Boolean Fields** | `is*` prefix | `isDeleted`, `isUpdated` |
 | **Foreign Keys** | `entityId` | `artifactId`, `versionId` |
-| **Index Names** | `by_field` (snake_case) | `by_created_by`, `by_artifact_active` |
+| **Index Names** | `by_camelCaseField` | `by_createdBy`, `by_artifactId_active` |
 | **Query Functions** | `get*`, `list*`, `getBy*` | `get`, `list`, `getByShareToken` |
 | **Mutation Functions** | verb | `create`, `delete`, `updateContent` |
 | **Internal Functions** | `*Internal` suffix | `createInternal`, `getByIdInternal` |
@@ -172,28 +172,28 @@ artifacts: defineTable({
   title: v.string(),
   // ...
 })
-  .index("by_created_by", ["createdBy"])
+  .index("by_createdBy", ["createdBy"])
 
 artifactVersions: defineTable({
   createdBy: v.id("users"),      // Who created this version
   fileType: v.string(),
   // ...
 })
-  .index("by_created_by", ["createdBy"])
+  .index("by_createdBy", ["createdBy"])
 
 comments: defineTable({
   createdBy: v.id("users"),      // Who created this comment
   content: v.string(),
   // ...
 })
-  .index("by_created_by", ["createdBy"])
+  .index("by_createdBy", ["createdBy"])
 
 commentReplies: defineTable({
   createdBy: v.id("users"),      // Who created this reply
   content: v.string(),
   // ...
 })
-  .index("by_created_by", ["createdBy"])
+  .index("by_createdBy", ["createdBy"])
 ```
 
 **Why `createdBy`?**
@@ -227,12 +227,12 @@ if (version.createdBy === userId) { /* can delete */ }
 // Consistent query pattern
 const userArtifacts = await ctx.db
   .query("artifacts")
-  .withIndex("by_created_by", q => q.eq("createdBy", userId))
+  .withIndex("by_createdBy", q => q.eq("createdBy", userId))
   .collect();
 
 const userComments = await ctx.db
   .query("comments")
-  .withIndex("by_created_by", q => q.eq("createdBy", userId))
+  .withIndex("by_createdBy", q => q.eq("createdBy", userId))
   .collect();
 ```
 
@@ -368,43 +368,49 @@ artifacts: defineTable({
 
 ### Index Naming
 
-**Convention: `by_field` or `by_field1_and_field2`**
+**Convention: `by_camelCaseField` with underscore separators**
 
-Follow the pattern from `convex-rules.md`: include all indexed fields in the name.
+Preserve camelCase field names, use underscore only as separator between fields.
 
-```typescript
-// Good - Single field index
-.index("by_creator", ["creatorId"])
-.index("by_email", ["email"])
-.index("by_share_token", ["shareToken"])
-
-// Good - Multi-field index (include all fields)
-.index("by_creator_and_is_deleted", ["creatorId", "isDeleted"])
-.index("by_artifact_and_version", ["artifactId", "versionNumber"])
-.index("by_version_and_path", ["versionId", "filePath"])
-.index("by_artifact_and_email", ["artifactId", "email"])
-
-// Good - Shorthand for soft-delete pattern
-.index("by_creator_active", ["creatorId", "isDeleted"])  // "_active" implies isDeleted filter
-.index("by_artifact_active", ["artifactId", "isDeleted"])
-
-// Bad
-.index("creator_index", ["creatorId"])     // Don't use "_index" suffix
-.index("byCreator", ["creatorId"])          // Use snake_case for index names
-.index("by_creator", ["creatorId", "isDeleted"])  // Missing second field in name!
-.index("idx_creator", ["creatorId"])       // Don't use "idx_" prefix
+```
+Pattern: by_[camelCaseField]_[camelCaseField]
+                └─ underscore separator ─┘
 ```
 
-**Special index pattern for soft-deletable entities:**
-
-Use `_active` suffix as shorthand for `_and_is_deleted` when the index is used to filter out deleted items:
+**Rationale:** Research of public Convex repositories on GitHub shows zero usage of `_and_` in index names. The community convention is simple underscore separation while preserving field name casing.
 
 ```typescript
-// Pattern: by_[field]_active for filtering out deleted items
-.index("by_creator_active", ["creatorId", "isDeleted"])
-.index("by_artifact_active", ["artifactId", "isDeleted"])
-.index("by_version_active", ["versionId", "isDeleted"])
-.index("by_comment_active", ["commentId", "isDeleted"])
+// Good - Single field (preserve camelCase)
+.index("by_createdBy", ["createdBy"])
+.index("by_artifactId", ["artifactId"])
+.index("by_shareToken", ["shareToken"])
+
+// Good - Compound indexes (underscore separator, preserve camelCase)
+.index("by_createdBy_artifactId", ["createdBy", "artifactId"])
+.index("by_versionId_path", ["versionId", "path"])
+.index("by_artifactId_email", ["artifactId", "email"])
+
+// Good - Soft-delete pattern (_active shorthand)
+.index("by_createdBy_active", ["createdBy", "isDeleted"])
+.index("by_artifactId_active", ["artifactId", "isDeleted"])
+
+// Bad
+.index("by_created_by_and_artifact_id", ...)  // Don't use _and_, don't snake_case fields
+.index("by_created_by", ["createdBy"])        // Don't convert camelCase to snake_case
+.index("byCreatedBy", ["createdBy"])          // Missing by_ prefix underscore
+.index("idx_createdBy", ["createdBy"])        // Don't use idx_ prefix
+.index("createdBy_index", ["createdBy"])      // Don't use _index suffix
+```
+
+**`_active` shorthand for soft-delete:**
+
+Use `_active` suffix when the index filters by `isDeleted`. This is a project-specific convention that signals "query for active (non-deleted) records."
+
+```typescript
+// Pattern: by_[field]_active → ["field", "isDeleted"]
+.index("by_createdBy_active", ["createdBy", "isDeleted"])
+.index("by_artifactId_active", ["artifactId", "isDeleted"])
+.index("by_versionId_active", ["versionId", "isDeleted"])
 ```
 
 ---
@@ -615,10 +621,10 @@ tableNamePlural: defineTable({
   resolvedUpdatedAt: v.optional(v.number()),
 })
   // ---- Indexes ----
-  .index("by_parent", ["parentId"])
-  .index("by_parent_active", ["parentId", "isDeleted"])
-  .index("by_created_by", ["createdBy"])
-  .index("by_created_by_active", ["createdBy", "isDeleted"])
+  .index("by_parentId", ["parentId"])
+  .index("by_parentId_active", ["parentId", "isDeleted"])
+  .index("by_createdBy", ["createdBy"])
+  .index("by_createdBy_active", ["createdBy", "isDeleted"])
 ```
 
 ---
@@ -665,9 +671,11 @@ artifactVersions: defineTable({
 })
 
 // Index Naming
-.index("idx_creator", ["creatorId"])     // Use by_creator
-.index("byCreator", ["creatorId"])       // Use snake_case: by_creator
-.index("by_creator", ["creatorId", "isDeleted"]) // Missing second field!
+.index("by_created_by", ["createdBy"])   // Don't snake_case - use by_createdBy
+.index("by_created_by_and_artifact_id", ...) // Don't use _and_ - use by_createdBy_artifactId
+.index("byCreatedBy", ["createdBy"])     // Missing underscore after by
+.index("idx_createdBy", ["createdBy"])   // Don't use idx_ prefix
+.index("by_createdBy", ["createdBy", "isDeleted"]) // Missing second field - use by_createdBy_active
 
 // Function Naming - Don't include resource name
 export const createArtifact = action({ ... })   // Redundant - just "create"
@@ -778,7 +786,7 @@ When writing Convex backend code, ask:
 - [ ] Creator field: `createdBy` for who created this record?
 - [ ] Booleans: `is*` prefix?
 - [ ] Foreign keys: `entityId` pattern?
-- [ ] Indexes: `by_field` and all fields in name?
+- [ ] Indexes: `by_camelCaseField` pattern (preserve field casing)?
 - [ ] Functions: CRUD verb pattern (`create`, `get`, `delete` - NOT `createReply`, `getArtifact`)?
 - [ ] Functions: No resource name in function (context from file name)?
 - [ ] Internal functions: `*Internal` suffix?

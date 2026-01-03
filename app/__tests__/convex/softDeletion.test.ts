@@ -55,7 +55,7 @@ describe("soft deletion", () => {
       const versions = await t.run(async (ctx) => {
         return await ctx.db
           .query("artifactVersions")
-          .withIndex("by_artifact", (q) => q.eq("artifactId", result.artifactId))
+          .withIndex("by_artifactId", (q) => q.eq("artifactId", result.artifactId))
           .collect();
       });
 

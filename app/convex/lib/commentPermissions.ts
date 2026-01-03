@@ -56,7 +56,7 @@ export async function requireCommentPermission(
   // The by_artifact_active index narrows the search first
   const reviewers = await ctx.db
     .query("artifactReviewers")
-    .withIndex("by_artifact_active", (q) =>
+    .withIndex("by_artifactId_active", (q) =>
       q.eq("artifactId", artifact._id).eq("isDeleted", false)
     )
     .collect();

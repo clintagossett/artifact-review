@@ -62,7 +62,7 @@ export const inviteReviewer = mutation({
     // Check for existing invitation
     const existingInvitation = await ctx.db
       .query("artifactReviewers")
-      .withIndex("by_artifact_email", (q) =>
+      .withIndex("by_artifactId_email", (q) =>
         q.eq("artifactId", args.artifactId).eq("email", normalizedEmail)
       )
       .first();
@@ -148,7 +148,7 @@ export const getReviewers = query({
     // Get active reviewers only
     const reviewers = await ctx.db
       .query("artifactReviewers")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .collect();
@@ -255,7 +255,7 @@ export const getUserPermission = query({
     // Check if user is an invited reviewer
     const reviewer = await ctx.db
       .query("artifactReviewers")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", args.artifactId).eq("isDeleted", false)
       )
       .filter((q) => q.eq(q.field("userId"), userId))

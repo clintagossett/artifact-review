@@ -58,7 +58,7 @@ export const getReplies = query({
     // Get active replies using index
     const replies = await ctx.db
       .query("commentReplies")
-      .withIndex("by_comment_active", (q) =>
+      .withIndex("by_commentId_active", (q) =>
         q.eq("commentId", args.commentId).eq("isDeleted", false)
       )
       .order("asc")

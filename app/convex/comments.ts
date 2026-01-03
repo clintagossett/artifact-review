@@ -55,7 +55,7 @@ export const getByVersion = query({
     // Get active comments using index (no filter!)
     const comments = await ctx.db
       .query("comments")
-      .withIndex("by_version_active", (q) =>
+      .withIndex("by_versionId_active", (q) =>
         q.eq("versionId", args.versionId).eq("isDeleted", false)
       )
       .order("asc")
@@ -69,7 +69,7 @@ export const getByVersion = query({
         // Count active replies
         const replies = await ctx.db
           .query("commentReplies")
-          .withIndex("by_comment_active", (q) =>
+          .withIndex("by_commentId_active", (q) =>
             q.eq("commentId", comment._id).eq("isDeleted", false)
           )
           .collect();
@@ -117,7 +117,7 @@ export const create = mutation({
     // Check if this version is the latest (Task 00021 - Subtask 01)
     const latestVersion = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", version.artifactId).eq("isDeleted", false)
       )
       .order("desc")
@@ -288,7 +288,7 @@ export const softDelete = mutation({
     // Cascade soft delete to all replies
     const replies = await ctx.db
       .query("commentReplies")
-      .withIndex("by_comment", (q) => q.eq("commentId", args.commentId))
+      .withIndex("by_commentId", (q) => q.eq("commentId", args.commentId))
       .collect();
 
     for (const reply of replies) {

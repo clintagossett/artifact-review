@@ -47,7 +47,7 @@ export async function getArtifactPermission(
   if (userId) {
     const reviewer = await ctx.db
       .query("artifactReviewers")
-      .withIndex("by_artifact_active", (q) =>
+      .withIndex("by_artifactId_active", (q) =>
         q.eq("artifactId", artifactId).eq("isDeleted", false)
       )
       .filter((q) => q.eq(q.field("userId"), userId))
@@ -102,7 +102,7 @@ export async function getArtifactByShareToken(
 } | null> {
   const artifact = await ctx.db
     .query("artifacts")
-    .withIndex("by_share_token", (q) => q.eq("shareToken", shareToken))
+    .withIndex("by_shareToken", (q) => q.eq("shareToken", shareToken))
     .first();
 
   if (!artifact || artifact.isDeleted) {

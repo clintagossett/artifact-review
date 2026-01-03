@@ -220,7 +220,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     const storedFiles = await t.run(async (ctx) =>
       ctx.db
         .query("artifactFiles")
-        .withIndex("by_version_active", (q) =>
+        .withIndex("by_versionId_active", (q) =>
           q.eq("versionId", versionId).eq("isDeleted", false)
         )
         .collect()

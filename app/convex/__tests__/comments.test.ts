@@ -1115,7 +1115,7 @@ describe.skip("Comment Operations", () => {
       const replies = await asOwner.run(async (ctx) =>
         await ctx.db
           .query("commentReplies")
-          .withIndex("by_comment", (q) => q.eq("commentId", commentId))
+          .withIndex("by_commentId", (q) => q.eq("commentId", commentId))
           .collect()
       );
 
@@ -1145,7 +1145,7 @@ describe.skip("Comment Operations", () => {
       const replies = await asOwner.run(async (ctx) =>
         await ctx.db
           .query("commentReplies")
-          .withIndex("by_comment", (q) => q.eq("commentId", commentId))
+          .withIndex("by_commentId", (q) => q.eq("commentId", commentId))
           .collect()
       );
 
@@ -1977,7 +1977,7 @@ describe.skip("Integration Tests", () => {
       const replies = await asOwner.run(async (ctx) =>
         await ctx.db
           .query("commentReplies")
-          .withIndex("by_comment", (q) => q.eq("commentId", commentId))
+          .withIndex("by_commentId", (q) => q.eq("commentId", commentId))
           .collect()
       );
 

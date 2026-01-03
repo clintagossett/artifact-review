@@ -109,7 +109,7 @@ export const addZipVersion = mutation({
     // 4. Get next version number (query existing versions)
     const versions = await ctx.db
       .query("artifactVersions")
-      .withIndex("by_artifact", (q) => q.eq("artifactId", args.artifactId))
+      .withIndex("by_artifactId", (q) => q.eq("artifactId", args.artifactId))
       .collect();
     const maxVersionNumber = Math.max(...versions.map((v) => v.number), 0);
     const newVersionNumber = maxVersionNumber + 1;
