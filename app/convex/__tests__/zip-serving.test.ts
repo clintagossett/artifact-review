@@ -22,8 +22,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -77,8 +77,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -117,8 +117,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -169,8 +169,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -285,8 +285,8 @@ describe("ZIP Serving - Version and Entry Point", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -326,8 +326,8 @@ describe("ZIP Serving - Version and Entry Point", () => {
 
     await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken: "testtkn1",
         isDeleted: false,
         createdAt: Date.now(),
@@ -340,7 +340,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
     });
 
     expect(artifact).toBeDefined();
-    expect(artifact?.title).toBe("Test Artifact");
+    expect(artifact?.name).toBe("Test Artifact");
     expect(artifact?.shareToken).toBe("testtkn1");
   });
 
@@ -353,8 +353,8 @@ describe("ZIP Serving - Version and Entry Point", () => {
 
     await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Deleted Artifact",
-        creatorId: userId,
+        name: "Deleted Artifact",
+        createdBy: userId,
         shareToken: "deleted1",
         isDeleted: true,
         deletedAt: Date.now(),

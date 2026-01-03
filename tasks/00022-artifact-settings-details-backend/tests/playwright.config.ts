@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 90000, // ZIP uploads may take longer
+  timeout: 90000, // Settings updates may take a moment
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on',      // CRITICAL: Enables trace.zip

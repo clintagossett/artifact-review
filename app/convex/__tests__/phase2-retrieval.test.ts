@@ -40,8 +40,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test",
-          creatorId: userId,
+          name: "Test",
+          createdBy: userId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -90,8 +90,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test",
-          creatorId: ownerId,
+          name: "Test",
+          createdBy: ownerId,
           shareToken: "test456",
           isDeleted: true, // Deleted - no access
           deletedAt: Date.now(),
@@ -134,8 +134,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test",
-          creatorId: userId,
+          name: "Test",
+          createdBy: userId,
           shareToken: "test789",
           isDeleted: false,
           createdAt: Date.now(),

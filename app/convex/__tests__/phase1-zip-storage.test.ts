@@ -80,7 +80,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
 
     await expect(
       t.withIdentity({ subject: userId }).mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test ZIP",
+        name: "Test ZIP",
         fileSize: oversizedBytes,
       })
     ).rejects.toThrow(/too large/i);
@@ -96,7 +96,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     const result = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "My Dashboard",
+        name: "My Dashboard",
         description: "Interactive sales dashboard",
         fileSize: 10000, // 10KB - valid
       });
@@ -109,9 +109,9 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     // Verify artifact was created
     const artifact = await t.run(async (ctx) => ctx.db.get(result.artifactId));
     expect(artifact).toBeDefined();
-    expect(artifact?.title).toBe("My Dashboard");
+    expect(artifact?.name).toBe("My Dashboard");
     expect(artifact?.description).toBe("Interactive sales dashboard");
-    expect(artifact?.creatorId).toBe(userId);
+    expect(artifact?.createdBy).toBe(userId);
 
     // Verify version was created with fileType=zip
     const version = await t.run(async (ctx) => ctx.db.get(result.versionId));
@@ -126,7 +126,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
 
     await expect(
       t.mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       })
     ).rejects.toThrow(/not authenticated/i);
@@ -145,7 +145,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const { artifactId } = await t
       .withIdentity({ subject: ownerId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       });
 
@@ -185,7 +185,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const { artifactId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       });
 
@@ -209,7 +209,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const { artifactId } = await t
       .withIdentity({ subject: ownerId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       });
 
@@ -236,7 +236,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const { artifactId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       });
 
@@ -258,7 +258,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const { artifactId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test",
+        name: "Test",
         fileSize: 1000,
       });
 
@@ -286,8 +286,8 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -317,8 +317,8 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: ownerId,
+        name: "Test",
+        createdBy: ownerId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -345,8 +345,8 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: true,  // Deleted
         deletedAt: Date.now(),
@@ -372,8 +372,8 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -400,8 +400,8 @@ describe("ZIP Processing Error Handling", () => {
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
-        title: "Test",
-        creatorId: userId,
+        name: "Test",
+        createdBy: userId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
@@ -468,7 +468,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { artifactId, versionId, uploadUrl } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Dashboard v1",
+        name: "Dashboard v1",
         fileSize: 4000, // Valid size
       });
 
@@ -556,7 +556,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Presentation with video",
+        name: "Presentation with video",
         fileSize: 142000, // Size of the sample ZIP
       });
 
@@ -636,7 +636,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "ZIP with too many files",
+        name: "ZIP with too many files",
         fileSize: 10000,
       });
 
@@ -669,7 +669,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "ZIP with oversized file",
+        name: "ZIP with oversized file",
         fileSize: 10000,
       });
 
@@ -700,7 +700,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId: v1 } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test 1",
+        name: "Test 1",
         fileSize: 1000,
       });
 
@@ -716,7 +716,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId: v2 } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test 2",
+        name: "Test 2",
         fileSize: 1000,
       });
 
@@ -732,7 +732,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const { versionId: v3 } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Test 3",
+        name: "Test 3",
         fileSize: 1000,
       });
 

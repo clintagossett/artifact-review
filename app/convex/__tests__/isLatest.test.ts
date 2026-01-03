@@ -35,8 +35,8 @@ describe("isLatest computation", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -74,8 +74,8 @@ describe("isLatest computation", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -146,8 +146,8 @@ describe("isLatest computation", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -222,8 +222,8 @@ describe("isLatest computation", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -266,8 +266,8 @@ describe("isLatest computation", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,

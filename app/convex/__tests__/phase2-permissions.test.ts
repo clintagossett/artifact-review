@@ -29,8 +29,8 @@ describe("Read Permission Helpers", () => {
       const artifactId = await t.run(async (ctx) => {
         const shareToken = "test123";
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: userId,
+          name: "Test Artifact",
+          createdBy: userId,
           shareToken,
           isDeleted: false,
           createdAt: Date.now(),
@@ -72,8 +72,8 @@ describe("Read Permission Helpers", () => {
       // Create artifact
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "test456",
           isDeleted: false,
           createdAt: Date.now(),
@@ -120,8 +120,8 @@ describe("Read Permission Helpers", () => {
       // Create artifact
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "public789",
           isDeleted: false,
           createdAt: Date.now(),
@@ -155,8 +155,8 @@ describe("Read Permission Helpers", () => {
       // Create deleted artifact
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Deleted Artifact",
-          creatorId: ownerId,
+          name: "Deleted Artifact",
+          createdBy: ownerId,
           shareToken: "deleted123",
           isDeleted: true,
           deletedAt: Date.now(),
@@ -205,8 +205,8 @@ describe("Read Permission Helpers", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: userId,
+          name: "Test Artifact",
+          createdBy: userId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -236,8 +236,8 @@ describe("Read Permission Helpers", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: ownerId,
+          name: "Test Artifact",
+          createdBy: ownerId,
           shareToken: "public123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -267,8 +267,8 @@ describe("Read Permission Helpers", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Deleted Artifact",
-          creatorId: ownerId,
+          name: "Deleted Artifact",
+          createdBy: ownerId,
           shareToken: "deleted123",
           isDeleted: true,
           deletedAt: Date.now(),
@@ -301,8 +301,8 @@ describe("Read Permission Helpers", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: userId,
+          name: "Test Artifact",
+          createdBy: userId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -345,8 +345,8 @@ describe("Read Permission Helpers", () => {
 
       const artifactId = await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: userId,
+          name: "Test Artifact",
+          createdBy: userId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -393,8 +393,8 @@ describe("Read Permission Helpers", () => {
       const shareToken = "validToken123";
       await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Test Artifact",
-          creatorId: userId,
+          name: "Test Artifact",
+          createdBy: userId,
           shareToken,
           isDeleted: false,
           createdAt: Date.now(),
@@ -427,8 +427,8 @@ describe("Read Permission Helpers", () => {
       const shareToken = "deletedToken";
       await t.run(async (ctx) => {
         return await ctx.db.insert("artifacts", {
-          title: "Deleted Artifact",
-          creatorId: userId,
+          name: "Deleted Artifact",
+          createdBy: userId,
           shareToken,
           isDeleted: true,
           deletedAt: Date.now(),

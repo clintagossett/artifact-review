@@ -20,7 +20,7 @@ describe("soft deletion", () => {
 
       // Create artifact with v1
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html" as const,
         content: "<html>v1</html>",
       });
@@ -79,7 +79,7 @@ describe("soft deletion", () => {
 
       // Create artifact with v1
       const v1Result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html" as const,
         content: "<html>v1</html>",
       });
@@ -130,7 +130,7 @@ describe("soft deletion", () => {
 
       // Create artifact with v1 only
       const v1Result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html" as const,
         content: "<html>v1</html>",
       });

@@ -7,36 +7,14 @@
  * Task 00022: Hook Up Artifact Settings Details Tab to Backend
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { injectClickIndicator } from './utils/clickIndicator';
 import { registerUser } from './helpers/auth';
 import { createZipArtifact, verifyArtifactContentVisible } from './helpers/artifacts';
 import * as path from 'path';
 
-// Absolute path to samples directory
-const SAMPLES_DIR = '/Users/clintgossett/Documents/personal/personal projects/artifact-review/samples';
-
-// Inline click indicator helper (simplified version for this test)
-async function injectClickIndicator(page: Page): Promise<void> {
-  try {
-    await page.addStyleTag({
-      content: `
-        .playwright-cursor {
-          position: fixed;
-          pointer-events: none;
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: rgba(255, 0, 0, 0.8);
-          border: 2px solid white;
-          transform: translate(-50%, -50%);
-          z-index: 999998;
-        }
-      `,
-    });
-  } catch {
-    // Page may have closed
-  }
-}
+// Sample file path (absolute path to ensure it works)
+const SAMPLE_ZIP_PATH = path.resolve(__dirname, '../../../../samples/01-valid/zip/charting/v1.zip');
 
 // Inject click indicator after each navigation for validation videos
 test.beforeEach(async ({ page }) => {
@@ -61,13 +39,11 @@ test.describe('Artifact Settings - Details Tab', () => {
     await expect(page).toHaveURL('/dashboard');
 
     // 2. Upload ZIP file from central samples
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     const testTitle = `Dashboard v1 - ${Date.now()}`;
     const { shareToken, title } = await createZipArtifact(page, {
       title: testTitle,
       description: 'Testing artifact creation with name field',
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     console.log('Created artifact with shareToken:', shareToken);
@@ -88,12 +64,10 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should update artifact name via Settings panel', async ({ page }) => {
     // 1. Register and create artifact
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     const originalName = `Original Name - ${Date.now()}`;
     const { shareToken } = await createZipArtifact(page, {
       title: originalName,
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel
@@ -156,12 +130,15 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should update artifact description via Settings panel', async ({ page }) => {
     // 1. Register and create artifact
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
+    const zipPath = path.join(
+      __dirname,
+      '../../../../../../samples/01-valid/zip/charting/v1.zip'
+    );
 
     const { shareToken } = await createZipArtifact(page, {
       title: `Description Test - ${Date.now()}`,
       description: 'Original description',
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel
@@ -220,11 +197,9 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should show validation error for empty name', async ({ page }) => {
     // 1. Register and create artifact
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     await createZipArtifact(page, {
       title: `Validation Test - ${Date.now()}`,
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel
@@ -260,11 +235,9 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should show validation error for name exceeding 100 characters', async ({ page }) => {
     // 1. Register and create artifact
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     await createZipArtifact(page, {
       title: `Long Name Test - ${Date.now()}`,
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel
@@ -302,11 +275,9 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should show validation error for description exceeding 500 characters', async ({ page }) => {
     // 1. Register and create artifact
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     await createZipArtifact(page, {
       title: `Long Description Test - ${Date.now()}`,
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel
@@ -344,14 +315,17 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should verify getDetailsForSettings returns correct data', async ({ page }) => {
     // 1. Register and create artifact
     const { email } = await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
+    const zipPath = path.join(
+      __dirname,
+      '../../../../../../samples/01-valid/zip/charting/v1.zip'
+    );
 
     const testTitle = `Details Query Test - ${Date.now()}`;
     const testDescription = 'Test description for details query';
     const { shareToken } = await createZipArtifact(page, {
       title: testTitle,
       description: testDescription,
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel to view details
@@ -389,12 +363,10 @@ test.describe('Artifact Settings - Details Tab', () => {
   test('should allow clearing description with empty string', async ({ page }) => {
     // 1. Register and create artifact with description
     await registerUser(page);
-    const zipPath = path.join(SAMPLES_DIR, '01-valid/zip/charting/v1.zip');
-
     await createZipArtifact(page, {
       title: `Clear Description Test - ${Date.now()}`,
       description: 'This description will be cleared',
-      zipFilePath: zipPath,
+      zipFilePath: SAMPLE_ZIP_PATH,
     });
 
     // 2. Open Settings panel

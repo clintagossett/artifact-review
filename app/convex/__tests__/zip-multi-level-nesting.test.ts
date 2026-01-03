@@ -174,7 +174,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     const { artifactId, versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Charting with 1-level nesting",
+        name: "Charting with 1-level nesting",
         fileSize: 5000,
       });
 
@@ -240,7 +240,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     const { versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Charting with 2-level nesting",
+        name: "Charting with 2-level nesting",
         fileSize: 5000,
       });
 

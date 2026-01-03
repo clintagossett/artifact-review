@@ -158,7 +158,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const { artifactId, versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Charting Dashboard v1",
+        name: "Charting Dashboard v1",
         fileSize: 5000,
       });
 
@@ -235,7 +235,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const { artifactId, versionId: v1Id } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Charting Dashboard",
+        name: "Charting Dashboard",
         fileSize: 5000,
       });
 
@@ -305,7 +305,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const { versionId } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Multi-page Website",
+        name: "Multi-page Website",
         fileSize: 8000,
       });
 
@@ -434,7 +434,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     const { artifactId, versionId: v1Id } = await t
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
-        title: "Charting Dashboard",
+        name: "Charting Dashboard",
         fileSize: 5000,
       });
 

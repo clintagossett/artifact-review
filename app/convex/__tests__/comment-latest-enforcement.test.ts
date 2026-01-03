@@ -39,8 +39,8 @@ describe("comment latest version enforcement", () => {
       const now = Date.now();
 
       const artifactId = await ctx.db.insert("artifacts", {
-        title: "Test Artifact",
-        creatorId: userId,
+        name: "Test Artifact",
+        createdBy: userId,
         shareToken,
         isDeleted: false,
         createdAt: now,

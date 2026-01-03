@@ -38,7 +38,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create artifact
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         description: "Test description",
         fileType: "html",
         content: "<h1>Hello</h1>",
@@ -50,7 +50,7 @@ describe("Artifact Viewing Queries", () => {
       });
 
       expect(artifact).toBeDefined();
-      expect(artifact?.title).toBe("Test Artifact");
+      expect(artifact?.name).toBe("Test Artifact");
       expect(artifact?.shareToken).toBe(result.shareToken);
     });
 
@@ -71,7 +71,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create and delete artifact
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>Hello</h1>",
       });
@@ -97,7 +97,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create artifact with version 1
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -134,7 +134,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create artifact with 2 versions
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -168,7 +168,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create artifact with multiple versions
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -197,7 +197,7 @@ describe("Artifact Viewing Queries", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -217,7 +217,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create 2 versions
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -250,7 +250,7 @@ describe("Artifact Viewing Queries", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -283,7 +283,7 @@ describe("Artifact Viewing Queries", () => {
       const asUser = t.withIdentity({ subject: userId });
 
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<h1>V1</h1>",
       });
@@ -322,7 +322,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create html artifact (ZIP not supported by create action)
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Zip",
+        name: "Test Zip",
         fileType: "html",
         content: "<html><body>Test</body></html>",
       });
@@ -346,7 +346,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create artifact to get valid versionId
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html",
         content: "<html><body>Test</body></html>",
       });

@@ -22,7 +22,7 @@ describe("artifacts", () => {
       const htmlContent = "<html><body><h1>Test Artifact</h1></body></html>";
 
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test HTML Artifact",
+        name: "Test HTML Artifact",
         description: "A test artifact with HTML content",
         fileType: "html" as const,
         content: htmlContent,
@@ -41,7 +41,7 @@ describe("artifacts", () => {
       });
 
       expect(artifact).toBeDefined();
-      expect(artifact?.title).toBe("Test HTML Artifact");
+      expect(artifact?.name).toBe("Test HTML Artifact");
       expect(artifact?.description).toBe("A test artifact with HTML content");
       expect(artifact?.shareToken).toBe(result.shareToken);
       expect(artifact?.isDeleted).toBe(false);
@@ -77,7 +77,7 @@ describe("artifacts", () => {
       const markdownContent = "# Test Artifact\n\nThis is a **test** markdown document.";
 
       const result = await asUser.action(api.artifacts.create, {
-        title: "Test Markdown Artifact",
+        name: "Test Markdown Artifact",
         description: "A test artifact with Markdown content",
         fileType: "markdown" as const,
         content: markdownContent,
@@ -129,20 +129,20 @@ describe("artifacts", () => {
 
       // User 1 creates 2 artifacts
       await asUser1.action(api.artifacts.create, {
-        title: "User 1 Artifact 1",
+        name: "User 1 Artifact 1",
         fileType: "html" as const,
         content: "<html>1</html>",
       });
 
       await asUser1.action(api.artifacts.create, {
-        title: "User 1 Artifact 2",
+        name: "User 1 Artifact 2",
         fileType: "html" as const,
         content: "<html>2</html>",
       });
 
       // User 2 creates 1 artifact
       await asUser2.action(api.artifacts.create, {
-        title: "User 2 Artifact 1",
+        name: "User 2 Artifact 1",
         fileType: "html" as const,
         content: "<html>3</html>",
       });
@@ -150,13 +150,13 @@ describe("artifacts", () => {
       // User 1 should see only their 2 artifacts
       const user1Artifacts = await asUser1.query(api.artifacts.list);
       expect(user1Artifacts).toHaveLength(2);
-      expect(user1Artifacts[0].title).toBe("User 1 Artifact 1");
-      expect(user1Artifacts[1].title).toBe("User 1 Artifact 2");
+      expect(user1Artifacts[0].name).toBe("User 1 Artifact 1");
+      expect(user1Artifacts[1].name).toBe("User 1 Artifact 2");
 
       // User 2 should see only their 1 artifact
       const user2Artifacts = await asUser2.query(api.artifacts.list);
       expect(user2Artifacts).toHaveLength(1);
-      expect(user2Artifacts[0].title).toBe("User 2 Artifact 1");
+      expect(user2Artifacts[0].name).toBe("User 2 Artifact 1");
     });
   });
 
@@ -175,7 +175,7 @@ describe("artifacts", () => {
 
       // Create v1
       const v1Result = await asUser.action(api.artifacts.create, {
-        title: "Test Artifact",
+        name: "Test Artifact",
         fileType: "html" as const,
         content: "<html>v1</html>",
       });
