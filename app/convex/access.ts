@@ -675,12 +675,15 @@ export const linkInvitesToUserInternal = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     const normalizedEmail = normalizeEmail(args.email);
+    console.log("linkInvitesToUserInternal called:", { userId: args.userId, email: normalizedEmail });
 
     // Find all userInvites for this email
     const invites = await ctx.db
       .query("userInvites")
       .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .collect();
+
+    console.log("Found invites:", invites.length);
 
     // For each invite, update convertedToUserId and migrate access records
     for (const invite of invites) {
@@ -1004,5 +1007,84 @@ export const sendEmailInternal = internalAction({
     }
 
     return null;
+  },
+});
+
+// TEMPORARY DEBUG QUERY - REMOVE AFTER DEBUGGING
+export const debugAccessData = query({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return { error: "Not authenticated" };
+    
+    const user = await ctx.db.get(userId);
+    
+    // Get all userInvites
+    const allInvites = await ctx.db.query("userInvites").collect();
+    
+    // Get all artifactAccess for this user
+    const accessByUserId = await ctx.db
+      .query("artifactAccess")
+      .withIndex("by_userId_active", (q) => q.eq("userId", userId))
+      .collect();
+    
+    return {
+      currentUser: { id: userId, email: user?.email },
+      allInvites: allInvites.map(i => ({ id: i._id, email: i.email, convertedToUserId: i.convertedToUserId })),
+      accessByUserId,
+    };
+  },
+});
+
+// TEMPORARY FIX MUTATION - Manually link invites for a user
+// Call from Convex dashboard: api.access.manualLinkInvites({ email: "clintagossett+20260103@gmail.com" })
+export const manualLinkInvites = mutation({
+  args: { email: v.string() },
+  returns: v.object({
+    success: v.boolean(),
+    message: v.string(),
+    linkedCount: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return { success: false, message: "Not authenticated", linkedCount: 0 };
+    }
+    
+    const normalizedEmail = normalizeEmail(args.email);
+    console.log("manualLinkInvites called:", { userId, email: normalizedEmail });
+    
+    // Find all userInvites for this email
+    const invites = await ctx.db
+      .query("userInvites")
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .collect();
+    
+    console.log("Found invites:", invites.length);
+    
+    let linkedCount = 0;
+    for (const invite of invites) {
+      // Update userInvites record
+      await ctx.db.patch(invite._id, {
+        convertedToUserId: userId,
+      });
+      
+      // Find all artifactAccess records for this invite
+      const accessRecords = await ctx.db
+        .query("artifactAccess")
+        .withIndex("by_userInviteId", (q) => q.eq("userInviteId", invite._id))
+        .collect();
+      
+      for (const access of accessRecords) {
+        await ctx.db.patch(access._id, {
+          userId: userId,
+          userInviteId: undefined,
+        });
+        linkedCount++;
+      }
+    }
+    
+    return { success: true, message: `Linked ${linkedCount} access records`, linkedCount };
   },
 });
