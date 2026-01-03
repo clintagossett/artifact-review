@@ -104,22 +104,35 @@ All 6 subtasks completed:
 
 ---
 
-## Known Issues
+## Backend Test Files (Completed)
 
-**Backend Test Files:** The Convex backend test files in `convex/__tests__/` still reference `title` and will need to be updated in a follow-up task. This was not part of the original scope (which focused on frontend wiring). The backend tests include:
-- `convex/__tests__/artifacts-queries.test.ts`
-- `convex/__tests__/artifacts.test.ts`
-- `convex/__tests__/phase1-zip-storage.test.ts`
-- `convex/__tests__/phase2-permissions.test.ts`
-- `convex/__tests__/phase2-retrieval.test.ts`
+**All Convex backend test files updated** - Although not part of the original frontend wiring scope, all 14 backend test files were updated to use the new field names to enable proper development:
 
-These tests use the old `title` field and will cause TypeScript errors. They should be updated in a separate task focused on backend test maintenance.
+**Batch 1 (11 files - commit e6a3f39):**
+- `convex/__tests__/artifacts-queries.test.ts` - 9 failures fixed
+- `convex/__tests__/artifacts.test.ts` - 4 failures fixed
+- `convex/__tests__/phase1-zip-storage.test.ts` - 18 failures fixed
+- `convex/__tests__/phase2-permissions.test.ts` - 11 failures fixed
+- `convex/__tests__/phase2-retrieval.test.ts` - 3 failures fixed
+- `convex/__tests__/comment-latest-enforcement.test.ts` - 5 failures fixed
+- `convex/__tests__/isLatest.test.ts` - 5 failures fixed
+- `convex/__tests__/softDeletion.test.ts` - 3 failures fixed
+- `convex/__tests__/zip-backend-integration.test.ts` - 4 failures fixed
+- `convex/__tests__/zip-multi-level-nesting.test.ts` - 2 failures fixed
+- `convex/__tests__/zip-serving.test.ts` - 7 failures fixed
+
+**Batch 2 (3 files - commit d904347):**
+- `convex/__tests__/sharing.test.ts` - 27 field references updated
+- `convex/__tests__/zipProcessor.test.ts` - 1 field reference updated
+- `convex/__tests__/zipUpload.test.ts` - 7 field references updated
+
+These files were blocking Convex dev server startup. All TypeScript errors resolved.
 
 ---
 
 ## Next Steps
 
-1. **Create follow-up task** to update backend Convex test files
+1. **✅ Backend test files** - All 14 Convex test files updated (completed)
 2. **Manual testing** - Test the UI end-to-end:
    - Create new artifact (name field)
    - View artifact settings → Details tab
