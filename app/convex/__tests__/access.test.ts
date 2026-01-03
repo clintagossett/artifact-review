@@ -885,3 +885,259 @@ describe("access - auth callback integration", () => {
     });
   });
 });
+
+// ============================================================================
+// GROUP 7: ACTIVITY STATS
+// ============================================================================
+
+describe("access - activity stats", () => {
+  it("should return zero stats for artifact with no reviewers", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    const asOwner = t.withIdentity({ subject: ownerId });
+
+    const stats = await asOwner.query(api.access.getActivityStats, {
+      artifactId,
+    });
+
+    expect(stats.totalViews).toBe(0);
+    expect(stats.uniqueViewers).toBe(0);
+    expect(stats.totalComments).toBe(0);
+    expect(stats.lastViewed).toBeUndefined();
+  });
+
+  it("should count views from access records with firstViewedAt", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const reviewer1Id = await createTestUser(t, "reviewer1@test.com");
+    const reviewer2Id = await createTestUser(t, "reviewer2@test.com");
+
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    // Create access records - one viewed, one not
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      // Reviewer 1 has viewed
+      await ctx.db.insert("artifactAccess", {
+        artifactId,
+        userId: reviewer1Id,
+        createdBy: ownerId,
+        lastSentAt: now - 86400000, // 1 day ago
+        sendCount: 1,
+        firstViewedAt: now - 3600000, // 1 hour ago
+        lastViewedAt: now - 1800000, // 30 min ago
+        isDeleted: false,
+      });
+
+      // Reviewer 2 has not viewed (no firstViewedAt)
+      await ctx.db.insert("artifactAccess", {
+        artifactId,
+        userId: reviewer2Id,
+        createdBy: ownerId,
+        lastSentAt: now - 86400000,
+        sendCount: 1,
+        isDeleted: false,
+      });
+    });
+
+    const asOwner = t.withIdentity({ subject: ownerId });
+
+    const stats = await asOwner.query(api.access.getActivityStats, {
+      artifactId,
+    });
+
+    expect(stats.totalViews).toBe(1);
+    expect(stats.uniqueViewers).toBe(1);
+    expect(stats.lastViewed).toBeDefined();
+    expect(stats.lastViewed?.userName).toBe("reviewer1");
+    expect(stats.lastViewed?.userEmail).toBe("reviewer1@test.com");
+  });
+
+  it("should count comments across all versions", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    // Create version 1 manually (helper doesn't create versions)
+    const version1Id = await t.run(async (ctx) => {
+      return await ctx.db.insert("artifactVersions", {
+        artifactId,
+        number: 1,
+        createdBy: ownerId,
+        fileType: "html",
+        entryPoint: "index.html",
+        fileSize: 1000,
+        isDeleted: false,
+        createdAt: Date.now(),
+      });
+    });
+
+    // Add version 2
+    const version2Id = await t.run(async (ctx) => {
+      return await ctx.db.insert("artifactVersions", {
+        artifactId,
+        number: 2,
+        createdBy: ownerId,
+        fileType: "html",
+        entryPoint: "index.html",
+        fileSize: 1200,
+        isDeleted: false,
+        createdAt: Date.now(),
+      });
+    });
+
+    // Add comments to both versions
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      // 2 comments on version 1
+      await ctx.db.insert("comments", {
+        versionId: version1Id,
+        createdBy: ownerId,
+        content: "Comment 1 on v1",
+        resolved: false,
+        target: { _version: 1, type: "general" },
+        isEdited: false,
+        isDeleted: false,
+        createdAt: now,
+      });
+
+      await ctx.db.insert("comments", {
+        versionId: version1Id,
+        createdBy: ownerId,
+        content: "Comment 2 on v1",
+        resolved: false,
+        target: { _version: 1, type: "general" },
+        isEdited: false,
+        isDeleted: false,
+        createdAt: now,
+      });
+
+      // 1 comment on version 2
+      await ctx.db.insert("comments", {
+        versionId: version2Id,
+        createdBy: ownerId,
+        content: "Comment 1 on v2",
+        resolved: false,
+        target: { _version: 1, type: "general" },
+        isEdited: false,
+        isDeleted: false,
+        createdAt: now,
+      });
+    });
+
+    const asOwner = t.withIdentity({ subject: ownerId });
+
+    const stats = await asOwner.query(api.access.getActivityStats, {
+      artifactId,
+    });
+
+    expect(stats.totalComments).toBe(3);
+  });
+
+  it("should throw error if non-owner tries to access stats", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const otherUserId = await createTestUser(t, "other@test.com");
+
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    const asOther = t.withIdentity({ subject: otherUserId });
+
+    // Try to get stats as non-owner
+    await expect(
+      asOther.query(api.access.getActivityStats, { artifactId })
+    ).rejects.toThrow("Only the artifact owner can view activity stats");
+  });
+
+  it("should exclude soft-deleted access records from stats", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const reviewerId = await createTestUser(t, "reviewer@test.com");
+
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    // Create access record and mark as deleted
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      await ctx.db.insert("artifactAccess", {
+        artifactId,
+        userId: reviewerId,
+        createdBy: ownerId,
+        lastSentAt: now - 86400000,
+        sendCount: 1,
+        firstViewedAt: now - 3600000,
+        lastViewedAt: now - 1800000,
+        isDeleted: true, // Soft deleted
+        deletedAt: now - 900000,
+      });
+    });
+
+    const asOwner = t.withIdentity({ subject: ownerId });
+
+    const stats = await asOwner.query(api.access.getActivityStats, {
+      artifactId,
+    });
+
+    // Should not count soft-deleted access record
+    expect(stats.totalViews).toBe(0);
+    expect(stats.uniqueViewers).toBe(0);
+    expect(stats.lastViewed).toBeUndefined();
+  });
+
+  it("should find last viewed from multiple viewers", async () => {
+    const t = convexTest(schema);
+
+    const ownerId = await createTestUser(t, "owner@test.com");
+    const reviewer1Id = await createTestUser(t, "reviewer1@test.com");
+    const reviewer2Id = await createTestUser(t, "reviewer2@test.com");
+
+    const artifactId = await createTestArtifact(t, ownerId, "Test Artifact");
+
+    const now = Date.now();
+    await t.run(async (ctx) => {
+      // Reviewer 1 viewed 2 hours ago
+      await ctx.db.insert("artifactAccess", {
+        artifactId,
+        userId: reviewer1Id,
+        createdBy: ownerId,
+        lastSentAt: now - 86400000,
+        sendCount: 1,
+        firstViewedAt: now - 7200000,
+        lastViewedAt: now - 7200000,
+        isDeleted: false,
+      });
+
+      // Reviewer 2 viewed 1 hour ago (most recent)
+      await ctx.db.insert("artifactAccess", {
+        artifactId,
+        userId: reviewer2Id,
+        createdBy: ownerId,
+        lastSentAt: now - 86400000,
+        sendCount: 1,
+        firstViewedAt: now - 3600000,
+        lastViewedAt: now - 3600000,
+        isDeleted: false,
+      });
+    });
+
+    const asOwner = t.withIdentity({ subject: ownerId });
+
+    const stats = await asOwner.query(api.access.getActivityStats, {
+      artifactId,
+    });
+
+    expect(stats.totalViews).toBe(2);
+    expect(stats.uniqueViewers).toBe(2);
+    expect(stats.lastViewed).toBeDefined();
+    expect(stats.lastViewed?.userName).toBe("reviewer2");
+    expect(stats.lastViewed?.userEmail).toBe("reviewer2@test.com");
+    expect(stats.lastViewed?.timestamp).toBe(now - 3600000);
+  });
+});

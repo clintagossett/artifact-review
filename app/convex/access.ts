@@ -546,6 +546,116 @@ export const listShared = query({
   },
 });
 
+/**
+ * Get activity stats for an artifact (owner only)
+ * - Total views count
+ * - Unique viewers count
+ * - Total comments count
+ * - Last viewed info
+ */
+export const getActivityStats = query({
+  args: {
+    artifactId: v.id("artifacts"),
+  },
+  returns: v.object({
+    totalViews: v.number(),
+    uniqueViewers: v.number(),
+    totalComments: v.number(),
+    lastViewed: v.optional(
+      v.object({
+        timestamp: v.number(),
+        userName: v.string(),
+        userEmail: v.string(),
+      })
+    ),
+  }),
+  handler: async (ctx, args) => {
+    // Verify authentication
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Authentication required");
+    }
+
+    // Verify artifact exists and user is owner
+    const artifact = await ctx.db.get(args.artifactId);
+    if (!artifact) {
+      throw new Error("Artifact not found");
+    }
+
+    if (artifact.createdBy !== userId) {
+      throw new Error("Only the artifact owner can view activity stats");
+    }
+
+    // Get all active access records for this artifact
+    const accessRecords = await ctx.db
+      .query("artifactAccess")
+      .withIndex("by_artifactId_active", (q) =>
+        q.eq("artifactId", args.artifactId).eq("isDeleted", false)
+      )
+      .collect();
+
+    // Calculate view stats
+    const viewedRecords = accessRecords.filter(
+      (access) => access.firstViewedAt !== undefined
+    );
+    const totalViews = viewedRecords.length;
+    const uniqueViewers = viewedRecords.length; // One access record per user
+
+    // Find last viewed
+    let lastViewed:
+      | { timestamp: number; userName: string; userEmail: string }
+      | undefined = undefined;
+
+    if (viewedRecords.length > 0) {
+      // Sort by lastViewedAt descending
+      const sortedViews = [...viewedRecords].sort((a, b) => {
+        const aTime = a.lastViewedAt ?? 0;
+        const bTime = b.lastViewedAt ?? 0;
+        return bTime - aTime;
+      });
+
+      const mostRecent = sortedViews[0];
+      if (mostRecent.lastViewedAt && mostRecent.userId) {
+        const user = await ctx.db.get(mostRecent.userId);
+        if (user) {
+          lastViewed = {
+            timestamp: mostRecent.lastViewedAt,
+            userName: user.name || user.email || "Unknown",
+            userEmail: user.email || "",
+          };
+        }
+      }
+    }
+
+    // Get all versions for this artifact
+    const versions = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifactId_active", (q) =>
+        q.eq("artifactId", args.artifactId).eq("isDeleted", false)
+      )
+      .collect();
+
+    // Count comments across all versions
+    let totalComments = 0;
+    for (const version of versions) {
+      const comments = await ctx.db
+        .query("comments")
+        .withIndex("by_versionId_active", (q) =>
+          q.eq("versionId", version._id).eq("isDeleted", false)
+        )
+        .collect();
+      totalComments += comments.length;
+    }
+
+    return {
+      totalViews,
+      uniqueViewers,
+      totalComments,
+      lastViewed,
+    };
+  },
+});
+
 // ============================================================================
 // INTERNAL MUTATIONS
 // ============================================================================
