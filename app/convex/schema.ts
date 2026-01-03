@@ -855,6 +855,224 @@ const schema = defineSchema({
      * @example ctx.db.query("commentReplies").withIndex("by_createdBy_active", q => q.eq("createdBy", userId).eq("isDeleted", false))
      */
     .index("by_createdBy_active", ["createdBy", "isDeleted"]),
+
+  // ============================================================================
+  // USER INVITES
+  // ============================================================================
+  /**
+   * Pending user invitations - email addresses not yet signed up.
+   *
+   * ## Purpose
+   * Tracks email invitations to the platform before user signup.
+   * Supports invite-before-signup pattern for artifact sharing.
+   * One userInvite per (email, createdBy) pair - reused across multiple artifacts.
+   *
+   * ## Lifecycle
+   * - **Created**: `access.grant` mutation when inviting non-existent email
+   * - **Converted**: `access.linkInvitesToUserInternal` sets convertedToUserId on signup
+   * - **Deleted**: Soft-deleted when user requests removal (not currently implemented)
+   *
+   * ## Relationship to artifactAccess
+   * - One userInvite can have many artifactAccess records (invited to multiple artifacts)
+   * - When user signs up, convertedToUserId is set and all artifactAccess records are updated
+   *
+   * @see convex/access.ts - Invitation system
+   * @see Task 00020 - Two-table invitation refactor
+   */
+  userInvites: defineTable({
+    /**
+     * Invitee's email address.
+     * Normalized to lowercase for consistent matching.
+     * Combined with createdBy forms compound key for deduplication.
+     */
+    email: v.string(),
+
+    /**
+     * Optional name for the invitee.
+     * Can be provided by inviter when sending invitation.
+     * Used for display before user signs up and sets their own name.
+     */
+    name: v.optional(v.string()),
+
+    /**
+     * Reference to user who created this invitation.
+     * Scopes invitations per-inviter (same email can be invited by different users).
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Reference to user account after signup.
+     * Set by linkInvitesToUserInternal when user signs up with this email.
+     * Once set, this invite is "converted" and all associated access grants work.
+     */
+    convertedToUserId: v.optional(v.id("users")),
+
+    /**
+     * Soft deletion flag.
+     * Currently not used - invites persist indefinitely.
+     * Reserved for future "uninvite all" feature.
+     */
+    isDeleted: v.boolean(),
+
+    /**
+     * Timestamp when soft deleted.
+     * Unix timestamp in milliseconds.
+     */
+    deletedAt: v.optional(v.number()),
+  })
+    /**
+     * Compound key for deduplication.
+     * One invite per (email, createdBy) pair - reused across artifacts.
+     * @example ctx.db.query("userInvites").withIndex("by_email_createdBy", q => q.eq("email", "user@example.com").eq("createdBy", inviterId))
+     */
+    .index("by_email_createdBy", ["email", "createdBy"])
+
+    /**
+     * Find all invites for an email (across all inviters).
+     * Used by linkInvitesToUserInternal to link pending invites on signup.
+     * @example ctx.db.query("userInvites").withIndex("by_email", q => q.eq("email", "user@example.com"))
+     */
+    .index("by_email", ["email"])
+
+    /**
+     * Find user by their converted invite.
+     * Used for reverse lookups (which invites led to this user).
+     * @example ctx.db.query("userInvites").withIndex("by_convertedToUserId", q => q.eq("convertedToUserId", userId))
+     */
+    .index("by_convertedToUserId", ["convertedToUserId"]),
+
+  // ============================================================================
+  // ARTIFACT ACCESS
+  // ============================================================================
+  /**
+   * Access grants for artifact sharing.
+   *
+   * ## Purpose
+   * Tracks who has access to view/comment on artifacts.
+   * Links artifacts to users (existing accounts) or userInvites (pending signups).
+   * Tracks email send count, view timestamps, and soft-deletion for revocation.
+   *
+   * ## Lifecycle
+   * - **Created**: `access.grant` mutation (owner invites reviewer)
+   * - **Linked**: `access.linkInvitesToUserInternal` links userInviteId to userId on signup
+   * - **Revoked**: `access.revoke` soft-deletes record (user loses access)
+   * - **Re-granted**: `access.grant` un-deletes existing record if re-inviting
+   *
+   * ## Email Tracking
+   * - lastSentAt: Timestamp of most recent invitation email
+   * - sendCount: Number of times invitation email was sent (initial + resends)
+   *
+   * ## View Tracking
+   * - firstViewedAt: Timestamp of first artifact view by reviewer
+   * - lastViewedAt: Timestamp of most recent view
+   *
+   * @see convex/access.ts - Access control mutations and queries
+   */
+  artifactAccess: defineTable({
+    /**
+     * Reference to artifact being shared.
+     * All access records belong to exactly one artifact.
+     */
+    artifactId: v.id("artifacts"),
+
+    /**
+     * Reference to user account (for existing users).
+     * Set immediately if inviting existing user.
+     * Set by linkInvitesToUserInternal when pending user signs up.
+     * Mutually exclusive path: EITHER userId OR userInviteId (not both).
+     */
+    userId: v.optional(v.id("users")),
+
+    /**
+     * Reference to pending invitation (for non-existent users).
+     * Set when inviting email address with no account.
+     * Cleared by linkInvitesToUserInternal when user signs up (moved to userId).
+     * Mutually exclusive path: EITHER userId OR userInviteId (not both).
+     */
+    userInviteId: v.optional(v.id("userInvites")),
+
+    /**
+     * Reference to user who granted access.
+     * Always the artifact owner (permission-checked in grant mutation).
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Timestamp when invitation email was last sent.
+     * Unix timestamp in milliseconds.
+     * Updated on grant (initial send) and resend operations.
+     */
+    lastSentAt: v.number(),
+
+    /**
+     * Number of times invitation email was sent.
+     * Starts at 1 on grant, incremented by resend mutation.
+     * Used to track "nagging" behavior and limit resends.
+     */
+    sendCount: v.number(),
+
+    /**
+     * Timestamp of first view by reviewer.
+     * Unix timestamp in milliseconds.
+     * Set by recordView mutation on first access.
+     * Never updated after initial set.
+     */
+    firstViewedAt: v.optional(v.number()),
+
+    /**
+     * Timestamp of most recent view by reviewer.
+     * Unix timestamp in milliseconds.
+     * Updated by recordView mutation on each access.
+     */
+    lastViewedAt: v.optional(v.number()),
+
+    /**
+     * Soft deletion flag.
+     * When true, access is revoked (user loses view/comment permissions).
+     * Can be un-deleted by re-granting access.
+     */
+    isDeleted: v.boolean(),
+
+    /**
+     * Timestamp when access was revoked.
+     * Unix timestamp in milliseconds.
+     */
+    deletedAt: v.optional(v.number()),
+  })
+    /**
+     * List active access grants for an artifact.
+     * Primary query for "who has access to this artifact".
+     * @example ctx.db.query("artifactAccess").withIndex("by_artifactId_active", q => q.eq("artifactId", artifactId).eq("isDeleted", false))
+     */
+    .index("by_artifactId_active", ["artifactId", "isDeleted"])
+
+    /**
+     * O(1) lookup for permission check (existing user).
+     * Check if specific user has access to artifact.
+     * @example ctx.db.query("artifactAccess").withIndex("by_artifactId_userId", q => q.eq("artifactId", artifactId).eq("userId", userId))
+     */
+    .index("by_artifactId_userId", ["artifactId", "userId"])
+
+    /**
+     * Lookup by userInvite (for pending users).
+     * Used to find access grants for a pending invitation.
+     * @example ctx.db.query("artifactAccess").withIndex("by_artifactId_userInviteId", q => q.eq("artifactId", artifactId).eq("userInviteId", inviteId))
+     */
+    .index("by_artifactId_userInviteId", ["artifactId", "userInviteId"])
+
+    /**
+     * List artifacts shared with a user.
+     * Powers "Shared with me" view.
+     * @example ctx.db.query("artifactAccess").withIndex("by_userId_active", q => q.eq("userId", userId).eq("isDeleted", false))
+     */
+    .index("by_userId_active", ["userId", "isDeleted"])
+
+    /**
+     * Find all access grants for a userInvite.
+     * Used by linkInvitesToUserInternal to update all grants when user signs up.
+     * @example ctx.db.query("artifactAccess").withIndex("by_userInviteId", q => q.eq("userInviteId", inviteId))
+     */
+    .index("by_userInviteId", ["userInviteId"]),
 });
 
 export default schema;

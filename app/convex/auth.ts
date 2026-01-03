@@ -72,7 +72,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
 
       // Link pending reviewer invitations for new users
       if (args.profile.email && !existingUser) {
-        await ctx.scheduler.runAfter(0, internal.sharing.linkPendingInvitations, {
+        await ctx.scheduler.runAfter(0, internal.access.linkInvitesToUserInternal, {
           userId,
           email: args.profile.email,
         });
