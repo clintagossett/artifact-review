@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Link2, Check, Info } from "lucide-react";
+import { ReviewerList } from "./ReviewerList";
+import { InviteReviewerForm } from "./InviteReviewerForm";
 import type { Id } from "@/../../convex/_generated/dataModel";
 
 export interface ShareModalProps {
@@ -61,7 +64,25 @@ export function ShareModal({ open, onOpenChange, artifact }: ShareModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Invite Reviewers Section */}
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-gray-900">
+              Invite Reviewers
+            </h3>
+            <InviteReviewerForm artifactId={artifact._id} />
+          </div>
+
+          {/* Reviewer List */}
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-gray-900">
+              Reviewers
+            </h3>
+            <ReviewerList artifactId={artifact._id} />
+          </div>
+
+          <Separator />
+
           {/* Share Link Section */}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">

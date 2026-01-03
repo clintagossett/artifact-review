@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ArtifactHeader } from "./ArtifactHeader";
 import { ArtifactFrame } from "./ArtifactFrame";
 import { MultiPageNavigation } from "./MultiPageNavigation";
+import { usePermission } from "@/hooks/usePermission";
+import { toast } from "@/hooks/use-toast";
+import { logger, LOG_TOPICS } from "@/lib/logger";
 import { Id } from "../../../convex/_generated/dataModel";
 
 interface ArtifactViewerProps {
@@ -41,12 +45,46 @@ export function ArtifactViewer({
   currentUser,
   userPermission,
 }: ArtifactViewerProps) {
+  const router = useRouter();
+
   // Multi-page navigation state (for ZIP artifacts)
   const [currentPage, setCurrentPage] = useState<string>(
     version.entryPoint || "index.html"
   );
   const [history, setHistory] = useState<string[]>([]);
   const [forwardHistory, setForwardHistory] = useState<string[]>([]);
+
+  // Real-time permission subscription
+  const permission = usePermission(artifact._id);
+  const previousPermission = useRef(permission);
+
+  // Handle permission revocation (kick-out)
+  useEffect(() => {
+    // Only trigger on transition from truthy to null
+    // This prevents false positives on initial load
+    if (previousPermission.current && permission === null) {
+      logger.warn(
+        LOG_TOPICS.Artifact,
+        "ArtifactViewer",
+        "Access revoked - redirecting to dashboard",
+        { artifactId: artifact._id }
+      );
+
+      // Show toast
+      toast({
+        title: "Access revoked",
+        description: "Your access to this artifact has been revoked.",
+        variant: "destructive",
+      });
+
+      // Redirect with slight delay for toast visibility
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
+    }
+
+    previousPermission.current = permission;
+  }, [permission, artifact._id, router]);
 
   // Build iframe URL
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL?.replace(

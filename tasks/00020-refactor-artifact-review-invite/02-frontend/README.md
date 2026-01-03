@@ -1,8 +1,9 @@
 # Subtask 02: Frontend Implementation
 
 **Parent Task:** 00020-refactor-artifact-review-invite
-**Status:** OPEN
+**Status:** COMPLETE
 **Created:** 2026-01-03
+**Completed:** 2026-01-03
 **Dependencies:** 01-backend (schema and Convex functions must exist)
 
 ---
@@ -216,8 +217,36 @@ npx shadcn@latest add alert-dialog
 
 | File | Description |
 |------|-------------|
-| `README.md` | This file |
-| `tests/` | Frontend E2E tests (to be created) |
+| `README.md` | This file (subtask documentation) |
+| `test-report.md` | Test results and implementation summary |
+| `tests/unit/access.test.ts` | Utility function tests (4/4 passing) |
+| `tests/unit/ReviewerRow.test.tsx` | Component tests (requires jsdom) |
+| `tests/unit/InviteReviewerForm.test.tsx` | Component tests (requires jsdom) |
+
+## Implementation Summary
+
+### ✅ Completed
+
+1. **Utility Function:** `app/src/lib/access.ts` with `deriveReviewerStatus` (4 tests passing)
+2. **Hooks:**
+   - `app/src/hooks/useReviewers.ts` - Query reviewers list
+   - `app/src/hooks/usePermission.ts` - Real-time permission subscription
+3. **Components:**
+   - `app/src/components/artifacts/ReviewerRow.tsx` - Single reviewer with actions
+   - `app/src/components/artifacts/ReviewerList.tsx` - List container with mutations
+   - `app/src/components/artifacts/InviteReviewerForm.tsx` - Email invitation form
+4. **Integrations:**
+   - `app/src/components/artifacts/ShareModal.tsx` - Added reviewer management
+   - `app/src/components/artifact/ArtifactViewer.tsx` - Added permission subscription + kick-out
+5. **ShadCN Components:** Installed `alert-dialog`, using `badge`, `skeleton`, `dropdown-menu`, etc.
+
+### 📝 Test Coverage
+
+- **Unit Tests:** 4/4 passing for utility function
+- **Component Tests:** Written (require jsdom environment from `app/` directory)
+- **E2E Tests:** Should be created at task level for full flow validation
+
+See `test-report.md` for detailed coverage and next steps.
 
 ---
 
