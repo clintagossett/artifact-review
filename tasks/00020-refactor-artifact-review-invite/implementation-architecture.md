@@ -4,6 +4,7 @@
 **Date:** 2026-01-01
 **Status:** Ready for Implementation
 **Design Source:** `design-revised.md`, `diagrams.md`
+**Updated:** 2026-01-03 (ADR-0012 naming convention compliance)
 
 ---
 
@@ -23,9 +24,9 @@ userInvites: defineTable({
   isDeleted: v.boolean(),
   deletedAt: v.optional(v.number()),
 })
-  .index("by_email_and_createdBy", ["email", "createdBy"])
-  .index("by_email", ["email"])
-  .index("by_convertedToUserId", ["convertedToUserId"]),
+  .index("by_email_createdBy", ["email", "createdBy"])  // Unique lookup
+  .index("by_email", ["email"])                          // For linking on signup
+  .index("by_convertedToUserId", ["convertedToUserId"]), // Lookup by converted user
 ```
 
 ### New Table: `artifactAccess`
@@ -46,11 +47,11 @@ artifactAccess: defineTable({
   isDeleted: v.boolean(),
   deletedAt: v.optional(v.number()),
 })
-  .index("by_artifact_and_isDeleted", ["artifactId", "isDeleted"])
-  .index("by_artifact_and_userId", ["artifactId", "userId"])
-  .index("by_artifact_and_userInviteId", ["artifactId", "userInviteId"])
-  .index("by_userId_and_isDeleted", ["userId", "isDeleted"])
-  .index("by_userInviteId", ["userInviteId"]),
+  .index("by_artifactId_active", ["artifactId", "isDeleted"])       // List reviewers (active only)
+  .index("by_artifactId_userId", ["artifactId", "userId"])          // Permission check
+  .index("by_artifactId_userInviteId", ["artifactId", "userInviteId"]) // Re-invite lookup
+  .index("by_userId_active", ["userId", "isDeleted"])               // "Shared with me" query
+  .index("by_userInviteId", ["userInviteId"]),                      // Signup linking
 ```
 
 ### Table to Remove (after full migration)
@@ -67,35 +68,35 @@ The existing `artifactReviewers` table will be deprecated. Since we have no prod
 
 | Function | Purpose | Args | Returns |
 |----------|---------|------|---------|
-| `getArtifactReviewers` | List reviewers for share dialog | `{ artifactId }` | `Array<{ displayName, email, status, accessId, sendCount, lastSentAt }>` |
-| `getUserPermission` | Check user permission on artifact (used as subscription for real-time permission changes) | `{ artifactId }` | `"owner" \| "can-comment" \| null` |
-| `getSharedWithMe` | List artifacts shared with current user | `{}` | `Array<{ artifact, accessRecord }>` |
+| `listReviewers` | List reviewers for share dialog | `{ artifactId }` | `Array<{ displayName, email, status, accessId, sendCount, lastSentAt }>` |
+| `getPermission` | Check current user's permission on artifact (subscription for real-time changes) | `{ artifactId }` | `"owner" \| "can-comment" \| null` |
+| `listShared` | List artifacts shared with current user | `{}` | `Array<{ artifact, accessRecord }>` |
 
 #### Mutations
 
 | Function | Purpose | Args | Returns |
 |----------|---------|------|---------|
-| `grantAccess` | Invite reviewer (existing or new user) | `{ artifactId, email }` | `Id<"artifactAccess">` |
-| `revokeAccess` | Soft delete access record | `{ accessId }` | `null` |
-| `resendInvitation` | Increment sendCount, update lastSentAt, trigger email | `{ accessId }` | `null` |
+| `grant` | Invite reviewer (existing or new user) | `{ artifactId, email }` | `Id<"artifactAccess">` |
+| `revoke` | Soft delete access record | `{ accessId }` | `null` |
+| `resend` | Increment sendCount, update lastSentAt, trigger email | `{ accessId }` | `null` |
 | `recordView` | Set firstViewedAt/lastViewedAt | `{ accessId }` | `null` |
 
 #### Internal Mutations
 
 | Function | Purpose | Args | Returns |
 |----------|---------|------|---------|
-| `linkUserInvitesToUser` | Called on signup to link pending invites | `{ userId, email }` | `null` |
+| `linkInvitesToUserInternal` | Called on signup to link pending invites | `{ userId, email }` | `null` |
 
 #### Internal Actions
 
 | Function | Purpose | Args | Returns |
 |----------|---------|------|---------|
-| `sendAccessEmail` | Send invitation/notification email via Resend | `{ accessId }` | `null` |
+| `sendEmailInternal` | Send invitation/notification email via Resend | `{ accessId }` | `null` |
 
 ### File: `convex/auth.ts` (modify)
 
 Update `createOrUpdateUser` callback:
-- Replace `internal.sharing.linkPendingInvitations` with `internal.access.linkUserInvitesToUser`
+- Replace `internal.sharing.linkPendingInvitations` with `internal.access.linkInvitesToUserInternal`
 
 ---
 
@@ -120,8 +121,8 @@ Update `createOrUpdateUser` callback:
 
 | Hook | Location | Purpose |
 |------|----------|---------|
-| `useArtifactAccess` | `hooks/useArtifactAccess.ts` | Query `getArtifactReviewers`, manage loading state |
-| `useUserPermission` | `hooks/useUserPermission.ts` | Query `getUserPermission` for current artifact |
+| `useReviewers` | `hooks/useReviewers.ts` | Query `listReviewers`, manage loading state |
+| `usePermission` | `hooks/usePermission.ts` | Query `getPermission` for current artifact |
 
 ### Utilities
 
@@ -131,7 +132,7 @@ Update `createOrUpdateUser` callback:
 
 ### Reactive Permission Handling
 
-Frontend subscribes to `getUserPermission` query via Convex's real-time subscription. When permission becomes `null` (revoked) mid-session:
+Frontend subscribes to `getPermission` query via Convex's real-time subscription. When permission becomes `null` (revoked) mid-session:
 
 1. **Show toast notification:** "Your access was revoked"
 2. **Redirect to dashboard:** Navigate user away from artifact
@@ -160,8 +161,8 @@ app/src/
     ReviewerRow.tsx            # Single reviewer row
     InviteReviewerForm.tsx     # Email invite form
   hooks/
-    useArtifactAccess.ts       # Reviewers query hook
-    useUserPermission.ts       # Permission query hook
+    useReviewers.ts            # Reviewers query hook
+    usePermission.ts           # Permission query hook
   lib/
     access.ts                  # Status derivation, email parsing
 ```
@@ -194,14 +195,14 @@ convex/
 
 1. **Schema** - Add `userInvites` and `artifactAccess` tables to `schema.ts`
 2. **Core Backend** - Create `convex/access.ts` with:
-   - `grantAccess` mutation
-   - `linkUserInvitesToUser` internal mutation
-   - `getArtifactReviewers` query
-   - `getUserPermission` query
+   - `grant` mutation
+   - `linkInvitesToUserInternal` internal mutation
+   - `listReviewers` query
+   - `getPermission` query
 3. **Auth Integration** - Update `auth.ts` callback to use new linking function
-4. **Remaining Backend** - Add `revokeAccess`, `resendInvitation`, `recordView`, `sendAccessEmail`
+4. **Remaining Backend** - Add `revoke`, `resend`, `recordView`, `sendEmailInternal`
 5. **Frontend Utilities** - Create `lib/access.ts` with `deriveReviewerStatus`
-6. **Frontend Hooks** - Create `useArtifactAccess`, `useUserPermission`
+6. **Frontend Hooks** - Create `useReviewers`, `usePermission`
 7. **Frontend Components** - Create `ReviewerRow`, `ReviewerList`, `InviteReviewerForm`
 8. **ShareModal Integration** - Wire up new components in ShareModal
 9. **Cleanup** - Remove old `sharing.ts`, remove `artifactReviewers` from schema
@@ -223,9 +224,9 @@ The 12 scenarios from design that must pass:
 | 7 | Revoke access (existing user) | `isDeleted=true`, user loses access |
 | 8 | Revoke access (pending user) | `isDeleted=true` on access, `userInvites` unchanged |
 | 9 | Re-invite after revocation | Un-delete existing record, update `lastSentAt`/`sendCount` |
-| 10 | Permission check (critical path) | O(1) lookup via `by_artifact_and_userId` index |
-| 11 | "Shared with me" query | Uses `by_userId_and_isDeleted` index |
-| 12 | Owner views reviewer list | Combines pending + active via `by_artifact_and_isDeleted` index |
+| 10 | Permission check (critical path) | O(1) lookup via `by_artifactId_userId` index |
+| 11 | "Shared with me" query | Uses `by_userId_active` index |
+| 12 | Owner views reviewer list | Combines pending + active via `by_artifactId_active` index |
 | 13 | Real-time revocation | Reviewer is kicked out immediately when owner revokes access (toast + redirect) |
 
 ---

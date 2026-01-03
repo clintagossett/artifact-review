@@ -3,6 +3,7 @@
 **Task:** 00020 - Refactor and Artifact Review Invite
 **Date:** 2025-12-31
 **Status:** Draft - Pending Validation
+**Updated:** 2026-01-03 (ADR-0012 naming convention compliance)
 
 ---
 
@@ -37,6 +38,7 @@ userInvites: defineTable({
 })
   .index("by_email_createdBy", ["email", "createdBy"])  // Unique lookup
   .index("by_email", ["email"])                         // For linking on signup
+  .index("by_convertedToUserId", ["convertedToUserId"]) // Lookup by converted user
 ```
 
 **Uniqueness:** One record per (email, createdBy) pair.
@@ -71,11 +73,11 @@ artifactAccess: defineTable({
   isDeleted: v.boolean(),
   deletedAt: v.optional(v.number()),
 })
-  .index("by_artifact", ["artifactId", "isDeleted"])
-  .index("by_artifact_user", ["artifactId", "userId"])
-  .index("by_artifact_userInvite", ["artifactId", "userInviteId"])
-  .index("by_user", ["userId", "isDeleted"])
-  .index("by_userInvite", ["userInviteId"])
+  .index("by_artifactId_active", ["artifactId", "isDeleted"])       // List reviewers (active only)
+  .index("by_artifactId_userId", ["artifactId", "userId"])          // Permission check
+  .index("by_artifactId_userInviteId", ["artifactId", "userInviteId"]) // Re-invite lookup
+  .index("by_userId_active", ["userId", "isDeleted"])               // "Shared with me" query
+  .index("by_userInviteId", ["userInviteId"])                       // Signup linking
 ```
 
 ---
@@ -305,7 +307,7 @@ Expected:
 Input: User tries to view/comment on artifact
 
 Query:
-- artifactAccess.by_artifact_user(artifactId, userId)
+- artifactAccess.by_artifactId_userId(artifactId, userId)
 - Return first where isDeleted = false
 
 Expected: O(1) lookup
@@ -317,7 +319,7 @@ Expected: O(1) lookup
 Input: User wants to see all artifacts they have access to
 
 Query:
-- artifactAccess.by_user(userId, isDeleted=false)
+- artifactAccess.by_userId_active(userId, isDeleted=false)
 
 Expected: Returns all artifacts user can access
 ```
@@ -328,7 +330,7 @@ Expected: Returns all artifacts user can access
 Input: Owner opens share dialog for artifact
 
 Query:
-- artifactAccess.by_artifact(artifactId, isDeleted=false)
+- artifactAccess.by_artifactId_active(artifactId, isDeleted=false)
 - For each with userInviteId: fetch userInvites for email/name
 - For each with userId: fetch users for display name
 

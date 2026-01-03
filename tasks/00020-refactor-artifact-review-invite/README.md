@@ -8,13 +8,24 @@
 
 ## Resume (Start Here)
 
-**Last Updated:** 2026-01-01 (Session 2)
+**Last Updated:** 2026-01-03 (Session 3)
 
 ### Current Status: Ready for Implementation
 
-**Phase:** Design complete, implementation architecture defined. Ready to build.
+**Phase:** Design complete, subtasks defined. Ready to build.
 
-### What We Did This Session (Session 2)
+### What We Did This Session (Session 3)
+
+1. **ADR-0012 Compliance Review** - Audited all design documents for naming convention violations
+2. **Fixed Index Names** - Corrected `_and_` patterns to simple underscore separator, added `_active` shorthand
+3. **Fixed Function Names** - Changed to generic CRUD patterns (`grant`, `revoke`, `listReviewers`, etc.)
+4. **Created Subtasks** - Split implementation into:
+   - `01-backend/` - Schema + Convex functions
+   - `02-frontend/` - Components, hooks, UI
+
+### Previous Sessions
+
+**Session 2:**
 
 1. **Simplified design** - Challenged the three-table architecture
    - Removed `systemInvites` table (not needed)
@@ -60,14 +71,19 @@
 | `diagrams.md` | Mermaid diagrams for all flows (ER, sequence, flowcharts) |
 | `implementation-architecture.md` | Schema, backend functions, frontend components, implementation order |
 
+### Subtasks
+
+| Subtask | Description | Status |
+|---------|-------------|--------|
+| `01-backend/` | Schema + Convex functions (`convex/access.ts`) | OPEN |
+| `02-frontend/` | Components, hooks, UI integration | OPEN (depends on 01) |
+
 ### Next Steps
 
-1. **Implement schema** - Add `userInvites` and `artifactAccess` tables
-2. **Build backend** - Create `convex/access.ts` with queries/mutations
-3. **Update auth** - Wire up signup linking
-4. **Build frontend** - Components, hooks, ShareModal integration
-5. **Test** - Validate all 13 scenarios
-6. **Cleanup** - Remove old `artifactReviewers` table
+1. **Start 01-backend** - Implement schema and Convex functions
+2. **Start 02-frontend** - Components, hooks, ShareModal integration (after backend)
+3. **Test** - Validate all 13 scenarios
+4. **Cleanup** - Remove old `artifactReviewers` table and `sharing.ts`
 
 ---
 
