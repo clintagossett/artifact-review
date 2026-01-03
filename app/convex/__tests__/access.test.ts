@@ -2,7 +2,7 @@ import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
-import { Id } from "../_generated/dataModel";
+import { Id, Doc } from "../_generated/dataModel";
 
 // ============================================================================
 // TEST HELPERS
@@ -119,7 +119,7 @@ describe("access - schema foundation", () => {
         });
       });
 
-      const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+      const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
 
       expect(access?.artifactId).toBe(artifactId);
       expect(access?.userId).toBe(ownerId);
@@ -180,7 +180,7 @@ describe("access - grant mutation", () => {
         email: "reviewer@example.com",
       });
 
-      const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+      const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null as Doc<"artifactAccess"> | null;
 
       // Should have userId set
       expect(access?.userId).toBe(reviewerId);
@@ -213,7 +213,7 @@ describe("access - grant mutation", () => {
         email: "newuser@example.com",
       });
 
-      const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+      const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null as Doc<"artifactAccess"> | null;
 
       // Should NOT have userId
       expect(access?.userId).toBeUndefined();
@@ -223,7 +223,7 @@ describe("access - grant mutation", () => {
       // Verify userInvites record was created
       const invite = await t.run(async (ctx) =>
         await ctx.db.get(access!.userInviteId!)
-      );
+      ) as Doc<"userInvites"> | null;
       expect(invite?.email).toBe("newuser@example.com");
       expect(invite?.createdBy).toBe(ownerId);
     });
@@ -251,8 +251,8 @@ describe("access - grant mutation", () => {
         email: "newuser@example.com",
       });
 
-      const access1 = await t.run(async (ctx) => await ctx.db.get(access1Id));
-      const access2 = await t.run(async (ctx) => await ctx.db.get(access2Id));
+      const access1 = await t.run(async (ctx) => await ctx.db.get(access1Id)) as Doc<"artifactAccess"> | null;
+      const access2 = await t.run(async (ctx) => await ctx.db.get(access2Id)) as Doc<"artifactAccess"> | null;
 
       // Should use same userInvite
       expect(access1?.userInviteId).toBe(access2?.userInviteId);
@@ -312,8 +312,8 @@ describe("access - grant mutation", () => {
         email: "reviewer@example.com",
       });
 
-      const access1 = await t.run(async (ctx) => await ctx.db.get(access1Id));
-      const access2 = await t.run(async (ctx) => await ctx.db.get(access2Id));
+      const access1 = await t.run(async (ctx) => await ctx.db.get(access1Id)) as Doc<"artifactAccess"> | null;
+      const access2 = await t.run(async (ctx) => await ctx.db.get(access2Id)) as Doc<"artifactAccess"> | null;
 
       // Should have DIFFERENT userInviteIds
       expect(access1?.userInviteId).not.toBe(access2?.userInviteId);
@@ -354,7 +354,7 @@ describe("access - grant mutation", () => {
       // Verify deleted
       const deletedAccess = await t.run(async (ctx) =>
         await ctx.db.get(accessId)
-      );
+      ) as Doc<"artifactAccess"> | null;
       expect(deletedAccess?.isDeleted).toBe(true);
 
       // Re-grant (should un-delete same record)
@@ -369,7 +369,7 @@ describe("access - grant mutation", () => {
       // Verify un-deleted
       const restoredAccess = await t.run(async (ctx) =>
         await ctx.db.get(accessId)
-      );
+      ) as Doc<"artifactAccess"> | null;
       expect(restoredAccess?.isDeleted).toBe(false);
       expect(restoredAccess?.deletedAt).toBeUndefined();
     });
@@ -624,7 +624,7 @@ describe("access - revoke", () => {
     await asOwner.mutation(api.access.revoke, { accessId });
 
     // Verify soft deleted
-    const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     expect(access?.isDeleted).toBe(true);
     expect(access?.deletedAt).toBeDefined();
 
@@ -650,14 +650,14 @@ describe("access - revoke", () => {
       email: "pending@example.com",
     });
 
-    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     const userInviteId = accessBefore!.userInviteId!;
 
     // Revoke
     await asOwner.mutation(api.access.revoke, { accessId });
 
     // Verify artifactAccess deleted
-    const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     expect(access?.isDeleted).toBe(true);
 
     // Verify userInvites still exists (NOT deleted)
@@ -681,7 +681,7 @@ describe("access - resend", () => {
       email: "newuser@example.com",
     });
 
-    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     const initialSendCount = accessBefore!.sendCount;
     const initialLastSentAt = accessBefore!.lastSentAt;
 
@@ -691,7 +691,7 @@ describe("access - resend", () => {
     // Resend
     await asOwner.mutation(api.access.resend, { accessId });
 
-    const accessAfter = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const accessAfter = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
 
     expect(accessAfter?.sendCount).toBe(initialSendCount + 1);
     expect(accessAfter?.lastSentAt).toBeGreaterThan(initialLastSentAt);
@@ -713,7 +713,7 @@ describe("access - recordView", () => {
     });
 
     // Verify no view timestamps initially
-    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const accessBefore = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     expect(accessBefore?.firstViewedAt).toBeUndefined();
     expect(accessBefore?.lastViewedAt).toBeUndefined();
 
@@ -722,7 +722,7 @@ describe("access - recordView", () => {
     await asReviewer.mutation(api.access.recordView, { accessId });
 
     // Verify firstViewedAt and lastViewedAt set
-    const accessAfter = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const accessAfter = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     expect(accessAfter?.firstViewedAt).toBeDefined();
     expect(accessAfter?.lastViewedAt).toBeDefined();
     expect(accessAfter?.firstViewedAt).toBe(accessAfter?.lastViewedAt);
@@ -747,7 +747,7 @@ describe("access - recordView", () => {
     await asReviewer.mutation(api.access.recordView, { accessId });
     const accessAfterFirst = await t.run(async (ctx) =>
       await ctx.db.get(accessId)
-    );
+    ) as Doc<"artifactAccess"> | null;
     const firstViewedAt = accessAfterFirst!.firstViewedAt!;
 
     // Wait a moment
@@ -757,7 +757,7 @@ describe("access - recordView", () => {
     await asReviewer.mutation(api.access.recordView, { accessId });
     const accessAfterSecond = await t.run(async (ctx) =>
       await ctx.db.get(accessId)
-    );
+    ) as Doc<"artifactAccess"> | null;
 
     // firstViewedAt should not change
     expect(accessAfterSecond?.firstViewedAt).toBe(firstViewedAt);
@@ -796,10 +796,10 @@ describe("access - linkInvitesToUserInternal", () => {
     // Verify both have userInviteId set
     const access1Before = await t.run(async (ctx) =>
       await ctx.db.get(access1Id)
-    );
+    ) as Doc<"artifactAccess"> | null;
     const access2Before = await t.run(async (ctx) =>
       await ctx.db.get(access2Id)
-    );
+    ) as Doc<"artifactAccess"> | null;
     expect(access1Before?.userInviteId).toBeDefined();
     expect(access2Before?.userInviteId).toBeDefined();
 
@@ -815,20 +815,20 @@ describe("access - linkInvitesToUserInternal", () => {
     // Verify userInvites converted
     const invite1 = await t.run(async (ctx) =>
       await ctx.db.get(access1Before!.userInviteId!)
-    );
+    ) as Doc<"userInvites"> | null;
     const invite2 = await t.run(async (ctx) =>
       await ctx.db.get(access2Before!.userInviteId!)
-    );
+    ) as Doc<"userInvites"> | null;
     expect(invite1?.convertedToUserId).toBe(newUserId);
     expect(invite2?.convertedToUserId).toBe(newUserId);
 
     // Verify artifactAccess updated
     const access1After = await t.run(async (ctx) =>
       await ctx.db.get(access1Id)
-    );
+    ) as Doc<"artifactAccess"> | null;
     const access2After = await t.run(async (ctx) =>
       await ctx.db.get(access2Id)
-    );
+    ) as Doc<"artifactAccess"> | null;
     expect(access1After?.userId).toBe(newUserId);
     expect(access1After?.userInviteId).toBeUndefined();
     expect(access2After?.userId).toBe(newUserId);
@@ -859,7 +859,7 @@ describe("access - linkInvitesToUserInternal", () => {
     });
 
     // Verify link worked
-    const access = await t.run(async (ctx) => await ctx.db.get(accessId));
+    const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
     expect(access?.userId).toBe(newUserId);
   });
 });
