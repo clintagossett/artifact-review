@@ -14,32 +14,22 @@ See `PRODUCT-DISCOVERY.md` for full product research and strategy.
 
 Uses direnv for environment management (`.envrc` with `source_up` to inherit from parent directory).
 
-## Task Workflow
+### Creating a New Task (MANDATORY SEQUENCE)
 
-All work is tracked through numbered task folders tied to GitHub issues:
-
-```
-tasks/
-├── 00001-first-task/        # GitHub Issue #1
-├── 00002-another-task/      # GitHub Issue #2
-└── XXXXX-task-name/         # Future tasks
-```
-
-### Creating a New Task
-
-1. **Create GitHub Issue:**
+1. **Create GitHub Issue FIRST:**
    ```bash
    gh issue create --title "Task title" --body "Description"
    ```
+   *Note: This command will return an issue number (e.g. #30).*
 
 2. **Create Task Folder:**
    ```bash
-   mkdir tasks/XXXXX-task-name/
+   mkdir tasks/000XX-task-name/
    ```
-   - Use 5-digit numbering (00001, 00002, etc.)
-   - Match the GitHub issue number when possible
+   - **MANDATORY:** The folder name MUST use the GitHub issue number as its prefix (zero-padded to 5 digits).
+   - Example: Issue #30 results in `tasks/00030-track-artifact-views/`.
 
-3. **Add README.md** to document the task (see `tasks/TEMPLATE.md`)
+3. **Add README.md** to document the task (see `tasks/TEMPLATE.md`).
 
 4. **Do the work**
 
