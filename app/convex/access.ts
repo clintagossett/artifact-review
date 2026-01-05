@@ -924,6 +924,16 @@ export const sendEmailInternal = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Skip or redirect if testing
+    if (process.env.SKIP_EMAILS === "true") {
+      console.log("Skipping email send (SKIP_EMAILS=true)");
+      return null;
+    }
+
+    // In test mode (or when explicitly requested), divert to safe address
+    // This allows testing the full flow including Resend API call
+    const isTestMode = process.env.RESEND_TEST_MODE === "true";
+
     // Get access record
     const access = await ctx.runQuery(internal.access.getAccessById, {
       accessId: args.accessId,
@@ -1017,18 +1027,18 @@ export const debugAccessData = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return { error: "Not authenticated" };
-    
+
     const user = await ctx.db.get(userId);
-    
+
     // Get all userInvites
     const allInvites = await ctx.db.query("userInvites").collect();
-    
+
     // Get all artifactAccess for this user
     const accessByUserId = await ctx.db
       .query("artifactAccess")
       .withIndex("by_userId_active", (q) => q.eq("userId", userId))
       .collect();
-    
+
     return {
       currentUser: { id: userId, email: user?.email },
       allInvites: allInvites.map(i => ({ id: i._id, email: i.email, convertedToUserId: i.convertedToUserId })),
@@ -1051,31 +1061,31 @@ export const manualLinkInvites = mutation({
     if (!userId) {
       return { success: false, message: "Not authenticated", linkedCount: 0 };
     }
-    
+
     const normalizedEmail = normalizeEmail(args.email);
     console.log("manualLinkInvites called:", { userId, email: normalizedEmail });
-    
+
     // Find all userInvites for this email
     const invites = await ctx.db
       .query("userInvites")
       .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .collect();
-    
+
     console.log("Found invites:", invites.length);
-    
+
     let linkedCount = 0;
     for (const invite of invites) {
       // Update userInvites record
       await ctx.db.patch(invite._id, {
         convertedToUserId: userId,
       });
-      
+
       // Find all artifactAccess records for this invite
       const accessRecords = await ctx.db
         .query("artifactAccess")
         .withIndex("by_userInviteId", (q) => q.eq("userInviteId", invite._id))
         .collect();
-      
+
       for (const access of accessRecords) {
         await ctx.db.patch(access._id, {
           userId: userId,
@@ -1084,7 +1094,7 @@ export const manualLinkInvites = mutation({
         linkedCount++;
       }
     }
-    
+
     return { success: true, message: `Linked ${linkedCount} access records`, linkedCount };
   },
 });
