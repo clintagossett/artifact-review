@@ -174,9 +174,17 @@ export const listAllStats = query({
         })
     ),
     handler: async (ctx, args) => {
-        return await ctx.db
+        const stats = await ctx.db
             .query("artifactVersionStats")
             .withIndex("by_artifactId_versionId", (q) => q.eq("artifactId", args.artifactId))
             .collect();
+
+        return stats.map((s) => ({
+            userId: s.userId,
+            versionId: s.versionId,
+            viewCount: s.viewCount,
+            firstViewedAt: s.firstViewedAt,
+            lastViewedAt: s.lastViewedAt,
+        }));
     },
 });

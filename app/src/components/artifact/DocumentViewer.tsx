@@ -50,7 +50,7 @@ import type {
   ToolMode,
   ToolBadge,
 } from '@/components/comments/types';
-import { Id } from '@/convex/_generated/dataModel';
+import { Id } from '../../../convex/_generated/dataModel';
 
 // Real version data from backend (from api.artifacts.getVersions)
 interface BackendVersion {
@@ -222,7 +222,6 @@ export function DocumentViewer({
 
   // LIVE PRESENCE AND VIEW TRACKING
   const activeUsers = usePresence(documentId as Id<"artifacts">, versionId);
-  useViewTracker(documentId as Id<"artifacts">, versionId, !!currentVersion);
 
   // Presence states
   const [recentActivity, setRecentActivity] = useState<{
@@ -245,6 +244,9 @@ export function DocumentViewer({
 
   const currentVersion = versions.find(v => v._id === currentVersionId);
   const isViewingOldVersion = !currentVersion?.isLatest;
+
+  // Track the view once the version object is confirmed to exist
+  useViewTracker(documentId as Id<"artifacts">, versionId, !!currentVersion);
 
   // Calculate latest version number for navigation
   const latestVersionNumber = Math.max(...versions.map((v) => v.number));

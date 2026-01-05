@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArtifactDetailsTab } from './artifact-settings/ArtifactDetailsTab';
 import { ArtifactVersionsTab } from './artifact-settings/ArtifactVersionsTab';
 import { ArtifactAccessTab } from './artifact-settings/ArtifactAccessTab';
+import { ArtifactActivityTab } from './artifact-settings/ArtifactActivityTab';
 import { Id } from '../../convex/_generated/dataModel';
 
 interface ArtifactSettingsProps {
@@ -14,18 +15,20 @@ interface ArtifactSettingsProps {
   initialTab?: TabType;
 }
 
-type TabType = 'details' | 'versions' | 'access';
+type TabType = 'details' | 'versions' | 'access' | 'activity';
 
 // Map tab types to hash values
 const tabToHash: Record<TabType, string> = {
-  'access': 'access-and-activity',
+  'activity': 'activity',
+  'access': 'access',
   'versions': 'versions',
   'details': 'details',
 };
 
 // Map hash values to tab types
 const hashToTab: Record<string, TabType> = {
-  'access-and-activity': 'access',
+  'activity': 'activity',
+  'access-and-activity': 'activity',
   'access': 'access',
   'versions': 'versions',
   'details': 'details',
@@ -66,7 +69,8 @@ export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, in
 
   const tabs = [
     { id: 'versions' as TabType, label: 'Versions', icon: '📚' },
-    { id: 'access' as TabType, label: 'Access & Activity', icon: '👥' },
+    { id: 'activity' as TabType, label: 'Activity', icon: '📈' },
+    { id: 'access' as TabType, label: 'Access', icon: '👥' },
     { id: 'details' as TabType, label: 'Details', icon: '📝' },
   ];
 
@@ -104,10 +108,9 @@ export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, in
                 onClick={() => handleTabChange(tab.id)}
                 className={`
                   px-4 py-3 text-sm font-medium transition-colors relative
-                  ${
-                    activeTab === tab.id
-                      ? 'text-blue-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  ${activeTab === tab.id
+                    ? 'text-blue-600'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }
                 `}
               >
@@ -127,6 +130,7 @@ export function ArtifactSettings({ onBack, artifactId, artifactName, isOwner, in
         {activeTab === 'details' && <ArtifactDetailsTab artifactId={artifactId} />}
         {activeTab === 'versions' && <ArtifactVersionsTab artifactId={artifactId} />}
         {activeTab === 'access' && <ArtifactAccessTab artifactId={artifactId} />}
+        {activeTab === 'activity' && <ArtifactActivityTab artifactId={artifactId} />}
       </main>
     </div>
   );
