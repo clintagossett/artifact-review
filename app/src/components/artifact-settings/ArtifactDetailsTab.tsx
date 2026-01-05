@@ -9,6 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, User, FileText, HardDrive } from 'lucide-react';
 import { Id } from '../../../convex/_generated/dataModel';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ArtifactDetailsTabProps {
   artifactId: Id<"artifacts">;
@@ -24,6 +34,9 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
   const [description, setDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Sync state from backend data
   useEffect(() => {
@@ -91,6 +104,26 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
     }
   };
 
+  const softDeleteMutation = useMutation(api.artifacts.softDelete);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await softDeleteMutation({ id: artifactId });
+      toast({ title: 'Artifact deleted successfully' });
+      // Redirect back to dashboard
+      window.location.href = '/dashboard';
+    } catch (error) {
+      toast({
+        title: 'Failed to delete artifact',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   const handleCancel = () => {
     if (details) {
       setName(details.name);
@@ -146,7 +179,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl space-y-6">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="p-6 space-y-6">
           {/* Name Field */}
@@ -242,6 +275,52 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
           </div>
         )}
       </div>
+
+      {/* Danger Zone */}
+      <div className="bg-white rounded-lg border border-red-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-red-100 bg-red-50">
+          <h3 className="font-semibold text-red-900">Danger Zone</h3>
+          <p className="text-sm text-red-700 mt-1">Irreversible actions for this artifact</p>
+        </div>
+        <div className="p-6 flex items-center justify-between">
+          <div>
+            <p className="font-medium text-gray-900">Delete Artifact</p>
+            <p className="text-sm text-gray-600">This will permanently remove the artifact and all its versions.</p>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            Delete Artifact
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the artifact
+              <strong> "{name}"</strong> and all its versions, files, and comments.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
