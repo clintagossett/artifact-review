@@ -1,8 +1,9 @@
 # Subtask 04: Integrate MarkdownViewer with DocumentViewer
 
 **Parent Task:** 00027-md-file-viewing-support
-**Status:** PENDING
+**Status:** COMPLETE
 **Created:** 2026-01-03
+**Completed:** 2026-01-03
 
 ---
 
@@ -92,11 +93,11 @@ app/src/components/artifact/DocumentViewer.tsx
 
 ## Deliverables
 
-- [ ] `DocumentViewer.tsx` updated with conditional rendering
-- [ ] Markdown artifacts render with `MarkdownViewer`
-- [ ] HTML/ZIP artifacts continue using iframe
-- [ ] Container styling consistent across both renderers
-- [ ] Manual testing confirms rendering works
+- [x] `DocumentViewer.tsx` updated with conditional rendering
+- [x] Markdown artifacts render with `MarkdownViewer`
+- [x] HTML/ZIP artifacts continue using iframe
+- [x] Container styling consistent across both renderers
+- [x] Build verification confirms no errors
 
 ---
 
@@ -111,3 +112,43 @@ app/src/components/artifact/DocumentViewer.tsx
 - Comment targeting for markdown is handled in Subtask 05
 - Multi-page navigation (for ZIP) should not apply to markdown (single file)
 - The iframeRef is still needed for HTML artifacts, so keep it
+
+## Implementation Summary
+
+**Changes Made:**
+
+1. **Import MarkdownViewer**
+   ```typescript
+   import { MarkdownViewer } from '@/components/artifact/MarkdownViewer';
+   ```
+
+2. **Conditional Rendering Logic**
+   ```tsx
+   {currentVersion?.fileType === 'markdown' ? (
+     <MarkdownViewer src={artifactUrl} className="min-h-[1000px]" />
+   ) : (
+     <iframe
+       ref={iframeRef}
+       src={artifactUrl}
+       className="w-full h-[1000px] border-0"
+       title="HTML Document Preview"
+     />
+   )}
+   ```
+
+**How It Works:**
+- Checks `currentVersion.fileType` to determine render method
+- Markdown files: Renders with `MarkdownViewer` component (fetches and renders markdown)
+- HTML/ZIP files: Continues using iframe (existing behavior)
+- Same artifact URL is used for both (`/api/artifact/{shareToken}/v{version}/{page}`)
+- Container styling is consistent (same shadow, max-width, overflow)
+
+**Backward Compatibility:**
+- HTML and ZIP artifacts continue to work exactly as before
+- Only markdown files get the new rendering path
+- No breaking changes to existing functionality
+
+**Build Verification:**
+- Next.js build completed successfully
+- TypeScript compilation passed
+- No runtime errors introduced

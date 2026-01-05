@@ -1,8 +1,9 @@
 # Subtask 03: Create MarkdownViewer Component
 
 **Parent Task:** 00027-md-file-viewing-support
-**Status:** PENDING
+**Status:** COMPLETE
 **Created:** 2026-01-03
+**Completed:** 2026-01-03
 
 ---
 
@@ -94,13 +95,13 @@ If `@tailwindcss/typography` is not installed, add it or use custom styles.
 
 ## Deliverables
 
-- [ ] `MarkdownViewer.tsx` component created
-- [ ] Fetches and renders markdown content
-- [ ] GFM features work: tables, task lists, strikethrough, autolinks
-- [ ] Code blocks have syntax highlighting or at minimum styled background
-- [ ] Loading skeleton matches `ArtifactFrame` loading state
-- [ ] Error state displays user-friendly message
-- [ ] Unit tests for component
+- [x] `MarkdownViewer.tsx` component created
+- [x] Fetches and renders markdown content
+- [x] GFM features work: tables, task lists, strikethrough, autolinks
+- [x] Code blocks have styled background
+- [x] Loading skeleton matches `ArtifactFrame` loading state
+- [x] Error state displays user-friendly message
+- [x] Unit tests for component (14 tests, all passing)
 
 ---
 
@@ -125,3 +126,36 @@ If `@tailwindcss/typography` is not installed, add it or use custom styles.
 - Mermaid diagrams are out of scope (Phase 2)
 - Comment targeting on markdown content is handled in Subtask 05
 - This component is standalone; integration with DocumentViewer is Subtask 04
+
+## Implementation Summary
+
+**Component Location:** `app/src/components/artifact/MarkdownViewer.tsx`
+
+**Features Implemented:**
+- Fetches markdown from `src` URL using native fetch API
+- Renders using `react-markdown` with `remark-gfm` plugin
+- Loading state with skeleton matching `ArtifactFrame` design
+- Error handling with user-friendly messages
+- Tailwind typography with custom styling:
+  - Purple links matching platform brand
+  - Gray headings and body text
+  - Styled code blocks (inline and fenced)
+  - Proper table borders and spacing
+
+**Test Coverage:** 14 unit tests covering:
+- Basic markdown rendering (headings, paragraphs, lists)
+- GFM features (tables, task lists, strikethrough)
+- Code blocks (inline and fenced)
+- Loading states
+- Error handling
+- Content fetching and re-fetching
+- Custom styling
+
+**Additional Dependencies Installed:**
+- `@tailwindcss/typography@^0.5.15` - For prose classes
+- Updated `tailwind.config.ts` to include typography plugin
+
+**TDD Workflow Followed:**
+1. RED: Wrote 14 failing tests first
+2. GREEN: Implemented component to pass all tests
+3. Tests now pass: 14/14 passing

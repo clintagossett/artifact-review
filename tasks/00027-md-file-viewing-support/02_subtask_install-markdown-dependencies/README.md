@@ -1,8 +1,9 @@
 # Subtask 02: Install Markdown Dependencies
 
 **Parent Task:** 00027-md-file-viewing-support
-**Status:** PENDING
+**Status:** COMPLETE
 **Created:** 2026-01-03
+**Completed:** 2026-01-03
 
 ---
 
@@ -37,9 +38,9 @@ npm install react-markdown remark-gfm
 
 ## Deliverables
 
-- [ ] Packages installed in `app/package.json`
-- [ ] Basic import test passes (no runtime errors)
-- [ ] Document any peer dependency warnings
+- [x] Packages installed in `app/package.json`
+- [x] Basic import test passes (no runtime errors)
+- [x] Document any peer dependency warnings
 
 ---
 
@@ -57,3 +58,17 @@ From library research (Subtask 01):
 - `react-markdown` is the recommended library for security (no `dangerouslySetInnerHTML`)
 - `remark-gfm` provides tables, task lists, strikethrough, and autolinks
 - Base bundle size: ~60KB (react-markdown + remark-gfm)
+
+## Installation Results
+
+**Packages installed:**
+- `react-markdown@10.1.0` - Includes built-in TypeScript types
+- `remark-gfm@4.0.1` - Includes built-in TypeScript types
+
+**Dependencies added:** 95 additional packages (peer dependencies for markdown parsing)
+
+**TypeScript support:** Both packages include `.d.ts` files, no `@types/*` packages needed
+
+**Peer dependency warnings:** None
+
+**Build verification:** Next.js compilation successful - packages integrated without issues
