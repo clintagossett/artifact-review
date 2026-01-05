@@ -366,6 +366,8 @@ export const listReviewers = query({
       status: v.union(v.literal("pending"), v.literal("accepted")),
       sendCount: v.number(),
       lastSentAt: v.number(),
+      userId: v.optional(v.id("users")),
+      userInviteId: v.optional(v.id("userInvites")),
     })
   ),
   handler: async (ctx, args) => {
@@ -424,6 +426,8 @@ export const listReviewers = query({
           status,
           sendCount: access.sendCount,
           lastSentAt: access.lastSentAt,
+          userId: access.userId,
+          userInviteId: access.userInviteId,
         };
       })
     );

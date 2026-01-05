@@ -19,6 +19,7 @@ Record of significant architectural decisions made for this project.
 | [0011](./0011-soft-delete-strategy.md) | Soft Delete Strategy | Accepted | 2025-12-28 |
 | [0012](./0012-naming-conventions.md) | Backend Naming Conventions | Accepted | 2025-12-31 |
 | [0013](./0013-comment-character-limits.md) | Comment Character Limits | Accepted | 2026-01-02 |
+| [0014](./0014-pii-safe-relational-tracking.md) | PII-Safe Relational Tracking | Accepted | 2026-01-04 |
 
 ---
 

@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentCard } from '@/components/artifact/CommentCard';
+import { MarkdownViewer } from '@/components/artifact/MarkdownViewer';
 import type {
   Comment,
   ToolMode,
@@ -70,6 +71,11 @@ import { useReplyActions } from '@/hooks/useReplyActions';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useRouter } from 'next/navigation';
+import { usePresence } from '@/hooks/usePresence';
+import { useViewTracker } from '@/hooks/useViewTracker';
+import { PresenceAvatars } from './PresenceAvatars';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -186,7 +192,7 @@ export function DocumentViewer({
     preview?: string;
     text?: string;
   } | null>(null);
-  
+
   // Tool states
   const [activeToolMode, setActiveToolMode] = useState<ToolMode>(null);
   const [commentBadge, setCommentBadge] = useState<ToolBadge>(null);
@@ -204,7 +210,7 @@ export function DocumentViewer({
   useEffect(() => {
     commentBadgeRef.current = commentBadge;
   }, [commentBadge]);
-  
+
   // Version management state
   // Use the real versionId prop instead of mock version IDs
   const [currentVersionId, setCurrentVersionId] = useState<string>(versionId);
@@ -214,25 +220,29 @@ export function DocumentViewer({
     setCurrentVersionId(versionId);
   }, [versionId]);
 
+  // LIVE PRESENCE AND VIEW TRACKING
+  const activeUsers = usePresence(documentId as Id<"artifacts">, versionId);
+  useViewTracker(documentId as Id<"artifacts">, versionId, !!currentVersion);
+
   // Presence states
   const [recentActivity, setRecentActivity] = useState<{
     message: string;
     timestamp: number;
   } | null>(null);
-  
+
   // Multi-page navigation state
   const [currentPage, setCurrentPage] = useState('/index.html');
   const [navigationHistory, setNavigationHistory] = useState<string[]>(['/index.html']);
   const [historyIndex, setHistoryIndex] = useState(0);
-  
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  
+
   // Filter comments by current version and page
   const currentVersionComments = comments.filter(
     comment => comment.versionId === currentVersionId &&
       (!comment.page || comment.page === currentPage) // Filter by page if specified
   );
-  
+
   const currentVersion = versions.find(v => v._id === currentVersionId);
   const isViewingOldVersion = !currentVersion?.isLatest;
 
@@ -258,15 +268,15 @@ export function DocumentViewer({
   };
 
   const artifactUrl = getArtifactUrl(currentPage);
-  
+
   // Store location context for each comment
   const [commentLocations, setCommentLocations] = useState<Record<string, Comment['location']>>({});
-  
+
   // Helper: Detect element location (tab/accordion/visible)
   const detectElementLocation = (elementId: string, doc: Document): Comment['location'] | undefined => {
     const element = doc.getElementById(elementId);
     if (!element) return undefined;
-    
+
     // Check if element is in a tab
     let parent = element.parentElement;
     while (parent) {
@@ -281,7 +291,7 @@ export function DocumentViewer({
           isHidden: !isActive,
         };
       }
-      
+
       // Check if element is in an accordion
       if (parent.classList.contains('accordion-content')) {
         const isActive = parent.classList.contains('active');
@@ -293,25 +303,25 @@ export function DocumentViewer({
           isHidden: !isActive,
         };
       }
-      
+
       parent = parent.parentElement;
     }
-    
+
     return {
       type: 'visible',
       label: '',
       isHidden: false,
     };
   };
-  
+
   // Helper: Navigate to and reveal hidden element
   const navigateToElement = (elementId: string, location?: Comment['location']) => {
     const doc = iframeRef.current?.contentDocument;
     if (!doc) return;
-    
+
     const element = doc.getElementById(elementId);
     if (!element) return;
-    
+
     if (location?.type === 'tab' && location.isHidden) {
       // Find and click the tab button
       let parent = element.parentElement;
@@ -326,7 +336,7 @@ export function DocumentViewer({
         }
       }
     }
-    
+
     if (location?.type === 'accordion' && location.isHidden) {
       // Find and click the accordion header
       let parent = element.parentElement;
@@ -340,7 +350,7 @@ export function DocumentViewer({
         }
       }
     }
-    
+
     // Wait for animation, then scroll and highlight
     setTimeout(() => {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -389,66 +399,66 @@ export function DocumentViewer({
       // Add selection listener for text
       doc.addEventListener('mouseup', handleTextSelection);
 
-        // Add click listeners for images and other elements (for comment creation)
-        const images = doc.querySelectorAll('img[id]');
-        images.forEach((img) => {
-          img.addEventListener('click', handleElementClick);
-          img.addEventListener('contextmenu', handleElementClick);
-          // Add hover effect styling
-          (img as HTMLElement).style.cursor = 'pointer';
-        });
+      // Add click listeners for images and other elements (for comment creation)
+      const images = doc.querySelectorAll('img[id]');
+      images.forEach((img) => {
+        img.addEventListener('click', handleElementClick);
+        img.addEventListener('contextmenu', handleElementClick);
+        // Add hover effect styling
+        (img as HTMLElement).style.cursor = 'pointer';
+      });
 
-        // Add click listeners for buttons
-        const buttons = doc.querySelectorAll('a.cta-button[id], button[id]');
-        buttons.forEach((btn) => {
-          btn.addEventListener('click', handleElementClick);
-          btn.addEventListener('contextmenu', handleElementClick);
-          (btn as HTMLElement).style.cursor = 'pointer';
-        });
+      // Add click listeners for buttons
+      const buttons = doc.querySelectorAll('a.cta-button[id], button[id]');
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', handleElementClick);
+        btn.addEventListener('contextmenu', handleElementClick);
+        (btn as HTMLElement).style.cursor = 'pointer';
+      });
 
-        // Add click listeners for headings
-        const headings = doc.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
-        headings.forEach((heading) => {
-          heading.addEventListener('click', handleElementClick);
-          heading.addEventListener('contextmenu', handleElementClick);
-          (heading as HTMLElement).style.cursor = 'pointer';
-        });
-        
-        // Add navigation handling for links
-        const links = doc.querySelectorAll('a[href]');
-        links.forEach((link) => {
-          link.addEventListener('click', (e) => {
-            const href = link.getAttribute('href');
-            if (href && (href.endsWith('.html') || href.startsWith('/'))) {
-              e.preventDefault();
-              // Navigate to the new page
-              const newPage = href.startsWith('/') ? href : '/' + href;
-              setCurrentPage(newPage);
-              
-              // Update navigation history
-              const newHistory = navigationHistory.slice(0, historyIndex + 1);
-              newHistory.push(newPage);
-              setNavigationHistory(newHistory);
-              setHistoryIndex(newHistory.length - 1);
-            }
-          });
-        });
-        
-        // Detect location context for all comments with elementIds
-        const locations: Record<string, Comment['location']> = {};
-        currentVersionComments.forEach(comment => {
-          if (comment.elementId) {
-            const location = detectElementLocation(comment.elementId, doc);
-            if (location) {
-              locations[comment.id] = location;
-            }
+      // Add click listeners for headings
+      const headings = doc.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
+      headings.forEach((heading) => {
+        heading.addEventListener('click', handleElementClick);
+        heading.addEventListener('contextmenu', handleElementClick);
+        (heading as HTMLElement).style.cursor = 'pointer';
+      });
+
+      // Add navigation handling for links
+      const links = doc.querySelectorAll('a[href]');
+      links.forEach((link) => {
+        link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          if (href && (href.endsWith('.html') || href.startsWith('/'))) {
+            e.preventDefault();
+            // Navigate to the new page
+            const newPage = href.startsWith('/') ? href : '/' + href;
+            setCurrentPage(newPage);
+
+            // Update navigation history
+            const newHistory = navigationHistory.slice(0, historyIndex + 1);
+            newHistory.push(newPage);
+            setNavigationHistory(newHistory);
+            setHistoryIndex(newHistory.length - 1);
           }
         });
-        setCommentLocations(locations);
-        
-        // Add presence indicators styles
-        const presenceStyle = doc.createElement('style');
-        presenceStyle.textContent = `
+      });
+
+      // Detect location context for all comments with elementIds
+      const locations: Record<string, Comment['location']> = {};
+      currentVersionComments.forEach(comment => {
+        if (comment.elementId) {
+          const location = detectElementLocation(comment.elementId, doc);
+          if (location) {
+            locations[comment.id] = location;
+          }
+        }
+      });
+      setCommentLocations(locations);
+
+      // Add presence indicators styles
+      const presenceStyle = doc.createElement('style');
+      presenceStyle.textContent = `
           .presence-indicator {
             position: absolute;
             width: 8px;
@@ -478,7 +488,7 @@ export function DocumentViewer({
             margin-left: 10px;
           }
         `;
-        doc.head.appendChild(presenceStyle);
+      doc.head.appendChild(presenceStyle);
     };
 
     // Wait for iframe to load before setting up listeners
@@ -586,11 +596,11 @@ export function DocumentViewer({
 
     setSelectedText('');
     setShowCommentTooltip(true);
-    
+
     // Get position relative to the viewport
     const rect = target.getBoundingClientRect();
     const iframeRect = iframeRef.current?.getBoundingClientRect();
-    
+
     if (iframeRect) {
       setTooltipPosition({
         x: iframeRect.left + rect.right + 10,
@@ -731,10 +741,10 @@ export function DocumentViewer({
 
   const highlightElement = (elementId: string | undefined) => {
     if (!elementId || !iframeRef.current?.contentDocument) return;
-    
+
     const doc = iframeRef.current.contentDocument;
     const element = doc.getElementById(elementId);
-    
+
     if (element) {
       element.classList.add('highlight-element');
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -743,10 +753,10 @@ export function DocumentViewer({
 
   const removeHighlight = (elementId: string | undefined) => {
     if (!elementId || !iframeRef.current?.contentDocument) return;
-    
+
     const doc = iframeRef.current.contentDocument;
     const element = doc.getElementById(elementId);
-    
+
     if (element) {
       element.classList.remove('highlight-element');
     }
@@ -874,10 +884,10 @@ export function DocumentViewer({
           }
         }
       `}</style>
-      
+
       {/* Activity Notification */}
       {recentActivity && (
-        <div 
+        <div
           className="fixed top-20 right-6 z-50 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[200px]"
           style={{
             animation: 'slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards',
@@ -887,297 +897,305 @@ export function DocumentViewer({
           <span className="text-gray-900 font-medium">{recentActivity.message}</span>
         </div>
       )}
-      
+
       <div className="h-screen flex flex-col bg-white">
         {/* Top Bar */}
         <header className="border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={onBack}>
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
-            <div className="h-6 w-px bg-gray-300" />
-            
-            {/* Version Selector */}
-            {versions.length > 0 && (
-              <>
-                <div className="flex items-center gap-3">
-                  <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <History className="w-4 h-4" />
-                        {currentVersion?.name && currentVersion.name !== `v${currentVersion.number}`
-                          ? `v${currentVersion?.number || 1} - ${currentVersion.name}`
-                          : `v${currentVersion?.number || 1}`}
-                        {currentVersion?.isLatest && (
-                          <Badge className="bg-green-100 text-green-800 text-xs ml-1">
-                            Latest
-                          </Badge>
-                        )}
-                        <ChevronDown className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-80">
-                      <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
-                      <DropdownMenuSeparator />
-                      {[...versions].sort((a, b) => b.number - a.number).map((version) => (
-                        <DropdownMenuItem
-                          key={version._id}
-                          onClick={() => handleVersionChange(version.number)}
-                          className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
-                        >
-                          <div className="flex items-start justify-between w-full gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">
-                                  {version.name && version.name !== `v${version.number}`
-                                    ? `v${version.number} - ${version.name}`
-                                    : `v${version.number}`}
-                                </span>
-                                {version.isLatest && (
-                                  <Badge className="bg-green-100 text-green-800 text-xs">
-                                    Latest
-                                  </Badge>
-                                )}
-                                {currentVersionId === version._id && (
-                                  <Check className="w-4 h-4 text-purple-600" />
-                                )}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-0.5">
-                                {new Date(version.createdAt).toLocaleDateString()}
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={onBack}>
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back
+              </Button>
+              <div className="h-6 w-px bg-gray-300" />
+
+              {/* Version Selector */}
+              {versions.length > 0 && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-2">
+                          <History className="w-4 h-4" />
+                          {currentVersion?.name && currentVersion.name !== `v${currentVersion.number}`
+                            ? `v${currentVersion?.number || 1} - ${currentVersion.name}`
+                            : `v${currentVersion?.number || 1}`}
+                          {currentVersion?.isLatest && (
+                            <Badge className="bg-green-100 text-green-800 text-xs ml-1">
+                              Latest
+                            </Badge>
+                          )}
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-80">
+                        <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
+                        <DropdownMenuSeparator />
+                        {[...versions].sort((a, b) => b.number - a.number).map((version) => (
+                          <DropdownMenuItem
+                            key={version._id}
+                            onClick={() => handleVersionChange(version.number)}
+                            className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
+                          >
+                            <div className="flex items-start justify-between w-full gap-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    {version.name && version.name !== `v${version.number}`
+                                      ? `v${version.number} - ${version.name}`
+                                      : `v${version.number}`}
+                                  </span>
+                                  {version.isLatest && (
+                                    <Badge className="bg-green-100 text-green-800 text-xs">
+                                      Latest
+                                    </Badge>
+                                  )}
+                                  {currentVersionId === version._id && (
+                                    <Check className="w-4 h-4 text-purple-600" />
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-0.5">
+                                  {new Date(version.createdAt).toLocaleDateString()}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </DropdownMenuItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-purple-600"
+                          onClick={() => {
+                            if (!isOwner) {
+                              showPermissionModal('upload');
+                              return;
+                            }
+                            onNavigateToVersions?.();
+                          }}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload New Version
                         </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-purple-600"
-                        onClick={() => {
-                          if (!isOwner) {
-                            showPermissionModal('upload');
-                            return;
-                          }
-                          onNavigateToVersions?.();
-                        }}
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload New Version
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </>
-            )}
-            
-            {versions.length === 0 && <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>}
-            
-            <Badge className={getStatusColor(status)}>
-              {status === 'in-review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
-            </Badge>
-          </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </>
+              )}
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              {onNavigateToShare && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (!isOwner) {
-                      showPermissionModal('share');
-                      return;
-                    }
-                    onNavigateToShare();
-                  }}
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-              )}
-              {onNavigateToSettings && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (!isOwner) {
-                      showPermissionModal('manage');
-                      return;
-                    }
-                    onNavigateToSettings();
-                  }}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Manage
-                </Button>
-              )}
+              {versions.length === 0 && <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>}
+
+              <Badge className={getStatusColor(status)}>
+                {status === 'in-review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
+              </Badge>
+
+              {/* Live Presence Face Pile */}
+              <PresenceAvatars activeUsers={activeUsers} currentVersionId={versionId} />
             </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Comment Toolbar */}
-      <CommentToolbar
-        activeToolMode={activeToolMode}
-        commentBadge={commentBadge}
-        onToolChange={handleToolChange}
-        onBadgeClick={handleBadgeClick}
-        filter={filter}
-        onFilterChange={setFilter}
-        activeCount={filteredComments.filter(c => !c.resolved).length}
-        isViewingOldVersion={isViewingOldVersion}
-        currentVersionNumber={currentVersion?.number}
-        latestVersionNumber={versions.find(v => v.isLatest)?.number}
-        onSwitchToLatest={() => handleVersionChange(latestVersionNumber)}
-      />
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Document Display */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-8">
-          <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-            <iframe
-              ref={iframeRef}
-              src={artifactUrl}
-              className="w-full h-[1000px] border-0"
-              title="HTML Document Preview"
-            />
-          </div>
-        </div>
-
-        {/* Comments Sidebar */}
-        {sidebarOpen && (
-          <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-gray-700" />
-                <h2 className="font-semibold text-gray-900">
-                  Comments ({filteredComments.length})
-                </h2>
+                {onNavigateToShare && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!isOwner) {
+                        showPermissionModal('share');
+                        return;
+                      }
+                      onNavigateToShare();
+                    }}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                )}
+                {onNavigateToSettings && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (!isOwner) {
+                        showPermissionModal('manage');
+                        return;
+                      }
+                      onNavigateToSettings();
+                    }}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Manage
+                  </Button>
+                )}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="flex-1 overflow-auto p-4 space-y-4">
-              {/* Comments List */}
-              {filteredComments.map((comment) => (
-                <CommentCard
-                  key={comment.id}
-                  comment={comment}
-                  currentUserId={currentUserId}
-                  artifactOwnerId={artifactOwnerId}
-                  hoveredComment={hoveredComment}
-                  commentLocation={commentLocations[comment.id]}
-                  onMouseEnter={() => setHoveredComment(comment.id)}
-                  onMouseLeave={() => setHoveredComment(null)}
-                  onClick={() => {
-                    if (comment.elementId) {
-                      const location = commentLocations[comment.id];
-                      navigateToElement(comment.elementId, location);
-                    }
-                  }}
-                  onReply={handleAddReply}
-                  onEdit={handleEditComment}
-                  onSaveEdit={handleSaveEdit}
-                  onCancelEdit={handleCancelEdit}
-                  onToggleResolve={toggleResolve}
-                  onDelete={handleDeleteComment}
-                  editingCommentId={editingComment}
-                  editText={editText}
-                  setEditText={setEditText}
-                />
-              ))}
             </div>
           </div>
-        )}
+        </header>
 
-        {/* Collapsed Sidebar Toggle */}
-        {!sidebarOpen && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute right-4 top-20"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Comments ({filteredComments.length})
-          </Button>
-        )}
-      </div>
+        {/* Comment Toolbar */}
+        <CommentToolbar
+          activeToolMode={activeToolMode}
+          commentBadge={commentBadge}
+          onToolChange={handleToolChange}
+          onBadgeClick={handleBadgeClick}
+          filter={filter}
+          onFilterChange={setFilter}
+          activeCount={filteredComments.filter(c => !c.resolved).length}
+          isViewingOldVersion={isViewingOldVersion}
+          currentVersionNumber={currentVersion?.number}
+          latestVersionNumber={versions.find(v => v.isLatest)?.number}
+          onSwitchToLatest={() => handleVersionChange(latestVersionNumber)}
+        />
 
-      {/* Comment Tooltip */}
-      {showCommentTooltip && (
-        <div
-          className="fixed bg-white shadow-lg rounded-lg p-4 z-50 w-80 border border-gray-200"
-          style={{
-            left: Math.min(tooltipPosition.x, window.innerWidth - 340),
-            top: tooltipPosition.y + 10,
-          }}
-        >
-          <div className="mb-3">
-            {selectedElement?.type === 'image' && selectedElement.preview ? (
-              <>
-                <div className="text-gray-600 mb-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs capitalize">
-                    {selectedElement.type}
-                  </Badge>
-                  <span className="text-xs">Click to comment on this image</span>
-                </div>
-                <img
-                  src={selectedElement.preview}
-                  alt="Selected element"
-                  className="w-full h-40 object-cover rounded border-2 border-purple-200 mb-2"
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Document Display */}
+          <div className="flex-1 overflow-auto bg-gray-50 p-8">
+            <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+              {/* Conditional rendering based on file type */}
+              {currentVersion?.fileType === 'markdown' ? (
+                <MarkdownViewer src={artifactUrl} className="min-h-[1000px]" />
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  src={artifactUrl}
+                  className="w-full h-[1000px] border-0"
+                  title="HTML Document Preview"
                 />
-              </>
-            ) : selectedElement?.text ? (
-              <>
-                <div className="text-gray-600 mb-2 flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs capitalize">
-                    {selectedElement.type}
-                  </Badge>
-                  <span className="text-xs">Commenting on this element</span>
-                </div>
-                <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                  "{selectedElement.text.substring(0, 50)}{selectedElement.text.length > 50 ? '...' : ''}"
-                </div>
-              </>
-            ) : selectedText ? (
-              <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                "{selectedText.substring(0, 50)}{selectedText.length > 50 ? '...' : ''}"
-              </div>
-            ) : null}
+              )}
+            </div>
           </div>
-          <Textarea
-            placeholder="Add a comment..."
-            value={newCommentText}
-            onChange={(e) => setNewCommentText(e.target.value)}
-            className="mb-2"
-            autoFocus
-          />
-          <div className="flex gap-2">
-            <Button size="sm" onClick={handleAddComment}>
-              <Send className="w-3 h-3 mr-1" />
-              Comment
-            </Button>
+
+          {/* Comments Sidebar */}
+          {sidebarOpen && (
+            <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-gray-700" />
+                  <h2 className="font-semibold text-gray-900">
+                    Comments ({filteredComments.length})
+                  </h2>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="flex-1 overflow-auto p-4 space-y-4">
+                {/* Comments List */}
+                {filteredComments.map((comment) => (
+                  <CommentCard
+                    key={comment.id}
+                    comment={comment}
+                    currentUserId={currentUserId}
+                    artifactOwnerId={artifactOwnerId}
+                    hoveredComment={hoveredComment}
+                    commentLocation={commentLocations[comment.id]}
+                    onMouseEnter={() => setHoveredComment(comment.id)}
+                    onMouseLeave={() => setHoveredComment(null)}
+                    onClick={() => {
+                      if (comment.elementId) {
+                        const location = commentLocations[comment.id];
+                        navigateToElement(comment.elementId, location);
+                      }
+                    }}
+                    onReply={handleAddReply}
+                    onEdit={handleEditComment}
+                    onSaveEdit={handleSaveEdit}
+                    onCancelEdit={handleCancelEdit}
+                    onToggleResolve={toggleResolve}
+                    onDelete={handleDeleteComment}
+                    editingCommentId={editingComment}
+                    editText={editText}
+                    setEditText={setEditText}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Collapsed Sidebar Toggle */}
+          {!sidebarOpen && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setShowCommentTooltip(false);
-                setNewCommentText('');
-                setSelectedText('');
-                setSelectedElement(null);
-              }}
+              className="absolute right-4 top-20"
+              onClick={() => setSidebarOpen(true)}
             >
-              Cancel
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Comments ({filteredComments.length})
             </Button>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Comment Tooltip */}
+        {showCommentTooltip && (
+          <div
+            className="fixed bg-white shadow-lg rounded-lg p-4 z-50 w-80 border border-gray-200"
+            style={{
+              left: Math.min(tooltipPosition.x, window.innerWidth - 340),
+              top: tooltipPosition.y + 10,
+            }}
+          >
+            <div className="mb-3">
+              {selectedElement?.type === 'image' && selectedElement.preview ? (
+                <>
+                  <div className="text-gray-600 mb-2 flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs capitalize">
+                      {selectedElement.type}
+                    </Badge>
+                    <span className="text-xs">Click to comment on this image</span>
+                  </div>
+                  <img
+                    src={selectedElement.preview}
+                    alt="Selected element"
+                    className="w-full h-40 object-cover rounded border-2 border-purple-200 mb-2"
+                  />
+                </>
+              ) : selectedElement?.text ? (
+                <>
+                  <div className="text-gray-600 mb-2 flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs capitalize">
+                      {selectedElement.type}
+                    </Badge>
+                    <span className="text-xs">Commenting on this element</span>
+                  </div>
+                  <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
+                    "{selectedElement.text.substring(0, 50)}{selectedElement.text.length > 50 ? '...' : ''}"
+                  </div>
+                </>
+              ) : selectedText ? (
+                <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
+                  "{selectedText.substring(0, 50)}{selectedText.length > 50 ? '...' : ''}"
+                </div>
+              ) : null}
+            </div>
+            <Textarea
+              placeholder="Add a comment..."
+              value={newCommentText}
+              onChange={(e) => setNewCommentText(e.target.value)}
+              className="mb-2"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleAddComment}>
+                <Send className="w-3 h-3 mr-1" />
+                Comment
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowCommentTooltip(false);
+                  setNewCommentText('');
+                  setSelectedText('');
+                  setSelectedElement(null);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
       </div>
     </>

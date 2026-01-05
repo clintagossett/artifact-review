@@ -954,6 +954,78 @@ const schema = defineSchema({
      * @example ctx.db.query("artifactAccess").withIndex("by_userInviteId", q => q.eq("userInviteId", inviteId))
      */
     .index("by_userInviteId", ["userInviteId"]),
+
+  // ============================================================================
+  // PRESENCE
+  // ============================================================================
+  /**
+   * Real-time user presence tracking.
+   * 
+   * ## Purpose
+   * Tracks which users are currently viewing which artifact versions.
+   * Used for "face pile" indicators and current-viewer lists.
+   * 
+   * ## Lifecycle
+   * - **Updated**: Repeatedly via heartbeats in `presence.update`
+   * - **Cleanup**: Inactive records (old lastSeen) are ignored by queries
+   */
+  presence: defineTable({
+    artifactId: v.id("artifacts"),
+    versionId: v.id("artifactVersions"),
+    userId: v.id("users"),
+    lastSeen: v.number(),
+  })
+    .index("by_artifactId_lastSeen", ["artifactId", "lastSeen"])
+    .index("by_userId_artifactId", ["userId", "artifactId"]),
+
+  // ============================================================================
+  // ARTIFACT VIEWS
+  // ============================================================================
+  /**
+   * Persistent history of artifact views.
+   * 
+   * ## Purpose
+   * Logs every time an artifact version is accessed by a user.
+   * Used for activity history and view counters.
+   * 
+   * ## Lifecycle
+   * - **Created**: `views.record` mutation on page load
+   */
+  artifactViews: defineTable({
+    artifactId: v.id("artifacts"),
+    versionId: v.id("artifactVersions"),
+    userId: v.id("users"),
+    viewedAt: v.number(),
+  })
+    .index("by_artifactId_viewedAt", ["artifactId", "viewedAt"])
+    .index("by_versionId_viewedAt", ["versionId", "viewedAt"])
+    .index("by_artifactId_userId_viewedAt", ["artifactId", "userId", "viewedAt"])
+    .index("by_versionId_userId_viewedAt", ["versionId", "userId", "viewedAt"]),
+
+  // ============================================================================
+  // ARTIFACT VERSION STATS
+  // ============================================================================
+  /**
+   * Aggregate statistics for user views per artifact version.
+   * 
+   * ## Purpose
+   * Provides fast lookups for "Has User X seen Version Y?" and "How many times?".
+   * Prevents expensive counting of raw artifactViews records for reporting.
+   * 
+   * ## Lifecycle
+   * - **Upserted**: Via `views.record` mutation whenever a view is logged.
+   */
+  artifactVersionStats: defineTable({
+    artifactId: v.id("artifacts"),
+    versionId: v.id("artifactVersions"),
+    userId: v.id("users"),
+    firstViewedAt: v.number(),
+    lastViewedAt: v.number(),
+    viewCount: v.number(),
+  })
+    .index("by_artifactId_versionId", ["artifactId", "versionId"])
+    .index("by_userId_artifactId", ["userId", "artifactId"])
+    .index("by_versionId_userId", ["versionId", "userId"]),
 });
 
 export default schema;
