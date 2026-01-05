@@ -4,11 +4,12 @@ These rules are mirrored from `CLAUDE.md` and `docs/architecture/convex-rules.md
 
 ## 🚨 Critical Mandates
 
-1.  **Strict TDD**: You MUST write a failing test in `tasks/XXXXX/tests/` before writing implementation code.
+1.  **Task Initiation**: You MUST create a GitHub issue using `gh issue create` BEFORE starting work. The resulting issue number MUST be used as the task ID (e.g. `tasks/00042-.../`).
+2.  **Strict TDD**: You MUST write a failing test in `tasks/XXXXX/tests/` before writing implementation code.
     *   **Red**: Write test, confirm failure.
     *   **Green**: Write minimal code to pass.
     *   **Refactor**: Clean up.
-2.  **Task Artifacts**: Design docs, task-specific scripts, and isolated tests live in `tasks/XXXXX-task-name/`.
+3.  **Task Artifacts**: Design docs, task-specific scripts, and isolated tests live in `tasks/XXXXX-task-name/`.
     *   **Application Code**: Lives in `src/` and `convex/` (the root). Do NOT try to run the app from the task folder.
     *   **Tests**: Unit tests can live alongside components, but task-specific reproduction/e2e tests often live in `tasks/XXXXX/tests/`.
 3.  **Convex Security**: 

@@ -1,6 +1,6 @@
 # Task 00030: Track artifact views and "who's currently viewing"
 
-**GitHub Issue:** #30
+**GitHub Issue:** [#30](https://github.com/clintagossett/artifact-review/issues/30)
 
 ---
 
