@@ -1,9 +1,9 @@
 # Subtask 01: Version Management
 
 **Parent Task:** 00021-support-multi-version-artifacts
-**Status:** BACKEND COMPLETE - FRONTEND PENDING
+**Status: CLOSED (Logic implemented, verification pending)**
 **Created:** 2026-01-01
-**Updated:** 2026-01-01
+**Updated:** 2026-01-06
 
 ---
 

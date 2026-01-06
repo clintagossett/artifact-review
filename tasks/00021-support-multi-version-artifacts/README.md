@@ -8,9 +8,9 @@
 
 **Last Updated:** 2026-01-01 (Session 2 - Architect Review)
 
-### Current Status: ✅ SCOPED & REVIEWED - READY FOR IMPLEMENTATION
+### Current Status: 🏁 CLOSED (Implementation Complete, Verification Pending)
 
-**Phase:** MVP scope defined, architect review complete, corrected plan ready.
+**Phase:** Implementation phase wrapped up. Core features working. E2E tests and minor polishing deferred. See [PENDING.md](./PENDING.md) for details.
 
 ### What We Did This Session (Session 2 - Architect Review)
 
@@ -180,9 +180,18 @@ This builds on the backend foundation from Task 18 (Refine Version Model Permiss
 - Frontend uses `isLatest` flag for UI state (banner, comment input visibility)
 - Two subtasks: (1) Version Management, (2) Artifact Viewer
 
-## Changes Made
+## Implementation Summary
 
-_(To be filled in as implementation progresses)_
+All core features for multi-version artifacts have been implemented:
+- **Backend**: Schema renames, `isLatest` computation, and comment enforcement.
+- **Frontend**: Version switcher, old version banner with switch link, and full version management in settings.
+- **Routing**: Support for version deep links via `/a/{token}/v/{number}`.
+
+## Pending Verification & Polishing
+See [PENDING.md](./PENDING.md) for a detailed list of remaining work, including:
+- E2E Tests (Playwright)
+- Validation Videos
+- Dynamic "Uploaded By" names in settings.
 
 ## Subtasks
 
