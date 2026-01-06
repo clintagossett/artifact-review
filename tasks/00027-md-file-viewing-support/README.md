@@ -8,9 +8,9 @@
 
 **Last Updated:** 2026-01-03 (Session 2)
 
-### Current Status: OPEN
+### Current Status: IN_PROGRESS (Polish Phase)
 
-**Phase:** Subtasks designed, ready for implementation.
+**Phase:** Phase 1 (Basic MD) and Phase 2 (Mermaid) are COMPLETE and VERIFIED.
 
 ### What We Did This Session (Session 2)
 
@@ -67,9 +67,9 @@ Add support for viewing markdown (.md) files as rendered HTML in the artifact re
 
 | # | Name | Status | Description |
 |---|------|--------|-------------|
-| 08 | [Mermaid Lazy Loading](./08_subtask_mermaid-lazy-loading/) | IN_PROGRESS | Implement lazy-loaded Mermaid rendering |
+| 08 | [Mermaid Lazy Loading](./08_subtask_mermaid-lazy-loading/) | COMPLETE | Implement lazy-loaded Mermaid rendering |
 | 09 | [Complex MD Test Samples](./09_subtask_complex-md-samples/) | COMPLETE | Create test files with Mermaid, complex GFM |
-| 10 | [Phase 2 Testing](./10_subtask_phase2-testing/) | PENDING | Test Mermaid diagrams and bundle size |
+| 10 | [Phase 2 Testing](./10_subtask_phase2-testing/) | COMPLETE | Test Mermaid diagrams and bundle size |
 
 ---
 
