@@ -3,7 +3,7 @@
 **Parent Task:** 00020-refactor-artifact-review-invite
 **Status:** COMPLETE
 **Created:** 2026-01-03
-**Completed:** 2026-01-03
+**Completed:** 2026-01-06
 **Dependencies:** 01-backend (schema and Convex functions must exist)
 
 ---

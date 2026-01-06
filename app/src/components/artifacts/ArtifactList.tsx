@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import type { Id } from "@/../../convex/_generated/dataModel";
 
 export interface ArtifactListProps {
+  title?: string;
+  showNewButton?: boolean;
   artifacts: Array<{
     _id: Id<"artifacts">;
     name: string;
@@ -20,13 +22,15 @@ export interface ArtifactListProps {
     }>
   >;
   onArtifactClick: (id: Id<"artifacts">) => void;
-  onNewArtifact: () => void;
+  onNewArtifact?: () => void;
 }
 
 /**
  * ArtifactList - Grid layout of artifact cards with section header
  */
 export function ArtifactList({
+  title = "Your Artifacts",
+  showNewButton = true,
   artifacts,
   versionsMap,
   onArtifactClick,
@@ -41,16 +45,18 @@ export function ArtifactList({
     <div>
       {/* Section Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Your Artifacts</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onNewArtifact}
-          className="text-purple-600 hover:text-purple-700"
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          New Artifact
-        </Button>
+        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        {showNewButton && onNewArtifact && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNewArtifact}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            New Artifact
+          </Button>
+        )}
       </div>
 
       {/* Artifact Grid */}

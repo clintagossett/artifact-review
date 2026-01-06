@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const currentUser = useQuery(api.users.getCurrentUser);
   const artifacts = useQuery(api.artifacts.list);
+  const sharedWithMe = useQuery(api.access.listShared);
   const [isNewArtifactOpen, setIsNewArtifactOpen] = useState(false);
   const { uploadFile } = useArtifactUpload();
 
@@ -32,7 +33,10 @@ export default function DashboardPage() {
 
   const handleArtifactClick = (id: Id<"artifacts">) => {
     // Navigate to artifact viewer
-    const artifact = artifacts?.find((a) => a._id === id);
+    // Find in either artifacts or sharedWithMe
+    const artifact = artifacts?.find((a) => a._id === id) ||
+      sharedWithMe?.find((s) => s.artifact._id === id)?.artifact;
+
     if (artifact) {
       router.push(`/a/${artifact.shareToken}`);
     }
@@ -40,7 +44,7 @@ export default function DashboardPage() {
 
   const handleCreateArtifact = async (data: {
     file: File;
-    title: string;
+    name: string;
     description?: string;
   }) => {
     const result = await uploadFile(data);
@@ -48,35 +52,51 @@ export default function DashboardPage() {
     router.push(`/a/${result.shareToken}`);
   };
 
+  const isLoading = currentUser === undefined || artifacts === undefined || sharedWithMe === undefined;
+
   return (
     <ProtectedPage>
       {/* Loading state while data is fetching */}
-      {(currentUser === undefined || artifacts === undefined) && (
+      {isLoading && (
         <div className="flex h-screen items-center justify-center">
           <div className="text-gray-600">Loading...</div>
         </div>
       )}
 
       {/* Dashboard content */}
-      {currentUser !== undefined && artifacts !== undefined && (
+      {!isLoading && currentUser && (
         <div className="min-h-screen bg-gray-50">
           <DashboardHeader
             onUploadClick={handleUploadClick}
-            onInviteClick={() => console.log("Invite clicked")}
             userEmail={currentUser.email}
             userName={currentUser.name}
           />
 
-          <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            {artifacts.length === 0 ? (
+          <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-12">
+            {/* Owned Artifacts */}
+            {artifacts.length === 0 && (!sharedWithMe || sharedWithMe.length === 0) ? (
               <EmptyState onCreateFirst={handleNewArtifact} />
             ) : (
-              <ArtifactList
-                artifacts={artifacts}
-                versionsMap={{}}
-                onArtifactClick={handleArtifactClick}
-                onNewArtifact={handleNewArtifact}
-              />
+              <>
+                {artifacts.length > 0 && (
+                  <ArtifactList
+                    artifacts={artifacts}
+                    versionsMap={{}}
+                    onArtifactClick={handleArtifactClick}
+                    onNewArtifact={handleNewArtifact}
+                  />
+                )}
+
+                {sharedWithMe && sharedWithMe.length > 0 && (
+                  <ArtifactList
+                    title="Shared with me"
+                    showNewButton={false}
+                    artifacts={sharedWithMe.map(s => s.artifact)}
+                    versionsMap={{}}
+                    onArtifactClick={handleArtifactClick}
+                  />
+                )}
+              </>
             )}
           </main>
 

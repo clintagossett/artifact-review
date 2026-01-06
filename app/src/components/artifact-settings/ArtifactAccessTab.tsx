@@ -198,7 +198,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
     );
   }
 
-  const acceptedReviewers = reviewers.filter(r => r.status === 'accepted');
+  const acceptedReviewers = reviewers.filter(r => r.status === 'added' || r.status === 'viewed');
   const pendingInvitations = reviewers.filter(r => r.status === 'pending');
 
   return (
@@ -267,9 +267,21 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900">{reviewer.displayName}</p>
-                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Active
+                          <Badge
+                            variant="outline"
+                            className={reviewer.status === 'viewed' ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700 border-blue-200"}
+                          >
+                            {reviewer.status === 'viewed' ? (
+                              <>
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Viewed
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="w-3 h-3 mr-1" />
+                                Added
+                              </>
+                            )}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600">{reviewer.email}</p>

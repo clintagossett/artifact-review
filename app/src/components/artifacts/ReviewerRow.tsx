@@ -27,7 +27,7 @@ export interface ReviewerRowProps {
   reviewer: {
     displayName: string;
     email: string;
-    status: "pending" | "accepted";
+    status: "pending" | "added" | "viewed";
     accessId: Id<"artifactAccess">;
     sendCount: number;
     lastSentAt: number;
@@ -55,13 +55,18 @@ export function ReviewerRow({ reviewer, onResend, onRemove }: ReviewerRowProps) 
   const statusConfig = {
     pending: {
       label: "Pending",
-      variant: "secondary" as const,
+      className: "bg-gray-100 text-gray-700 border-gray-200",
       ariaLabel: "Invitation pending - user has not signed up yet",
     },
-    accepted: {
+    added: {
       label: "Added",
-      variant: "default" as const,
-      ariaLabel: "User has accepted invitation",
+      className: "bg-blue-100 text-blue-700 border-blue-200",
+      ariaLabel: "User has signed up but not viewed the artifact",
+    },
+    viewed: {
+      label: "Viewed",
+      className: "bg-green-100 text-green-700 border-green-200",
+      ariaLabel: "User has viewed the artifact",
     },
   };
 
@@ -91,7 +96,7 @@ export function ReviewerRow({ reviewer, onResend, onRemove }: ReviewerRowProps) 
         </div>
 
         {/* Status Badge */}
-        <Badge variant={config.variant} aria-label={config.ariaLabel}>
+        <Badge variant="outline" className={config.className} aria-label={config.ariaLabel}>
           {config.label}
         </Badge>
 

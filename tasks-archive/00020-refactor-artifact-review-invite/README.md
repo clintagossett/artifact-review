@@ -1,67 +1,30 @@
 # Task 00020: Refactor and Artifact Review Invite
 
 **GitHub Issue:** [#20](https://github.com/clintagossett/artifact-review/issues/20)
-**Status:** Design Complete - Ready for Implementation
+**Status:** Complete
 **Created:** 2025-12-31
 
 ---
 
 ## Resume (Start Here)
 
-**Last Updated:** 2026-01-03 (Session 3)
+**Last Updated:** 2026-01-06 (Session 4)
 
-### Current Status: Ready for Implementation
+### Current Status: Complete
 
-**Phase:** Design complete, subtasks defined. Ready to build.
+**Phase:** Implementation complete, all scenarios validated.
 
-### What We Did This Session (Session 3)
+### What We Did This Session (Session 4)
 
-1. **ADR-0012 Compliance Review** - Audited all design documents for naming convention violations
-2. **Fixed Index Names** - Corrected `_and_` patterns to simple underscore separator, added `_active` shorthand
-3. **Fixed Function Names** - Changed to generic CRUD patterns (`grant`, `revoke`, `listReviewers`, etc.)
-4. **Created Subtasks** - Split implementation into:
-   - `01-backend/` - Schema + Convex functions
-   - `02-frontend/` - Components, hooks, UI
+1. **Implemented "Viewed" Status** - Updated backend and frontend to track and display when a reviewer has viewed an artifact.
+2. **Dashboard Integration** - Added "Shared with me" section to the dashboard.
+3. **Artifact Deletion** - Implemented soft-delete for artifacts with cascading deletes for versions and files, plus a "Danger Zone" in settings.
+4. **Documentation** - Created `invitation-states.md` with Mermaid diagram.
+5. **Dev Workflow** - Created `.agent/workflows/dev.md` for consistent server management.
 
-### Previous Sessions
+### Next Steps
 
-**Session 2:**
-
-1. **Simplified design** - Challenged the three-table architecture
-   - Removed `systemInvites` table (not needed)
-   - Landed on cleaner two-table model
-   - Focus on PII isolation
-
-2. **Finalized two-table architecture:**
-   ```
-   userInvites     → Pending users (PII: email, name)
-   artifactAccess  → Access grants (no PII, just IDs)
-   ```
-
-3. **Created diagrams** - Visual flows for:
-   - Invite existing user
-   - Invite new user
-   - Signup linking
-   - Resend invitation
-   - Revoke & re-invite
-   - Document: `diagrams.md`
-
-4. **Architect review** - Fixed issues:
-   - Clarified re-invite lookup flow
-   - Fixed ER diagram (missing fields)
-   - Standardized state naming
-   - Resolved open questions
-
-5. **Implementation architecture** - Created full implementation plan:
-   - Schema additions
-   - Backend functions (queries, mutations)
-   - Frontend components and hooks
-   - Validation checklist (13 scenarios)
-   - Document: `implementation-architecture.md`
-
-6. **Added reactive permissions** - Real-time permission revocation
-   - Reviewer kicked out immediately when access revoked
-   - Graceful UX (toast + redirect)
+1. **Architecture Archival** - Archive Task 20 folder now that all scenarios are validated. ✅
 
 ### Design Documents
 
@@ -75,8 +38,8 @@
 
 | Subtask | Description | Status |
 |---------|-------------|--------|
-| `01-backend/` | Schema + Convex functions (`convex/access.ts`) | OPEN |
-| `02-frontend/` | Components, hooks, UI integration | OPEN (depends on 01) |
+| `01-backend/` | Schema + Convex functions (`convex/access.ts`) | COMPLETE |
+| `02-frontend/` | Components, hooks, UI integration | COMPLETE |
 
 ### Next Steps
 

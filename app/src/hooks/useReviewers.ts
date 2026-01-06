@@ -10,7 +10,7 @@ export interface Reviewer {
   accessId: Id<"artifactAccess">;
   email: string;
   displayName: string;
-  status: "pending" | "accepted";
+  status: "pending" | "added" | "viewed";
   sendCount: number;
   lastSentAt: number;
 }

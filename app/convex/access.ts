@@ -363,7 +363,7 @@ export const listReviewers = query({
       accessId: v.id("artifactAccess"),
       email: v.string(),
       displayName: v.string(),
-      status: v.union(v.literal("pending"), v.literal("accepted")),
+      status: v.union(v.literal("pending"), v.literal("added"), v.literal("viewed")),
       sendCount: v.number(),
       lastSentAt: v.number(),
       userId: v.optional(v.id("users")),
@@ -400,16 +400,16 @@ export const listReviewers = query({
       accessRecords.map(async (access) => {
         let email: string;
         let displayName: string;
-        let status: "pending" | "accepted";
+        let status: "pending" | "added" | "viewed";
 
         if (access.userId) {
-          // Existing user
+          // Existing user (added or viewed)
           const user = await ctx.db.get(access.userId);
           email = user?.email || "";
           displayName = user?.name || email;
-          status = "accepted";
+          status = access.firstViewedAt ? "viewed" : "added";
         } else if (access.userInviteId) {
-          // Pending user
+          // Pending user (invited but not signed up)
           const invite = await ctx.db.get(access.userInviteId);
           email = invite?.email || "";
           displayName = invite?.name || email;
