@@ -25,12 +25,10 @@ export function Mermaid({ chart }: MermaidProps) {
     let isMounted = true;
 
     const renderChart = async () => {
-      if (!containerRef.current) return;
-
       try {
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
         const { svg: renderedSvg } = await mermaid.render(id, chart);
-        
+
         if (isMounted) {
           setSvg(renderedSvg);
           setIsRendered(true);
@@ -66,7 +64,7 @@ export function Mermaid({ chart }: MermaidProps) {
   }
 
   return (
-    <div 
+    <div
       className="mermaid-container flex justify-center bg-white p-4 my-4 border border-gray-100 rounded-lg shadow-sm overflow-x-auto"
       dangerouslySetInnerHTML={{ __html: svg }}
     />
