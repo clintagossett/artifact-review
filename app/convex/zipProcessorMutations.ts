@@ -25,10 +25,10 @@ export const storeExtractedFile = internalAction({
     // Create artifactFile record via mutation
     const fileId = await ctx.runMutation(internal.zipProcessorMutations.createArtifactFileRecord, {
       versionId: args.versionId,
-      filePath: args.filePath,
+      path: args.filePath,
       storageId,
       mimeType: args.mimeType,
-      fileSize: args.content.length,
+      size: args.content.length,
     });
 
     return fileId;
@@ -41,20 +41,21 @@ export const storeExtractedFile = internalAction({
 export const createArtifactFileRecord = internalMutation({
   args: {
     versionId: v.id("artifactVersions"),
-    filePath: v.string(),
+    path: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
-    fileSize: v.number(),
+    size: v.number(),
   },
   returns: v.id("artifactFiles"),
   handler: async (ctx, args) => {
     const fileId = await ctx.db.insert("artifactFiles", {
       versionId: args.versionId,
-      filePath: args.filePath,
+      path: args.path,
       storageId: args.storageId,
       mimeType: args.mimeType,
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
+      createdAt: Date.now(),
     });
     return fileId;
   },

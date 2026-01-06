@@ -56,7 +56,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
-          fileSize: 1024,
+          size: 1024,
           isDeleted: true, // Deleted
           deletedAt: Date.now(),
           createdAt: Date.now(),
@@ -107,7 +107,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
           createdBy: ownerId,
           fileType: "html",
           entryPoint: "index.html",
-          fileSize: 1024,
+          size: 1024,
           isDeleted: false,
           createdAt: Date.now(),
         });
@@ -150,7 +150,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
-          fileSize: 1024,
+          size: 1024,
           isDeleted: false,
           createdAt: Date.now(),
         });
@@ -200,7 +200,7 @@ describe("Unified Content Retrieval - Permission Logic", () => {
     it("NOTE: query gets signed URL from storage", () => {
       // The getEntryPointContent query:
       // 1. Calls: await ctx.storage.getUrl(file.storageId)
-      // 2. Returns: { url, mimeType, fileSize, filePath, fileType }
+      // 2. Returns: { url, mimeType, size, path, fileType }
       // 3. URL can be null if storage file doesn't exist
       // 4. Frontend uses URL to fetch and display content
       expect(true).toBe(true);
@@ -211,8 +211,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       // {
       //   url: string | null,     // Signed URL from storage
       //   mimeType: string,       // e.g., "text/html", "text/markdown"
-      //   fileSize: number,       // Size in bytes
-      //   filePath: string,       // e.g., "index.html", "README.md"
+      //   size: number,       // Size in bytes
+      //   path: string,       // e.g., "index.html", "README.md"
       //   fileType: string        // e.g., "html", "markdown"
       // }
       expect(true).toBe(true);

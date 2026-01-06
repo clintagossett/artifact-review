@@ -94,8 +94,8 @@ async function extractZipWithRootStripping(zipPath: string): Promise<{
   );
 
   // Detect common root path
-  const filePaths = fileEntries.map(([path]) => path);
-  const commonRoot = detectCommonRootPath(filePaths);
+  const paths = fileEntries.map(([path]) => path);
+  const commonRoot = detectCommonRootPath(paths);
 
   // Helper to strip the common root from a path
   const stripRoot = (path: string): string => {
@@ -175,7 +175,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Charting with 1-level nesting",
-        fileSize: 5000,
+        size: 5000,
       });
 
     // Extract v1 (wrapped in "project/" folder)
@@ -205,10 +205,10 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId,
-        filePath: file.normalizedPath,
+        path: file.normalizedPath,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: file.size,
+        size: file.size,
       });
     }
 
@@ -227,7 +227,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     );
 
     expect(storedFiles.length).toBe(files.length);
-    expect(storedFiles.some(f => f.filePath === "index.html")).toBe(true);
+    expect(storedFiles.some(f => f.path === "index.html")).toBe(true);
   });
 
   test("should strip 2-level parent directories (project/dist/)", async () => {
@@ -241,7 +241,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Charting with 2-level nesting",
-        fileSize: 5000,
+        size: 5000,
       });
 
     const { files, commonRoot, entryPoint } = await extractZipWithRootStripping(
@@ -266,10 +266,10 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId,
-        filePath: file.normalizedPath,
+        path: file.normalizedPath,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: file.size,
+        size: file.size,
       });
     }
 

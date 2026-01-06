@@ -83,7 +83,7 @@ describe("Read Permission Helpers", () => {
 
       // Invite reviewer (Path A: existing user, no userInvite needed)
       await t.run(async (ctx) => {
-        return await ctx.db.insert("artifactAccess", {
+        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
           artifactId,
           userId: reviewerId,
           createdBy: ownerId,
@@ -316,7 +316,7 @@ describe("Read Permission Helpers", () => {
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
-          fileSize: 1024,
+          size: 1024,
           isDeleted: false,
           createdAt: Date.now(),
         });
@@ -360,7 +360,7 @@ describe("Read Permission Helpers", () => {
           createdBy: userId,
           fileType: "html",
           entryPoint: "index.html",
-          fileSize: 1024,
+          size: 1024,
           isDeleted: true,
           deletedAt: Date.now(),
           createdAt: Date.now(),

@@ -16,7 +16,7 @@ interface ArtifactHeaderProps {
   };
   version: {
     number: number;
-    fileSize: number;
+    size: number;
     createdAt: number;
   };
   versions: Array<{
@@ -87,7 +87,7 @@ export function ArtifactHeader({
               </Badge>
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <span>{formatFileSize(version.fileSize)}</span>
+              <span>{formatFileSize(version.size)}</span>
               <span>{formatDate(version.createdAt)}</span>
             </div>
           </div>

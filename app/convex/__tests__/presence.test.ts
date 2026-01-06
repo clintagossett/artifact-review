@@ -37,7 +37,7 @@ async function createTestVersion(t: any, artifactId: Id<"artifacts">, userId: Id
             number: 1,
             fileType: "html",
             entryPoint: "index.html",
-            fileSize: 100,
+            size: 100,
             isDeleted: false,
             createdAt: Date.now(),
         });
@@ -71,11 +71,11 @@ describe("presence", () => {
 
         // Manually insert an old presence record
         await t.run(async (ctx) => {
-            await ctx.db.insert("presence", {
+            await ctx.db.insert("presence", { createdAt: Date.now(),
                 artifactId,
                 versionId,
                 userId,
-                lastSeen: Date.now() - (PRESENCE_SLA_MS + 1000), // Just past the window
+                lastSeenAtAt: Date.now() - (PRESENCE_SLA_MS + 1000), // Just past the window
             });
         });
 

@@ -79,7 +79,7 @@ export const grant = mutation({
     // Check if email belongs to existing user
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", normalizedEmail))
+      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
       .first();
 
     let targetUserId: Id<"users"> | undefined = undefined;
@@ -130,6 +130,7 @@ export const grant = mutation({
         lastSentAt: now,
         sendCount: 1,
         isDeleted: false,
+        createdAt: now,
       });
 
       // Trigger email
@@ -156,6 +157,7 @@ export const grant = mutation({
           email: normalizedEmail,
           createdBy: userId,
           isDeleted: false,
+          createdAt: now,
         });
       }
 
@@ -200,6 +202,7 @@ export const grant = mutation({
         lastSentAt: now,
         sendCount: 1,
         isDeleted: false,
+        createdAt: now,
       });
 
       // Trigger email

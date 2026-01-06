@@ -56,7 +56,7 @@ describe("artifacts", () => {
       expect(version?.fileType).toBe("html");
       // Content now stored in blob storage, not inline
       // expect(version?.htmlContent).toBe(htmlContent);
-      expect(version?.fileSize).toBe(htmlContent.length);
+      expect(version?.size).toBe(htmlContent.length);
       expect(version?.isDeleted).toBe(false);
     });
 
@@ -100,7 +100,7 @@ describe("artifacts", () => {
       expect(version?.fileType).toBe("markdown");
       // Content now stored in blob storage, not inline
       // expect(version?.markdownContent).toBe(markdownContent);
-      expect(version?.fileSize).toBe(markdownContent.length);
+      expect(version?.size).toBe(markdownContent.length);
       expect(version?.isDeleted).toBe(false);
     });
   });

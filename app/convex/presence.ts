@@ -32,14 +32,15 @@ export const update = mutation({
         if (existing) {
             await ctx.db.patch(existing._id, {
                 versionId: args.versionId,
-                lastSeen: now,
+                lastSeenAt: now,
             });
         } else {
             await ctx.db.insert("presence", {
                 artifactId: args.artifactId,
                 versionId: args.versionId,
                 userId: userId,
-                lastSeen: now,
+                lastSeenAt: now,
+                createdAt: now,
             });
         }
 
@@ -60,7 +61,7 @@ export const list = query({
             userId: v.id("users"),
             versionId: v.id("artifactVersions"),
             name: v.string(),
-            lastSeen: v.number(),
+            lastSeenAt: v.number(),
         })
     ),
     handler: async (ctx, args) => {
@@ -68,8 +69,8 @@ export const list = query({
 
         const activePresence = await ctx.db
             .query("presence")
-            .withIndex("by_artifactId_lastSeen", (q) =>
-                q.eq("artifactId", args.artifactId).gt("lastSeen", cutoff)
+            .withIndex("by_artifactId_lastSeenAt", (q) =>
+                q.eq("artifactId", args.artifactId).gt("lastSeenAt", cutoff)
             )
             .collect();
 
@@ -80,7 +81,7 @@ export const list = query({
                     userId: p.userId,
                     versionId: p.versionId,
                     name: user?.name || user?.email || "Unknown User",
-                    lastSeen: p.lastSeen,
+                    lastSeenAt: p.lastSeenAt,
                 };
             })
         );

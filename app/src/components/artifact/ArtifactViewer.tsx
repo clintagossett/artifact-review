@@ -21,7 +21,7 @@ interface ArtifactViewerProps {
     number: number;
     fileType: "html" | "zip" | "markdown";
     entryPoint?: string;
-    fileSize: number;
+    size: number;
     createdAt: number;
   };
   versions: Array<{

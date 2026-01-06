@@ -8,7 +8,7 @@ interface PresenceAvatarsProps {
         userId: Id<"users">;
         versionId: Id<"artifactVersions">;
         name: string;
-        lastSeen: number;
+        lastSeenAt: number;
     }>;
     currentVersionId: Id<"artifactVersions">;
 }

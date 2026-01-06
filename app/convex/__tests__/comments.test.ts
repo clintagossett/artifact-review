@@ -108,7 +108,7 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
       createdBy: ownerId,
       fileType: "html",
       entryPoint: "index.html",
-      fileSize: 100,
+      size: 100,
       isDeleted: false,
       createdAt: now,
     })
@@ -116,19 +116,19 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
 
   // Create artifact file for the version
   await asOwner.run(async (ctx) =>
-    await ctx.db.insert("artifactFiles", {
+    await ctx.db.insert("artifactFiles", { createdAt: Date.now(),
       versionId,
-      filePath: "index.html",
+      path: "index.html",
       storageId,
       mimeType: "text/html",
-      fileSize: 100,
+      size: 100,
       isDeleted: false,
     })
   );
 
   // Add Bob as reviewer (Path A: existing user, no userInvite needed)
   await asOwner.run(async (ctx) => {
-    await ctx.db.insert("artifactAccess", {
+    await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
       artifactId,
       userId: reviewerId,
       createdBy: ownerId,
@@ -349,7 +349,7 @@ describe.skip("Permission Helpers", () => {
         const artifactId = (await ctx.db.get(versionId))!.artifactId;
 
         // Add reviewer2 (Path A: existing user, no userInvite needed)
-        await ctx.db.insert("artifactAccess", {
+        await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
           artifactId,
           userId: reviewer2Id,
           createdBy: ownerId,
@@ -535,8 +535,8 @@ describe.skip("Comment Operations", () => {
       });
 
       const comment = await asOwner.run(async (ctx) => await ctx.db.get(commentId));
-      expect(comment?.resolvedChangedBy).toBeUndefined();
-      expect(comment?.resolvedChangedAt).toBeUndefined();
+      expect(comment?.resolvedBy).toBeUndefined();
+      expect(comment?.resolvedAt).toBeUndefined();
     });
   });
 
@@ -890,8 +890,8 @@ describe.skip("Comment Operations", () => {
       await asOwner.mutation(api.comments.toggleResolved, { commentId });
 
       const comment = await asOwner.run(async (ctx) => await ctx.db.get(commentId));
-      expect(comment?.resolvedChangedBy).toBe(ownerId);
-      expect(comment?.resolvedChangedAt).toBeDefined();
+      expect(comment?.resolvedBy).toBe(ownerId);
+      expect(comment?.resolvedAt).toBeDefined();
     });
 
     it("should update tracking fields on subsequent toggles", async () => {
@@ -912,7 +912,7 @@ describe.skip("Comment Operations", () => {
 
       const comment = await asReviewer.run(async (ctx) => await ctx.db.get(commentId));
       expect(comment?.resolved).toBe(false);
-      expect(comment?.resolvedChangedBy).toBe(reviewerId);
+      expect(comment?.resolvedBy).toBe(reviewerId);
     });
 
     it("should not allow toggling deleted comment", async () => {
@@ -2005,15 +2005,15 @@ describe.skip("Integration Tests", () => {
       // 1. Initial state: not resolved, no tracking
       let comment = await asOwner.run(async (ctx) => await ctx.db.get(commentId));
       expect(comment?.resolved).toBe(false);
-      expect(comment?.resolvedChangedBy).toBeUndefined();
-      expect(comment?.resolvedChangedAt).toBeUndefined();
+      expect(comment?.resolvedBy).toBeUndefined();
+      expect(comment?.resolvedAt).toBeUndefined();
 
       // 2. Alice resolves
       await asOwner.mutation(api.comments.toggleResolved, { commentId });
       comment = await asOwner.run(async (ctx) => await ctx.db.get(commentId));
       expect(comment?.resolved).toBe(true);
-      expect(comment?.resolvedChangedBy).toBe(ownerId);
-      const firstChangeTime = comment?.resolvedChangedAt;
+      expect(comment?.resolvedBy).toBe(ownerId);
+      const firstChangeTime = comment?.resolvedAt;
       expect(firstChangeTime).toBeDefined();
 
       // Wait a bit
@@ -2024,15 +2024,15 @@ describe.skip("Integration Tests", () => {
       await asReviewer.mutation(api.comments.toggleResolved, { commentId });
       comment = await asReviewer.run(async (ctx) => await ctx.db.get(commentId));
       expect(comment?.resolved).toBe(false);
-      expect(comment?.resolvedChangedBy).toBe(reviewerId);
-      expect(comment?.resolvedChangedAt).toBeGreaterThan(firstChangeTime!);
+      expect(comment?.resolvedBy).toBe(reviewerId);
+      expect(comment?.resolvedAt).toBeGreaterThan(firstChangeTime!);
 
       // 4. Alice re-resolves
       await asOwner.mutation(api.comments.toggleResolved, { commentId });
       comment = await asOwner.run(async (ctx) => await ctx.db.get(commentId));
       expect(comment?.resolved).toBe(true);
-      expect(comment?.resolvedChangedBy).toBe(ownerId);
-      expect(comment?.resolvedChangedAt).toBeGreaterThan(firstChangeTime!);
+      expect(comment?.resolvedBy).toBe(ownerId);
+      expect(comment?.resolvedAt).toBeGreaterThan(firstChangeTime!);
     });
   });
 

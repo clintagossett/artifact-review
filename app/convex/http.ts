@@ -105,7 +105,7 @@ http.route({
       const decodedPath = decodeURIComponent(filePathToServe);
       const file = await ctx.runQuery(internal.artifacts.getFileByPath, {
         versionId: version._id,
-        filePath: decodedPath,
+        path: decodedPath,
       });
 
       if (!file) {

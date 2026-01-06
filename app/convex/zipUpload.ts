@@ -14,7 +14,7 @@ export const createArtifactWithZip = mutation({
   args: {
     name: v.string(),
     description: v.optional(v.string()),
-    fileSize: v.number(),
+    size: v.number(),
     entryPoint: v.optional(v.string()),
   },
   returns: v.object({
@@ -31,7 +31,7 @@ export const createArtifactWithZip = mutation({
     }
 
     // Validate ZIP size before creating records
-    validateZipSize(args.fileSize);
+    validateZipSize(args.size);
 
     const now = Date.now();
     const shareToken = nanoid(8);
@@ -55,7 +55,7 @@ export const createArtifactWithZip = mutation({
       createdBy: userId,
       fileType: "zip",
       entryPoint: args.entryPoint || "index.html", // Default, updated after ZIP processing
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
       createdAt: now,
     });
@@ -79,7 +79,7 @@ export const createArtifactWithZip = mutation({
 export const addZipVersion = mutation({
   args: {
     artifactId: v.id("artifacts"),
-    fileSize: v.number(),
+    size: v.number(),
     name: v.optional(v.string()),
   },
   returns: v.object({
@@ -95,7 +95,7 @@ export const addZipVersion = mutation({
     }
 
     // 2. Validate ZIP size
-    validateZipSize(args.fileSize);
+    validateZipSize(args.size);
 
     // 3. Verify artifact exists and user is owner
     const artifact = await ctx.db.get(args.artifactId);
@@ -124,7 +124,7 @@ export const addZipVersion = mutation({
       name: args.name,
       fileType: "zip",
       entryPoint: "index.html", // Updated after extraction
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
       createdAt: now,
     });

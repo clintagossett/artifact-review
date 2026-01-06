@@ -57,10 +57,10 @@ export const create = action({
 
     // 3. Calculate size and validate
     const contentBlob = new Blob([args.content], { type: getMimeType(args.fileType) });
-    const fileSize = contentBlob.size;
+    const size = contentBlob.size;
 
-    if (fileSize > MAX_SINGLE_FILE_SIZE) {
-      throw new Error(`File too large. Maximum: 5MB, got: ${(fileSize / 1024 / 1024).toFixed(2)}MB`);
+    if (size > MAX_SINGLE_FILE_SIZE) {
+      throw new Error(`File too large. Maximum: 5MB, got: ${(size / 1024 / 1024).toFixed(2)}MB`);
     }
 
     // 4. Determine file path and MIME type
@@ -84,7 +84,7 @@ export const create = action({
       filePath,
       storageId,
       mimeType: getMimeType(args.fileType),
-      fileSize,
+      size: size,
     });
 
     return result;
@@ -105,7 +105,7 @@ export const createInternal = internalMutation({
     filePath: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
-    fileSize: v.number(),
+    size: v.number(),
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -136,7 +136,7 @@ export const createInternal = internalMutation({
       name: args.versionName,
       fileType: args.fileType,
       entryPoint: args.filePath,
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
       createdAt: now,
       // Keep inline content fields undefined (not used in new pattern)
@@ -145,11 +145,12 @@ export const createInternal = internalMutation({
     // Create file record
     await ctx.db.insert("artifactFiles", {
       versionId,
-      filePath: args.filePath,
+      path: args.filePath,
       storageId: args.storageId,
       mimeType: args.mimeType,
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
+      createdAt: now,
     });
 
     return {
@@ -208,7 +209,7 @@ export const getVersion = query({
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
       createdAt: v.number(),
@@ -237,7 +238,7 @@ export const getVersion = query({
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,
-      fileSize: version.fileSize,
+      size: version.size,
       isDeleted: version.isDeleted,
       deletedAt: version.deletedAt,
       createdAt: version.createdAt,
@@ -257,10 +258,10 @@ export const getFilesByVersion = query({
       _id: v.id("artifactFiles"),
       _creationTime: v.number(),
       versionId: v.id("artifactVersions"),
-      filePath: v.string(),
+      path: v.string(),
       storageId: v.id("_storage"),
       mimeType: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
     })
@@ -412,9 +413,9 @@ export const addVersion = action({
 
     // 4. Calculate size and validate
     const contentBlob = new Blob([args.content], { type: getMimeType(args.fileType) });
-    const fileSize = contentBlob.size;
+    const size = contentBlob.size;
 
-    if (fileSize > MAX_SINGLE_FILE_SIZE) {
+    if (size > MAX_SINGLE_FILE_SIZE) {
       throw new Error(`File too large. Maximum: 5MB`);
     }
 
@@ -436,7 +437,7 @@ export const addVersion = action({
       filePath,
       storageId,
       mimeType: getMimeType(args.fileType),
-      fileSize,
+      size: size,
     });
 
     return result;
@@ -456,7 +457,7 @@ export const addVersionInternal = internalMutation({
     filePath: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
-    fileSize: v.number(),
+    size: v.number(),
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
@@ -482,7 +483,7 @@ export const addVersionInternal = internalMutation({
       name: args.name,
       fileType: args.fileType,
       entryPoint: args.filePath,
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
       createdAt: now,
     });
@@ -490,11 +491,12 @@ export const addVersionInternal = internalMutation({
     // Create file record
     await ctx.db.insert("artifactFiles", {
       versionId,
-      filePath: args.filePath,
+      path: args.filePath,
       storageId: args.storageId,
       mimeType: args.mimeType,
-      fileSize: args.fileSize,
+      size: args.size,
       isDeleted: false,
+      createdAt: now,
     });
 
     // Update artifact timestamp
@@ -717,7 +719,7 @@ export const getVersions = query({
       name: v.optional(v.string()),
       createdBy: v.id("users"),
       fileType: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       createdAt: v.number(),
       isLatest: v.boolean(),
     })
@@ -749,7 +751,7 @@ export const getVersions = query({
       name: v.name,
       createdBy: v.createdBy,
       fileType: v.fileType,
-      fileSize: v.fileSize,
+      size: v.size,
       createdAt: v.createdAt,
       isLatest: v._id === latestId,
     }));
@@ -776,7 +778,7 @@ export const getVersionByNumber = query({
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
       createdAt: v.number(),
@@ -811,7 +813,7 @@ export const getVersionByNumber = query({
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,
-      fileSize: version.fileSize,
+      size: version.size,
       isDeleted: version.isDeleted,
       deletedAt: version.deletedAt,
       createdAt: version.createdAt,
@@ -838,7 +840,7 @@ export const getLatestVersion = query({
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
       createdAt: v.number(),
@@ -876,7 +878,7 @@ export const getLatestVersion = query({
       createdBy: latestVersion.createdBy,
       fileType: latestVersion.fileType,
       entryPoint: latestVersion.entryPoint,
-      fileSize: latestVersion.fileSize,
+      size: latestVersion.size,
       isDeleted: latestVersion.isDeleted,
       deletedAt: latestVersion.deletedAt,
       createdAt: latestVersion.createdAt,
@@ -893,7 +895,7 @@ export const listHtmlFiles = query({
   },
   returns: v.array(
     v.object({
-      filePath: v.string(),
+      path: v.string(),
       mimeType: v.string(),
     })
   ),
@@ -909,7 +911,7 @@ export const listHtmlFiles = query({
     return files
       .filter((f) => f.mimeType === "text/html")
       .map((f) => ({
-        filePath: f.filePath,
+        path: f.path,
         mimeType: f.mimeType,
       }));
   },
@@ -921,7 +923,7 @@ export const listHtmlFiles = query({
 export const getFileByPath = internalQuery({
   args: {
     versionId: v.id("artifactVersions"),
-    filePath: v.string(),
+    path: v.string(),
   },
   returns: v.union(
     v.object({
@@ -933,8 +935,8 @@ export const getFileByPath = internalQuery({
   handler: async (ctx, args) => {
     const file = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_versionId_filePath", (q) =>
-        q.eq("versionId", args.versionId).eq("filePath", args.filePath)
+      .withIndex("by_versionId_path", (q) =>
+        q.eq("versionId", args.versionId).eq("path", args.path)
       )
       .unique();
 
@@ -969,7 +971,7 @@ export const getVersionByNumberInternal = internalQuery({
       createdBy: v.id("users"),
       fileType: v.string(),
       entryPoint: v.string(),
-      fileSize: v.number(),
+      size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
       createdAt: v.number(),
@@ -998,7 +1000,7 @@ export const getVersionByNumberInternal = internalQuery({
       createdBy: version.createdBy,
       fileType: version.fileType,
       entryPoint: version.entryPoint,
-      fileSize: version.fileSize,
+      size: version.size,
       isDeleted: version.isDeleted,
       deletedAt: version.deletedAt,
       createdAt: version.createdAt,
@@ -1081,8 +1083,8 @@ export const getEntryPointContent = query({
     v.object({
       url: v.union(v.string(), v.null()),
       mimeType: v.string(),
-      fileSize: v.number(),
-      filePath: v.string(),
+      size: v.number(),
+      path: v.string(),
       fileType: v.string(),
     }),
     v.null()
@@ -1107,8 +1109,8 @@ export const getEntryPointContent = query({
 
     const file = await ctx.db
       .query("artifactFiles")
-      .withIndex("by_versionId_filePath", (q) =>
-        q.eq("versionId", args.versionId).eq("filePath", version.entryPoint!)
+      .withIndex("by_versionId_path", (q) =>
+        q.eq("versionId", args.versionId).eq("path", version.entryPoint!)
       )
       .first();
 
@@ -1119,12 +1121,12 @@ export const getEntryPointContent = query({
     // 4. Get signed URL from ctx.storage.getUrl(file.storageId)
     const url = await ctx.storage.getUrl(file.storageId);
 
-    // 5. Return { url, mimeType, fileSize, filePath, fileType }
+    // 5. Return { url, mimeType, size, path, fileType }
     return {
       url,
       mimeType: file.mimeType,
-      fileSize: file.fileSize,
-      filePath: file.filePath,
+      size: file.size,
+      path: file.path,
       fileType: version.fileType,
     };
   },
@@ -1260,7 +1262,7 @@ export const getDetailsForSettings = query({
       .collect();
 
     const versionCount = versions.length;
-    const totalFileSize = versions.reduce((sum, v) => sum + v.fileSize, 0);
+    const totalFileSize = versions.reduce((sum, v) => sum + v.size, 0);
 
     // 6. Return enriched data
     return {

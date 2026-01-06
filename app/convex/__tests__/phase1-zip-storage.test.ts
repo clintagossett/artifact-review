@@ -81,7 +81,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     await expect(
       t.withIdentity({ subject: userId }).mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test ZIP",
-        fileSize: oversizedBytes,
+        size: oversizedBytes,
       })
     ).rejects.toThrow(/too large/i);
   });
@@ -98,7 +98,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "My Dashboard",
         description: "Interactive sales dashboard",
-        fileSize: 10000, // 10KB - valid
+        size: 10000, // 10KB - valid
       });
 
     expect(result.artifactId).toBeDefined();
@@ -118,7 +118,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     expect(version).toBeDefined();
     expect(version?.fileType).toBe("zip");
     expect(version?.number).toBe(1);
-    expect(version?.fileSize).toBe(10000);
+    expect(version?.size).toBe(10000);
   });
 
   test("createArtifactWithZip should require authentication", async () => {
@@ -127,7 +127,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     await expect(
       t.mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       })
     ).rejects.toThrow(/not authenticated/i);
   });
@@ -146,7 +146,7 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: ownerId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       });
 
     // Add version 2
@@ -154,7 +154,7 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: ownerId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 2000,
+        size: 2000,
         name: "Second iteration",
       });
 
@@ -168,7 +168,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     expect(version?.fileType).toBe("zip");
     expect(version?.number).toBe(2);
     expect(version?.name).toBe("Second iteration");
-    expect(version?.fileSize).toBe(2000);
+    expect(version?.size).toBe(2000);
 
     // Verify artifact timestamp was updated
     const artifact = await t.run(async (ctx) => ctx.db.get(artifactId));
@@ -186,14 +186,14 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       });
 
     // Attempt to add oversized version
     await expect(
       t.withIdentity({ subject: userId }).mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 60 * 1024 * 1024, // 60MB
+        size: 60 * 1024 * 1024, // 60MB
       })
     ).rejects.toThrow(/too large/i);
   });
@@ -210,7 +210,7 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: ownerId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       });
 
     // Different user tries to add version
@@ -221,7 +221,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     await expect(
       t.withIdentity({ subject: otherId }).mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 1000,
+        size: 1000,
       })
     ).rejects.toThrow(/not authorized.*owner/i);
   });
@@ -237,13 +237,13 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       });
 
     await expect(
       t.mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 1000,
+        size: 1000,
       })
     ).rejects.toThrow(/not authenticated/i);
   });
@@ -259,7 +259,7 @@ describe("ZIP Upload - Add Version Flow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test",
-        fileSize: 1000,
+        size: 1000,
       });
 
     // Soft delete the artifact
@@ -270,7 +270,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     await expect(
       t.withIdentity({ subject: userId }).mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 1000,
+        size: 1000,
       })
     ).rejects.toThrow(/artifact not found/i);
   });
@@ -416,7 +416,7 @@ describe("ZIP Processing Error Handling", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })
@@ -469,7 +469,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Dashboard v1",
-        fileSize: 4000, // Valid size
+        size: 4000, // Valid size
       });
 
     // Load the sample ZIP file
@@ -508,10 +508,10 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId,
-        filePath: file.path,
+        path: file.path,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: 100,
+        size: 100,
       });
     }
 
@@ -532,7 +532,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     );
 
     expect(files).toHaveLength(4);
-    expect(files.map((f) => f.filePath)).toEqual(
+    expect(files.map((f) => f.path)).toEqual(
       expect.arrayContaining([
         "v1/index.html",
         "v1/app.js",
@@ -557,7 +557,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Presentation with video",
-        fileSize: 142000, // Size of the sample ZIP
+        size: 142000, // Size of the sample ZIP
       });
 
     // Load the sample ZIP with forbidden video files
@@ -637,7 +637,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "ZIP with too many files",
-        fileSize: 10000,
+        size: 10000,
       });
 
     // Simulate a ZIP with >500 files
@@ -670,7 +670,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "ZIP with oversized file",
-        fileSize: 10000,
+        size: 10000,
       });
 
     // Simulate extraction finding a 6MB file
@@ -701,7 +701,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test 1",
-        fileSize: 1000,
+        size: 1000,
       });
 
     await t.mutation(internal.zipProcessorMutations.markProcessingComplete, {
@@ -717,7 +717,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test 2",
-        fileSize: 1000,
+        size: 1000,
       });
 
     await t.mutation(internal.zipProcessorMutations.markProcessingComplete, {
@@ -733,7 +733,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test 3",
-        fileSize: 1000,
+        size: 1000,
       });
 
     // Load multi-page-site.zip and verify detection logic

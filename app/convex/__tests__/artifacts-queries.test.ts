@@ -354,7 +354,7 @@ describe("Artifact Viewing Queries", () => {
       // Query for non-existent file path
       const file = await t.query(internal.artifacts.getFileByPath, {
         versionId: result.versionId,
-        filePath: "assets/logo.png",
+        path: "assets/logo.png",
       });
 
       expect(file).toBeNull();

@@ -23,7 +23,7 @@ describe("isLatest computation", () => {
     userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
-        emailVerificationTime: Date.now(),
+        emailVerifiedAt: Date.now(),
       });
     });
   });
@@ -49,7 +49,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: now,
       });
@@ -88,7 +88,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: now,
       });
@@ -99,7 +99,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 2000,
+        size: 2000,
         isDeleted: false,
         createdAt: now + 1000,
       });
@@ -110,7 +110,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 3000,
+        size: 3000,
         isDeleted: false,
         createdAt: now + 2000,
       });
@@ -160,7 +160,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: now,
       });
@@ -171,7 +171,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 2000,
+        size: 2000,
         isDeleted: false,
         createdAt: now + 1000,
       });
@@ -182,7 +182,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 3000,
+        size: 3000,
         isDeleted: false,
         createdAt: now + 2000,
       });
@@ -236,7 +236,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: now,
       });
@@ -280,7 +280,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: now,
       });
@@ -291,7 +291,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 3000,
+        size: 3000,
         isDeleted: false,
         createdAt: now + 2000,
       });
@@ -302,7 +302,7 @@ describe("isLatest computation", () => {
         createdBy: userId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 5000,
+        size: 5000,
         isDeleted: false,
         createdAt: now + 4000,
       });

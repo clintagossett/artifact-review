@@ -160,7 +160,7 @@ describe("artifacts.create - Unified Storage", () => {
       //    - number: 1
       //    - createdBy: userId (NEW - Phase 1 requirement)
       //    - name: optional (NEW - Phase 1 requirement)
-      //    - fileType, entryPoint, fileSize (from args)
+      //    - fileType, entryPoint, size (from args)
       //    - isDeleted: false, createdAt: now
       // 2. Does NOT set htmlContent/markdownContent (deprecated inline fields)
       // 3. Returns versionId
@@ -171,7 +171,7 @@ describe("artifacts.create - Unified Storage", () => {
       // The createInternal mutation:
       // 1. Inserts into artifactFiles table with:
       //    - versionId (from version creation)
-      //    - filePath, storageId, mimeType, fileSize (from args)
+      //    - path, storageId, mimeType, size (from args)
       //    - isDeleted: false
       // 2. This is the unified storage pattern - all content in blobs
       expect(true).toBe(true);

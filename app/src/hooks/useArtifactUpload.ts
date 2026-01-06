@@ -116,7 +116,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
             await createArtifactWithZip({
               name,
               description,
-              fileSize: file.size,
+              size: file.size,
               entryPoint,
             });
 

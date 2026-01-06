@@ -57,7 +57,7 @@ describe("access - schema foundation", () => {
       const createdById = await createTestUser(t, "owner@example.com");
 
       const inviteId = await t.run(async (ctx) => {
-        return await ctx.db.insert("userInvites", {
+        return await ctx.db.insert("userInvites", { createdAt: Date.now(),
           email: "invite@example.com",
           name: "Invited User",
           createdBy: createdById,
@@ -80,7 +80,7 @@ describe("access - schema foundation", () => {
       const ownerId = await createTestUser(t, "owner@example.com");
 
       await t.run(async (ctx) => {
-        await ctx.db.insert("userInvites", {
+        await ctx.db.insert("userInvites", { createdAt: Date.now(),
           email: "test@example.com",
           createdBy: ownerId,
           isDeleted: false,
@@ -109,7 +109,7 @@ describe("access - schema foundation", () => {
       const now = Date.now();
 
       const accessId = await t.run(async (ctx) => {
-        return await ctx.db.insert("artifactAccess", {
+        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
           artifactId,
           userId: ownerId,
           createdBy: ownerId,
@@ -137,7 +137,7 @@ describe("access - schema foundation", () => {
       const artifactId = await createTestArtifact(t, ownerId, "Test");
 
       await t.run(async (ctx) => {
-        await ctx.db.insert("artifactAccess", {
+        await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
           artifactId,
           userId: ownerId,
           createdBy: ownerId,
@@ -922,7 +922,7 @@ describe("access - activity stats", () => {
     const now = Date.now();
     await t.run(async (ctx) => {
       // Reviewer 1 has viewed
-      await ctx.db.insert("artifactAccess", {
+      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
         artifactId,
         userId: reviewer1Id,
         createdBy: ownerId,
@@ -934,7 +934,7 @@ describe("access - activity stats", () => {
       });
 
       // Reviewer 2 has not viewed (no firstViewedAt)
-      await ctx.db.insert("artifactAccess", {
+      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
         artifactId,
         userId: reviewer2Id,
         createdBy: ownerId,
@@ -971,7 +971,7 @@ describe("access - activity stats", () => {
         createdBy: ownerId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       });
@@ -985,7 +985,7 @@ describe("access - activity stats", () => {
         createdBy: ownerId,
         fileType: "html",
         entryPoint: "index.html",
-        fileSize: 1200,
+        size: 1200,
         isDeleted: false,
         createdAt: Date.now(),
       });
@@ -1066,7 +1066,7 @@ describe("access - activity stats", () => {
     // Create access record and mark as deleted
     const now = Date.now();
     await t.run(async (ctx) => {
-      await ctx.db.insert("artifactAccess", {
+      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
         artifactId,
         userId: reviewerId,
         createdBy: ownerId,
@@ -1103,7 +1103,7 @@ describe("access - activity stats", () => {
     const now = Date.now();
     await t.run(async (ctx) => {
       // Reviewer 1 viewed 2 hours ago
-      await ctx.db.insert("artifactAccess", {
+      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
         artifactId,
         userId: reviewer1Id,
         createdBy: ownerId,
@@ -1115,7 +1115,7 @@ describe("access - activity stats", () => {
       });
 
       // Reviewer 2 viewed 1 hour ago (most recent)
-      await ctx.db.insert("artifactAccess", {
+      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
         artifactId,
         userId: reviewer2Id,
         createdBy: ownerId,

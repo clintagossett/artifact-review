@@ -61,7 +61,7 @@ interface BackendVersion {
   name?: string;
   createdBy: Id<"users">;
   fileType: string;
-  fileSize: number;
+  size: number;
   createdAt: number;
   isLatest: boolean;
 }

@@ -38,7 +38,7 @@ describe("ZIP Serving - File Retrieval", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })
@@ -47,12 +47,12 @@ describe("ZIP Serving - File Retrieval", () => {
     // Create file records
     const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", {
+      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
         versionId,
-        filePath: "index.html",
+        path: "index.html",
         storageId: mockStorageId,
         mimeType: "text/html",
-        fileSize: 500,
+        size: 500,
         isDeleted: false,
       })
     );
@@ -60,7 +60,7 @@ describe("ZIP Serving - File Retrieval", () => {
     // Test getFileByPath
     const file = await t.query(internal.artifacts.getFileByPath, {
       versionId,
-      filePath: "index.html",
+      path: "index.html",
     });
 
     expect(file).toBeDefined();
@@ -93,7 +93,7 @@ describe("ZIP Serving - File Retrieval", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })
@@ -102,7 +102,7 @@ describe("ZIP Serving - File Retrieval", () => {
     // No files created - query should return null
     const file = await t.query(internal.artifacts.getFileByPath, {
       versionId,
-      filePath: "nonexistent.html",
+      path: "nonexistent.html",
     });
 
     expect(file).toBeNull();
@@ -133,7 +133,7 @@ describe("ZIP Serving - File Retrieval", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })
@@ -141,12 +141,12 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", {
+      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
         versionId,
-        filePath: "deleted.html",
+        path: "deleted.html",
         storageId: mockStorageId,
         mimeType: "text/html",
-        fileSize: 500,
+        size: 500,
         isDeleted: true,
         deletedAt: Date.now(),
       })
@@ -154,7 +154,7 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const file = await t.query(internal.artifacts.getFileByPath, {
       versionId,
-      filePath: "deleted.html",
+      path: "deleted.html",
     });
 
     expect(file).toBeNull();
@@ -185,7 +185,7 @@ describe("ZIP Serving - File Retrieval", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })
@@ -193,19 +193,19 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const mockStorageId = "kg2test000002;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", {
+      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
         versionId,
-        filePath: "assets/images/logo.png",
+        path: "assets/images/logo.png",
         storageId: mockStorageId,
         mimeType: "image/png",
-        fileSize: 2000,
+        size: 2000,
         isDeleted: false,
       })
     );
 
     const file = await t.query(internal.artifacts.getFileByPath, {
       versionId,
-      filePath: "assets/images/logo.png",
+      path: "assets/images/logo.png",
     });
 
     expect(file).toBeDefined();
@@ -301,7 +301,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
         createdBy: userId,
         fileType: "zip",
         entryPoint: "v1/index.html",
-        fileSize: 1000,
+        size: 1000,
         isDeleted: false,
         createdAt: Date.now(),
       })

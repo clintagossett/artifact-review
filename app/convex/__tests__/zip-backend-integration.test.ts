@@ -84,9 +84,9 @@ async function extractZipInfo(zipPath: string): Promise<{
 
   // Validation: forbidden extensions
   const forbiddenFiles: string[] = [];
-  for (const [filePath] of fileEntries) {
-    if (isForbiddenExtension(filePath)) {
-      forbiddenFiles.push(filePath);
+  for (const [path] of fileEntries) {
+    if (isForbiddenExtension(path)) {
+      forbiddenFiles.push(path);
     }
   }
   if (forbiddenFiles.length > 0) {
@@ -159,7 +159,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Charting Dashboard v1",
-        fileSize: 5000,
+        size: 5000,
       });
 
     // Extract real ZIP file
@@ -182,10 +182,10 @@ describe("Backend Integration: Real ZIP Extraction", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId,
-        filePath: file.path,
+        path: file.path,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: file.size,
+        size: file.size,
       });
     }
 
@@ -208,13 +208,13 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     expect(storedFiles).toHaveLength(files.length);
 
     // Verify file paths match
-    const storedPaths = storedFiles.map((f) => f.filePath).sort();
+    const storedPaths = storedFiles.map((f) => f.path).sort();
     const extractedPaths = files.map((f) => f.path).sort();
     expect(storedPaths).toEqual(extractedPaths);
 
     // Verify MIME types
     for (const file of files) {
-      const storedFile = storedFiles.find((f) => f.filePath === file.path);
+      const storedFile = storedFiles.find((f) => f.path === file.path);
       expect(storedFile).toBeDefined();
       expect(storedFile?.mimeType).toBe(file.mimeType);
     }
@@ -236,7 +236,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Charting Dashboard",
-        fileSize: 5000,
+        size: 5000,
       });
 
     // Add v2 as new version
@@ -244,7 +244,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 6000,
+        size: 6000,
         name: "Updated charts",
       });
 
@@ -265,10 +265,10 @@ describe("Backend Integration: Real ZIP Extraction", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId: v2Id,
-        filePath: file.path,
+        path: file.path,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: file.size,
+        size: file.size,
       });
     }
 
@@ -306,7 +306,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Multi-page Website",
-        fileSize: 8000,
+        size: 8000,
       });
 
     // Extract multi-page-site.zip
@@ -329,10 +329,10 @@ describe("Backend Integration: Real ZIP Extraction", () => {
 
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId,
-        filePath: file.path,
+        path: file.path,
         storageId: mockStorageId,
         mimeType: file.mimeType,
-        fileSize: file.size,
+        size: file.size,
       });
     }
 
@@ -435,7 +435,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.createArtifactWithZip, {
         name: "Charting Dashboard",
-        fileSize: 5000,
+        size: 5000,
       });
 
     const v1Info = await extractZipInfo(VALID_ZIP.charting.v1);
@@ -443,10 +443,10 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       const mockStorageId = `kg2v1${i.toString().padStart(8, "0")};_storage` as Id<"_storage">;
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId: v1Id,
-        filePath: v1Info.files[i].path,
+        path: v1Info.files[i].path,
         storageId: mockStorageId,
         mimeType: v1Info.files[i].mimeType,
-        fileSize: v1Info.files[i].size,
+        size: v1Info.files[i].size,
       });
     }
     await t.mutation(internal.zipProcessorMutations.markProcessingComplete, {
@@ -459,7 +459,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 6000,
+        size: 6000,
         name: "Version 2",
       });
 
@@ -470,10 +470,10 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       const mockStorageId = `kg2v2${i.toString().padStart(8, "0")};_storage` as Id<"_storage">;
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId: v2Id,
-        filePath: v2Info.files[i].path,
+        path: v2Info.files[i].path,
         storageId: mockStorageId,
         mimeType: v2Info.files[i].mimeType,
-        fileSize: v2Info.files[i].size,
+        size: v2Info.files[i].size,
       });
     }
     await t.mutation(internal.zipProcessorMutations.markProcessingComplete, {
@@ -486,7 +486,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       .withIdentity({ subject: userId })
       .mutation(api.zipUpload.addZipVersion, {
         artifactId,
-        fileSize: 7000,
+        size: 7000,
         name: "Version 3",
       });
 
@@ -497,10 +497,10 @@ describe("Backend Integration: Multi-Version Workflow", () => {
       const mockStorageId = `kg2v3${i.toString().padStart(8, "0")};_storage` as Id<"_storage">;
       await t.mutation(internal.zipProcessorMutations.createArtifactFileRecord, {
         versionId: v3Id,
-        filePath: v3Info.files[i].path,
+        path: v3Info.files[i].path,
         storageId: mockStorageId,
         mimeType: v3Info.files[i].mimeType,
-        fileSize: v3Info.files[i].size,
+        size: v3Info.files[i].size,
       });
     }
     await t.mutation(internal.zipProcessorMutations.markProcessingComplete, {

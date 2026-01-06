@@ -57,8 +57,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         ? await ctx.db.get(args.existingUserId)
         : await ctx.db
           .query("users")
-          // @ts-expect-error - email index exists in schema override but not in authTables types
-          .withIndex("email", (q) => q.eq("email", args.profile.email))
+          .withIndex("by_email", (q) => q.eq("email", args.profile.email))
           .first();
 
       // Create or update user
@@ -66,7 +65,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         email: args.profile.email,
         name: args.profile.name,
         image: args.profile.image,
-        emailVerificationTime: args.profile.emailVerified ? Date.now() : undefined,
+        emailVerifiedAt: args.profile.emailVerified ? Date.now() : undefined,
       });
 
       // Link pending reviewer invitations for new users OR existing users adding email

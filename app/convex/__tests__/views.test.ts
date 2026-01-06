@@ -34,7 +34,7 @@ async function createTestVersion(t: any, artifactId: Id<"artifacts">, userId: Id
             number: 1,
             fileType: "html",
             entryPoint: "index.html",
-            fileSize: 100,
+            size: 100,
             isDeleted: false,
             createdAt: Date.now(),
         });
@@ -43,7 +43,7 @@ async function createTestVersion(t: any, artifactId: Id<"artifacts">, userId: Id
 
 async function createAccessRecord(t: any, artifactId: Id<"artifacts">, userId: Id<"users">, ownerId: Id<"users">) {
     return await t.run(async (ctx: any) => {
-        return await ctx.db.insert("artifactAccess", {
+        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
             artifactId,
             userId,
             createdBy: ownerId,

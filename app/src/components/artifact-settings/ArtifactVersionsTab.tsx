@@ -157,7 +157,7 @@ export function ArtifactVersionsTab({ artifactId }: ArtifactVersionsTabProps) {
         // Step 1: Get upload URL and create version record
         const { uploadUrl, versionId } = await addZipVersionMutation({
           artifactId,
-          fileSize: file.size,
+          size: file.size,
         });
 
         // Step 2: Upload file to storage URL

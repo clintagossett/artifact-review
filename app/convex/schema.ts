@@ -80,7 +80,7 @@ const schema = defineSchema({
      * Set when user completes magic link flow or OAuth with verified email.
      * Unix timestamp in milliseconds.
      */
-    emailVerificationTime: v.optional(v.number()),
+    emailVerifiedAt: v.optional(v.number()),
 
     /**
      * User's phone number.
@@ -91,8 +91,9 @@ const schema = defineSchema({
     /**
      * Timestamp when phone was verified.
      * Reserved for future phone auth support. Not currently used.
+     * Unix timestamp in milliseconds.
      */
-    phoneVerificationTime: v.optional(v.number()),
+    phoneVerifiedAt: v.optional(v.number()),
 
     /**
      * URL to user's profile image.
@@ -100,19 +101,14 @@ const schema = defineSchema({
      */
     image: v.optional(v.string()),
 
-    /**
-     * Whether this is an anonymous user.
-     * Legacy field from previous auth implementation.
-     */
-    isAnonymous: v.optional(v.boolean()),
   })
     /**
      * Lookup user by email address.
      * Required by Convex Auth for email-based authentication.
      * Used in auth callbacks for account linking.
-     * @example ctx.db.query("users").withIndex("email", q => q.eq("email", "user@example.com"))
+     * @example ctx.db.query("users").withIndex("by_email", q => q.eq("email", "user@example.com"))
      */
-    .index("email", ["email"]),
+    .index("by_email", ["email"]),
 
   // ============================================================================
   // ARTIFACTS TABLE
@@ -324,8 +320,9 @@ const schema = defineSchema({
      * Total size of the version content in bytes.
      * For single files: size of the file
      * For zip: size of original ZIP file
+     * Renamed from fileSize (ADR 12: avoid redundancy).
      */
-    fileSize: v.number(),
+    size: v.number(),
 
     /**
      * Soft deletion flag.
@@ -414,11 +411,12 @@ const schema = defineSchema({
     /**
      * Relative file path within the ZIP archive.
      * Preserves original directory structure as path string.
+     * Renamed from filePath (ADR 12: avoid redundancy).
      * @example "index.html"
      * @example "assets/styles/main.css"
      * @example "images/logo.png"
      */
-    filePath: v.string(),
+    path: v.string(),
 
     /**
      * Reference to file content in Convex File Storage.
@@ -439,8 +437,15 @@ const schema = defineSchema({
     /**
      * Size of the file in bytes.
      * Used for upload limit validation and display.
+     * Renamed from fileSize (ADR 12: avoid redundancy).
      */
-    fileSize: v.number(),
+    size: v.number(),
+
+    /**
+     * Timestamp when the file record was created.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
 
     /**
      * Soft deletion flag.
@@ -472,9 +477,9 @@ const schema = defineSchema({
     /**
      * O(1) file lookup by path for HTTP serving.
      * Critical for performance - enables instant file resolution.
-     * @example ctx.db.query("artifactFiles").withIndex("by_versionId_filePath", q => q.eq("versionId", versionId).eq("filePath", "assets/logo.png"))
+     * @example ctx.db.query("artifactFiles").withIndex("by_versionId_path", q => q.eq("versionId", versionId).eq("path", "assets/logo.png"))
      */
-    .index("by_versionId_filePath", ["versionId", "filePath"])
+    .index("by_versionId_path", ["versionId", "path"])
 
     /**
      * List active files for a version (for viewer UI).
@@ -541,14 +546,14 @@ const schema = defineSchema({
      * Set on first toggle, updated on subsequent toggles.
      * Never cleared once set.
      */
-    resolvedChangedBy: v.optional(v.id("users")),
+    resolvedBy: v.optional(v.id("users")),
 
     /**
      * Timestamp when resolution status last changed.
      * Unix timestamp in milliseconds.
      * Never cleared once set.
      */
-    resolvedChangedAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
 
     /**
      * Self-describing JSON target metadata.
@@ -800,6 +805,13 @@ const schema = defineSchema({
      * Unix timestamp in milliseconds.
      */
     deletedAt: v.optional(v.number()),
+
+    /**
+     * Timestamp when invitation was created.
+     * Unix timestamp in milliseconds.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
   })
     /**
      * Compound key for deduplication.
@@ -919,6 +931,13 @@ const schema = defineSchema({
      * Unix timestamp in milliseconds.
      */
     deletedAt: v.optional(v.number()),
+
+    /**
+     * Timestamp when the access record was created.
+     * Unix timestamp in milliseconds.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
   })
     /**
      * List active access grants for an artifact.
@@ -973,9 +992,14 @@ const schema = defineSchema({
     artifactId: v.id("artifacts"),
     versionId: v.id("artifactVersions"),
     userId: v.id("users"),
-    lastSeen: v.number(),
+    lastSeenAt: v.number(),
+    /**
+     * Timestamp when the presence record was created.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
   })
-    .index("by_artifactId_lastSeen", ["artifactId", "lastSeen"])
+    .index("by_artifactId_lastSeenAt", ["artifactId", "lastSeenAt"])
     .index("by_userId_artifactId", ["userId", "artifactId"]),
 
   // ============================================================================

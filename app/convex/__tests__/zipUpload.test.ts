@@ -22,7 +22,7 @@ describe.skip("zipUpload", () => {
       const result = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
         name: "Test ZIP Artifact",
         description: "A test artifact with ZIP file",
-        fileSize: 12345,
+        size: 12345,
         entryPoint: "index.html",
       });
 
@@ -56,7 +56,7 @@ describe.skip("zipUpload", () => {
       expect(version?.number).toBe(1);
       expect(version?.fileType).toBe("zip");
       expect(version?.entryPoint).toBe("index.html");
-      expect(version?.fileSize).toBe(12345);
+      expect(version?.size).toBe(12345);
       expect(version?.isDeleted).toBe(false);
     });
 
@@ -74,7 +74,7 @@ describe.skip("zipUpload", () => {
 
       const result = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
         name: "ZIP without entry point",
-        fileSize: 5000,
+        size: 5000,
       });
 
       expect(result.uploadUrl).toBeDefined();
@@ -96,7 +96,7 @@ describe.skip("zipUpload", () => {
       await expect(
         t.mutation(api.zipUpload.createArtifactWithZip, {
           name: "Test ZIP",
-          fileSize: 1000,
+          size: 1000,
         })
       ).rejects.toThrow("Not authenticated");
     });
@@ -116,12 +116,12 @@ describe.skip("zipUpload", () => {
       // Create two artifacts
       const result1 = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
         name: "ZIP 1",
-        fileSize: 1000,
+        size: 1000,
       });
 
       const result2 = await asUser.mutation(api.zipUpload.createArtifactWithZip, {
         name: "ZIP 2",
-        fileSize: 2000,
+        size: 2000,
       });
 
       // Share tokens should be different

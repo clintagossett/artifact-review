@@ -70,7 +70,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
     created: formatDate(details.createdAt),
     createdBy: details.creatorEmail || 'Unknown',
     lastModified: formatDate(details.updatedAt),
-    fileSize: formatFileSize(details.totalFileSize),
+    size: formatFileSize(details.totalFileSize),
     versions: details.versionCount,
   } : null;
 
@@ -241,7 +241,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
                 <div className="flex items-center gap-3 text-sm">
                   <HardDrive className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-600 w-32">File size:</span>
-                  <span className="text-gray-900">{metadata.fileSize}</span>
+                  <span className="text-gray-900">{metadata.size}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <FileText className="w-4 h-4 text-gray-400" />

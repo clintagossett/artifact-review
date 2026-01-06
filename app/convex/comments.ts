@@ -32,8 +32,8 @@ export const getByVersion = query({
       createdBy: v.id("users"),
       content: v.string(),
       resolved: v.boolean(),
-      resolvedChangedBy: v.optional(v.id("users")),
-      resolvedChangedAt: v.optional(v.number()),
+      resolvedBy: v.optional(v.id("users")),
+      resolvedAt: v.optional(v.number()),
       target: v.any(),
       isEdited: v.boolean(),
       editedAt: v.optional(v.number()),
@@ -238,8 +238,8 @@ export const toggleResolved = mutation({
     // Toggle resolved status and track who/when
     await ctx.db.patch(args.commentId, {
       resolved: !comment.resolved,
-      resolvedChangedBy: userId,
-      resolvedChangedAt: now,
+      resolvedBy: userId,
+      resolvedAt: now,
     });
 
     return null;
