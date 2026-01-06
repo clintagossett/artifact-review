@@ -145,8 +145,8 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
 // PHASE 1: PERMISSION HELPERS
 // ============================================================================
 
-describe.skip("Permission Helpers", () => {
-  describe.skip("requireCommentPermission", () => {
+describe("Permission Helpers", () => {
+  describe("requireCommentPermission", () => {
     it("should return 'owner' for artifact owner", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -241,7 +241,7 @@ describe.skip("Permission Helpers", () => {
     });
   });
 
-  describe.skip("canEditComment", () => {
+  describe("canEditComment", () => {
     it("should return true when user is comment author", async () => {
       const t = convexTest(schema);
       const { ownerId } = await setupTestData(t);
@@ -269,7 +269,7 @@ describe.skip("Permission Helpers", () => {
     });
   });
 
-  describe.skip("canDeleteComment", () => {
+  describe("canDeleteComment", () => {
     it("should return true when user is comment author", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -395,8 +395,8 @@ describe.skip("Permission Helpers", () => {
 // PHASE 2: COMMENT CRUD OPERATIONS
 // ============================================================================
 
-describe.skip("Comment Operations", () => {
-  describe.skip("create", () => {
+describe("Comment Operations", () => {
+  describe("create", () => {
     it("should allow owner to create comment with valid content", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -540,7 +540,7 @@ describe.skip("Comment Operations", () => {
     });
   });
 
-  describe.skip("getByVersion", () => {
+  describe("getByVersion", () => {
     it("should allow owner to query their version", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -646,7 +646,7 @@ describe.skip("Comment Operations", () => {
     });
   });
 
-  describe.skip("updateContent", () => {
+  describe("updateContent", () => {
     it("should allow author to update own comment", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -840,7 +840,7 @@ describe.skip("Comment Operations", () => {
     });
   });
 
-  describe.skip("toggleResolved", () => {
+  describe("toggleResolved", () => {
     it("should allow owner to toggle resolution", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -975,7 +975,7 @@ describe.skip("Comment Operations", () => {
     });
   });
 
-  describe.skip("softDelete", () => {
+  describe("softDelete", () => {
     it("should allow author to delete own comment", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -1160,8 +1160,8 @@ describe.skip("Comment Operations", () => {
 // PHASE 3: REPLY CRUD OPERATIONS
 // ============================================================================
 
-describe.skip("Reply Operations", () => {
-  describe.skip("getReplies", () => {
+describe("Reply Operations", () => {
+  describe("getReplies", () => {
     it("should allow owner to query replies", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -1298,7 +1298,7 @@ describe.skip("Reply Operations", () => {
     });
   });
 
-  describe.skip("createReply", () => {
+  describe("createReply", () => {
     it("should allow owner to create reply", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -1468,7 +1468,7 @@ describe.skip("Reply Operations", () => {
     });
   });
 
-  describe.skip("updateReply", () => {
+  describe("updateReply", () => {
     it("should allow author to update own reply", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -1764,7 +1764,7 @@ describe.skip("Reply Operations", () => {
     });
   });
 
-  describe.skip("softDeleteReply", () => {
+  describe("softDeleteReply", () => {
     it("should allow author to delete own reply", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
@@ -1942,8 +1942,8 @@ describe.skip("Reply Operations", () => {
 // PHASE 4: INTEGRATION TESTS
 // ============================================================================
 
-describe.skip("Integration Tests", () => {
-  describe.skip("Cascade Delete", () => {
+describe("Integration Tests", () => {
+  describe("Cascade Delete", () => {
     it("should cascade delete from comment to all replies with correct audit trail", async () => {
       const t = convexTest(schema);
       const { ownerId, reviewerId, versionId } = await setupTestData(t);
@@ -1989,7 +1989,7 @@ describe.skip("Integration Tests", () => {
     });
   });
 
-  describe.skip("Resolution Tracking", () => {
+  describe("Resolution Tracking", () => {
     it("should track resolution changes across multiple toggles correctly", async () => {
       const t = convexTest(schema);
       const { ownerId, reviewerId, versionId } = await setupTestData(t);
@@ -2036,7 +2036,7 @@ describe.skip("Integration Tests", () => {
     });
   });
 
-  describe.skip("Edit Tracking", () => {
+  describe("Edit Tracking", () => {
     it("should track edits correctly with flags and timestamps", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);

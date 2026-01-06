@@ -19,6 +19,8 @@ async function createTestUser(
     return await ctx.db.insert("users", {
       email,
       name: email.split("@")[0],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
   });
 }
@@ -57,7 +59,8 @@ describe("access - schema foundation", () => {
       const createdById = await createTestUser(t, "owner@example.com");
 
       const inviteId = await t.run(async (ctx) => {
-        return await ctx.db.insert("userInvites", { createdAt: Date.now(),
+        return await ctx.db.insert("userInvites", {
+          createdAt: Date.now(),
           email: "invite@example.com",
           name: "Invited User",
           createdBy: createdById,
@@ -80,7 +83,8 @@ describe("access - schema foundation", () => {
       const ownerId = await createTestUser(t, "owner@example.com");
 
       await t.run(async (ctx) => {
-        await ctx.db.insert("userInvites", { createdAt: Date.now(),
+        await ctx.db.insert("userInvites", {
+          createdAt: Date.now(),
           email: "test@example.com",
           createdBy: ownerId,
           isDeleted: false,
@@ -109,7 +113,8 @@ describe("access - schema foundation", () => {
       const now = Date.now();
 
       const accessId = await t.run(async (ctx) => {
-        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+        return await ctx.db.insert("artifactAccess", {
+          createdAt: Date.now(),
           artifactId,
           userId: ownerId,
           createdBy: ownerId,
@@ -137,7 +142,8 @@ describe("access - schema foundation", () => {
       const artifactId = await createTestArtifact(t, ownerId, "Test");
 
       await t.run(async (ctx) => {
-        await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+        await ctx.db.insert("artifactAccess", {
+          createdAt: Date.now(),
           artifactId,
           userId: ownerId,
           createdBy: ownerId,
@@ -427,7 +433,7 @@ describe("access - listReviewers", () => {
       (r) => r.email === "existing@example.com"
     );
     expect(existingReviewer?.displayName).toBe("existing"); // From name field
-    expect(existingReviewer?.status).toBe("accepted"); // Has userId
+    expect(existingReviewer?.status).toBe("added"); // Has userId
 
     // Pending user should show email as displayName
     const pendingReviewer = reviewers.find(
@@ -922,7 +928,8 @@ describe("access - activity stats", () => {
     const now = Date.now();
     await t.run(async (ctx) => {
       // Reviewer 1 has viewed
-      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+      await ctx.db.insert("artifactAccess", {
+        createdAt: Date.now(),
         artifactId,
         userId: reviewer1Id,
         createdBy: ownerId,
@@ -934,7 +941,8 @@ describe("access - activity stats", () => {
       });
 
       // Reviewer 2 has not viewed (no firstViewedAt)
-      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+      await ctx.db.insert("artifactAccess", {
+        createdAt: Date.now(),
         artifactId,
         userId: reviewer2Id,
         createdBy: ownerId,
@@ -1066,7 +1074,8 @@ describe("access - activity stats", () => {
     // Create access record and mark as deleted
     const now = Date.now();
     await t.run(async (ctx) => {
-      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+      await ctx.db.insert("artifactAccess", {
+        createdAt: Date.now(),
         artifactId,
         userId: reviewerId,
         createdBy: ownerId,
@@ -1103,7 +1112,8 @@ describe("access - activity stats", () => {
     const now = Date.now();
     await t.run(async (ctx) => {
       // Reviewer 1 viewed 2 hours ago
-      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+      await ctx.db.insert("artifactAccess", {
+        createdAt: Date.now(),
         artifactId,
         userId: reviewer1Id,
         createdBy: ownerId,
@@ -1115,7 +1125,8 @@ describe("access - activity stats", () => {
       });
 
       // Reviewer 2 viewed 1 hour ago (most recent)
-      await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+      await ctx.db.insert("artifactAccess", {
+        createdAt: Date.now(),
         artifactId,
         userId: reviewer2Id,
         createdBy: ownerId,

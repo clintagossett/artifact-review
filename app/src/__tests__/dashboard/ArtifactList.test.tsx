@@ -8,7 +8,7 @@ describe("ArtifactList", () => {
   const mockArtifacts = [
     {
       _id: "test-id-1" as Id<"artifacts">,
-      title: "Product Landing Pages",
+      name: "Product Landing Pages",
       description: "AI-generated landing page reviews",
       shareToken: "abc12345",
       createdAt: Date.now() - 2 * 60 * 60 * 1000,
@@ -16,7 +16,7 @@ describe("ArtifactList", () => {
     },
     {
       _id: "test-id-2" as Id<"artifacts">,
-      title: "Interactive UI Components",
+      name: "Interactive UI Components",
       description: "Testing tabs and accordion interactions",
       shareToken: "xyz67890",
       createdAt: Date.now() - 30 * 60 * 1000,

@@ -56,18 +56,18 @@ export const create = action({
     }
 
     // 3. Calculate size and validate
-    const contentBlob = new Blob([args.content], { type: getMimeType(args.fileType) });
-    const size = contentBlob.size;
+    const data = new TextEncoder().encode(args.content);
+    const size = data.byteLength;
 
     if (size > MAX_SINGLE_FILE_SIZE) {
       throw new Error(`File too large. Maximum: 5MB, got: ${(size / 1024 / 1024).toFixed(2)}MB`);
     }
 
     // 4. Determine file path and MIME type
-    const filePath = args.originalFileName || getDefaultFilePath(args.fileType);
+    const path = args.originalFileName || getDefaultFilePath(args.fileType);
 
     // 5. Store content in Convex file storage (only available in actions)
-    const storageId = await ctx.storage.store(contentBlob);
+    const storageId = await ctx.storage.store(data);
 
     // 6. Call mutation to create artifact, version, and file records
     const result: {
@@ -81,7 +81,7 @@ export const create = action({
       description: args.description,
       fileType: args.fileType,
       versionName: args.versionName,
-      filePath,
+      path,
       storageId,
       mimeType: getMimeType(args.fileType),
       size: size,
@@ -102,7 +102,7 @@ export const createInternal = internalMutation({
     description: v.optional(v.string()),
     fileType: v.string(),
     versionName: v.optional(v.string()),
-    filePath: v.string(),
+    path: v.string(),
     storageId: v.id("_storage"),
     mimeType: v.string(),
     size: v.number(),
@@ -482,7 +482,7 @@ export const addVersionInternal = internalMutation({
       createdBy: args.userId,
       name: args.name,
       fileType: args.fileType,
-      entryPoint: args.filePath,
+      entryPoint: args.path,
       size: args.size,
       isDeleted: false,
       createdAt: now,
@@ -490,13 +490,13 @@ export const addVersionInternal = internalMutation({
 
     // Create file record
     await ctx.db.insert("artifactFiles", {
+      createdAt: Date.now(),
       versionId,
-      path: args.filePath,
+      path: args.path,
       storageId: args.storageId,
       mimeType: args.mimeType,
       size: args.size,
       isDeleted: false,
-      createdAt: now,
     });
 
     // Update artifact timestamp

@@ -10,6 +10,8 @@ describe("Password Authentication Schema", () => {
     await t.run(async (ctx) => {
       await ctx.db.insert("users", {
         email: "bob@local.app",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
     });
 

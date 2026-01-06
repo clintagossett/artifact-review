@@ -20,6 +20,8 @@ describe("users", () => {
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
           email: "user@example.com",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -38,8 +40,10 @@ describe("users", () => {
 
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
-            email: "test@example.com",
+          email: "test@example.com",
           name: "Test User",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -61,7 +65,9 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Old Name",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -89,7 +95,9 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -106,7 +114,9 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -123,7 +133,9 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -142,7 +154,9 @@ describe("users", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });

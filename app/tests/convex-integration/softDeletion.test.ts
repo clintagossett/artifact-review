@@ -1,7 +1,7 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "../_generated/api";
-import schema from "../schema";
+import { api } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
 
 describe("soft deletion", () => {
   describe("softDelete artifact", () => {
@@ -13,25 +13,25 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1
-      const result = await asUser.mutation(api.artifacts.create, {
-        title: "Test Artifact",
+      const result = await asUser.action(api.artifacts.create, {
+        name: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Add v2
-      await asUser.mutation(api.artifacts.addVersion, {
+      await asUser.action(api.artifacts.addVersion, {
         artifactId: result.artifactId,
         fileType: "html" as const,
-        htmlContent: "<html>v2</html>",
-        fileSize: 100,
+        content: "<html>v2</html>",
       });
 
       // Soft delete the artifact
@@ -74,25 +74,25 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1
-      const v1Result = await asUser.mutation(api.artifacts.create, {
-        title: "Test Artifact",
+      const v1Result = await asUser.action(api.artifacts.create, {
+        name: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Add v2
-      const v2Result = await asUser.mutation(api.artifacts.addVersion, {
+      const v2Result = await asUser.action(api.artifacts.addVersion, {
         artifactId: v1Result.artifactId,
         fileType: "html" as const,
-        htmlContent: "<html>v2</html>",
-        fileSize: 100,
+        content: "<html>v2</html>",
       });
 
       // Soft delete v2 only
@@ -127,17 +127,18 @@ describe("soft deletion", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
 
       // Create artifact with v1 only
-      const v1Result = await asUser.mutation(api.artifacts.create, {
-        title: "Test Artifact",
+      const v1Result = await asUser.action(api.artifacts.create, {
+        name: "Test Artifact",
         fileType: "html" as const,
-        htmlContent: "<html>v1</html>",
-        fileSize: 100,
+        content: "<html>v1</html>",
       });
 
       // Try to delete the only version - should fail

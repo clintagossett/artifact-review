@@ -108,13 +108,15 @@ export const grant = mutation({
           });
 
           // Trigger email
-          await ctx.scheduler.runAfter(
-            0,
-            internal.access.sendEmailInternal,
-            {
-              accessId: existingAccess._id,
-            }
-          );
+          if (process.env.SKIP_EMAILS !== "true") {
+            await ctx.scheduler.runAfter(
+              0,
+              internal.access.sendEmailInternal,
+              {
+                accessId: existingAccess._id,
+              }
+            );
+          }
 
           return existingAccess._id;
         } else {
@@ -134,9 +136,11 @@ export const grant = mutation({
       });
 
       // Trigger email
-      await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
-        accessId,
-      });
+      if (process.env.SKIP_EMAILS !== "true") {
+        await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
+          accessId,
+        });
+      }
 
       return accessId;
     } else {
@@ -180,13 +184,15 @@ export const grant = mutation({
           });
 
           // Trigger email
-          await ctx.scheduler.runAfter(
-            0,
-            internal.access.sendEmailInternal,
-            {
-              accessId: existingAccess._id,
-            }
-          );
+          if (process.env.SKIP_EMAILS !== "true") {
+            await ctx.scheduler.runAfter(
+              0,
+              internal.access.sendEmailInternal,
+              {
+                accessId: existingAccess._id,
+              }
+            );
+          }
 
           return existingAccess._id;
         } else {
@@ -206,9 +212,11 @@ export const grant = mutation({
       });
 
       // Trigger email
-      await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
-        accessId,
-      });
+      if (process.env.SKIP_EMAILS !== "true") {
+        await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
+          accessId,
+        });
+      }
 
       return accessId;
     }
@@ -300,9 +308,11 @@ export const resend = mutation({
     });
 
     // Trigger email
-    await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
-      accessId: args.accessId,
-    });
+    if (process.env.SKIP_EMAILS !== "true") {
+      await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
+        accessId: args.accessId,
+      });
+    }
 
     return null;
   },

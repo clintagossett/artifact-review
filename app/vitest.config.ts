@@ -10,12 +10,14 @@ export default defineConfig({
     include: [
       "**/*.{test,spec}.{ts,tsx}",
       "../tasks/**/*.test.ts",
+      "tests/convex-integration/**/*.test.ts",
     ],
-    // Use edge-runtime for Convex tests, jsdom for React component tests
+    // Use node for Convex tests, jsdom for React component tests
     // @ts-expect-error - environmentMatchGlobs is supported but not in type definitions
     environmentMatchGlobs: [
-      ["convex/**/*.test.ts", "edge-runtime"],
-      ["../tasks/**/*.test.ts", "edge-runtime"],
+      ["convex/**/*.test.ts", "node"],
+      ["tests/convex-integration/**/*.test.ts", "node"],
+      ["../tasks/**/*.test.ts", "node"],
       ["src/**/*.test.{ts,tsx}", "jsdom"],
       ["src/**/__tests__/**/*.test.{ts,tsx}", "jsdom"],
     ],

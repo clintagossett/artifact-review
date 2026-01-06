@@ -26,19 +26,19 @@ describe("UploadProgress", () => {
 
   describe("file size formatting", () => {
     it("should format bytes correctly", () => {
-      render(<UploadProgress fileName="test.html" progress={50} fileSize={512} />);
+      render(<UploadProgress fileName="test.html" progress={50} size={512} />);
 
       expect(screen.getByText(/512 B/)).toBeInTheDocument();
     });
 
     it("should format KB correctly", () => {
-      render(<UploadProgress fileName="test.html" progress={50} fileSize={1536} />); // 1.5 KB
+      render(<UploadProgress fileName="test.html" progress={50} size={1536} />); // 1.5 KB
 
       expect(screen.getByText(/1.5 KB/)).toBeInTheDocument();
     });
 
     it("should format MB correctly", () => {
-      render(<UploadProgress fileName="test.html" progress={50} fileSize={2097152} />); // 2 MB
+      render(<UploadProgress fileName="test.html" progress={50} size={2097152} />); // 2 MB
 
       expect(screen.getByText(/2.0 MB/)).toBeInTheDocument();
     });

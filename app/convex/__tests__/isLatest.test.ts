@@ -24,6 +24,8 @@ describe("isLatest computation", () => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         emailVerifiedAt: Date.now(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
     });
   });

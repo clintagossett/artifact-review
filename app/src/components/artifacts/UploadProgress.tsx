@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export interface UploadProgressProps {
   fileName: string;
   progress: number; // 0-100
-  fileSize?: number;
+  size?: number;
   className?: string;
 }
 
@@ -23,7 +23,7 @@ function formatFileSize(bytes: number): string {
 export function UploadProgress({
   fileName,
   progress,
-  fileSize,
+  size,
   className,
 }: UploadProgressProps) {
   return (
@@ -35,8 +35,8 @@ export function UploadProgress({
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-gray-900 truncate">{fileName}</p>
-          {fileSize !== undefined && (
-            <p className="text-sm text-gray-600">{formatFileSize(fileSize)}</p>
+          {size !== undefined && (
+            <p className="text-sm text-gray-600">{formatFileSize(size)}</p>
           )}
         </div>
         <div className="text-sm font-medium text-purple-600">{progress}%</div>

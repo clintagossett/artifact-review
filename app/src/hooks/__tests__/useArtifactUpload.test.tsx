@@ -205,7 +205,7 @@ describe("useArtifactUpload", () => {
       expect(mockMutation).toHaveBeenCalledWith({
         name: "Test ZIP",
         description: undefined,
-        fileSize: file.size,
+        size: file.size,
         entryPoint: "index.html",
       });
     });

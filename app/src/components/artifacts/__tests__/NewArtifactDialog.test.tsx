@@ -151,7 +151,7 @@ describe("NewArtifactDialog", () => {
     await waitFor(() => {
       expect(handleCreate).toHaveBeenCalledWith({
         file,
-        title: "My Project",
+        name: "My Project",
         description: "My description",
       });
     });

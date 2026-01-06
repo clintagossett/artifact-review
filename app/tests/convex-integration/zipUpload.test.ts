@@ -1,10 +1,10 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect, vi } from "vitest";
-import { api, internal } from "../_generated/api";
-import schema from "../schema";
+import { api, internal } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
 
-describe.skip("zipUpload", () => {
-  describe.skip("createArtifactWithZip", () => {
+describe("zipUpload", () => {
+  describe("createArtifactWithZip", () => {
     it("should create artifact and version with ZIP type and return upload URL", async () => {
       const t = convexTest(schema);
 
@@ -13,7 +13,7 @@ describe.skip("zipUpload", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+        });
       });
 
       // Create as authenticated user
@@ -67,7 +67,7 @@ describe.skip("zipUpload", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -86,7 +86,7 @@ describe.skip("zipUpload", () => {
         return await ctx.db.get(result.versionId);
       });
 
-      expect(version?.entryPoint).toBeUndefined();
+      expect(version?.entryPoint).toBe("index.html");
     });
 
     it("should throw error if user is not authenticated", async () => {
@@ -108,7 +108,7 @@ describe.skip("zipUpload", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
@@ -129,7 +129,7 @@ describe.skip("zipUpload", () => {
     });
   });
 
-  describe.skip("triggerZipProcessing", () => {
+  describe("triggerZipProcessing", () => {
     it("should be exported as a public action from zipUpload module", () => {
       // Verify the action exists and is accessible via API
       expect(api.zipUpload.triggerZipProcessing).toBeDefined();

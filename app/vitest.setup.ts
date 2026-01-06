@@ -2,6 +2,9 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 
+// Set environment variables for tests
+process.env.SKIP_EMAILS = "true";
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
@@ -20,8 +23,8 @@ vi.mock("next/navigation", () => ({
 
 // Mock ResizeObserver for components that use it (e.g., ScrollArea)
 class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 }
 global.ResizeObserver = ResizeObserverMock as any;

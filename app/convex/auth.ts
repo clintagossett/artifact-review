@@ -3,6 +3,7 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
 import { query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 // Configure Email provider with Resend for magic links
 const MagicLinkEmail = Email({
@@ -61,12 +62,26 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           .first();
 
       // Create or update user
-      const userId = existingUser?._id ?? await ctx.db.insert("users", {
-        email: args.profile.email,
-        name: args.profile.name,
-        image: args.profile.image,
-        emailVerifiedAt: args.profile.emailVerified ? Date.now() : undefined,
-      });
+      let userId: Id<"users">;
+      const now = Date.now();
+
+      if (existingUser) {
+        userId = existingUser._id;
+        await ctx.db.patch(userId, {
+          name: args.profile.name ?? existingUser.name,
+          image: args.profile.image ?? existingUser.image,
+          updatedAt: now,
+        });
+      } else {
+        userId = await ctx.db.insert("users", {
+          email: args.profile.email,
+          name: args.profile.name,
+          image: args.profile.image,
+          emailVerifiedAt: args.profile.emailVerified ? now : undefined,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
 
       // Link pending reviewer invitations for new users OR existing users adding email
       if (args.profile.email) {

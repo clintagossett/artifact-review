@@ -1,0 +1,207 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/Users/clintgossett/Documents/personal/personal projects/artifact-review/app[39m
+
+ [31m❯[39m convex/__tests__/comments.test.ts [2m([22m[2m87 tests[22m[2m | [22m[31m87 failed[39m[2m)[22m[32m 104[2mms[22m[39m
+[31m       [31m×[31m should return 'owner' for artifact owner[39m[32m 23[2mms[22m[39m
+[31m       [31m×[31m should return 'can-comment' for invited reviewer[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m should throw 'Authentication required' for unauthenticated user[39m[32m 2[2mms[22m[39m
+[31m       [31m×[31m should throw 'No permission to comment' for outsider[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw 'Version not found' for deleted version[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw 'Artifact not found' for deleted artifact[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return true when user is comment author[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return false when user is not comment author[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return true when user is comment author[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return true when user is artifact owner[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return false when reviewer tries to delete another reviewer's comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to create comment with valid content[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to create comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to create comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 10,000 characters[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should store target metadata as-is[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set createdAt timestamp[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not have resolution tracking fields on creation[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to query their version[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to query version[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to query[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return empty array when no comments[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should exclude soft-deleted comments[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should include author data[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should include reply count[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow author to update own comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow non-author to update[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow owner to edit others' comments[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 10,000 characters[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return null for no-op when content unchanged[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow editing deleted comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to toggle resolution[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to toggle resolution[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set tracking fields on first toggle[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should update tracking fields on subsequent toggles[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow toggling deleted comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to toggle[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow author to delete own comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to delete any comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow reviewer to delete others' comments[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to delete any comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow deleting already deleted comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should cascade to all replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set deletedBy and deletedAt on cascaded replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to query replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to query replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to query[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return empty array when no replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should exclude soft-deleted replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should include author data[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow querying deleted comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to create reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to create reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to create reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 5,000 characters[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow replying to deleted comment[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set createdAt timestamp[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow author to update own reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow non-author to update[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m should not allow owner to edit others' replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 5,000 characters[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set isEdited and editedAt[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should return null for no-op when content unchanged[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow editing deleted reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow editing if parent comment deleted[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid replyId[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow author to delete own reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should allow owner to delete any reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow reviewer to delete others' replies[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to delete any reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should set deletedBy and deletedAt audit fields[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should not allow deleting already deleted reply[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid replyId[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should cascade delete from comment to all replies with correct audit trail[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should track resolution changes across multiple toggles correctly[39m[32m 1[2mms[22m[39m
+[31m       [31m×[31m should track edits correctly with flags and timestamps[39m[32m 1[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 87 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould return 'owner' for artifact owner
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould return 'can-comment' for invited reviewer
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Authentication required' for unauthenticated user
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'No permission to comment' for outsider
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Version not found' for deleted version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Artifact not found' for deleted artifact
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanEditComment[2m > [22mshould return true when user is comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanEditComment[2m > [22mshould return false when user is not comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return true when user is comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return true when user is artifact owner
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return false when reviewer tries to delete another reviewer's comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould allow owner to create comment with valid content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould allow reviewer to create comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould not allow outsider to create comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould reject content exceeding 10,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould store target metadata as-is
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould set createdAt timestamp
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould not have resolution tracking fields on creation
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould allow owner to query their version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould allow reviewer to query version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould not allow outsider to query
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould return empty array when no comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould exclude soft-deleted comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould include author data
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould include reply count
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould allow author to update own comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow non-author to update
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow owner to edit others' comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould reject content exceeding 10,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould return null for no-op when content unchanged
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow editing deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould allow owner to toggle resolution
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould allow reviewer to toggle resolution
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould set tracking fields on first toggle
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould update tracking fields on subsequent toggles
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould not allow toggling deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould not allow outsider to toggle
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould allow author to delete own comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould allow owner to delete any comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow reviewer to delete others' comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow outsider to delete any comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow deleting already deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould cascade to all replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould set deletedBy and deletedAt on cascaded replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould allow owner to query replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould allow reviewer to query replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould not allow outsider to query
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould return empty array when no replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould exclude soft-deleted replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould include author data
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould not allow querying deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould allow owner to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould allow reviewer to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould not allow outsider to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould reject content exceeding 5,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould not allow replying to deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould set createdAt timestamp
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould allow author to update own reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow non-author to update
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow owner to edit others' replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould reject content exceeding 5,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould set isEdited and editedAt
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould return null for no-op when content unchanged
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow editing deleted reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow editing if parent comment deleted
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould throw for invalid replyId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould allow author to delete own reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould allow owner to delete any reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow reviewer to delete others' replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow outsider to delete any reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould set deletedBy and deletedAt audit fields
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow deleting already deleted reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould throw for invalid replyId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mCascade Delete[2m > [22mshould cascade delete from comment to all replies with correct audit trail
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mResolution Tracking[2m > [22mshould track resolution changes across multiple toggles correctly
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mEdit Tracking[2m > [22mshould track edits correctly with flags and timestamps
+[31m[1mTypeError[22m: blob.arrayBuffer is not a function[39m
+[36m [2m❯[22m blobSha node_modules/convex-test/dist/index.js:[2m995:36[22m[39m
+    [90m993| [39m}
+    [90m994| [39m[35masync[39m [35mfunction[39m [34mblobSha[39m(blob) {
+    [90m995| [39m    [35mconst[39m arrayBuffer [33m=[39m [35mawait[39m blob[33m.[39m[34marrayBuffer[39m()[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m996| [39m    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuff…
+    [90m997| [39m    [35mconst[39m hashArray [33m=[39m [35mnew[39m [33mUint8Array[39m(hashBuffer)[33m;[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m966:39[22m[39m
+[90m [2m❯[22m writeToDatabase node_modules/convex-test/dist/index.js:[2m991:22[22m[39m
+[90m [2m❯[22m Object.jsSyscall node_modules/convex-test/dist/index.js:[2m963:41[22m[39m
+[90m [2m❯[22m performJsSyscall ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/syscall.js:[2m38:17[22m[39m
+[90m [2m❯[22m Object.store ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/storage_impl.js:[2m49:20[22m[39m
+[90m [2m❯[22m convex/__tests__/comments.test.ts:[2m101:30[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/87]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m87 failed[39m[22m[90m (87)[39m
+[2m   Start at [22m 16:41:30
+[2m   Duration [22m 1.76s[2m (transform 213ms, setup 284ms, import 304ms, tests 104ms, environment 681ms)[22m
+

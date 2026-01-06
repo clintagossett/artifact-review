@@ -19,9 +19,9 @@
 
 import { convexTest } from "convex-test";
 import { expect, test, describe } from "vitest";
-import schema from "../schema";
-import { api, internal } from "../_generated/api";
-import type { Id } from "../_generated/dataModel";
+import schema from "../../convex/schema";
+import { api, internal } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
 import path from "path";
 import fs from "fs/promises";
 import JSZip from "jszip";

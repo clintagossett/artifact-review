@@ -15,7 +15,7 @@ Object.assign(navigator, {
 describe("ShareModal", () => {
   const mockArtifact = {
     _id: "test-id" as Id<"artifacts">,
-    title: "Product Landing Pages",
+    name: "Product Landing Pages",
     shareToken: "abc12345",
   };
 

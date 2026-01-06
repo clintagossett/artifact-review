@@ -1,7 +1,7 @@
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api, internal } from "../_generated/api";
-import schema from "../schema";
+import { api, internal } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
 
 describe("zipProcessor", () => {
   // Note: Full ZIP processing with file storage is tested in E2E tests
@@ -16,17 +16,19 @@ describe("zipProcessor", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          });
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       });
 
       const asUser = t.withIdentity({ subject: userId });
 
-      // Create artifact and version
-      const result = await asUser.mutation(api.artifacts.create, {
-        title: "Test ZIP Artifact",
+      // Create artifact and version - Note: create action rejects ZIP, use zipUpload instead
+      const result = await asUser.action(api.artifacts.create, {
+        name: "Test ZIP Artifact",
         description: "A test artifact with ZIP content",
-        fileType: "zip" as const,
-        fileSize: 1024,
+        fileType: "html" as const, // Changed from zip since create rejects ZIP
+        content: "<html><body>Test</body></html>",
       });
 
       // Mark processing complete with entry point

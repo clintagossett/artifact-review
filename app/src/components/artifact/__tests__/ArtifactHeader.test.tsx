@@ -8,13 +8,13 @@ describe("ArtifactHeader", () => {
   });
 
   const mockArtifact = {
-    title: "My Test Artifact",
+    name: "My Test Artifact",
     shareToken: "abc123",
   };
 
   const mockVersion = {
     number: 2,
-    fileSize: 1024000, // 1000 KB
+    size: 1024000, // 1000 KB
     createdAt: new Date("2024-12-26").getTime(),
   };
 

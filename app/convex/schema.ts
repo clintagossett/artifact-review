@@ -101,6 +101,19 @@ const schema = defineSchema({
      */
     image: v.optional(v.string()),
 
+    /**
+     * Timestamp when the user was created.
+     * Unix timestamp in milliseconds.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
+
+    /**
+     * Timestamp of last modification.
+     * Unix timestamp in milliseconds.
+     * Updated when profile fields (like name) are changed.
+     */
+    updatedAt: v.number(),
   })
     /**
      * Lookup user by email address.
@@ -1020,6 +1033,11 @@ const schema = defineSchema({
     versionId: v.id("artifactVersions"),
     userId: v.id("users"),
     viewedAt: v.number(),
+    /**
+     * Timestamp when the view record was created.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
   })
     .index("by_artifactId_viewedAt", ["artifactId", "viewedAt"])
     .index("by_versionId_viewedAt", ["versionId", "viewedAt"])
@@ -1046,6 +1064,11 @@ const schema = defineSchema({
     firstViewedAt: v.number(),
     lastViewedAt: v.number(),
     viewCount: v.number(),
+    /**
+     * Timestamp when the stats record was created.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
   })
     .index("by_artifactId_versionId", ["artifactId", "versionId"])
     .index("by_userId_artifactId", ["userId", "artifactId"])

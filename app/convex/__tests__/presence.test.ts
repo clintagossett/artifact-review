@@ -12,6 +12,8 @@ async function createTestUser(t: any, email: string) {
         return await ctx.db.insert("users", {
             email,
             name: email.split("@")[0],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
         });
     });
 }
@@ -71,11 +73,12 @@ describe("presence", () => {
 
         // Manually insert an old presence record
         await t.run(async (ctx) => {
-            await ctx.db.insert("presence", { createdAt: Date.now(),
+            await ctx.db.insert("presence", {
+                createdAt: Date.now(),
                 artifactId,
                 versionId,
                 userId,
-                lastSeenAtAt: Date.now() - (PRESENCE_SLA_MS + 1000), // Just past the window
+                lastSeenAt: Date.now() - (PRESENCE_SLA_MS + 1000), // Just past the window
             });
         });
 

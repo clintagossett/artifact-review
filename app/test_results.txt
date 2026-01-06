@@ -1,0 +1,1068 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90m/Users/clintgossett/Documents/personal/personal projects/artifact-review/app[39m
+
+[90mstdout[2m | convex/__tests__/artifacts.test.ts
+[22m[39mDEBUG: Blob type: function
+DEBUG: Blob prototype arrayBuffer: function
+
+ [32m✓[39m convex/__tests__/views.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould return false when session does not exist
+[22m[39m{"timestamp":"2026-01-06T23:40:01.214Z","level":"warn","topic":"AUTH","context":"settings","message":"Session not found","metadata":{"sessionId":"10001;authSessions"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould return null when no user is authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.216Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould return null when no user is authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.219Z","level":"debug","topic":"AUTH","context":"users","message":"No authenticated user"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould return true when session is within grace period
+[22m[39m{"timestamp":"2026-01-06T23:40:01.224Z","level":"info","topic":"AUTH","context":"settings","message":"Grace period status calculated","metadata":{"sessionCreatedAt":1767742801223.001,"expiresAt":1767742806223.001,"isWithinGracePeriod":true,"gracePeriodMs":5000}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould return false when session is outside grace period (5s in test mode)
+[22m[39m{"timestamp":"2026-01-06T23:40:01.230Z","level":"info","topic":"AUTH","context":"settings","message":"Grace period status calculated","metadata":{"sessionCreatedAt":1767742801229,"expiresAt":1767742806229,"isWithinGracePeriod":true,"gracePeriodMs":5000}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould return user data when authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.236Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould return user data when authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.236Z","level":"debug","topic":"AUTH","context":"users","message":"User ID retrieved","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould return user data when authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.237Z","level":"info","topic":"AUTH","context":"users","message":"User retrieved successfully","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould include email when user has email
+[22m[39m{"timestamp":"2026-01-06T23:40:01.243Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould include email when user has email
+[22m[39m{"timestamp":"2026-01-06T23:40:01.243Z","level":"debug","topic":"AUTH","context":"users","message":"User ID retrieved","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mgetCurrentUser[2m > [22m[2mshould include email when user has email
+[22m[39m{"timestamp":"2026-01-06T23:40:01.244Z","level":"info","topic":"AUTH","context":"users","message":"User retrieved successfully","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould update user name successfully
+[22m[39m{"timestamp":"2026-01-06T23:40:01.249Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":"New Name"}}
+
+ [32m✓[39m convex/__tests__/phase2-retrieval.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould update user name successfully
+[22m[39m{"timestamp":"2026-01-06T23:40:01.251Z","level":"info","topic":"USER","context":"users","message":"User name updated","metadata":{"userId":"10000;users","newName":"New Name"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould update user name successfully
+[22m[39m{"timestamp":"2026-01-06T23:40:01.269Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould update user name successfully
+[22m[39m{"timestamp":"2026-01-06T23:40:01.269Z","level":"debug","topic":"AUTH","context":"users","message":"User ID retrieved","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould update user name successfully
+[22m[39m{"timestamp":"2026-01-06T23:40:01.270Z","level":"info","topic":"AUTH","context":"users","message":"User retrieved successfully","metadata":{"userId":"10000;users"}}
+
+[90mstderr[2m | convex/__tests__/phase1-zip-storage.test.ts[2m > [22m[2mZIP Processing Error Handling[2m > [22m[2mmarkProcessingError should soft-delete version on failure
+[22m[39mZIP processing error for version 10002;artifactVersions: ZIP contains forbidden file type: .exe
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.277Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":"New Name"}}
+
+[90mstderr[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:01.277Z","level":"warn","topic":"AUTH","context":"users","message":"Attempted to update name without authentication"}
+
+ [32m✓[39m convex/__tests__/isLatest.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 212[2mms[22m[39m
+ [32m✓[39m convex/__tests__/zip-serving.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 217[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name is empty
+[22m[39m{"timestamp":"2026-01-06T23:40:01.290Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":""}}
+
+[90mstderr[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name is empty
+[22m[39m{"timestamp":"2026-01-06T23:40:01.290Z","level":"warn","topic":"USER","context":"users","message":"Attempted to set empty name","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name is whitespace only
+[22m[39m{"timestamp":"2026-01-06T23:40:01.293Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":"   "}}
+
+[90mstderr[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name is whitespace only
+[22m[39m{"timestamp":"2026-01-06T23:40:01.293Z","level":"warn","topic":"USER","context":"users","message":"Attempted to set empty name","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name exceeds 100 characters
+[22m[39m{"timestamp":"2026-01-06T23:40:01.298Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}
+
+[90mstderr[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould throw error when name exceeds 100 characters
+[22m[39m{"timestamp":"2026-01-06T23:40:01.298Z","level":"warn","topic":"USER","context":"users","message":"Attempted to set name too long","metadata":{"userId":"10000;users","length":101}}
+
+ [31m❯[39m convex/__tests__/softDeletion.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 235[2mms[22m[39m
+[31m       [31m×[31m should soft delete artifact and cascade to versions and files[39m[32m 212[2mms[22m[39m
+[31m       [31m×[31m should soft delete specific version only[39m[32m 13[2mms[22m[39m
+[31m       [31m×[31m should prevent deleting the last active version[39m[32m 4[2mms[22m[39m
+ [32m✓[39m convex/__tests__/comment-latest-enforcement.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 237[2mms[22m[39m
+ [31m❯[39m convex/__tests__/artifacts.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[32m 239[2mms[22m[39m
+[31m       [31m×[31m should create artifact with HTML content and generate v1[39m[32m 200[2mms[22m[39m
+[31m       [31m×[31m should create artifact with Markdown content and generate v1[39m[32m 16[2mms[22m[39m
+[31m       [31m×[31m should list only user's own artifacts[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m should add version 2 to existing artifact[39m[32m 13[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould trim whitespace from name
+[22m[39m{"timestamp":"2026-01-06T23:40:01.307Z","level":"debug","topic":"USER","context":"users","message":"updateName called","metadata":{"name":"  Trimmed Name  "}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould trim whitespace from name
+[22m[39m{"timestamp":"2026-01-06T23:40:01.314Z","level":"info","topic":"USER","context":"users","message":"User name updated","metadata":{"userId":"10000;users","newName":"Trimmed Name"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould trim whitespace from name
+[22m[39m{"timestamp":"2026-01-06T23:40:01.334Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould trim whitespace from name
+[22m[39m{"timestamp":"2026-01-06T23:40:01.334Z","level":"debug","topic":"AUTH","context":"users","message":"User ID retrieved","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/users.test.ts[2m > [22m[2musers[2m > [22m[2mupdateName[2m > [22m[2mshould trim whitespace from name
+[22m[39m{"timestamp":"2026-01-06T23:40:01.334Z","level":"info","topic":"AUTH","context":"users","message":"User retrieved successfully","metadata":{"userId":"10000;users"}}
+
+ [32m✓[39m convex/__tests__/users.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 267[2mms[22m[39m
+ [31m❯[39m convex/__tests__/artifacts-queries.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m9 failed[39m[2m | [22m[33m2 skipped[39m[2m)[22m[32m 289[2mms[22m[39m
+[31m       [31m×[31m should return artifact when found by share token[39m[32m 188[2mms[22m[39m
+       [32m✓[39m should return null for invalid share token[32m 14[2mms[22m[39m
+[31m       [31m×[31m should return null for deleted artifacts[39m[32m 16[2mms[22m[39m
+[31m       [31m×[31m should return all versions for an artifact[39m[32m 15[2mms[22m[39m
+[31m       [31m×[31m should not return deleted versions[39m[32m 24[2mms[22m[39m
+[31m       [31m×[31m should return specific version by artifact and version number[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m should return null for non-existent version number[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should return null for deleted version[39m[32m 3[2mms[22m[39m
+[31m       [31m×[31m should return the highest version number[39m[32m 4[2mms[22m[39m
+[31m       [31m×[31m should skip deleted versions when finding latest[39m[32m 4[2mms[22m[39m
+       [2m[90m↓[39m[22m should return all HTML files for a zip version
+       [2m[90m↓[39m[22m should return null for non-existent file
+[90mstderr[2m | convex/__tests__/phase1-zip-storage.test.ts[2m > [22m[2mZIP Processing Integration Tests (requires sample files)[2m > [22m[2mshould reject ZIP with forbidden file types
+[22m[39mZIP processing error for version 10002;artifactVersions: ZIP contains unsupported file types: .avi, .mp4, .mov
+
+[90mstderr[2m | convex/__tests__/phase1-zip-storage.test.ts[2m > [22m[2mZIP Processing Integration Tests (requires sample files)[2m > [22m[2mshould reject ZIP with too many files
+[22m[39mZIP processing error for version 10002;artifactVersions: ZIP contains too many files. Maximum: 500, found: 501
+
+[90mstderr[2m | convex/__tests__/phase1-zip-storage.test.ts[2m > [22m[2mZIP Processing Integration Tests (requires sample files)[2m > [22m[2mshould reject ZIP with oversized individual files
+[22m[39mZIP processing error for version 10002;artifactVersions: File too large: huge-image.jpg (6.00MB). Maximum: 5MB per file.
+
+ [32m✓[39m convex/__tests__/zip-backend-integration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 289[2mms[22m[39m
+ [32m✓[39m convex/__tests__/phase1-zip-storage.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 418[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - resend[2m > [22m[2mshould increment sendCount and update lastSentAt
+[22m[39mSkipping email send (SKIP_EMAILS=true)
+
+ [32m✓[39m convex/__tests__/zip-multi-level-nesting.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 320[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - recordView[2m > [22m[2mshould update lastViewedAt on subsequent views
+[22m[39mSkipping email send (SKIP_EMAILS=true)
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - linkInvitesToUserInternal[2m > [22m[2mshould link all pending invites to new user on signup
+[22m[39mlinkInvitesToUserInternal called: { userId: [32m'10010;users'[39m, email: [32m'pending@example.com'[39m }
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - linkInvitesToUserInternal[2m > [22m[2mshould link all pending invites to new user on signup
+[22m[39mFound invites: [33m2[39m
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - linkInvitesToUserInternal[2m > [22m[2mshould normalize email case when linking
+[22m[39mlinkInvitesToUserInternal called: { userId: [32m'10005;users'[39m, email: [32m'newuser@example.com'[39m }
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - linkInvitesToUserInternal[2m > [22m[2mshould normalize email case when linking
+[22m[39mFound invites: [33m1[39m
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - auth callback integration[2m > [22m[2mshould call linkInvitesToUserInternal on user creation
+[22m[39mlinkInvitesToUserInternal called: { userId: [32m'10000;users'[39m, email: [32m'test@example.com'[39m }
+
+[90mstdout[2m | convex/__tests__/access.test.ts[2m > [22m[2maccess - auth callback integration[2m > [22m[2mshould call linkInvitesToUserInternal on user creation
+[22m[39mFound invites: [33m0[39m
+
+ [31m❯[39m convex/__tests__/access.test.ts [2m([22m[2m32 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 519[2mms[22m[39m
+       [32m✓[39m should create userInvites record with all required fields[32m 19[2mms[22m[39m
+       [32m✓[39m should query userInvites by email and createdBy[32m 7[2mms[22m[39m
+       [32m✓[39m should create artifactAccess record with all required fields[32m 5[2mms[22m[39m
+       [32m✓[39m should query artifactAccess by artifactId and userId[32m 3[2mms[22m[39m
+       [32m✓[39m should create artifactAccess with userId when email matches existing user[32m 105[2mms[22m[39m
+       [32m✓[39m should create userInvites + artifactAccess with userInviteId for new email[32m 7[2mms[22m[39m
+       [32m✓[39m should reuse existing userInvites for same owner + email across artifacts[32m 10[2mms[22m[39m
+       [32m✓[39m should create separate userInvites for different owners with same email[32m 9[2mms[22m[39m
+       [32m✓[39m should un-delete existing artifactAccess when re-inviting[32m 11[2mms[22m[39m
+     [32m✓[39m should return empty array for artifact with no reviewers[32m 5[2mms[22m[39m
+[31m     [31m×[31m should return reviewers with displayName, email, status[39m[32m 71[2mms[22m[39m
+     [32m✓[39m should exclude soft-deleted access records[32m 7[2mms[22m[39m
+     [32m✓[39m should return 'owner' for artifact creator[32m 20[2mms[22m[39m
+     [32m✓[39m should return 'can-comment' for invited reviewer[32m 5[2mms[22m[39m
+     [32m✓[39m should return null for user with no access[32m 2[2mms[22m[39m
+     [32m✓[39m should use O(1) index lookup by artifactId + userId[32m 4[2mms[22m[39m
+     [32m✓[39m should return artifacts shared with current user[32m 27[2mms[22m[39m
+     [32m✓[39m should exclude soft-deleted access records[32m 6[2mms[22m[39m
+     [32m✓[39m should soft delete artifactAccess for existing user[32m 13[2mms[22m[39m
+     [32m✓[39m should soft delete artifactAccess but keep userInvites[32m 6[2mms[22m[39m
+     [32m✓[39m should increment sendCount and update lastSentAt[32m 81[2mms[22m[39m
+     [32m✓[39m should set firstViewedAt on first view[32m 7[2mms[22m[39m
+     [32m✓[39m should update lastViewedAt on subsequent views[32m 16[2mms[22m[39m
+     [32m✓[39m should link all pending invites to new user on signup[32m 15[2mms[22m[39m
+     [32m✓[39m should normalize email case when linking[32m 5[2mms[22m[39m
+     [32m✓[39m should call linkInvitesToUserInternal on user creation[32m 2[2mms[22m[39m
+     [32m✓[39m should return zero stats for artifact with no reviewers[32m 5[2mms[22m[39m
+     [32m✓[39m should count views from access records with firstViewedAt[32m 10[2mms[22m[39m
+     [32m✓[39m should count comments across all versions[32m 7[2mms[22m[39m
+     [32m✓[39m should throw error if non-owner tries to access stats[32m 10[2mms[22m[39m
+     [32m✓[39m should exclude soft-deleted access records from stats[32m 3[2mms[22m[39m
+     [32m✓[39m should find last viewed from multiple viewers[32m 4[2mms[22m[39m
+ [31m❯[39m convex/__tests__/comments.test.ts [2m([22m[2m87 tests[22m[2m | [22m[31m87 failed[39m[2m)[22m[33m 933[2mms[22m[39m
+[31m       [31m×[31m should return 'owner' for artifact owner[39m[32m 37[2mms[22m[39m
+[31m       [31m×[31m should return 'can-comment' for invited reviewer[39m[32m 13[2mms[22m[39m
+[31m       [31m×[31m should throw 'Authentication required' for unauthenticated user[39m[32m 13[2mms[22m[39m
+[31m       [31m×[31m should throw 'No permission to comment' for outsider[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should throw 'Version not found' for deleted version[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should throw 'Artifact not found' for deleted artifact[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should return true when user is comment author[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m should return false when user is not comment author[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should return true when user is comment author[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m should return true when user is artifact owner[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should return false when reviewer tries to delete another reviewer's comment[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should allow owner to create comment with valid content[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to create comment[39m[32m 11[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to create comment[39m[32m 16[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 13[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 10,000 characters[39m[32m 17[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 15[2mms[22m[39m
+[31m       [31m×[31m should store target metadata as-is[39m[32m 11[2mms[22m[39m
+[31m       [31m×[31m should set createdAt timestamp[39m[32m 14[2mms[22m[39m
+[31m       [31m×[31m should not have resolution tracking fields on creation[39m[32m 45[2mms[22m[39m
+[31m       [31m×[31m should allow owner to query their version[39m[32m 24[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to query version[39m[32m 25[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to query[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should return empty array when no comments[39m[32m 26[2mms[22m[39m
+[31m       [31m×[31m should exclude soft-deleted comments[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should include author data[39m[32m 23[2mms[22m[39m
+[31m       [31m×[31m should include reply count[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow author to update own comment[39m[32m 9[2mms[22m[39m
+[31m       [31m×[31m should not allow non-author to update[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should not allow owner to edit others' comments[39m[32m 17[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 9[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 10,000 characters[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should return null for no-op when content unchanged[39m[32m 9[2mms[22m[39m
+[31m       [31m×[31m should not allow editing deleted comment[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 15[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 17[2mms[22m[39m
+[31m       [31m×[31m should allow owner to toggle resolution[39m[32m 13[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to toggle resolution[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should set tracking fields on first toggle[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should update tracking fields on subsequent toggles[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should not allow toggling deleted comment[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 9[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to toggle[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow author to delete own comment[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should allow owner to delete any comment[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should not allow reviewer to delete others' comments[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to delete any comment[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should not allow deleting already deleted comment[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid commentId[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should cascade to all replies[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should set deletedBy and deletedAt on cascaded replies[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow owner to query replies[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to query replies[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to query[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should return empty array when no replies[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should exclude soft-deleted replies[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should include author data[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should not allow querying deleted comment[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should allow owner to create reply[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should allow reviewer to create reply[39m[32m 6[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to create reply[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 5,000 characters[39m[32m 11[2mms[22m[39m
+[31m       [31m×[31m should not allow replying to deleted comment[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should set createdAt timestamp[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow author to update own reply[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should not allow non-author to update[39m[32m 5[2mms[22m[39m
+[31m       [31m×[31m should not allow owner to edit others' replies[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should reject empty content after trim[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should reject content exceeding 5,000 characters[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should set isEdited and editedAt[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should return null for no-op when content unchanged[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should not allow editing deleted reply[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should not allow editing if parent comment deleted[39m[32m 15[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid replyId[39m[32m 14[2mms[22m[39m
+[31m       [31m×[31m should trim whitespace from content[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should allow author to delete own reply[39m[32m 10[2mms[22m[39m
+[31m       [31m×[31m should allow owner to delete any reply[39m[32m 12[2mms[22m[39m
+[31m       [31m×[31m should not allow reviewer to delete others' replies[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should not allow outsider to delete any reply[39m[32m 9[2mms[22m[39m
+[31m       [31m×[31m should set deletedBy and deletedAt audit fields[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should not allow deleting already deleted reply[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should throw for invalid replyId[39m[32m 8[2mms[22m[39m
+[31m       [31m×[31m should cascade delete from comment to all replies with correct audit trail[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should track resolution changes across multiple toggles correctly[39m[32m 7[2mms[22m[39m
+[31m       [31m×[31m should track edits correctly with flags and timestamps[39m[32m 7[2mms[22m[39m
+ [32m✓[39m convex/__tests__/artifacts-create.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m convex/__tests__/fileTypes.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m convex/__tests__/passwordAuth.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [2m[90m↓[39m[22m convex/__tests__/zipProcessor.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+ [32m✓[39m convex/__tests__/phase2-permissions.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m convex/__tests__/magicLinkAuth.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/repro_linking_bug.test.ts[2m > [22m[2mreproduce bug: invited user id not linked after signup
+[22m[39mlinkInvitesToUserInternal called: {
+  userId: [32m'10005;users'[39m,
+  email: [32m'e2e-1767742804485@tolauante.resend.app'[39m
+}
+
+[90mstdout[2m | convex/__tests__/repro_linking_bug.test.ts[2m > [22m[2mreproduce bug: invited user id not linked after signup
+[22m[39mFound invites: [33m1[39m
+
+[90mstdout[2m | convex/__tests__/repro_linking_bug.test.ts[2m > [22m[2mreproduce bug: invited user id not linked after signup
+[22m[39mUpdated Access Record: {
+  _creationTime: [33m1767742804503[39m,
+  _id: [32m'10003;artifactAccess'[39m,
+  artifactId: [32m'10001;artifacts'[39m,
+  createdAt: [33m1767742804498[39m,
+  createdBy: [32m'10000;users'[39m,
+  isDeleted: [33mfalse[39m,
+  lastSentAt: [33m1767742804498[39m,
+  sendCount: [33m1[39m,
+  userId: [32m'10005;users'[39m
+}
+
+[90mstdout[2m | convex/__tests__/repro_linking_bug.test.ts
+[22m[39mSkipping email send (SKIP_EMAILS=true)
+
+ [32m✓[39m convex/__tests__/repro_linking_bug.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m convex/__tests__/presence.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m convex/__tests__/zipUpload.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould return false when session is outside grace period (5s in test mode)
+[22m[39m{"timestamp":"2026-01-06T23:40:07.232Z","level":"info","topic":"AUTH","context":"settings","message":"Grace period status calculated","metadata":{"sessionCreatedAt":1767742801229,"expiresAt":1767742806229,"isWithinGracePeriod":false,"gracePeriodMs":5000}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould include correct expiry timestamp when fresh
+[22m[39m{"timestamp":"2026-01-06T23:40:07.235Z","level":"info","topic":"AUTH","context":"settings","message":"Grace period status calculated","metadata":{"sessionCreatedAt":1767742807234.001,"expiresAt":1767743707234.001,"isWithinGracePeriod":true,"gracePeriodMs":900000}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.calculateGracePeriodForSession[2m > [22m[2mshould return null for expiresAt when expired
+[22m[39m{"timestamp":"2026-01-06T23:40:13.239Z","level":"info","topic":"AUTH","context":"settings","message":"Grace period status calculated","metadata":{"sessionCreatedAt":1767742807237.001,"expiresAt":1767742812237.001,"isWithinGracePeriod":false,"gracePeriodMs":5000}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.getGracePeriodStatus[2m > [22m[2mshould return false when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.242Z","level":"debug","topic":"AUTH","context":"settings","message":"getGracePeriodStatus called"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.getGracePeriodStatus[2m > [22m[2mshould return false when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.242Z","level":"debug","topic":"AUTH","context":"settings","message":"No authenticated user"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.getGracePeriodStatus[2m > [22m[2mshould return false when authenticated but no session exists
+[22m[39m{"timestamp":"2026-01-06T23:40:13.244Z","level":"debug","topic":"AUTH","context":"settings","message":"getGracePeriodStatus called"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.getGracePeriodStatus[2m > [22m[2mshould return false when authenticated but no session exists
+[22m[39m{"timestamp":"2026-01-06T23:40:13.244Z","level":"debug","topic":"AUTH","context":"settings","message":"No active session"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould return error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.246Z","level":"debug","topic":"AUTH","context":"settings","message":"changePassword called"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould return error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.246Z","level":"warn","topic":"AUTH","context":"settings","message":"Attempted to change password without authentication"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password less than 8 characters
+[22m[39m{"timestamp":"2026-01-06T23:40:13.248Z","level":"debug","topic":"AUTH","context":"settings","message":"changePassword called"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password less than 8 characters
+[22m[39m{"timestamp":"2026-01-06T23:40:13.248Z","level":"warn","topic":"AUTH","context":"settings","message":"Password too short","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password without a number
+[22m[39m{"timestamp":"2026-01-06T23:40:13.250Z","level":"debug","topic":"AUTH","context":"settings","message":"changePassword called"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password without a number
+[22m[39m{"timestamp":"2026-01-06T23:40:13.250Z","level":"warn","topic":"AUTH","context":"settings","message":"Password missing number","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password without a letter
+[22m[39m{"timestamp":"2026-01-06T23:40:13.251Z","level":"debug","topic":"AUTH","context":"settings","message":"changePassword called"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould reject password without a letter
+[22m[39m{"timestamp":"2026-01-06T23:40:13.251Z","level":"warn","topic":"AUTH","context":"settings","message":"Password missing letter","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould require current password outside grace period
+[22m[39m{"timestamp":"2026-01-06T23:40:13.253Z","level":"debug","topic":"AUTH","context":"settings","message":"changePassword called"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.changePassword[2m > [22m[2mshould require current password outside grace period
+[22m[39m{"timestamp":"2026-01-06T23:40:13.253Z","level":"warn","topic":"AUTH","context":"settings","message":"Current password required outside grace period","metadata":{"userId":"10000;users"}}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.sendReauthMagicLink[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.255Z","level":"debug","topic":"AUTH","context":"settings","message":"sendReauthMagicLink called"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.sendReauthMagicLink[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.259Z","level":"debug","topic":"AUTH","context":"users","message":"getCurrentUser called"}
+
+[90mstdout[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.sendReauthMagicLink[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.259Z","level":"debug","topic":"AUTH","context":"users","message":"No authenticated user"}
+
+[90mstderr[2m | convex/__tests__/settings.test.ts[2m > [22m[2msettings.sendReauthMagicLink[2m > [22m[2mshould throw error when not authenticated
+[22m[39m{"timestamp":"2026-01-06T23:40:13.259Z","level":"warn","topic":"AUTH","context":"settings","message":"Attempted to send re-auth magic link without user email"}
+
+ [32m✓[39m convex/__tests__/settings.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 12194[2mms[22m[39m
+     [33m[2m✓[22m[39m should return false when session is outside grace period (5s in test mode) [33m 6007[2mms[22m[39m
+     [33m[2m✓[22m[39m should return null for expiresAt when expired [33m 6004[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 104 [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m convex/__tests__/access.test.ts[2m > [22maccess - listReviewers[2m > [22mshould return reviewers with displayName, email, status
+[31m[1mAssertionError[22m: expected 'added' to be 'accepted' // Object.is equality[39m
+
+Expected: [32m"a[7mccept[27med"[39m
+Received: [31m"a[7mdd[27med"[39m
+
+[36m [2m❯[22m convex/__tests__/access.test.ts:[2m430:38[22m[39m
+    [90m428| [39m    )[33m;[39m
+    [90m429| [39m    expect(existingReviewer?.displayName).toBe("existing"); // From na…
+    [90m430| [39m    [34mexpect[39m(existingReviewer[33m?.[39mstatus)[33m.[39m[34mtoBe[39m([32m"accepted"[39m)[33m;[39m [90m// Has userId[39m
+    [90m   | [39m                                     [31m^[39m
+    [90m431| [39m
+    [90m432| [39m    [90m// Pending user should show email as displayName[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/104]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetByShareToken[2m > [22mshould return artifact when found by share token
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetByShareToken[2m > [22mshould return null for deleted artifacts
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetVersions[2m > [22mshould return all versions for an artifact
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetVersions[2m > [22mshould not return deleted versions
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetVersionByNumber[2m > [22mshould return specific version by artifact and version number
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetVersionByNumber[2m > [22mshould return null for non-existent version number
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetVersionByNumber[2m > [22mshould return null for deleted version
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetLatestVersion[2m > [22mshould return the highest version number
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts-queries.test.ts[2m > [22mArtifact Viewing Queries[2m > [22mgetLatestVersion[2m > [22mshould skip deleted versions when finding latest
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts.test.ts[2m > [22martifacts[2m > [22mcreate[2m > [22mshould create artifact with HTML content and generate v1
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts.test.ts[2m > [22martifacts[2m > [22mcreate[2m > [22mshould create artifact with Markdown content and generate v1
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts.test.ts[2m > [22martifacts[2m > [22mlist[2m > [22mshould list only user's own artifacts
+[41m[1m FAIL [22m[49m convex/__tests__/artifacts.test.ts[2m > [22martifacts[2m > [22maddVersion[2m > [22mshould add version 2 to existing artifact
+[41m[1m FAIL [22m[49m convex/__tests__/softDeletion.test.ts[2m > [22msoft deletion[2m > [22msoftDelete artifact[2m > [22mshould soft delete artifact and cascade to versions and files
+[41m[1m FAIL [22m[49m convex/__tests__/softDeletion.test.ts[2m > [22msoft deletion[2m > [22msoftDeleteVersion[2m > [22mshould soft delete specific version only
+[41m[1m FAIL [22m[49m convex/__tests__/softDeletion.test.ts[2m > [22msoft deletion[2m > [22msoftDeleteVersion[2m > [22mshould prevent deleting the last active version
+[31m[1mTypeError[22m: blob.arrayBuffer is not a function[39m
+[36m [2m❯[22m blobSha node_modules/convex-test/dist/index.js:[2m995:36[22m[39m
+    [90m993| [39m}
+    [90m994| [39m[35masync[39m [35mfunction[39m [34mblobSha[39m(blob) {
+    [90m995| [39m    [35mconst[39m arrayBuffer [33m=[39m [35mawait[39m blob[33m.[39m[34marrayBuffer[39m()[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m996| [39m    const hashBuffer = await crypto.subtle.digest("SHA-256", arrayBuff…
+    [90m997| [39m    [35mconst[39m hashArray [33m=[39m [35mnew[39m [33mUint8Array[39m(hashBuffer)[33m;[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m966:39[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m987:26[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1292:24[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/104]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould return 'owner' for artifact owner
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould return 'can-comment' for invited reviewer
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Authentication required' for unauthenticated user
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'No permission to comment' for outsider
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Version not found' for deleted version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mrequireCommentPermission[2m > [22mshould throw 'Artifact not found' for deleted artifact
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanEditComment[2m > [22mshould return true when user is comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanEditComment[2m > [22mshould return false when user is not comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return true when user is comment author
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return true when user is artifact owner
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mPermission Helpers[2m > [22mcanDeleteComment[2m > [22mshould return false when reviewer tries to delete another reviewer's comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould allow owner to create comment with valid content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould allow reviewer to create comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould not allow outsider to create comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould reject content exceeding 10,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould store target metadata as-is
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould set createdAt timestamp
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mcreate[2m > [22mshould not have resolution tracking fields on creation
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould allow owner to query their version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould allow reviewer to query version
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould not allow outsider to query
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould return empty array when no comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould exclude soft-deleted comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould include author data
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mgetByVersion[2m > [22mshould include reply count
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould allow author to update own comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow non-author to update
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow owner to edit others' comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould reject content exceeding 10,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould return null for no-op when content unchanged
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould not allow editing deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mupdateContent[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould allow owner to toggle resolution
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould allow reviewer to toggle resolution
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould set tracking fields on first toggle
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould update tracking fields on subsequent toggles
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould not allow toggling deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22mtoggleResolved[2m > [22mshould not allow outsider to toggle
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould allow author to delete own comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould allow owner to delete any comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow reviewer to delete others' comments
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow outsider to delete any comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould not allow deleting already deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould throw for invalid commentId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould cascade to all replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mComment Operations[2m > [22msoftDelete[2m > [22mshould set deletedBy and deletedAt on cascaded replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould allow owner to query replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould allow reviewer to query replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould not allow outsider to query
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould return empty array when no replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould exclude soft-deleted replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould include author data
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mgetReplies[2m > [22mshould not allow querying deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould allow owner to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould allow reviewer to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould not allow outsider to create reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould reject content exceeding 5,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould not allow replying to deleted comment
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould set createdAt timestamp
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mcreateReply[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould allow author to update own reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow non-author to update
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow owner to edit others' replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould reject empty content after trim
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould reject content exceeding 5,000 characters
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould set isEdited and editedAt
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould return null for no-op when content unchanged
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow editing deleted reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould not allow editing if parent comment deleted
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould throw for invalid replyId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22mupdateReply[2m > [22mshould trim whitespace from content
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould allow author to delete own reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould allow owner to delete any reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow reviewer to delete others' replies
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow outsider to delete any reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould set deletedBy and deletedAt audit fields
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould not allow deleting already deleted reply
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mReply Operations[2m > [22msoftDeleteReply[2m > [22mshould throw for invalid replyId
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mCascade Delete[2m > [22mshould cascade delete from comment to all replies with correct audit trail
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mResolution Tracking[2m > [22mshould track resolution changes across multiple toggles correctly
+[41m[1m FAIL [22m[49m convex/__tests__/comments.test.ts[2m > [22mIntegration Tests[2m > [22mEdit Tracking[2m > [22mshould track edits correctly with flags and timestamps
+[31m[1mRangeError[22m: Maximum call stack size exceeded[39m
+[36m [2m❯[22m Blob.stream vitest.setup.ts:[2m17:12[22m[39m
+    [90m 15| [39m[35mif[39m ([35mtypeof[39m [33mBlob[39m [33m!==[39m [32m"undefined"[39m [33m&&[39m [33m![39m[33mBlob[39m[33m.[39mprototype[33m.[39mstream) {
+    [90m 16| [39m  [33mBlob[39m[33m.[39mprototype[33m.[39mstream [33m=[39m [35mfunction[39m ([35mthis[39m[33m:[39m [33mBlob[39m) {
+    [90m 17| [39m    [35mreturn[39m [35mnew[39m [33mResponse[39m([35mthis[39m)[33m.[39mbody [35mas[39m any[33m;[39m
+    [90m   | [39m           [31m^[39m
+    [90m 18| [39m  }[33m;[39m
+    [90m 19| [39m}
+[90m [2m❯[22m Blob.stream vitest.setup.ts:[2m17:12[22m[39m
+[90m [2m❯[22m Blob.stream vitest.setup.ts:[2m17:12[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/104]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 22 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10005;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10007;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10006;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10009;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10005;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10007;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10005;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10007;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould increment sendCount and update lastSentAt[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould update lastViewedAt on subsequent views[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10006;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10009;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m runNextTicks node:internal/process/task_queues:[2m65:5[22m[39m
+[90m [2m❯[22m listOnTimeout node:internal/timers:[2m549:9[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: Write outside of transaction 10004;_scheduled_functions[39m
+[36m [2m❯[22m DatabaseFake._addWrite node_modules/convex-test/dist/index.js:[2m73:19[22m[39m
+    [90m 71| [39m    [34m_addWrite[39m(id[33m,[39m newValue) {
+    [90m 72| [39m        [35mif[39m ([35mthis[39m[33m.[39m_writes[33m.[39mlength [33m===[39m [34m0[39m) {
+    [90m 73| [39m            [35mthrow[39m [35mnew[39m [33mError[39m([32m`Write outside of transaction [39m[36m${[39mid[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 74| [39m        }
+    [90m 75| [39m        [35mthis[39m[33m.[39m_writes[[35mthis[39m[33m.[39m_writes[33m.[39mlength [33m-[39m [34m1[39m][id] [33m=[39m newValue[33m;[39m
+[90m [2m❯[22m DatabaseFake.patch node_modules/convex-test/dist/index.js:[2m113:14[22m[39m
+[90m [2m❯[22m node_modules/convex-test/dist/index.js:[2m856:28[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1209:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:36[22m[39m
+[90m [2m❯[22m invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m36:24[22m[39m
+[90m [2m❯[22m Function.func.invokeMutation ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m119:38[22m[39m
+[90m [2m❯[22m runTransaction node_modules/convex-test/dist/index.js:[2m1215:39[22m[39m
+[90m [2m❯[22m handler node_modules/convex-test/dist/index.js:[2m1292:24[22m[39m
+[90m [2m❯[22m invokeFunction ../../../personal%20projects/artifact-review/app/node_modules/convex/dist/esm/server/impl/registration_impl.js:[2m50:14[22m[39m
+
+[31mThis error originated in "[1mconvex/__tests__/access.test.ts[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m18 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (24)[39m
+[2m      Tests [22m [1m[31m104 failed[39m[22m[2m | [22m[1m[32m194 passed[39m[22m[2m | [22m[33m3 skipped[39m[90m (301)[39m
+[2m     Errors [22m [1m[31m22 errors[39m[22m
+[2m   Start at [22m 16:39:56
+[2m   Duration [22m 17.00s[2m (transform 7.37s, setup 22.47s, import 17.98s, tests 16.93s, environment 46.27s)[22m
+

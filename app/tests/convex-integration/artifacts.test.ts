@@ -3,6 +3,11 @@ import { describe, it, expect } from "vitest";
 import { api } from "../_generated/api";
 import schema from "../schema";
 
+console.log("DEBUG: Blob type:", typeof Blob);
+if (typeof Blob !== 'undefined') {
+  console.log("DEBUG: Blob prototype arrayBuffer:", typeof Blob.prototype.arrayBuffer);
+}
+
 describe("artifacts", () => {
   describe("create", () => {
     it("should create artifact with HTML content and generate v1", async () => {
