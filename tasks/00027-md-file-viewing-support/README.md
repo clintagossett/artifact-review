@@ -56,19 +56,20 @@ Add support for viewing markdown (.md) files as rendered HTML in the artifact re
 | # | Name | Status | Description |
 |---|------|--------|-------------|
 | 01 | [MD Rendering Library Research](./01_subtask_md-rendering-library-research/) | COMPLETE | Evaluate libraries, select react-markdown |
-| 02 | [Install Markdown Dependencies](./02_subtask_install-markdown-dependencies/) | PENDING | Install react-markdown + remark-gfm |
-| 03 | [Create MarkdownViewer Component](./03_subtask_markdown-viewer-component/) | PENDING | Build component to fetch and render markdown |
-| 04 | [Integrate with DocumentViewer](./04_subtask_integrate-markdown-viewer/) | PENDING | Detect fileType and switch renderer |
+| 02 | [Install Markdown Dependencies](./02_subtask_install-markdown-dependencies/) | COMPLETE | Install react-markdown + remark-gfm |
+| 03 | [Create MarkdownViewer Component](./03_subtask_markdown-viewer-component/) | COMPLETE | Build component to fetch and render markdown |
+| 04 | [Integrate with DocumentViewer](./04_subtask_integrate-markdown-viewer/) | COMPLETE | Detect fileType and switch renderer |
 | 05 | [Enable Markdown Comments](./05_subtask_markdown-comment-targeting/) | PENDING | Text selection and commenting on markdown |
 | 06 | [Finalize Markdown Styling](./06_subtask_markdown-styling/) | PENDING | Polish typography, tables, code blocks |
-| 07 | [Phase 1 Testing](./07_subtask_phase1-testing/) | PENDING | Unit, E2E, and manual testing |
+| 07 | [Phase 1 Testing](./07_subtask_phase1-testing/) | COMPLETE | Unit, E2E, and manual testing |
 
 ### Phase 2: Mermaid Diagram Support
 
 | # | Name | Status | Description |
 |---|------|--------|-------------|
-| 08 | [Mermaid Lazy Loading](./08_subtask_mermaid-lazy-loading/) | PENDING | Implement lazy-loaded Mermaid rendering |
-| 09 | [Phase 2 Testing](./09_subtask_phase2-testing/) | PENDING | Test Mermaid diagrams and bundle size |
+| 08 | [Mermaid Lazy Loading](./08_subtask_mermaid-lazy-loading/) | IN_PROGRESS | Implement lazy-loaded Mermaid rendering |
+| 09 | [Complex MD Test Samples](./09_subtask_complex-md-samples/) | COMPLETE | Create test files with Mermaid, complex GFM |
+| 10 | [Phase 2 Testing](./10_subtask_phase2-testing/) | PENDING | Test Mermaid diagrams and bundle size |
 
 ---
 

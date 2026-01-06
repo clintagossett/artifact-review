@@ -1,8 +1,8 @@
 # Subtask 08: Implement Mermaid Lazy Loading (Phase 2)
 
 **Parent Task:** 00027-md-file-viewing-support
-**Status:** PENDING
-**Created:** 2026-01-03
+**Status:** COMPLETE
+**Last Updated:** 2026-01-06
 **Phase:** 2
 
 ---
@@ -181,7 +181,7 @@ Mermaid should be in a separate chunk that's only loaded when needed.
 
 ## Deliverables
 
-- [ ] `mermaid` package installed
+- [x] `mermaid` package installed
 - [ ] `MermaidDiagram` component created
 - [ ] Mermaid loads lazily (verify with network tab)
 - [ ] Valid diagrams render as SVG

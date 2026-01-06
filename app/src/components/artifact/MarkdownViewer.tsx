@@ -6,6 +6,13 @@ import remarkGfm from 'remark-gfm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
+import dynamic from 'next/dynamic';
+
+const Mermaid = dynamic(() => import('./Mermaid').then(mod => mod.Mermaid), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-64 my-4" />
+});
+
 export interface MarkdownViewerProps {
   /** URL to fetch markdown content from */
   src: string;
@@ -92,7 +99,27 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
         className
       )}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({ node, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            const lang = match ? match[1] : '';
+
+            if (lang === 'mermaid') {
+              return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+            }
+
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          }
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }
