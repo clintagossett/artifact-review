@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { DashboardHeader } from "@/components/artifacts/DashboardHeader";
 import { ArtifactList } from "@/components/artifacts/ArtifactList";
@@ -17,9 +17,11 @@ import type { Id } from "../../../convex/_generated/dataModel";
  */
 export default function DashboardPage() {
   const router = useRouter();
-  const currentUser = useQuery(api.users.getCurrentUser);
-  const artifacts = useQuery(api.artifacts.list);
-  const sharedWithMe = useQuery(api.access.listShared);
+  const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
+
+  const currentUser = useQuery(api.users.getCurrentUser, !isAuthenticated ? "skip" : undefined);
+  const artifacts = useQuery(api.artifacts.list, !isAuthenticated ? "skip" : {});
+  const sharedWithMe = useQuery(api.access.listShared, !isAuthenticated ? "skip" : {});
   const [isNewArtifactOpen, setIsNewArtifactOpen] = useState(false);
   const { uploadFile } = useArtifactUpload();
 

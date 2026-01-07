@@ -6,7 +6,7 @@
 
 ## TL;DR
 
-Use Resend for all transactional email. Mailpit for local development. No inbound email for MVP.
+Use Resend for all transactional email via `@convex-dev/resend` component. Use component `testMode` for safe development awareness. No inbound email for MVP.
 
 ## Quick Reference
 
@@ -15,7 +15,7 @@ Use Resend for all transactional email. Mailpit for local development. No inboun
 | **Provider** | Resend |
 | **Free tier** | 3,000 emails/month |
 | **Paid tier** | $20/month for 50K emails |
-| **Local dev** | Mailpit (Docker) |
+| **Local dev** | Resend Component (Test Mode) |
 | **Inbound email** | Not configured (MVP) |
 
 ## Decision Drivers (Priority Order)
@@ -68,46 +68,43 @@ The platform needs email for multiple use cases:
 | AWS SES | Pay-per-use | Manual setup | Poor DX | Too low-level |
 | Mailgun | 5K/month (3 months) | Manual setup | Good | Free tier expires |
 
-### Local Development: Mailpit
+### Local Development: Resend Component (Test Mode)
 
-**Use Mailpit for local email capture.**
+**Use the `@convex-dev/resend` component's built-in test mode.**
 
-```bash
-docker run -d -p 1025:1025 -p 8025:8025 axllent/mailpit
-```
+The component defaults to `testMode: true`, which restricts email delivery to the "delivered@resend.dev" address only. This ensures no emails are sent to real users during development while still verifying the Convex -> Resend integration.
 
-| Port | Purpose |
-|------|---------|
-| 1025 | SMTP server (send emails here) |
-| 8025 | Web UI (view captured emails) |
+**Configuration:**
+Set `RESEND_TEST_MODE` environment variable to control this behavior.
+
+- `RESEND_TEST_MODE=true` (Default): Safe mode. Emails are accepted but only delivered to test inboxes.
+- `RESEND_TEST_MODE=false`: Live mode. Emails are delivered to actual recipients.
 
 **Benefits:**
-- No real emails sent during development
-- Web UI to inspect magic links, notifications
-- No API keys or quotas
-- Works offline
+- **Zero infrastructure**: No need to run local Docker containers (Mailpit).
+- **Production parity**: Local dev uses the exact same code path and component as production.
+- **Verification**: Emails are logged in the Convex dashboard and Resend `emails` table.
 
 ### Environment Configuration
 
-| Environment | Provider | Mode | Delivery |
-|-------------|----------|------|----------|
-| **Local** | Mailpit | Capture | localhost:8025 UI |
-| **Hosted Dev** | Resend | Test mode | Logged, not delivered |
-| **Staging** | Resend | Live | Restricted recipients only |
-| **Production** | Resend | Live | All users |
+| Environment | Mode | Configuration | Behavior |
+|-------------|------|---------------|----------|
+| **Local** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
+| **Hosted Dev** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
+| **Staging** | Live | `RESEND_TEST_MODE=false` | Real delivery |
+| **Production** | Live | `RESEND_TEST_MODE=false` | Real delivery |
 
 ### Resend Configuration
 
 ```bash
-# Hosted Dev
-npx convex env set RESEND_API_KEY=re_test_xxx --project dev
+# Hosted Dev / Local
+npx convex env set RESEND_TEST_MODE=true --project dev
 
-# Staging (restricted recipients)
-npx convex env set RESEND_API_KEY=re_staging_xxx --project staging
-npx convex env set RESEND_ALLOWED_RECIPIENTS=test@example.com,qa@example.com --project staging
+# Staging
+npx convex env set RESEND_TEST_MODE=false --project staging
 
 # Production
-npx convex env set RESEND_API_KEY=re_prod_xxx --project prod
+npx convex env set RESEND_TEST_MODE=false --project prod
 ```
 
 ### Domain Setup

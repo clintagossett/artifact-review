@@ -12,10 +12,12 @@ const MagicLinkEmail = Email({
   authorize: undefined,
   async sendVerificationRequest({ identifier, url }) {
     const { Resend } = await import("resend");
-    const resend = new Resend(process.env.AUTH_RESEND_KEY);
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    // Note: We use the Resend SDK directly here because the Resend component
+    // requires a Convex context (ctx) which is not available in this callback.
 
     await resend.emails.send({
-      from: "Artifact Review <hello@artifactreview-early.xyz>",
+      from: process.env.AUTH_EMAIL_FROM || "Artifact Review <hello@artifactreview-early.xyz>",
       to: identifier,
       subject: "Sign in to Artifact Review",
       html: `
