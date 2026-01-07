@@ -347,6 +347,54 @@ export function DocumentViewer({
 
   const artifactUrl = getArtifactUrl(currentPage);
 
+  // Handle internal markdown links
+  const handleLinkClick = (href: string) => {
+    // Only handle relative links
+    if (!zipFiles || !currentVersion || currentVersion.fileType !== 'zip') return;
+
+    try {
+      // Basic path resolution
+      // Get directory of current page
+      const currentDir = currentPage.includes('/') ? currentPage.substring(0, currentPage.lastIndexOf('/')) : '';
+
+      let targetPath = '';
+
+      if (href.startsWith('/')) {
+        targetPath = href.substring(1); // Absolute path within zip
+      } else {
+        // Resolve relative path
+        const parts = (currentDir ? currentDir.split('/') : []);
+        const segments = href.split('/');
+
+        for (const segment of segments) {
+          if (segment === '.') continue;
+          if (segment === '..') {
+            parts.pop();
+          } else {
+            parts.push(segment);
+          }
+        }
+        targetPath = parts.join('/');
+      }
+
+      // Check if file exists in our zip file list
+      // Try exact match, or case-insensitive match
+      const fileExists = zipFiles.find(f =>
+        f.path === targetPath ||
+        f.path.toLowerCase() === targetPath.toLowerCase()
+      );
+
+      if (fileExists) {
+        setCurrentPage(fileExists.path);
+      } else {
+        console.warn(`File not found in ZIP: ${targetPath}`);
+        // Optionally show a toast or alert
+      }
+    } catch (e) {
+      console.error("Error resolving link:", e);
+    }
+  };
+
   // Store location context for each comment
   const [commentLocations, setCommentLocations] = useState<Record<string, Comment['location']>>({});
 
@@ -1181,7 +1229,11 @@ export function DocumentViewer({
               {/* Conditional rendering based on file type */}
               {currentVersion?.fileType === 'markdown' ||
                 (currentVersion?.fileType === 'zip' && (currentPage.toLowerCase().endsWith('.md') || currentPage.toLowerCase().endsWith('.markdown'))) ? (
-                <MarkdownViewer src={artifactUrl} className="min-h-[1000px]" />
+                <MarkdownViewer
+                  src={artifactUrl}
+                  className="min-h-[1000px]"
+                  onLinkClick={handleLinkClick}
+                />
               ) : (
                 <iframe
                   ref={iframeRef}

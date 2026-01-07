@@ -20,9 +20,11 @@ export interface MarkdownViewerProps {
   isLoading?: boolean;
   /** Optional CSS class for container */
   className?: string;
+  /** Callback for intercepting link clicks */
+  onLinkClick?: (href: string) => void;
 }
 
-export function MarkdownViewer({ src, isLoading = false, className }: MarkdownViewerProps) {
+export function MarkdownViewer({ src, isLoading = false, className, onLinkClick }: MarkdownViewerProps) {
   const [content, setContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(!isLoading);
@@ -102,6 +104,30 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          a({ node, className, children, href, ...props }) {
+            // Handle relative links
+            if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:') && onLinkClick) {
+              return (
+                <a
+                  href={href}
+                  className={className}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onLinkClick(href);
+                  }}
+                  {...props}
+                >
+                  {children}
+                </a>
+              );
+            }
+
+            return (
+              <a href={href} className={className} target="_blank" rel="noopener noreferrer" {...props}>
+                {children}
+              </a>
+            );
+          },
           code({ node, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const lang = match ? match[1] : '';
