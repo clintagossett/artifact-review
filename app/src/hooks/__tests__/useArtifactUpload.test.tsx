@@ -177,6 +177,12 @@ describe("useArtifactUpload", () => {
 
   describe("ZIP file upload", () => {
     it("should upload ZIP file with entry point", async () => {
+      // Mock fetch for upload
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ storageId: "storage123" }),
+      });
+
       const mockArtifactId = "artifact123" as unknown;
       const mockVersionId = "version123" as unknown;
 
@@ -185,6 +191,7 @@ describe("useArtifactUpload", () => {
         versionId: mockVersionId,
         number: 1,
         shareToken: "token",
+        uploadUrl: "https://example.com/upload",
       });
 
       const { result } = renderHook(() => useArtifactUpload(), {
