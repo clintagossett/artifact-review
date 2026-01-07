@@ -22,6 +22,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner User",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -58,6 +60,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -66,6 +70,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "reviewer@example.com",
           name: "Reviewer",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -83,7 +89,8 @@ describe("Read Permission Helpers", () => {
 
       // Invite reviewer (Path A: existing user, no userInvite needed)
       await t.run(async (ctx) => {
-        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+        return await ctx.db.insert("artifactAccess", {
+          createdAt: Date.now(),
           artifactId,
           userId: reviewerId,
           createdBy: ownerId,
@@ -113,6 +120,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -148,6 +157,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -199,6 +210,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -230,6 +243,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -261,6 +276,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -295,6 +312,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -339,6 +358,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -386,6 +407,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -420,6 +443,8 @@ describe("Read Permission Helpers", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 

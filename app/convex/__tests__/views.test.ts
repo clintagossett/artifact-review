@@ -9,6 +9,8 @@ async function createTestUser(t: any, email: string) {
         return await ctx.db.insert("users", {
             email,
             name: email.split("@")[0],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
         });
     });
 }
@@ -43,7 +45,8 @@ async function createTestVersion(t: any, artifactId: Id<"artifacts">, userId: Id
 
 async function createAccessRecord(t: any, artifactId: Id<"artifacts">, userId: Id<"users">, ownerId: Id<"users">) {
     return await t.run(async (ctx: any) => {
-        return await ctx.db.insert("artifactAccess", { createdAt: Date.now(),
+        return await ctx.db.insert("artifactAccess", {
+            createdAt: Date.now(),
             artifactId,
             userId,
             createdBy: ownerId,

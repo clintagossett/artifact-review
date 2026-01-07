@@ -125,7 +125,6 @@ export const createInternal = internalMutation({
       shareToken,
       isDeleted: false,
       createdAt: now,
-      updatedAt: now,
     });
 
     // Create version record (unified storage)

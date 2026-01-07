@@ -120,7 +120,7 @@ artifacts: defineTable({
 |-------|------|---------|-----------|
 | `createdAt` | `v.number()` | Creation timestamp (ms) | Yes for all |
 | `createdBy` | `v.optional(v.id("users"))` | Who triggered record creation | For audit trail |
-| `updatedAt` | `v.number()` | Last modification timestamp | When tracking edits |
+| `updatedAt` | `v.optional(v.number())` | Last modification timestamp (undefined at creation) | When tracking edits |
 | `updatedBy` | `v.optional(v.id("users"))` | Who last modified | Rare - usually overkill |
 | `isDeleted` | `v.boolean()` | Soft delete flag (for indexing) | Yes for soft-deletable |
 | `deletedAt` | `v.optional(v.number())` | Deletion timestamp | Yes for soft-deletable |
@@ -137,7 +137,7 @@ artifacts: defineTable({
   createdBy: v.optional(v.id("users")),  // Optional if inferred from context
 
   // Update audit (if tracking updates)
-  updatedAt: v.number(),
+  updatedAt: v.optional(v.number()),
 
   // Soft delete fields (ADR 0011)
   isDeleted: v.boolean(),

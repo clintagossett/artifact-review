@@ -35,6 +35,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -78,6 +80,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -85,6 +89,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
         return await ctx.db.insert("users", {
           email: "other@example.com",
           name: "Other User",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 
@@ -129,6 +135,8 @@ describe("Unified Content Retrieval - Permission Logic", () => {
         return await ctx.db.insert("users", {
           email: "owner@example.com",
           name: "Owner",
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
       });
 

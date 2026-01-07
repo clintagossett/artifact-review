@@ -38,6 +38,7 @@ export const record = mutation({
                 versionId: args.versionId,
                 userId: userId,
                 viewedAt: now,
+                createdAt: now,
             });
 
             // TIER 2: Aggregate - Upsert into artifactVersionStats
@@ -54,6 +55,7 @@ export const record = mutation({
                     firstViewedAt: now,
                     lastViewedAt: now,
                     viewCount: 1,
+                    createdAt: now,
                 });
             }
         } else if (existingStats) {

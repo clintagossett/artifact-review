@@ -79,7 +79,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           image: args.profile.image,
           emailVerifiedAt: args.profile.emailVerified ? now : undefined,
           createdAt: now,
-          updatedAt: now,
         });
       }
 
