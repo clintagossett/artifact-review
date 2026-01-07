@@ -35,7 +35,7 @@ describe("Magic Link Authentication Schema", () => {
     const user = await t.run(async (ctx) => {
       return await ctx.db
         .query("users")
-        .withIndex("email", (q) => q.eq("email", "test@example.com"))
+        .withIndex("email", (q) => q.eq("email", "verify@example.com"))
         .unique();
     });
 

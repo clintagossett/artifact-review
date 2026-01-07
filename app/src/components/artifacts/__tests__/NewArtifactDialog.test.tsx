@@ -55,7 +55,7 @@ describe("NewArtifactDialog", () => {
       />
     );
 
-    expect(screen.getByLabelText(/project name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/artifact name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
   });
 
@@ -77,7 +77,7 @@ describe("NewArtifactDialog", () => {
     await user.upload(fileInput, file);
 
     await waitFor(() => {
-      const titleInput = screen.getByLabelText(/project name/i) as HTMLInputElement;
+      const titleInput = screen.getByLabelText(/artifact name/i) as HTMLInputElement;
       expect(titleInput.value).toBe("My Awesome Project");
     });
   });
@@ -91,7 +91,7 @@ describe("NewArtifactDialog", () => {
       />
     );
 
-    const createButton = screen.getByRole("button", { name: /create project/i });
+    const createButton = screen.getByRole("button", { name: /create artifact/i });
     expect(createButton).toBeDisabled();
   });
 
@@ -111,10 +111,10 @@ describe("NewArtifactDialog", () => {
     await user.upload(fileInput, file);
 
     // Clear the auto-suggested title
-    const titleInput = screen.getByLabelText(/project name/i);
+    const titleInput = screen.getByLabelText(/artifact name/i);
     await user.clear(titleInput);
 
-    const createButton = screen.getByRole("button", { name: /create project/i });
+    const createButton = screen.getByRole("button", { name: /create artifact/i });
     expect(createButton).toBeDisabled();
   });
 
@@ -136,7 +136,7 @@ describe("NewArtifactDialog", () => {
     await user.upload(fileInput, file);
 
     // Edit title
-    const titleInput = screen.getByLabelText(/project name/i);
+    const titleInput = screen.getByLabelText(/artifact name/i);
     await user.clear(titleInput);
     await user.type(titleInput, "My Project");
 
@@ -145,7 +145,7 @@ describe("NewArtifactDialog", () => {
     await user.type(descInput, "My description");
 
     // Submit
-    const createButton = screen.getByRole("button", { name: /create project/i });
+    const createButton = screen.getByRole("button", { name: /create artifact/i });
     await user.click(createButton);
 
     await waitFor(() => {
