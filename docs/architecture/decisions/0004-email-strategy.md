@@ -90,15 +90,18 @@ Set `RESEND_TEST_MODE` environment variable to control this behavior.
 | Environment | Mode | Configuration | Behavior |
 |-------------|------|---------------|----------|
 | **Local** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
-| **Hosted Dev** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
+| **Hosted Dev** | Live | `RESEND_TEST_MODE=false` | Real delivery (Verified Domain) |
 | **Staging** | Live | `RESEND_TEST_MODE=false` | Real delivery |
 | **Production** | Live | `RESEND_TEST_MODE=false` | Real delivery |
 
 ### Resend Configuration
 
 ```bash
-# Hosted Dev / Local
+# Local
 npx convex env set RESEND_TEST_MODE=true --project dev
+
+# Hosted Dev
+npx convex env set RESEND_TEST_MODE=false --project dev
 
 # Staging
 npx convex env set RESEND_TEST_MODE=false --project staging
