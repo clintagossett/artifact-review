@@ -37,7 +37,7 @@ export function ArtifactActivityTab({ artifactId }: ArtifactActivityTabProps) {
         );
     }
 
-    const acceptedReviewers = reviewers.filter(r => r.status === 'accepted');
+    const acceptedReviewers = reviewers.filter(r => r.status !== 'pending');
 
     return (
         <div className="max-w-6xl space-y-8">
@@ -121,7 +121,7 @@ export function ArtifactActivityTab({ artifactId }: ArtifactActivityTabProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {reviewers?.filter(r => r.status === 'accepted').map((reviewer) => {
+                            {reviewers?.filter(r => r.status !== 'pending').map((reviewer) => {
                                 const reviewerId = reviewer.userId as Id<"users">;
 
                                 return (
@@ -166,7 +166,7 @@ export function ArtifactActivityTab({ artifactId }: ArtifactActivityTabProps) {
                                     </tr>
                                 );
                             })}
-                            {reviewers?.filter(r => r.status === 'accepted').length === 0 && (
+                            {reviewers?.filter(r => r.status !== 'pending').length === 0 && (
                                 <tr>
                                     <td colSpan={(versions?.length || 0) + 1} className="px-6 py-12 text-center">
                                         <Users className="w-8 h-8 text-gray-300 mx-auto mb-2 opacity-20" />
