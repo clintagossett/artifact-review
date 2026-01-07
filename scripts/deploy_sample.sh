@@ -3,7 +3,7 @@ set -e
 
 # File to upload
 cd app
-ZIP_FILE="../mixed-media-sample.zip"
+ZIP_FILE="../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip"
 FILE_SIZE=$(stat -f%z "$ZIP_FILE" 2>/dev/null || stat -c%s "$ZIP_FILE")
 
 echo "Uploading $ZIP_FILE (Size: $FILE_SIZE bytes)..."
