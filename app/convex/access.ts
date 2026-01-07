@@ -535,11 +535,14 @@ export const listShared = query({
       .collect();
 
     // Enrich with artifact data
-    const shared = await Promise.all(
+    const sharedWithNulls = await Promise.all(
       accessRecords.map(async (access) => {
         const artifact = await ctx.db.get(access.artifactId);
         if (!artifact) {
-          throw new Error("Artifact not found for access record");
+          // Artifact might have been deleted but access record remains
+          // In a real app we might want to clean this up, but for query safety
+          // we just skip it
+          return null;
         }
 
         return {
@@ -559,6 +562,8 @@ export const listShared = query({
         };
       })
     );
+
+    const shared = sharedWithNulls.filter((item) => item !== null);
 
     return shared;
   },
