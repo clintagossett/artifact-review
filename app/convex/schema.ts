@@ -117,12 +117,11 @@ const schema = defineSchema({
     updatedAt: v.optional(v.number()),
   })
     /**
-     * Lookup user by email address.
-     * Required by Convex Auth for email-based authentication.
-     * Used in auth callbacks for account linking.
-     * @example ctx.db.query("users").withIndex("by_email", q => q.eq("email", "user@example.com"))
+     * @important The index name MUST be "email" to work with Convex Auth.
+     * Do NOT rename to "by_email" even though it violates our naming convention.
+     * This is a hard requirement of the library.
      */
-    .index("by_email", ["email"]),
+    .index("email", ["email"]),
 
   // ============================================================================
   // ARTIFACTS TABLE

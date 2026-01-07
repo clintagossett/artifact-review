@@ -79,7 +79,7 @@ export const grant = mutation({
     // Check if email belongs to existing user
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+      .withIndex("email", (q) => q.eq("email", normalizedEmail))
       .first();
 
     let targetUserId: Id<"users"> | undefined = undefined;
@@ -509,7 +509,7 @@ export const listShared = query({
         description: v.optional(v.string()),
         shareToken: v.string(),
         createdAt: v.number(),
-        updatedAt: v.number(),
+        updatedAt: v.optional(v.number()),
       }),
       accessRecord: v.object({
         _id: v.id("artifactAccess"),
