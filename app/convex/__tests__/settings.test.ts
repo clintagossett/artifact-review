@@ -224,11 +224,13 @@ describe("settings.getGracePeriodStatus", () => {
     const t = convexTest(schema);
 
     // Create a user
+    const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
         createdAt: Date.now(),
       });
+    });
 
     const asUser = t.withIdentity({ subject: userId });
 
@@ -257,11 +259,13 @@ describe("settings.changePassword", () => {
   it("should reject password less than 8 characters", async () => {
     const t = convexTest(schema);
 
+    const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
         createdAt: Date.now(),
       });
+    });
 
     const asUser = t.withIdentity({ subject: userId });
 
@@ -276,11 +280,13 @@ describe("settings.changePassword", () => {
   it("should reject password without a number", async () => {
     const t = convexTest(schema);
 
+    const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
         createdAt: Date.now(),
       });
+    });
 
     const asUser = t.withIdentity({ subject: userId });
 
@@ -295,11 +301,13 @@ describe("settings.changePassword", () => {
   it("should reject password without a letter", async () => {
     const t = convexTest(schema);
 
+    const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
         createdAt: Date.now(),
       });
+    });
 
     const asUser = t.withIdentity({ subject: userId });
 
@@ -314,11 +322,13 @@ describe("settings.changePassword", () => {
   it("should require current password outside grace period", async () => {
     const t = convexTest(schema);
 
+    const userId = await t.run(async (ctx) => {
       return await ctx.db.insert("users", {
         email: "test@example.com",
         name: "Test User",
         createdAt: Date.now(),
       });
+    });
 
     const asUser = t.withIdentity({ subject: userId });
 
