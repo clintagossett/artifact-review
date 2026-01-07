@@ -263,6 +263,7 @@ export const getFilesByVersion = query({
       size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      createdAt: v.number(),
     })
   ),
   handler: async (ctx, args) => {

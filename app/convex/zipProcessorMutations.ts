@@ -7,33 +7,7 @@ import type { Id } from "./_generated/dataModel";
  * Store extracted file from ZIP archive
  * Uses action for storage.store() then calls mutation to create DB record
  */
-export const storeExtractedFile = internalAction({
-  args: {
-    versionId: v.id("artifactVersions"),
-    filePath: v.string(),
-    content: v.array(v.number()), // Uint8Array as number array
-    mimeType: v.string(),
-  },
-  returns: v.id("artifactFiles"),
-  handler: async (ctx, args): Promise<Id<"artifactFiles">> => {
-    // Convert number array back to Uint8Array and create Blob
-    const blob = new Blob([new Uint8Array(args.content)], { type: args.mimeType });
-
-    // Store in Convex storage (only available in actions)
-    const storageId = await ctx.storage.store(blob);
-
-    // Create artifactFile record via mutation
-    const fileId = await ctx.runMutation(internal.zipProcessorMutations.createArtifactFileRecord, {
-      versionId: args.versionId,
-      path: args.filePath,
-      storageId,
-      mimeType: args.mimeType,
-      size: args.content.length,
-    });
-
-    return fileId;
-  },
-});
+// storeExtractedFile action removed as it's replaced by direct storage call in zipProcessor.ts
 
 /**
  * Create artifactFile record in database (called from storeExtractedFile action)

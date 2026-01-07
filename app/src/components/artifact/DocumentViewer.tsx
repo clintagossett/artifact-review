@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ArrowLeft,
   Share2,
@@ -22,6 +22,7 @@ import {
   MapPin,
   Settings,
   Trash2,
+  FolderTree, // Added icon if needed
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +46,7 @@ import {
 import { CommentToolbar } from '@/components/comments/CommentToolbar';
 import { CommentCard } from '@/components/artifact/CommentCard';
 import { MarkdownViewer } from '@/components/artifact/MarkdownViewer';
+import { FileTree, FileNode } from '@/components/file-tree';
 import type {
   Comment,
   ToolMode,
@@ -149,6 +151,7 @@ export function DocumentViewer({
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isFileTreeOpen, setIsFileTreeOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
 
   // Load backend comments when they arrive
@@ -247,6 +250,79 @@ export function DocumentViewer({
 
   // Track the view once the version object is confirmed to exist
   useViewTracker(documentId as Id<"artifacts">, versionId, !!currentVersion);
+
+  // --- ZIP FILE SUPPORT START ---
+
+  // Fetch files if this version is a ZIP
+  const zipFiles = useQuery(api.artifacts.getFilesByVersion,
+    currentVersion?.fileType === "zip" ? { versionId: currentVersionId } : "skip"
+  );
+
+  // Convert flat files to tree structure
+  const fileTreeData = useMemo(() => {
+    if (!zipFiles || currentVersion?.fileType !== "zip") return [];
+
+    const root: FileNode[] = [];
+
+    // Sort files by path (folder first logic would be ideal, but simple alphabetical for now)
+    const sortedFiles = [...zipFiles].sort((a, b) => a.path.localeCompare(b.path));
+
+    sortedFiles.forEach(file => {
+      const parts = file.path.split('/');
+      const fileName = parts.pop()!;
+      const dirPath = parts.join('/');
+
+      const node: FileNode = {
+        id: file._id,
+        name: fileName,
+        type: "file",
+        content: "",
+      };
+
+      if (dirPath === "") {
+        root.push(node);
+      } else {
+        // Find or create parent folders
+        let currentLevel = root;
+        let currentPath = "";
+
+        parts.forEach((part) => {
+          currentPath = currentPath ? `${currentPath}/${part}` : part;
+          let folder = currentLevel.find(n => n.name === part && n.type === "folder");
+
+          if (!folder) {
+            folder = {
+              id: `folder-${currentPath}`,
+              name: part,
+              type: "folder",
+              children: []
+            };
+            currentLevel.push(folder);
+          }
+          currentLevel = folder.children!;
+        });
+
+        currentLevel.push(node);
+      }
+    });
+
+    return root;
+  }, [zipFiles, currentVersion?.fileType]);
+
+  const handleFileSelect = (node: FileNode) => {
+    const file = zipFiles?.find(f => f._id === node.id);
+    if (file) {
+      // Navigate to the file
+      // For DocumentViewer, navigation is handled by currentPage state and URL logic
+      setCurrentPage(file.path);
+
+      // Update browser history (optional but good for consistency)
+      // router.push(getArtifactUrl(file.path)); 
+      // Actually DocumentViewer uses internal state `currentPage` and `artifactUrl` computed derived from it.
+    }
+  };
+
+  // --- ZIP FILE SUPPORT END ---
 
   // Calculate latest version number for navigation
   const latestVersionNumber = Math.max(...versions.map((v) => v.number));
@@ -1050,11 +1126,61 @@ export function DocumentViewer({
 
         {/* Main Content Area */}
         <div className="flex-1 flex overflow-hidden">
+          {/* ZIP File Tree Sidebar (Left Side) */}
+          {currentVersion?.fileType === "zip" && fileTreeData.length > 0 && (
+            <div
+              className={`border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ease-in-out ${isFileTreeOpen ? 'w-64' : 'w-12 items-center'
+                }`}
+            >
+              <div className={`p-3 border-b border-gray-200 flex items-center ${isFileTreeOpen ? 'justify-between' : 'justify-center'} h-12`}>
+                {isFileTreeOpen ? (
+                  <>
+                    <div className="flex items-center gap-2 font-medium text-xs text-gray-500 uppercase tracking-wider">
+                      <FolderTree className="w-4 h-4" />
+                      Files
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(false)}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(true)}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+
+              {isFileTreeOpen ? (
+                <div className="flex-1 overflow-y-auto p-2">
+                  <FileTree
+                    data={fileTreeData}
+                    onSelectFile={handleFileSelect}
+                    selectedFileId={zipFiles?.find(f => f.path === currentPage)?._id || zipFiles?.find(f => f.path === currentPage.replace(/^\//, ''))?._id}
+                  />
+                </div>
+              ) : (
+                <div className="py-4 flex flex-col items-center gap-4">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <FolderTree className="w-5 h-5 text-gray-400" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Files</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Document Display */}
           <div className="flex-1 overflow-auto bg-gray-50 p-8">
             <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
               {/* Conditional rendering based on file type */}
-              {currentVersion?.fileType === 'markdown' ? (
+              {currentVersion?.fileType === 'markdown' ||
+                (currentVersion?.fileType === 'zip' && (currentPage.toLowerCase().endsWith('.md') || currentPage.toLowerCase().endsWith('.markdown'))) ? (
                 <MarkdownViewer src={artifactUrl} className="min-h-[1000px]" />
               ) : (
                 <iframe

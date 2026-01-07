@@ -38,7 +38,13 @@ export const processZipFile = internalAction({
 
       // VALIDATION PASS: Check constraints before extraction
       const fileEntries = Object.entries(zipContents.files).filter(
-        ([_, entry]) => !entry.dir
+        ([path, entry]) => {
+          if (entry.dir) return false;
+          // Ignore Mac system files
+          if (path.includes('__MACOSX')) return false;
+          if (path.endsWith('.DS_Store')) return false;
+          return true;
+        }
       );
 
       // DETECT COMMON ROOT PATH
@@ -119,23 +125,27 @@ export const processZipFile = internalAction({
 
         // Normalize path and strip common root folder
         const normalizedPath = stripRoot(relativePath);
+        const lowerPath = normalizedPath.toLowerCase();
 
-        if (
-          normalizedPath.toLowerCase().endsWith('.html') ||
-          normalizedPath.toLowerCase().endsWith('.htm')
-        ) {
+        if (lowerPath.endsWith('.html') || lowerPath.endsWith('.htm')) {
           htmlFiles.push(normalizedPath);
 
           // Priority 1: index.html in root
-          if (normalizedPath.toLowerCase() === 'index.html') {
+          if (lowerPath === 'index.html') {
             entryPoint = normalizedPath;
           }
           // Priority 2: index.htm in root
-          else if (!entryPoint && normalizedPath.toLowerCase() === 'index.htm') {
+          else if (!entryPoint && lowerPath === 'index.htm') {
             entryPoint = normalizedPath;
           }
           // Priority 3: index.html in subdirectory
-          else if (!entryPoint && normalizedPath.toLowerCase().endsWith('/index.html')) {
+          else if (!entryPoint && lowerPath.endsWith('/index.html')) {
+            entryPoint = normalizedPath;
+          }
+        }
+        // Support Markdown entry points if no HTML found yet
+        else if (lowerPath.endsWith('.md') || lowerPath.endsWith('.markdown') || lowerPath.endsWith('readme')) {
+          if (!entryPoint && (lowerPath === 'readme.md' || lowerPath === 'index.md' || lowerPath === 'readme')) {
             entryPoint = normalizedPath;
           }
         }
@@ -148,8 +158,27 @@ export const processZipFile = internalAction({
         entryPoint = htmlFiles[0];
       }
 
+      // Priority 5: First Markdown file (if no HTML)
       if (!entryPoint) {
-        throw new Error("No HTML file found in ZIP. At least one .html file is required.");
+        const mdFiles = fileEntries
+          .map(([path]) => stripRoot(path))
+          .filter(p => {
+            const lower = p.toLowerCase();
+            return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('readme');
+          })
+          .sort();
+
+        if (mdFiles.length > 0) {
+          entryPoint = mdFiles[0];
+        }
+      }
+
+      if (!entryPoint) {
+        // Collect a sample of files for the error message
+        const fileSample = filePaths.slice(0, 10).join(', ');
+        throw new Error(
+          `No HTML or Markdown file found in ZIP. At least one .html, .md, .markdown, or README file is required. Found files: ${fileSample}${filePaths.length > 10 ? '...' : ''}`
+        );
       }
 
       // EXTRACTION PASS: Extract and store all files
@@ -168,12 +197,17 @@ export const processZipFile = internalAction({
 
         const mimeType = getMimeType(normalizedPath);
 
-        // Store file using internal action
-        await ctx.runAction(internal.zipProcessorMutations.storeExtractedFile, {
+        // Store internally in the action context
+        const blob = new Blob([content], { type: mimeType });
+        const storageId = await ctx.storage.store(blob);
+
+        // Create the DB record using mutation
+        await ctx.runMutation(internal.zipProcessorMutations.createArtifactFileRecord, {
           versionId: args.versionId,
-          filePath: normalizedPath,
-          content: Array.from(new Uint8Array(content)),
+          path: normalizedPath,
+          storageId: storageId,
           mimeType,
+          size: content.byteLength,
         });
       }
 
