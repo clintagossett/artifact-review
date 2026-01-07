@@ -16,6 +16,8 @@
     "test:e2e:headed": "NODE_PATH=./node_modules playwright test --headed"
   },
   "dependencies": {
+    "@apache-annotator/dom": "^0.2.0",
+    "@apache-annotator/selector": "^0.2.0",
     "@convex-dev/auth": "^0.0.90",
     "@convex-dev/resend": "^0.2.3",
     "@hookform/resolvers": "^5.2.2",
@@ -63,7 +65,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "convex-test": "^0.0.41",
     "eslint": "^8",
-    "eslint-config-next": "14.2.35",
+    "eslint-config-next": "^16.1.1",
     "jsdom": "^27.3.0",
     "playwright": "^1.57.0",
     "postcss": "^8",
