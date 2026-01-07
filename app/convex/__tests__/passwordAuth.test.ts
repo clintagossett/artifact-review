@@ -18,7 +18,7 @@ describe("Password Authentication Schema", () => {
     const user = await t.run(async (ctx) => {
       return await ctx.db
         .query("users")
-        .withIndex("by_email", (q) => q.eq("email", "bob@local.app"))
+        .withIndex("email", (q) => q.eq("email", "bob@local.app"))
         .unique();
     });
 

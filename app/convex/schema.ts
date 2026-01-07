@@ -30,8 +30,11 @@ import { v } from "convex/values";
  * @see docs/architecture/decisions/0010-reviewer-invitation-account-linking.md
  * @see docs/architecture/decisions/0011-soft-delete-strategy.md
  */
+// Destructure users to avoid duplicate key in defineSchema, which confuses TypeScript
+const { users: _users, ...otherAuthTables } = authTables;
+
 const schema = defineSchema({
-  ...authTables,
+  ...otherAuthTables,
 
   // ============================================================================
   // USERS TABLE

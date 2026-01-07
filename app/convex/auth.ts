@@ -54,12 +54,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   callbacks: {
     async createOrUpdateUser(ctx, args) {
       // Check if user already exists (for account linking)
-      const existingUser = args.existingUserId
-        ? await ctx.db.get(args.existingUserId)
-        : await ctx.db
-          .query("users")
-          .withIndex("by_email", (q) => q.eq("email", args.profile.email))
+      let existingUser;
+      if (args.existingUserId) {
+        existingUser = await ctx.db.get(args.existingUserId);
+      } else {
+        existingUser = await (ctx.db.query("users") as any)
+          .withIndex("email", (q: any) => q.eq("email", args.profile.email))
           .first();
+      }
 
       // Create or update user
       let userId: Id<"users">;

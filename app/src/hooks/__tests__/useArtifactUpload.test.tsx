@@ -8,6 +8,7 @@ const mockMutation = vi.fn();
 
 vi.mock("convex/react", () => ({
   useMutation: () => mockMutation,
+  useAction: () => mockMutation,
 }));
 
 // Mock ConvexProvider wrapper

@@ -67,7 +67,7 @@ export const create = action({
     const path = args.originalFileName || getDefaultFilePath(args.fileType);
 
     // 5. Store content in Convex file storage (only available in actions)
-    const storageId = await ctx.storage.store(data);
+    const storageId = await ctx.storage.store(new Blob([data]));
 
     // 6. Call mutation to create artifact, version, and file records
     const result: {
@@ -134,7 +134,7 @@ export const createInternal = internalMutation({
       createdBy: args.userId,
       name: args.versionName,
       fileType: args.fileType,
-      entryPoint: args.filePath,
+      entryPoint: args.path,
       size: args.size,
       isDeleted: false,
       createdAt: now,
@@ -144,7 +144,7 @@ export const createInternal = internalMutation({
     // Create file record
     await ctx.db.insert("artifactFiles", {
       versionId,
-      path: args.filePath,
+      path: args.path,
       storageId: args.storageId,
       mimeType: args.mimeType,
       size: args.size,
@@ -180,7 +180,7 @@ export const get = query({
       deletedAt: v.optional(v.number()),
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -294,7 +294,7 @@ export const getByShareToken = query({
       deletedAt: v.optional(v.number()),
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -331,7 +331,7 @@ export const list = query({
       deletedAt: v.optional(v.number()),
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
     })
   ),
   handler: async (ctx, args) => {
@@ -391,7 +391,7 @@ export const addVersion = action({
       deletedAt?: number;
       deletedBy?: Id<"users">;
       createdAt: number;
-      updatedAt: number;
+      updatedAt?: number;
     } | null = await ctx.runQuery(internal.artifacts.getByIdInternal, {
       artifactId: args.artifactId,
     });
@@ -481,7 +481,7 @@ export const addVersionInternal = internalMutation({
       createdBy: args.userId,
       name: args.name,
       fileType: args.fileType,
-      entryPoint: args.path,
+      entryPoint: args.filePath,
       size: args.size,
       isDeleted: false,
       createdAt: now,
@@ -491,7 +491,7 @@ export const addVersionInternal = internalMutation({
     await ctx.db.insert("artifactFiles", {
       createdAt: Date.now(),
       versionId,
-      path: args.path,
+      path: args.filePath,
       storageId: args.storageId,
       mimeType: args.mimeType,
       size: args.size,
@@ -1026,7 +1026,7 @@ export const getByIdInternal = internalQuery({
       deletedAt: v.optional(v.number()),
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -1054,7 +1054,7 @@ export const getByShareTokenInternal = internalQuery({
       deletedAt: v.optional(v.number()),
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
     }),
     v.null()
   ),
@@ -1223,7 +1223,7 @@ export const getDetailsForSettings = query({
       name: v.string(),
       description: v.optional(v.string()),
       createdAt: v.number(),
-      updatedAt: v.number(),
+      updatedAt: v.optional(v.number()),
       creatorEmail: v.optional(v.string()),
       versionCount: v.number(),
       totalFileSize: v.number(),
