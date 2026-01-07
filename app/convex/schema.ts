@@ -112,8 +112,9 @@ const schema = defineSchema({
      * Timestamp of last modification.
      * Unix timestamp in milliseconds.
      * Updated when profile fields (like name) are changed.
+     * Optional - undefined until first update.
      */
-    updatedAt: v.number(),
+    updatedAt: v.optional(v.number()),
   })
     /**
      * Lookup user by email address.
@@ -207,8 +208,9 @@ const schema = defineSchema({
      * Timestamp of last modification.
      * Unix timestamp in milliseconds.
      * Updated when new versions are added.
+     * Optional - undefined until first update (initial creation doesn't set it).
      */
-    updatedAt: v.number(),
+    updatedAt: v.optional(v.number()),
 
     /**
      * User who soft deleted the artifact.
@@ -548,25 +550,17 @@ const schema = defineSchema({
     content: v.string(),
 
     /**
-     * Resolution status.
-     * Can be toggled by owner or reviewer.
-     * Defaults to false on creation.
+     * Timestamp when resolution status was last changed.
+     * Unix timestamp in milliseconds.
+     * Undefined until first resolved.
      */
-    resolved: v.boolean(),
+    resolvedUpdatedAt: v.optional(v.number()),
 
     /**
      * User who last changed resolution status.
-     * Set on first toggle, updated on subsequent toggles.
-     * Never cleared once set.
+     * Reference to user account.
      */
-    resolvedBy: v.optional(v.id("users")),
-
-    /**
-     * Timestamp when resolution status last changed.
-     * Unix timestamp in milliseconds.
-     * Never cleared once set.
-     */
-    resolvedAt: v.optional(v.number()),
+    resolvedUpdatedBy: v.optional(v.id("users")),
 
     /**
      * Self-describing JSON target metadata.
