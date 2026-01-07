@@ -30,5 +30,4 @@ export type { ArtifactListProps } from "./ArtifactList";
 export { EmptyState } from "./EmptyState";
 export type { EmptyStateProps } from "./EmptyState";
 
-export { ShareModal } from "./ShareModal";
-export type { ShareModalProps } from "./ShareModal";
+

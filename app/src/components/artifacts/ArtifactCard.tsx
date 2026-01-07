@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { FolderOpen, FileText, Users, Clock } from "lucide-react";
-import type { Id } from "@/../../convex/_generated/dataModel";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 export interface ArtifactCardProps {
   artifact: {
@@ -56,8 +56,8 @@ export function ArtifactCard({
   // Mock users for avatar display (future: real users from backend)
   const mockUsers = memberCount
     ? Array.from({ length: memberCount }, (_, i) => ({
-        name: `User ${i + 1}`,
-      }))
+      name: `User ${i + 1}`,
+    }))
     : [];
 
   return (
