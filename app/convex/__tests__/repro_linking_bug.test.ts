@@ -9,7 +9,11 @@ test("reproduce bug: invited user id not linked after signup", async () => {
 
     // 1. Setup: Create Owner and Invitee (Invitee not signed up yet)
     const ownerId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", { name: "Owner", email: "owner@example.com" });
+        return await ctx.db.insert("users", {
+            name: "Owner",
+            email: "owner@example.com",
+            createdAt: Date.now(),
+        });
     });
 
     const inviteeEmail = `e2e-${Date.now()}@tolauante.resend.app`;
@@ -49,7 +53,11 @@ test("reproduce bug: invited user id not linked after signup", async () => {
     // 5. Simulate Invitee Signup
     // This is where "linkInvitesToUserInternal" is called by the auth adapter (or manually in our test)
     const inviteeUserId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", { name: "Invitee", email: inviteeEmail });
+        return await ctx.db.insert("users", {
+            name: "Invitee",
+            email: inviteeEmail,
+            createdAt: Date.now(),
+        });
     });
 
     // Call the internal mutation that SHOULD link the records
