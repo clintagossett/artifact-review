@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Unit tests for comment enforcement on latest version only
  * Task 00021 - Subtask 01: Version Management
@@ -7,8 +8,8 @@
 
 import { convexTest } from "convex-test";
 import { describe, it, expect, beforeEach } from "vitest";
-import { api } from "../_generated/api";
-import schema from "../schema";
+import { api } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
 import { Id } from "../_generated/dataModel";
 
 describe("comment latest version enforcement", () => {
@@ -24,7 +25,7 @@ describe("comment latest version enforcement", () => {
 
     // Create a test user
     userId = await t.run(async (ctx) => {
-      return await ctx.db.insert("users", {
+      return await ctx.db.insert("users", { createdAt: Date.now(),
         email: "test@example.com",
         emailVerifiedAt: Date.now(),
       });

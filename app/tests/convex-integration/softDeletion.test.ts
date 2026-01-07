@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import { api } from "../../convex/_generated/api";
@@ -11,6 +12,7 @@ describe("soft deletion", () => {
       // Create a user
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
           createdAt: Date.now(),
@@ -72,6 +74,7 @@ describe("soft deletion", () => {
       // Create a user
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
           createdAt: Date.now(),
@@ -101,9 +104,7 @@ describe("soft deletion", () => {
       });
 
       // Verify v2 is deleted
-      const v2 = await asUser.query(api.artifacts.getVersion, {
-        versionId: v2Result.versionId,
-      });
+      const v2 = await asUser.run(async (ctx) => await ctx.db.get(v2Result.versionId));
       expect(v2?.isDeleted).toBe(true);
 
       // Verify v1 is still active
@@ -125,6 +126,7 @@ describe("soft deletion", () => {
       // Create a user
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
           createdAt: Date.now(),

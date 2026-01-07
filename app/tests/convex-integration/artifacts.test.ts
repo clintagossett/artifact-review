@@ -1,7 +1,8 @@
+// @vitest-environment node
 import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
-import { api } from "../_generated/api";
-import schema from "../schema";
+import { api } from "../../convex/_generated/api";
+import schema from "../../convex/schema";
 
 console.log("DEBUG: Blob type:", typeof Blob);
 if (typeof Blob !== 'undefined') {
@@ -16,6 +17,7 @@ describe("artifacts", () => {
       // Create a user first
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
@@ -71,6 +73,7 @@ describe("artifacts", () => {
       // Create a user first
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
@@ -117,6 +120,7 @@ describe("artifacts", () => {
       // Create two users
       const user1Id = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "user1@example.com",
           name: "User 1",
         });
@@ -124,6 +128,7 @@ describe("artifacts", () => {
 
       const user2Id = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "user2@example.com",
           name: "User 2",
         });
@@ -171,6 +176,7 @@ describe("artifacts", () => {
 
       const userId = await t.run(async (ctx) => {
         return await ctx.db.insert("users", {
+          createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });

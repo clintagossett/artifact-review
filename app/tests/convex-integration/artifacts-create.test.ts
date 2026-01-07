@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Tests for artifacts.create action + createInternal mutation (Step 4)
  * Testing the unified storage pattern for single-file artifacts
@@ -26,7 +27,7 @@ import {
   getDefaultFilePath,
   getMimeType,
   MAX_SINGLE_FILE_SIZE,
-} from "../lib/fileTypes";
+} from "../../convex/lib/fileTypes";
 
 describe("artifacts.create - Unified Storage", () => {
   describe("file type validation (used by action)", () => {

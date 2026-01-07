@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Tests for artifact viewing queries (Task 00011 Subtask 02)
  *
@@ -7,14 +8,14 @@
 
 import { convexTest } from "convex-test";
 import { describe, it, expect, beforeEach } from "vitest";
-import { api, internal } from "../_generated/api";
+import { api, internal } from "../../convex/_generated/api";
 import { Id } from "../_generated/dataModel";
-import schema from "../schema";
+import schema from "../../convex/schema";
 
 // Helper to create a test user
 async function createTestUser(t: ReturnType<typeof convexTest>) {
   return await t.run(async (ctx) => {
-    return await ctx.db.insert("users", {
+    return await ctx.db.insert("users", { createdAt: Date.now(),
       email: "test@example.com",
       name: "Test User",
     });
@@ -28,7 +29,7 @@ describe("Artifact Viewing Queries", () => {
 
       // Create a user first
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        return await ctx.db.insert("users", { createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });

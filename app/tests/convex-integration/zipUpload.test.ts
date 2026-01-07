@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { convexTest } from "convex-test";
 import { describe, it, expect, vi } from "vitest";
 import { api, internal } from "../../convex/_generated/api";
@@ -10,7 +11,7 @@ describe("zipUpload", () => {
 
       // Create a user first
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        return await ctx.db.insert("users", { createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
@@ -64,7 +65,7 @@ describe("zipUpload", () => {
       const t = convexTest(schema);
 
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        return await ctx.db.insert("users", { createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
@@ -105,7 +106,7 @@ describe("zipUpload", () => {
       const t = convexTest(schema);
 
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        return await ctx.db.insert("users", { createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });

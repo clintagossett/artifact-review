@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Backend Integration Tests: Multi-Level ZIP Directory Nesting
  * Task 00019 - Multi-level ZIP root path stripping
@@ -25,7 +26,7 @@ import type { Id } from "../../convex/_generated/dataModel";
 import path from "path";
 import fs from "fs/promises";
 import JSZip from "jszip";
-import { getMimeType } from "../lib/mimeTypes";
+import { getMimeType } from "../../convex/lib/mimeTypes";
 
 // Sample ZIP file paths - charting-with-parents variants
 const SAMPLES_DIR = path.join(__dirname, "../../../samples");
@@ -168,7 +169,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const { artifactId, versionId } = await t
@@ -234,7 +235,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const { versionId } = await t

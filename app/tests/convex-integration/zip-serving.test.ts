@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Phase 2 Tests: ZIP Artifact Serving
  * Task 00019 - Multi-file ZIP HTML Projects
@@ -17,7 +18,7 @@ describe("ZIP Serving - File Retrieval", () => {
 
     // Setup: Create version with files
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const artifactId = await t.run(async (ctx) =>
@@ -72,7 +73,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const artifactId = await t.run(async (ctx) =>
@@ -112,7 +113,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const artifactId = await t.run(async (ctx) =>
@@ -164,7 +165,7 @@ describe("ZIP Serving - File Retrieval", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const artifactId = await t.run(async (ctx) =>
@@ -215,7 +216,7 @@ describe("ZIP Serving - File Retrieval", () => {
 
 describe("ZIP Serving - MIME Type Verification", () => {
   test("getMimeType returns correct types for web assets", async () => {
-    const { getMimeType } = await import("../lib/mimeTypes");
+    const { getMimeType } = await import("../../convex/lib/mimeTypes");
 
     // HTML
     expect(getMimeType("index.html")).toBe("text/html");
@@ -258,7 +259,7 @@ describe("ZIP Serving - MIME Type Verification", () => {
   });
 
   test("getMimeType handles uppercase extensions", async () => {
-    const { getMimeType } = await import("../lib/mimeTypes");
+    const { getMimeType } = await import("../../convex/lib/mimeTypes");
 
     expect(getMimeType("INDEX.HTML")).toBe("text/html");
     expect(getMimeType("STYLES.CSS")).toBe("text/css");
@@ -267,7 +268,7 @@ describe("ZIP Serving - MIME Type Verification", () => {
   });
 
   test("getMimeType handles paths with directories", async () => {
-    const { getMimeType } = await import("../lib/mimeTypes");
+    const { getMimeType } = await import("../../convex/lib/mimeTypes");
 
     expect(getMimeType("assets/styles/main.css")).toBe("text/css");
     expect(getMimeType("scripts/vendor/chart.js")).toBe("application/javascript");
@@ -280,7 +281,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const artifactId = await t.run(async (ctx) =>
@@ -321,7 +322,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     await t.run(async (ctx) =>
@@ -348,7 +349,7 @@ describe("ZIP Serving - Version and Entry Point", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     await t.run(async (ctx) =>

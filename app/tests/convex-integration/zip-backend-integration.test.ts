@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Backend Integration Tests: Real ZIP File Processing
  * Task 00019 - Phase 1
@@ -28,8 +29,8 @@ import {
   MAX_ZIP_FILE_COUNT,
   MAX_EXTRACTED_FILE_SIZE,
   isForbiddenExtension,
-} from "../lib/fileTypes";
-import { getMimeType } from "../lib/mimeTypes";
+} from "../../convex/lib/fileTypes";
+import { getMimeType } from "../../convex/lib/mimeTypes";
 
 // Sample ZIP file paths
 const SAMPLES_DIR = path.join(__dirname, "../../../samples");
@@ -152,7 +153,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
 
     // Create user and artifact
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const { artifactId, versionId } = await t
@@ -228,7 +229,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     // Create v1 first
@@ -299,7 +300,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     const { versionId } = await t
@@ -427,7 +428,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
     const t = convexTest(schema);
 
     const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { email: "test@example.com" })
+      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
     // Version 1
