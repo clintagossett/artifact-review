@@ -255,7 +255,7 @@ export function DocumentViewer({
 
   // Fetch files if this version is a ZIP
   const zipFiles = useQuery(api.artifacts.getFilesByVersion,
-    currentVersion?.fileType === "zip" ? { versionId: currentVersionId } : "skip"
+    currentVersion?.fileType === "zip" ? { versionId: currentVersionId as Id<"artifactVersions"> } : "skip"
   );
 
   // Convert flat files to tree structure
