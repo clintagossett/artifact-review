@@ -303,7 +303,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the artifact
-              <strong> "{name}"</strong> and all its versions, files, and comments.
+              <strong> {`"${name}"`}</strong> and all its versions, files, and comments.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

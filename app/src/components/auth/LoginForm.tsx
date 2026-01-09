@@ -113,7 +113,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             Click the link in your email to sign in. The link expires in 10 minutes.
           </p>
           <p className="text-sm text-blue-800">
-            Didn't receive it? Check your spam folder or request a new link.
+            {"Didn't receive it? Check your spam folder or request a new link."}
           </p>
         </div>
 
@@ -224,7 +224,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   Passwordless sign in
                 </p>
                 <p className="text-xs text-purple-700">
-                  We&apos;ll email you a secure link to sign in instantly—no password needed.
+                  {"We'll email you a secure link to sign in instantly—no password needed."}
                 </p>
               </div>
             </div>
@@ -258,7 +258,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
-            Don&apos;t have an account?{" "}
+            {"Don't have an account? "}
             <Link
               href="/register"
               className="text-blue-600 hover:text-blue-700 font-semibold transition"

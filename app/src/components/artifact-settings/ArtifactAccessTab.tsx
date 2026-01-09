@@ -316,7 +316,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
           <>
             <div className="px-6 pt-6 pb-3 border-t border-gray-200">
               <h4 className="font-medium text-gray-900">Pending Invitations ({pendingInvitations.length})</h4>
-              <p className="text-sm text-gray-600 mt-1">These people haven't accepted their invitation yet</p>
+              <p className="text-sm text-gray-600 mt-1">{"These people haven't accepted their invitation yet"}</p>
             </div>
             <div className="divide-y divide-gray-200">
               {pendingInvitations.map((reviewer) => {

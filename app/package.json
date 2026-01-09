@@ -67,7 +67,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "convex-test": "^0.0.41",
     "eslint": "^8",
-    "eslint-config-next": "^16.1.1",
+    "eslint-config-next": "14.2.23",
     "jsdom": "^27.3.0",
     "playwright": "^1.57.0",
     "postcss": "^8",

@@ -147,9 +147,8 @@ export function CommentCard({
 
   return (
     <div
-      className={`border rounded-lg p-4 transition-all cursor-pointer hover:shadow-lg ${
-        comment.resolved ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-300'
-      } ${hoveredComment === comment.id ? (isHidden ? 'ring-2 ring-amber-400 shadow-md' : 'ring-2 ring-purple-400 shadow-md') : ''}`}
+      className={`border rounded-lg p-4 transition-all cursor-pointer hover:shadow-lg ${comment.resolved ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-300'
+        } ${hoveredComment === comment.id ? (isHidden ? 'ring-2 ring-amber-400 shadow-md' : 'ring-2 ring-purple-400 shadow-md') : ''}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={onClick}
@@ -197,7 +196,7 @@ export function CommentCard({
 
           {comment.highlightedText && !comment.elementPreview && (
             <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono inline-block">
-              "{comment.highlightedText}"
+              {`"${comment.highlightedText}"`}
             </div>
           )}
 
@@ -308,7 +307,7 @@ export function CommentCard({
                             size="sm"
                             className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => {
-                              if (confirm('Are you sure you want to delete this reply?')) {
+                              if (confirm("Are you sure you want to delete this reply?")) {
                                 handleDeleteReply(reply.id);
                               }
                             }}
@@ -393,7 +392,7 @@ export function CommentCard({
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm('Are you sure you want to delete this comment?')) {
+                if (confirm("Are you sure you want to delete this comment?")) {
                   onDelete(comment.id);
                 }
               }}

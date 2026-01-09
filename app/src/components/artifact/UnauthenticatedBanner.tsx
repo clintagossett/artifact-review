@@ -22,7 +22,7 @@ export function UnauthenticatedBanner({ shareToken }: UnauthenticatedBannerProps
             Sign in to view and comment
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            You've been invited to review this artifact. Sign in to continue.
+            {"You've been invited to review this artifact. Sign in to continue."}
           </p>
           <Button
             onClick={handleSignIn}

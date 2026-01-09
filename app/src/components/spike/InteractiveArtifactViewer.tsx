@@ -264,7 +264,7 @@ export function InteractiveArtifactViewer({
                                 </div>
                                 {comment.target.selector.type === "TextQuoteSelector" && (
                                     <blockquote className={`text-xs text-gray-400 mb-2 pl-2 border-l-2 ${comment.style === 'strike' ? 'border-red-400 line-through' : 'border-gray-200'} italic truncate`}>
-                                        "{(comment.target.selector as any).exact}"
+                                        {`"${(comment.target.selector as any).exact}"`}
                                     </blockquote>
                                 )}
                                 {comment.content && <p className="text-sm text-gray-800">{comment.content}</p>}

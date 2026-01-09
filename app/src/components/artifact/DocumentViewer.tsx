@@ -1340,12 +1340,12 @@ export function DocumentViewer({
                     <span className="text-xs">Commenting on this element</span>
                   </div>
                   <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                    "{selectedElement.text.substring(0, 50)}{selectedElement.text.length > 50 ? '...' : ''}"
+                    {`"${selectedElement.text.substring(0, 50)}${selectedElement.text.length > 50 ? '...' : ''}"`}
                   </div>
                 </>
               ) : selectedText ? (
                 <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                  "{selectedText.substring(0, 50)}{selectedText.length > 50 ? '...' : ''}"
+                  {`"${selectedText.substring(0, 50)}${selectedText.length > 50 ? '...' : ''}"`}
                 </div>
               ) : null}
             </div>
