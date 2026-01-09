@@ -2,8 +2,7 @@ import { useEffect, useRef } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
-
-const HEARTBEAT_INTERVAL_MS = 20000; // 20 seconds
+import { TRACKING_CONFIG } from "../../convex/shared";
 
 /**
  * Hook to manage real-time presence for an artifact version.
@@ -36,7 +35,7 @@ export function usePresence(
                 artifactId: idsRef.current.artifactId,
                 versionId: idsRef.current.versionId
             }).catch(console.error);
-        }, HEARTBEAT_INTERVAL_MS);
+        }, TRACKING_CONFIG.PRESENCE_HEARTBEAT_MS);
 
         return () => clearInterval(interval);
     }, [updatePresence]); // Only re-run if mutation changes (stable)

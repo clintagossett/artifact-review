@@ -130,6 +130,12 @@
         "type": "file",
         "path": "architecture/invitation-states.md",
         "ext": ".md"
+      },
+      {
+        "name": "tracking-presence.md",
+        "type": "file",
+        "path": "architecture/tracking-presence.md",
+        "ext": ".md"
       }
     ]
   },
