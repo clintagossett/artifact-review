@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import type { Comment } from '@/components/comments/types';
-import { Id } from '@@/convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import { useCommentReplies } from '@/hooks/useCommentReplies';
 import { useReplyActions } from '@/hooks/useReplyActions';
 
