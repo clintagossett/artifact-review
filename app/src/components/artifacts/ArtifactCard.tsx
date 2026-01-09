@@ -10,7 +10,7 @@ export interface ArtifactCardProps {
     description?: string;
     shareToken: string;
     createdAt: number;
-    updatedAt: number;
+    updatedAt?: number;
   };
   versions: Array<{
     number: number;
@@ -126,7 +126,7 @@ export function ArtifactCard({
         {/* Timestamp */}
         <div className="flex items-center gap-1 text-xs text-gray-500">
           <Clock className="h-3 w-3" />
-          <span>{formatRelativeTime(artifact.updatedAt)}</span>
+          <span>{artifact.updatedAt ? formatRelativeTime(artifact.updatedAt) : "-"}</span>
         </div>
       </div>
     </article>

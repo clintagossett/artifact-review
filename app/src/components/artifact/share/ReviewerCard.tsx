@@ -7,7 +7,7 @@ interface ReviewerCardProps {
   reviewer: {
     _id: string;
     email: string;
-    status: "pending" | "accepted";
+    status: "pending" | "added" | "viewed";
     user?: {
       name?: string;
     } | null;
@@ -75,10 +75,12 @@ export function ReviewerCard({ reviewer, onRemove, isRemoving = false }: Reviewe
         className={
           reviewer.status === "pending"
             ? "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100"
-            : "bg-green-100 text-green-800 border-green-200 hover:bg-green-100"
+            : reviewer.status === "viewed"
+              ? "bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100"
+              : "bg-green-100 text-green-800 border-green-200 hover:bg-green-100"
         }
       >
-        {reviewer.status === "pending" ? "Pending" : "Accepted"}
+        {reviewer.status.charAt(0).toUpperCase() + reviewer.status.slice(1)}
       </Badge>
 
       {/* Remove Button */}

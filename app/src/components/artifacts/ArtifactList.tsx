@@ -12,7 +12,7 @@ export interface ArtifactListProps {
     description?: string;
     shareToken: string;
     createdAt: number;
-    updatedAt: number;
+    updatedAt?: number;
   }>;
   versionsMap: Record<
     string,
@@ -38,7 +38,7 @@ export function ArtifactList({
 }: ArtifactListProps) {
   // Sort by updatedAt, newest first
   const sortedArtifacts = [...artifacts].sort(
-    (a, b) => b.updatedAt - a.updatedAt
+    (a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt)
   );
 
   return (

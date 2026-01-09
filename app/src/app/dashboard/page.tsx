@@ -82,11 +82,7 @@ export default function DashboardPage() {
               <>
                 {artifacts.length > 0 && (
                   <ArtifactList
-                    artifacts={artifacts.map(a => ({
-                      ...a,
-                      // Ensure updatedAt matches ArtifactList expectation
-                      updatedAt: a.updatedAt ?? a._creationTime
-                    }))}
+                    artifacts={artifacts}
                     versionsMap={{}}
                     onArtifactClick={handleArtifactClick}
                     onNewArtifact={handleNewArtifact}
@@ -97,10 +93,7 @@ export default function DashboardPage() {
                   <ArtifactList
                     title="Shared with me"
                     showNewButton={false}
-                    artifacts={sharedWithMe.map(s => ({
-                      ...s.artifact,
-                      updatedAt: s.artifact.updatedAt ?? s.artifact.createdAt
-                    }))}
+                    artifacts={sharedWithMe.map(s => s.artifact)}
                     versionsMap={{}}
                     onArtifactClick={handleArtifactClick}
                   />

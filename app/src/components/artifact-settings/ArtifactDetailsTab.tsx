@@ -69,7 +69,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
   const metadata = details ? {
     created: formatDate(details.createdAt),
     createdBy: details.creatorEmail || 'Unknown',
-    lastModified: formatDate(details.updatedAt ?? details.createdAt),
+    lastModified: details.updatedAt ? formatDate(details.updatedAt) : "-",
     size: formatFileSize(details.totalFileSize),
     versions: details.versionCount,
   } : null;

@@ -27,13 +27,13 @@ export function AccountInfoSection() {
   const { toast } = useToast();
 
   // Sync name with user data when it loads or when exiting edit mode
-  if (user && !isEditing && name !== user.name) {
-    setName(user.name);
+  if (user && !isEditing && name !== (user.name ?? "")) {
+    setName(user.name ?? "");
   }
 
   const handleEdit = () => {
     if (user) {
-      setName(user.name);
+      setName(user.name ?? "");
       setIsEditing(true);
       setError("");
     }
@@ -41,7 +41,7 @@ export function AccountInfoSection() {
 
   const handleCancel = () => {
     if (user) {
-      setName(user.name);
+      setName(user.name ?? "");
     }
     setIsEditing(false);
     setError("");
