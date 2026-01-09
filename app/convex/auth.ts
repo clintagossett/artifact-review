@@ -11,16 +11,18 @@ const MagicLinkEmail = Email({
   // Magic link behavior: only token is needed, no email verification required on callback
   authorize: undefined,
   async sendVerificationRequest({ identifier, url }) {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    // Note: We use the Resend SDK directly here because the Resend component
-    // requires a Convex context (ctx) which is not available in this callback.
-
-    await resend.emails.send({
-      from: process.env.AUTH_EMAIL_FROM || "Artifact Review <hello@artifactreview-early.xyz>",
-      to: identifier,
-      subject: "Sign in to Artifact Review",
-      html: `
+    // Use internal bridge to send via Resend component (preserving context/tracking)
+    try {
+      const response = await fetch(`${process.env.CONVEX_SITE_URL}/send-auth-email`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: identifier,
+          subject: "Sign in to Artifact Review",
+          html: `
         <!DOCTYPE html>
         <html>
           <head>
@@ -47,7 +49,16 @@ const MagicLinkEmail = Email({
           </body>
         </html>
       `,
-    });
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send auth email via bridge: ${await response.text()}`);
+      }
+    } catch (error) {
+      console.error("Failed to send auth email:", error);
+      throw error;
+    }
   },
 });
 

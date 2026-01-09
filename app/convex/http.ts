@@ -21,6 +21,44 @@ http.route({
 });
 
 /**
+ * Internal bridge to send auth emails via the Resend component
+ * Required because Auth.js callbacks lack the 'ctx' needed for the component
+ * Route: POST /send-auth-email
+ */
+http.route({
+  path: "/send-auth-email",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const authHeader = req.headers.get("Authorization");
+    const expectedSecret = `Bearer ${process.env.INTERNAL_API_KEY}`;
+
+    if (authHeader !== expectedSecret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const { email, html, subject } = await req.json();
+
+    if (!email || !html || !subject) {
+      return new Response("Missing required fields", { status: 400 });
+    }
+
+    try {
+      await resend.sendEmail(ctx, {
+        to: email,
+        subject: subject,
+        html: html,
+        from: process.env.EMAIL_FROM_AUTH || "Artifact Review <hello@artifactreview-early.xyz>",
+      });
+
+      return new Response("Email sent", { status: 200 });
+    } catch (error) {
+      console.error("Failed to send auth email:", error);
+      return new Response("Internal Server Error", { status: 500 });
+    }
+  }),
+});
+
+/**
  * Serve artifact files via HTTP
  * Pattern: /artifact/*
  *

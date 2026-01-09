@@ -1012,7 +1012,7 @@ export const sendEmailInternal = internalAction({
     // Send email
     try {
       const fromEmail =
-        process.env.NOTIFICATION_FROM_EMAIL ||
+        process.env.EMAIL_FROM_NOTIFICATIONS ||
         "notifications@artifactreview-early.xyz";
 
       await resendClient.sendEmail(ctx, {
