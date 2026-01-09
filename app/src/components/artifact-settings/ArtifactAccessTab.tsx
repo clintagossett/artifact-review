@@ -27,7 +27,7 @@ import {
   Send,
   Users,
 } from 'lucide-react';
-import { Id } from '../../../../convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import { logger, LOG_TOPICS } from '@/lib/logger';
 
 interface ArtifactAccessTabProps {
