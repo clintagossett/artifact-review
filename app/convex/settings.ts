@@ -67,7 +67,7 @@ export const calculateGracePeriodForSession = internalQuery({
 
     return {
       isWithinGracePeriod,
-      expiresAt: isWithinGracePeriod ? expiresAt : null,
+      expiresAt,
       sessionCreatedAt,
     };
   },
