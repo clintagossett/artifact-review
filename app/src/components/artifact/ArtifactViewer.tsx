@@ -222,7 +222,7 @@ export function ArtifactViewer({
     <div className="flex flex-col h-screen">
       {/* Header */}
       <ArtifactHeader
-        artifact={artifact}
+        artifact={{ ...artifact, name: artifact.title }}
         version={version}
         versions={versions}
         isLatestVersion={isLatestVersion}
