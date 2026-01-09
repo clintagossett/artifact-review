@@ -15,6 +15,13 @@ This workflow uses the project's helper script to manage the local development e
    ./scripts/start-dev-servers.sh --restart
    ```
 
-3. Monitor the status of the servers:
+3. **Docs Viewer**: To start the documentation viewer (live-syncing with `docs/`), run:
+   ```bash
+   cd docs-viewer && npm run dev
+   ```
+   Open [http://localhost:5111](http://localhost:5111) to view.
+
+4. Monitor the status of the servers:
    - Next.js: `app/logs/nextjs.log`
    - Convex: `app/logs/convex.log`
+   - Docs Viewer: Check terminal output in `docs-viewer`

@@ -1,0 +1,371 @@
+[
+  {
+    "name": "architecture",
+    "type": "directory",
+    "path": "architecture",
+    "children": [
+      {
+        "name": "decisions",
+        "type": "directory",
+        "path": "architecture/decisions",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "architecture/decisions/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0001-authentication-provider.md",
+            "type": "file",
+            "path": "architecture/decisions/0001-authentication-provider.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0002-html-artifact-storage.md",
+            "type": "file",
+            "path": "architecture/decisions/0002-html-artifact-storage.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0003-deployment-hosting-strategy.md",
+            "type": "file",
+            "path": "architecture/decisions/0003-deployment-hosting-strategy.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0004-email-strategy.md",
+            "type": "file",
+            "path": "architecture/decisions/0004-email-strategy.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0005-domain-registrar.md",
+            "type": "file",
+            "path": "architecture/decisions/0005-domain-registrar.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0006-frontend-stack.md",
+            "type": "file",
+            "path": "architecture/decisions/0006-frontend-stack.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0007-logging-strategy.md",
+            "type": "file",
+            "path": "architecture/decisions/0007-logging-strategy.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0008-nextjs-app-router-for-routing.md",
+            "type": "file",
+            "path": "architecture/decisions/0008-nextjs-app-router-for-routing.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0009-artifact-file-storage-structure.md",
+            "type": "file",
+            "path": "architecture/decisions/0009-artifact-file-storage-structure.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0010-reviewer-invitation-account-linking.md",
+            "type": "file",
+            "path": "architecture/decisions/0010-reviewer-invitation-account-linking.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0011-soft-delete-strategy.md",
+            "type": "file",
+            "path": "architecture/decisions/0011-soft-delete-strategy.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0012-naming-conventions.md",
+            "type": "file",
+            "path": "architecture/decisions/0012-naming-conventions.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0013-comment-character-limits.md",
+            "type": "file",
+            "path": "architecture/decisions/0013-comment-character-limits.md",
+            "ext": ".md"
+          },
+          {
+            "name": "0014-pii-safe-relational-tracking.md",
+            "type": "file",
+            "path": "architecture/decisions/0014-pii-safe-relational-tracking.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "architecture/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "claude-integration-plan.md",
+        "type": "file",
+        "path": "architecture/claude-integration-plan.md",
+        "ext": ".md"
+      },
+      {
+        "name": "convex-rules.md",
+        "type": "file",
+        "path": "architecture/convex-rules.md",
+        "ext": ".md"
+      },
+      {
+        "name": "deployment-environments.md",
+        "type": "file",
+        "path": "architecture/deployment-environments.md",
+        "ext": ".md"
+      },
+      {
+        "name": "invitation-states.md",
+        "type": "file",
+        "path": "architecture/invitation-states.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "design",
+    "type": "directory",
+    "path": "design",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "design/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "dpa-outline.md",
+        "type": "file",
+        "path": "design/dpa-outline.md",
+        "ext": ".md"
+      },
+      {
+        "name": "landing-page-figma-prompt.md",
+        "type": "file",
+        "path": "design/landing-page-figma-prompt.md",
+        "ext": ".md"
+      },
+      {
+        "name": "notification-patterns.md",
+        "type": "file",
+        "path": "design/notification-patterns.md",
+        "ext": ".md"
+      },
+      {
+        "name": "pricing-and-packaging.md",
+        "type": "file",
+        "path": "design/pricing-and-packaging.md",
+        "ext": ".md"
+      },
+      {
+        "name": "privacy-policy-outline.md",
+        "type": "file",
+        "path": "design/privacy-policy-outline.md",
+        "ext": ".md"
+      },
+      {
+        "name": "terms-of-service-outline.md",
+        "type": "file",
+        "path": "design/terms-of-service-outline.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "development",
+    "type": "directory",
+    "path": "development",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "development/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "logging-guide.md",
+        "type": "file",
+        "path": "development/logging-guide.md",
+        "ext": ".md"
+      },
+      {
+        "name": "routing-patterns.md",
+        "type": "file",
+        "path": "development/routing-patterns.md",
+        "ext": ".md"
+      },
+      {
+        "name": "testing-guide.md",
+        "type": "file",
+        "path": "development/testing-guide.md",
+        "ext": ".md"
+      },
+      {
+        "name": "TESTING-QUICK-START.md",
+        "type": "file",
+        "path": "development/TESTING-QUICK-START.md",
+        "ext": ".md"
+      },
+      {
+        "name": "workflow.md",
+        "type": "file",
+        "path": "development/workflow.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "journeys",
+    "type": "directory",
+    "path": "journeys",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "journeys/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "account-upgrade.md",
+        "type": "file",
+        "path": "journeys/account-upgrade.md",
+        "ext": ".md"
+      },
+      {
+        "name": "plan-upgrade.md",
+        "type": "file",
+        "path": "journeys/plan-upgrade.md",
+        "ext": ".md"
+      },
+      {
+        "name": "reviewer-comments.md",
+        "type": "file",
+        "path": "journeys/reviewer-comments.md",
+        "ext": ".md"
+      },
+      {
+        "name": "signup.md",
+        "type": "file",
+        "path": "journeys/signup.md",
+        "ext": ".md"
+      },
+      {
+        "name": "upload-and-share.md",
+        "type": "file",
+        "path": "journeys/upload-and-share.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "market-intelligence",
+    "type": "directory",
+    "path": "market-intelligence",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "market-intelligence/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "competitors.md",
+        "type": "file",
+        "path": "market-intelligence/competitors.md",
+        "ext": ".md"
+      },
+      {
+        "name": "legal-frameworks.md",
+        "type": "file",
+        "path": "market-intelligence/legal-frameworks.md",
+        "ext": ".md"
+      },
+      {
+        "name": "market-overview.md",
+        "type": "file",
+        "path": "market-intelligence/market-overview.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "marketing",
+    "type": "directory",
+    "path": "marketing",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "marketing/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "positioning.md",
+        "type": "file",
+        "path": "marketing/positioning.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "personas",
+    "type": "directory",
+    "path": "personas",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "personas/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "document-creator.md",
+        "type": "file",
+        "path": "personas/document-creator.md",
+        "ext": ".md"
+      },
+      {
+        "name": "document-reviewer.md",
+        "type": "file",
+        "path": "personas/document-reviewer.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "setup",
+    "type": "directory",
+    "path": "setup",
+    "children": [
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "setup/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "account-checklist.md",
+        "type": "file",
+        "path": "setup/account-checklist.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "_index.md",
+    "type": "file",
+    "path": "_index.md",
+    "ext": ".md"
+  }
+]
