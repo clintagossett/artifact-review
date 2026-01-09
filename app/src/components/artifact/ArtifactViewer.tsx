@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArtifactHeader } from "./ArtifactHeader";
 import { ArtifactFrame } from "./ArtifactFrame";
