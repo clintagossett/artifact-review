@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
  */
 export function GracePeriodBanner() {
   const { isWithinGracePeriod, timeRemaining, isLoading } = useGracePeriod();
-  const sendReauthMagicLink = useMutation(api.settings.sendReauthMagicLink);
+  const sendReauthMagicLink = useAction(api.settings.sendReauthMagicLink);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
