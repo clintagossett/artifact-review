@@ -25,7 +25,7 @@ export function GracePeriodBanner() {
   const handleSendMagicLink = async () => {
     setIsSending(true);
     try {
-      await sendReauthMagicLink();
+      await sendReauthMagicLink({});
       toast({
         title: "Magic link sent",
         description: "Check your email for a link to re-authenticate.",
