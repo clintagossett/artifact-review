@@ -1,5 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server"; // Re-added
+import { Doc, Id } from "./_generated/dataModel";      // Re-added
 import { TRACKING_CONFIG } from "./shared";
 
 /**
