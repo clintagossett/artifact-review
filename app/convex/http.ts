@@ -2,10 +2,23 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
+import { resend } from "./lib/resend";
 
 const http = httpRouter();
 
 auth.addHttpRoutes(http);
+
+/**
+ * Resend Webhook to receive email status events
+ * Route: POST /resend-webhook
+ */
+http.route({
+  path: "/resend-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    return await resend.handleResendEventWebhook(ctx, req);
+  }),
+});
 
 /**
  * Serve artifact files via HTTP
