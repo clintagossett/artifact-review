@@ -99,7 +99,7 @@ export default function DashboardPage() {
                     showNewButton={false}
                     artifacts={sharedWithMe.map(s => ({
                       ...s.artifact,
-                      updatedAt: s.artifact.updatedAt ?? s.artifact._creationTime
+                      updatedAt: s.artifact.updatedAt ?? s.artifact.createdAt
                     }))}
                     versionsMap={{}}
                     onArtifactClick={handleArtifactClick}
