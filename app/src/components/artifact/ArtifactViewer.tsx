@@ -13,7 +13,7 @@ import { Id } from "../../../convex/_generated/dataModel";
 interface ArtifactViewerProps {
   artifact: {
     _id: Id<"artifacts">;
-    title: string;
+    name: string;
     shareToken: string;
   };
   version: {
@@ -190,17 +190,7 @@ export function ArtifactViewer({
     currentPage.toLowerCase().endsWith('.markdown') ||
     currentPage.toLowerCase().endsWith('readme');
 
-  // Fetch markdown content if needed
-  const [markdownContent, setMarkdownContent] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isMarkdown && contentUrl) {
-      fetch(contentUrl)
-        .then(res => res.text())
-        .then(text => setMarkdownContent(text))
-        .catch(err => console.error("Failed to fetch markdown:", err));
-    }
-  }, [contentUrl, isMarkdown]);
 
   const handleFileSelect = (node: FileNode) => {
     // Reconstruct full path? 
@@ -222,7 +212,7 @@ export function ArtifactViewer({
     <div className="flex flex-col h-screen">
       {/* Header */}
       <ArtifactHeader
-        artifact={{ ...artifact, name: artifact.title }}
+        artifact={artifact}
         version={version}
         versions={versions}
         isLatestVersion={isLatestVersion}
@@ -265,7 +255,7 @@ export function ArtifactViewer({
           <div className="flex-1 bg-gray-100 overflow-auto relative">
             {isMarkdown ? (
               <div className="max-w-4xl mx-auto p-8 bg-white shadow-sm min-h-full">
-                <MarkdownViewer content={markdownContent || "Loading..."} />
+                <MarkdownViewer src={contentUrl} />
               </div>
             ) : (
               <ArtifactFrame src={contentUrl} />
