@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { FolderOpen, FileText, Users, Clock } from "lucide-react";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export interface ArtifactCardProps {
   artifact: {

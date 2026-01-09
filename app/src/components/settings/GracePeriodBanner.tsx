@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { useGracePeriod, formatTimeRemaining } from "@/hooks/useGracePeriod";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";

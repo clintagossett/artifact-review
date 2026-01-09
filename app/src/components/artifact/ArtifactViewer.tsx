@@ -8,7 +8,7 @@ import { MultiPageNavigation } from "./MultiPageNavigation";
 import { usePermission } from "@/hooks/usePermission";
 import { toast } from "@/hooks/use-toast";
 import { logger, LOG_TOPICS } from "@/lib/logger";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface ArtifactViewerProps {
   artifact: {
@@ -37,7 +37,7 @@ interface ArtifactViewerProps {
 }
 
 import { useQuery } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { FileTree, FileNode } from "@/components/file-tree";
 import { MarkdownViewer } from "./MarkdownViewer";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id } from "@@/convex/_generated/dataModel";
 
 interface PresenceAvatarsProps {
     activeUsers: Array<{

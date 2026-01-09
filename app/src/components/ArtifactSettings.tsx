@@ -5,7 +5,7 @@ import { ArtifactDetailsTab } from './artifact-settings/ArtifactDetailsTab';
 import { ArtifactVersionsTab } from './artifact-settings/ArtifactVersionsTab';
 import { ArtifactAccessTab } from './artifact-settings/ArtifactAccessTab';
 import { ArtifactActivityTab } from './artifact-settings/ArtifactActivityTab';
-import { Id } from '../../convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 
 interface ArtifactSettingsProps {
   onBack: () => void;

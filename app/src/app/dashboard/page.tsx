@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { DashboardHeader } from "@/components/artifacts/DashboardHeader";
 import { ArtifactList } from "@/components/artifacts/ArtifactList";
 import { EmptyState } from "@/components/artifacts/EmptyState";
 import { NewArtifactDialog } from "@/components/artifacts/NewArtifactDialog";
 import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import { ProtectedPage } from "@/components/auth/ProtectedPage";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 
 /**
  * Dashboard Page - Main dashboard view

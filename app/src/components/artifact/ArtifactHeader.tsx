@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VersionSwitcher } from "./VersionSwitcher";
 import { ShareModal } from "./ShareModal";
-import { Id } from "../../../convex/_generated/dataModel";
+import { Id } from "@/convex/_generated/dataModel";
 
 interface ArtifactHeaderProps {
   artifact: {

@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useAction, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import type { Id } from "../../convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export interface CreateArtifactData {
   file: File;

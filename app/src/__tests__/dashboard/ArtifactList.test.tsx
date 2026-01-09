@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { ArtifactList } from "@/components/artifacts/ArtifactList";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 
 describe("ArtifactList", () => {
   const mockArtifacts = [

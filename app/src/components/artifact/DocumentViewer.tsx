@@ -52,7 +52,7 @@ import type {
   ToolMode,
   ToolBadge,
 } from '@/components/comments/types';
-import { Id } from '../../../convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 
 // Real version data from backend (from api.artifacts.getVersions)
 interface BackendVersion {
@@ -71,7 +71,7 @@ import { useComments } from '@/hooks/useComments';
 import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
 import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { useRouter } from 'next/navigation';
 import { usePresence } from '@/hooks/usePresence';
 import { useViewTracker } from '@/hooks/useViewTracker';

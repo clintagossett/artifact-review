@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +27,7 @@ import {
   Send,
   Users,
 } from 'lucide-react';
-import { Id } from '@/convex/_generated/dataModel';
+import { Id } from '@@/convex/_generated/dataModel';
 import { logger, LOG_TOPICS } from '@/lib/logger';
 
 interface ArtifactAccessTabProps {

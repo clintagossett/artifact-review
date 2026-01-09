@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArtifactCard } from "./ArtifactCard";
 import { Plus } from "lucide-react";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export interface ArtifactListProps {
   title?: string;
