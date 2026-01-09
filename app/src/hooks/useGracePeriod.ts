@@ -25,6 +25,10 @@ export function useGracePeriod() {
     }
 
     const updateTimer = () => {
+      if (!gracePeriodStatus?.expiresAt) {
+        setTimeRemaining(0);
+        return;
+      }
       const remaining = Math.max(0, gracePeriodStatus.expiresAt - Date.now());
       setTimeRemaining(remaining);
     };
