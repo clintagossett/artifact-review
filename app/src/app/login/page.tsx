@@ -7,7 +7,9 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { PublicOnlyPage } from "@/components/auth/PublicOnlyPage";
 import { validateReturnTo } from "@/lib/validateReturnTo";
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,5 +40,17 @@ export default function LoginPage() {
         <LoginForm onSuccess={handleSuccess} />
       </div>
     </PublicOnlyPage>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 font-medium">Loading...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

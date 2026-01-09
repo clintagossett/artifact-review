@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, Authenticated, Unauthenticated } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -28,7 +28,6 @@ import {
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { signOut } = useAuthActions();
   const currentUser = useQuery(api.auth.getCurrentUser);
 
