@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
 /**
  * Playwright configuration for e2e testing
@@ -14,9 +19,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   // Tests live in task folders, not app/
   // Override with: npx playwright test --config=playwright.config.ts path/to/tests
-  testDir: '../tasks/00010-artifact-upload-creation/tests/e2e',
-  // Only run task 10 tests (artifact-upload and upload-validation)
-  testMatch: ['artifact-upload.spec.ts', 'upload-validation.spec.ts'],
+  // Point to the local e2e tests
+  testDir: './tests/e2e',
+  // Run all spec files
+  testMatch: ['*.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -24,7 +30,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
     // Always record for validation videos
     trace: 'on',
     screenshot: 'on',
@@ -40,9 +46,8 @@ export default defineConfig({
     },
   ],
 
-  // Note: Convex dev must be running separately
-  // The webServer only starts Next.js
-  webServer: {
+  // Only start local server if we are testing localhost
+  webServer: (process.env.TEST_BASE_URL && process.env.TEST_BASE_URL !== 'http://localhost:3000') ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true, // Always reuse - assumes servers are already running

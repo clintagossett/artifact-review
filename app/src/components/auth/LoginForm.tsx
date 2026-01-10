@@ -83,7 +83,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         });
         onSuccess();
       }
-    } catch {
+    } catch (err) {
+      console.error("Login error:", err);
       setError("Invalid email or password");
     } finally {
       setIsLoading(false);

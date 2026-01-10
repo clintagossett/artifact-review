@@ -83,7 +83,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           flow: "signUp",
         });
         onSuccess();
-      } catch {
+      } catch (err) {
+        console.error("Registration error:", err);
         setError("Registration failed. Email may already be in use.");
       } finally {
         setIsLoading(false);
