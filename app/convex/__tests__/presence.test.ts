@@ -4,8 +4,8 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 import { Id } from "../_generated/dataModel";
 
-// Constants matching presence.ts
-const PRESENCE_SLA_MS = 45000;
+// Constants matching presence.ts (PRESENCE_TTL_MS is 150000ms = 2.5 mins)
+const PRESENCE_SLA_MS = 150000;
 
 async function createTestUser(t: any, email: string) {
     return await t.run(async (ctx: any) => {

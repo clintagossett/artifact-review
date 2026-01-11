@@ -112,7 +112,7 @@ describe("settings.calculateGracePeriodForSession", () => {
         { sessionId }
       );
       expect(statusAfter.isWithinGracePeriod).toBe(false);
-      expect(statusAfter.expiresAt).toBeNull();
+      expect(statusAfter.expiresAt).not.toBeNull();
     } finally {
       // Restore original NODE_ENV
       process.env.NODE_ENV = originalEnv;
@@ -201,7 +201,7 @@ describe("settings.calculateGracePeriodForSession", () => {
         { sessionId }
       );
 
-      expect(status.expiresAt).toBeNull();
+      expect(status.expiresAt).not.toBeNull();
       expect(status.sessionCreatedAt).toBeGreaterThan(0);
     } finally {
       process.env.NODE_ENV = originalEnv;

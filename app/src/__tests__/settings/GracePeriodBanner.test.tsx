@@ -19,6 +19,7 @@ vi.mock("@/hooks/useGracePeriod", () => ({
 // Mock Convex
 vi.mock("convex/react", () => ({
   useMutation: vi.fn(() => vi.fn()),
+  useAction: vi.fn(() => vi.fn()),
 }));
 
 // Mock toast

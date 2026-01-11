@@ -125,7 +125,7 @@ describe("views", () => {
         // Mock time jump (manually editing the lastViewedAt in the DB)
         await t.run(async (ctx) => {
             const stats = await ctx.db.query("artifactVersionStats").unique();
-            await ctx.db.patch(stats!._id, { lastViewedAt: Date.now() - (10 * 60 * 1000) }); // 10 min ago
+            await ctx.db.patch(stats!._id, { lastViewedAt: Date.now() - (61 * 60 * 1000) }); // 61 min ago (> 60 min debounce)
         });
 
         // Second view
