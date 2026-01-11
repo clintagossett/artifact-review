@@ -373,5 +373,11 @@
     "type": "file",
     "path": "_index.md",
     "ext": ".md"
+  },
+  {
+    "name": "ENVIRONMENT_VARIABLES.md",
+    "type": "file",
+    "path": "ENVIRONMENT_VARIABLES.md",
+    "ext": ".md"
   }
 ]
