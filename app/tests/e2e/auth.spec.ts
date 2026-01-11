@@ -20,7 +20,7 @@ const generateUser = () => {
     // If the Resend API call returns the email (even if "bounced" or "test mode limited"), we are good.
     return {
         name: `Test User ${timestamp}`,
-        email: `test.user+${timestamp}${random}@example.com`,
+        email: `test.user+${timestamp}${random}@tolauante.resend.app`,
         password: `Pass${timestamp}!${random}`,
     };
 };

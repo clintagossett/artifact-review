@@ -15,7 +15,8 @@ These rules are mirrored from `CLAUDE.md` and `docs/architecture/convex-rules.md
 3.  **Convex Security**: 
     *   ALWAYS use validators (`args`, `returns`).
     *   NEVER use `filter` (use `withIndex`).
-    *   Actions cannot access `ctx.db`.
+    *   Action cannot access `ctx.db`.
+4.  **Test Accounts**: ALL test user accounts MUST use the domain `@tolauante.resend.app`. Usage of `@example.com` or other domains is strictly PROHIBITED for functional tests that involve email delivery.
 
 ## 🛠️ Common Commands
 
