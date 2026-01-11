@@ -66,6 +66,7 @@
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^5.1.2",
     "convex-test": "^0.0.41",
+    "dotenv": "^17.2.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.23",
     "jsdom": "^27.3.0",

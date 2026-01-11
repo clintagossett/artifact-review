@@ -871,7 +871,7 @@ function renderInvitationEmail(params: {
   recipientEmail: string;
 }): string {
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://app.artifactreview-early.xyz";
+    process.env.SITE_URL || "https://app.artifactreview-early.xyz";
   const artifactUrl = `${appUrl}/a/${params.shareToken}`;
 
   return `
