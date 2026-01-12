@@ -7,7 +7,7 @@
     "dev": "run-p watch:manifest dev:vite",
     "dev:vite": "vite",
     "generate:manifest": "node scripts/generate-docs-manifest.mjs",
-    "watch:manifest": "chokidar \"../docs/**/*\" -c \"npm run generate:manifest\" --initial",
+    "watch:manifest": "chokidar \"../docs/**/*\" \"../tasks/**/*\" -c \"npm run generate:manifest\" --initial",
     "build": "npm run generate:manifest && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

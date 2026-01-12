@@ -178,6 +178,12 @@ const schema = defineSchema({
     createdBy: v.id("users"),
 
     /**
+     * Reference to the organization that owns this artifact.
+     * Task 33 - Architecture Refactor.
+     */
+    organizationId: v.id("organizations"),
+
+    /**
      * Unique URL-safe token for public sharing.
      * Generated with `nanoid(8)` at creation time.
      * Used in URL path: `/a/{shareToken}`
@@ -242,7 +248,13 @@ const schema = defineSchema({
      * Token is unique across all artifacts.
      * @example ctx.db.query("artifacts").withIndex("by_shareToken", q => q.eq("shareToken", "abc123xy"))
      */
-    .index("by_shareToken", ["shareToken"]),
+    .index("by_shareToken", ["shareToken"])
+
+    /**
+     * List artifacts for an organization.
+     * Primary query for dashboard.
+     */
+    .index("by_organizationId", ["organizationId"]),
 
   // ============================================================================
   // ARTIFACT VERSIONS TABLE
@@ -1069,6 +1081,54 @@ const schema = defineSchema({
     .index("by_artifactId_versionId", ["artifactId", "versionId"])
     .index("by_userId_artifactId", ["userId", "artifactId"])
     .index("by_versionId_userId", ["versionId", "userId"]),
+
+  // ============================================================================
+  // STRIPE / BILLING TABLES (Task 33)
+  // ============================================================================
+  organizations: defineTable({
+    name: v.string(), // "Clint's Workspace"
+    stripeCustomerId: v.optional(v.string()),
+    createdAt: v.number(), // ADR 12
+    createdBy: v.id("users"), // ADR 12
+  }).index("by_stripeCustomerId", ["stripeCustomerId"]),
+
+  plans: defineTable({
+    key: v.string(),
+    stripeId: v.string(),
+    name: v.string(),
+    description: v.string(),
+    prices: v.any(), // JSON object with intervals (month/year)
+    createdAt: v.number(), // ADR 12
+  })
+    .index("key", ["key"])
+    .index("stripeId", ["stripeId"]),
+
+  members: defineTable({
+    userId: v.id("users"),
+    organizationId: v.id("organizations"),
+    roles: v.array(v.string()), // ["owner"]
+    createdAt: v.number(), // ADR 12
+    createdBy: v.id("users"), // Who added them?
+  })
+    .index("by_userId", ["userId"])
+    .index("by_organizationId", ["organizationId"])
+    .index("by_org_and_user", ["organizationId", "userId"]),
+
+  subscriptions: defineTable({
+    organizationId: v.id("organizations"),
+    planId: v.optional(v.id("plans")),
+    stripeSubscriptionId: v.string(),
+    stripePriceId: v.string(),
+    status: v.string(),
+    currentPeriodStart: v.number(),
+    currentPeriodEnd: v.number(),
+    cancelAtPeriodEnd: v.boolean(),
+    currency: v.optional(v.string()),
+    interval: v.optional(v.string()),
+    createdAt: v.number(), // ADR 12
+  })
+    .index("by_organizationId", ["organizationId"])
+    .index("by_stripeSubscriptionId", ["stripeSubscriptionId"]),
 });
 
 export default schema;

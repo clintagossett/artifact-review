@@ -24,11 +24,17 @@ describe("comment latest version enforcement", () => {
     t = convexTest(schema);
 
     // Create a test user
+    // Create a test user with Org
     userId = await t.run(async (ctx) => {
-      return await ctx.db.insert("users", { createdAt: Date.now(),
+      const uid = await ctx.db.insert("users", {
+        createdAt: Date.now(),
         email: "test@example.com",
         emailVerifiedAt: Date.now(),
+        name: "Test User",
       });
+      const orgId = await ctx.db.insert("organizations", { name: "Org", createdAt: Date.now(), createdBy: uid });
+      await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+      return uid;
     });
 
     // Create authenticated context
@@ -39,9 +45,11 @@ describe("comment latest version enforcement", () => {
       const shareToken = "testcmt";
       const now = Date.now();
 
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: member!.organizationId,
         shareToken,
         isDeleted: false,
         createdAt: now,

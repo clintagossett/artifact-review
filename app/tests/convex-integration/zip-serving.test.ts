@@ -12,6 +12,22 @@ import schema from "../../convex/schema";
 import { internal } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 
+async function createOrgAndMember(ctx: any, userId: Id<"users">) {
+  const orgId = await ctx.db.insert("organizations", {
+    name: "Test Org",
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  await ctx.db.insert("members", {
+    userId,
+    organizationId: orgId,
+    roles: ["owner"],
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  return orgId;
+}
+
 describe("ZIP Serving - File Retrieval", () => {
   test("getFileByPath returns correct file with MIME type", async () => {
     const t = convexTest(schema);
@@ -21,16 +37,18 @@ describe("ZIP Serving - File Retrieval", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
@@ -48,7 +66,8 @@ describe("ZIP Serving - File Retrieval", () => {
     // Create file records
     const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
+      ctx.db.insert("artifactFiles", {
+        createdAt: Date.now(),
         versionId,
         path: "index.html",
         storageId: mockStorageId,
@@ -76,16 +95,18 @@ describe("ZIP Serving - File Retrieval", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
@@ -116,16 +137,18 @@ describe("ZIP Serving - File Retrieval", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
@@ -142,7 +165,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const mockStorageId = "kg2test000001;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
+      ctx.db.insert("artifactFiles", {
+        createdAt: Date.now(),
         versionId,
         path: "deleted.html",
         storageId: mockStorageId,
@@ -168,16 +192,18 @@ describe("ZIP Serving - File Retrieval", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
@@ -194,7 +220,8 @@ describe("ZIP Serving - File Retrieval", () => {
 
     const mockStorageId = "kg2test000002;_storage" as Id<"_storage">;
     await t.run(async (ctx) =>
-      ctx.db.insert("artifactFiles", { createdAt: Date.now(),
+      ctx.db.insert("artifactFiles", {
+        createdAt: Date.now(),
         versionId,
         path: "assets/images/logo.png",
         storageId: mockStorageId,
@@ -284,16 +311,18 @@ describe("ZIP Serving - Version and Entry Point", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {
@@ -325,16 +354,18 @@ describe("ZIP Serving - Version and Entry Point", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "testtkn1",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const artifact = await t.query(internal.artifacts.getByShareTokenInternal, {
       shareToken: "testtkn1",
@@ -352,17 +383,19 @@ describe("ZIP Serving - Version and Entry Point", () => {
       ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
     );
 
-    await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    await t.run(async (ctx) => {
+      const orgId = await createOrgAndMember(ctx, userId);
+      return ctx.db.insert("artifacts", {
         name: "Deleted Artifact",
         createdBy: userId,
+        organizationId: orgId,
         shareToken: "deleted1",
         isDeleted: true,
         deletedAt: Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const artifact = await t.query(internal.artifacts.getByShareTokenInternal, {
       shareToken: "deleted1",

@@ -11,6 +11,22 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 import { Id } from "../_generated/dataModel";
 
+async function createOrgAndMember(ctx: any, userId: Id<"users">) {
+  const orgId = await ctx.db.insert("organizations", {
+    name: "Test Org",
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  await ctx.db.insert("members", {
+    userId,
+    organizationId: orgId,
+    roles: ["owner"],
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  return orgId;
+}
+
 describe("isLatest computation", () => {
   let t: ReturnType<typeof convexTest>;
   let userId: Id<"users">;
@@ -39,6 +55,7 @@ describe("isLatest computation", () => {
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: await createOrgAndMember(ctx, userId),
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -78,6 +95,7 @@ describe("isLatest computation", () => {
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: await createOrgAndMember(ctx, userId),
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -150,6 +168,7 @@ describe("isLatest computation", () => {
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: await createOrgAndMember(ctx, userId),
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -226,6 +245,7 @@ describe("isLatest computation", () => {
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: await createOrgAndMember(ctx, userId),
         shareToken,
         isDeleted: false,
         createdAt: now,
@@ -270,6 +290,7 @@ describe("isLatest computation", () => {
       const artifactId = await ctx.db.insert("artifacts", {
         name: "Test Artifact",
         createdBy: userId,
+        organizationId: await createOrgAndMember(ctx, userId),
         shareToken,
         isDeleted: false,
         createdAt: now,

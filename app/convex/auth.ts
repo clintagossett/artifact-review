@@ -95,6 +95,22 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           emailVerifiedAt: args.profile.emailVerified ? now : undefined,
           createdAt: now,
         });
+
+        // Task 33: Bootstrap Personal Organization
+        const orgName = args.profile.name ? `${args.profile.name}'s Organization` : "My Organization";
+        const orgId = await ctx.db.insert("organizations", {
+          name: orgName,
+          createdAt: now,
+          createdBy: userId,
+        });
+
+        await ctx.db.insert("members", {
+          userId,
+          organizationId: orgId,
+          roles: ["owner"],
+          createdAt: now,
+          createdBy: userId,
+        });
       }
 
       // Link pending reviewer invitations for new users OR existing users adding email

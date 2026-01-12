@@ -25,6 +25,23 @@ import { convexTest } from "convex-test";
 import { describe, it, expect } from "vitest";
 import { api, internal } from "../_generated/api";
 import schema from "../schema";
+import { Id } from "../_generated/dataModel";
+
+async function createOrgAndMember(ctx: any, userId: Id<"users">) {
+  const orgId = await ctx.db.insert("organizations", {
+    name: "Test Org",
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  await ctx.db.insert("members", {
+    userId,
+    organizationId: orgId,
+    roles: ["owner"],
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  return orgId;
+}
 
 describe("Unified Content Retrieval - Permission Logic", () => {
   describe("getEntryPointContent - permission checks", () => {
@@ -41,9 +58,11 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test",
           createdBy: userId,
+          organizationId: orgId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -95,9 +114,11 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
         return await ctx.db.insert("artifacts", {
           name: "Test",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "test456",
           isDeleted: true, // Deleted - no access
           deletedAt: Date.now(),
@@ -141,9 +162,11 @@ describe("Unified Content Retrieval - Permission Logic", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test",
           createdBy: userId,
+          organizationId: orgId,
           shareToken: "test789",
           isDeleted: false,
           createdAt: Date.now(),

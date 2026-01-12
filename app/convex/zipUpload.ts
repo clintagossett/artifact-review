@@ -16,6 +16,7 @@ export const createArtifactWithZip = mutation({
     description: v.optional(v.string()),
     size: v.number(),
     entryPoint: v.optional(v.string()),
+    organizationId: v.optional(v.id("organizations")),
   },
   returns: v.object({
     uploadUrl: v.string(),
@@ -30,6 +31,15 @@ export const createArtifactWithZip = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Resolve Organization
+    let organizationId = args.organizationId;
+    if (!organizationId) {
+      // Default to user's personal/first org
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      if (!member) throw new Error("User has no organization");
+      organizationId = member.organizationId;
+    }
+
     // Validate ZIP size before creating records
     validateZipSize(args.size);
 
@@ -41,6 +51,7 @@ export const createArtifactWithZip = mutation({
       name: args.name,
       description: args.description,
       createdBy: userId,
+      organizationId,
       shareToken,
       isDeleted: false,
       createdAt: now,

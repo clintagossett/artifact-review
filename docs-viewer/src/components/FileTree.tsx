@@ -22,7 +22,7 @@ interface FileTreeNodeProps {
 
 const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth }) => {
     const location = useLocation();
-    const currentPath = decodeURIComponent(location.pathname).replace(/^\//, '');
+    const currentPath = decodeURIComponent(location.pathname).replace(/^\/view\//, '');
 
     // Folder is open if it contains the current path or if manually toggled
     const isChildActive = currentPath.startsWith(node.path + '/');
@@ -77,7 +77,7 @@ const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth }) => {
     return (
         <div>
             {node.type === "file" ? (
-                <Link to={`/${node.path}`} className="block no-underline text-inherit">
+                <Link to={`/view/${node.path}`} className="block no-underline text-inherit">
                     {content}
                 </Link>
             ) : (

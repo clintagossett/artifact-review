@@ -35,6 +35,30 @@ export const createArtifactForTest = internalMutation({
         }
         const userId = user!._id;
 
+        // Task 33: Ensure User has Organization
+        let membership = await ctx.db.query("members")
+            .withIndex("by_userId", q => q.eq("userId", userId))
+            .first();
+
+        if (!membership) {
+            // Bootstrap org if missing (legacy test users)
+            const orgId = await ctx.db.insert("organizations", {
+                name: "Test Org",
+                createdAt: Date.now(),
+                createdBy: userId,
+            });
+            const memberId = await ctx.db.insert("members", {
+                userId,
+                organizationId: orgId,
+                roles: ["owner"],
+                createdAt: Date.now(),
+                createdBy: userId,
+            });
+            membership = await ctx.db.get(memberId);
+        }
+
+        const organizationId = membership!.organizationId;
+
         const now = Date.now();
         const shareToken = nanoid(8);
 
@@ -43,6 +67,7 @@ export const createArtifactForTest = internalMutation({
             name: args.name,
             description: args.description,
             createdBy: userId,
+            organizationId,
             shareToken,
             isDeleted: false,
             createdAt: now,

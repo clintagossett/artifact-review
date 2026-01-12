@@ -4,21 +4,38 @@ import { describe, it, expect } from "vitest";
 import { api } from "../../convex/_generated/api";
 import schema from "../../convex/schema";
 
+// Helper to create user with organization
+async function createTestUser(t: ReturnType<typeof convexTest>) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {
+      createdAt: Date.now(),
+      email: "test@example.com",
+      name: "Test User",
+    });
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
+  });
+}
+
 describe("soft deletion", () => {
   describe("softDelete artifact", () => {
     it("should soft delete artifact and cascade to versions and files", async () => {
       const t = convexTest(schema);
 
       // Create a user
-      const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
-          createdAt: Date.now(),
-          email: "test@example.com",
-          name: "Test User",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      });
+      // Create a user
+      const userId = await createTestUser(t);
 
       const asUser = t.withIdentity({ subject: userId });
 
@@ -72,15 +89,8 @@ describe("soft deletion", () => {
       const t = convexTest(schema);
 
       // Create a user
-      const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
-          createdAt: Date.now(),
-          email: "test@example.com",
-          name: "Test User",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      });
+      // Create a user
+      const userId = await createTestUser(t);
 
       const asUser = t.withIdentity({ subject: userId });
 
@@ -124,15 +134,8 @@ describe("soft deletion", () => {
       const t = convexTest(schema);
 
       // Create a user
-      const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
-          createdAt: Date.now(),
-          email: "test@example.com",
-          name: "Test User",
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        });
-      });
+      // Create a user
+      const userId = await createTestUser(t);
 
       const asUser = t.withIdentity({ subject: userId });
 

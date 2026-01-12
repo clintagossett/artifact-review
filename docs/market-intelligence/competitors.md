@@ -72,6 +72,47 @@ Large platforms that could build this as a feature.
 
 ---
 
+### Netlify (Deploy Previews)
+**What:** Static site hosting with built-in "Deploy Previews" and "Netlify Drawer"
+**Positioning:** "The fastest way to build the fastest sites" (DX Platform)
+**Strengths:**
+- **Native Git Sync:** Automatically builds every Pull Request from GitHub/GitLab.
+- **Rich Commenting:** Annotations, video recording, screenshots via "Netlify Drawer".
+- **Unlimited Free Reviewers:** Allows unlimited stakeholders to review without paying for a seat.
+- **Ecosystem:** Integrates with Jira, Linear, Slack.
+- **Pricing:** Free plan for individuals, Team plans start at $19/member/mo.
+**Gaps:**
+- **Requires a Repo:** Cannot just "drag and drop" a folder of HTML without connecting Git (mostly).
+- **Build Complexity:** Users need to know how to configure build settings/pipelines.
+- **Overkill:** Too complex for just "sharing one HTML file from Claude".
+
+**Threat Level:** **CRITICAL** for the "Git Sync" use case. They are the gold standard for this workflow.
+
+---
+
+### Vercel (Preview Comments)
+**What:** Frontend cloud platform with "Comments on Previews"
+**Positioning:** "Develop. Preview. Ship." (Next.js creators)
+**Strengths:**
+- **Toolbar Overlay:** Native commenting bar on every preview deployment.
+- **Slack Integration:** Threads sync directly to Slack.
+- **Developer Standard:** Default choice for Next.js/React apps.
+- **Pricing:** Pro plan is $20/user/mo.
+**Gaps:**
+- **External Reviewers:** Can be gated/complex depending on the plan (Pro required for some sharing).
+- **Rate Limits:** 32 deployments/hour.
+- **Dev-Centric:** Less friendly for non-technical "uploaders" than Netlify.
+
+**Threat Level:** **HIGH** for developer-led teams.
+
+---
+
+### CloudCannon / GitBook (Content-Specific)
+**GitBook:** Excellent for Markdown/Documentation review ("Change Requests").
+**CloudCannon:** Headless CMS approach, great for editing content but lacks native "overlay" commenting (relies on third-party).
+
+---
+
 ### Notion AI
 **What:** AI writing assistant within Notion workspace
 - **Positioning:** Generate content directly in Notion, collaborate in same platform
@@ -279,6 +320,21 @@ Large platforms that could build this as a feature.
 
 ---
 
+## Benchmark UX Competitors (The "Gold Standard")
+
+These tools define the user experience we should aim for in terms of commenting.
+
+### Pastel / BugHerd
+**What:** agency-focused website feedback tools.
+**Why they win:**
+- **No Login Required:** Clients just click a link and comment. No accounts.
+- **Rich Context:** Auto-screenshots, browser metadata, video.
+- **Pricing:** Expensive (~$80+/mo for teams), but agencies pay it for the *frictionless* client experience.
+
+**Strategic Takeaway:** We must emulate their "No Login" experience for reviewers to win against Vercel/Figma.
+
+---
+
 ## Competitive Advantages (Our Differentiation)
 
 ### 1. AI-Native Design
@@ -296,7 +352,21 @@ Reviewers don't need AI tool accounts, lowering friction for executives/non-tech
 ### 5. Zero Format Loss
 What AI generates is what stakeholders see—no copy-paste degradation.
 
-### 6. Speed to Market
+### 5. Zero Format Loss
+What AI generates is what stakeholders see—no copy-paste degradation.
+
+### 6. AI-Agent Readability (The "Killer Feature")
+**The Insight:** Competitors like Vercel and Netlify use "Visual Overlays" (screenshots, pixel coordinates) because they design for *human* developers.
+**Our Advantage:** We capture **Unique DOM Selectors** (e.g., `#pricing-table > div:nth-child(2) > h3`).
+*   **Why it matters:** An AI Agent cannot read "pixel 400,200" reliably. It *can* read a CSS Selector.
+*   **The Workflow:**
+    1.  User clicks element.
+    2.  We calculate the unique selector.
+    3.  We pass `{ selector: "#hero", comment: "Make bold" }` to the Agent.
+    4.  Agent executes code change *precisely*.
+    *No other tool offers this native "Human-to-Agent" translation layer.*
+
+### 7. Speed to Market
 12-24 month window before incumbents catch up. First-mover advantage in new category.
 
 ---

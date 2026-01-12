@@ -26,8 +26,8 @@ export function DocViewer({ path }: DocViewerProps) {
             setError(null);
 
             try {
-                // Adjust path to point to /docs/...
-                const src = `/docs/${path}`;
+                // Path already includes root dir (docs/ or tasks/)
+                const src = `/${path}`;
                 const response = await fetch(src);
 
                 if (!response.ok) {
@@ -134,7 +134,7 @@ export function DocViewer({ path }: DocViewerProps) {
                                                 finalPath = finalPath.replace(/\/$/, '') + '/_index.md';
                                             }
 
-                                            navigate(`/${finalPath.replace(/^\//, '')}`);
+                                            navigate(`/view/${finalPath.replace(/^\//, '')}`);
                                         }}
                                         {...props}
                                     >

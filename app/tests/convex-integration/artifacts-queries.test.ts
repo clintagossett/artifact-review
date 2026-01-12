@@ -15,10 +15,25 @@ import schema from "../../convex/schema";
 // Helper to create a test user
 async function createTestUser(t: ReturnType<typeof convexTest>) {
   return await t.run(async (ctx) => {
-    return await ctx.db.insert("users", { createdAt: Date.now(),
+    const userId = await ctx.db.insert("users", {
+      createdAt: Date.now(),
       email: "test@example.com",
       name: "Test User",
     });
+    // Create Org
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
   });
 }
 
@@ -28,12 +43,8 @@ describe("Artifact Viewing Queries", () => {
       const t = convexTest(schema);
 
       // Create a user first
-      const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", { createdAt: Date.now(),
-          email: "test@example.com",
-          name: "Test User",
-        });
-      });
+      // Create a user first
+      const userId = await createTestUser(t);
 
       const asUser = t.withIdentity({ subject: userId });
 

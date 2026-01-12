@@ -30,7 +30,10 @@ function AppContent() {
     }
   }, [location.pathname])
 
-  const currentDocPath = decodeURIComponent(location.pathname).replace(/^\//, '') || '_index.md'
+  const currentDocPath = decodeURIComponent(location.pathname).replace(/^\/view\//, '') || 'docs/_index.md'
+
+  // Clean up if we somehow ended up with a leading slash that wasn't /view/
+  const cleanPath = currentDocPath.replace(/^\//, '')
 
   return (
     <div className="flex h-screen bg-white">
@@ -80,7 +83,7 @@ function AppContent() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
         <div className="min-h-full flex flex-col">
-          <DocViewer path={currentDocPath} />
+          <DocViewer path={cleanPath} />
         </div>
       </main>
     </div>

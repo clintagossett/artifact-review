@@ -14,6 +14,30 @@ import type { Id } from "../../convex/_generated/dataModel";
 import path from "path";
 import fs from "fs/promises";
 
+// Helper to create user with organization
+async function createTestUser(t: ReturnType<typeof convexTest>, email = "test@example.com") {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {
+      createdAt: Date.now(),
+      email: email,
+      name: "Test User",
+    });
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
+  });
+}
+
 describe("ZIP Validation Constants", () => {
   test("validateZipSize should reject files larger than 50MB", async () => {
     const { validateZipSize } = await import("../../convex/lib/fileTypes");
@@ -72,9 +96,8 @@ describe("ZIP Upload - Create Artifact Flow", () => {
     const t = convexTest(schema);
 
     // Create user
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    // Create user
+    const userId = await createTestUser(t);
 
     // Attempt to create artifact with oversized ZIP
     const oversizedBytes = 60 * 1024 * 1024; // 60MB
@@ -90,9 +113,7 @@ describe("ZIP Upload - Create Artifact Flow", () => {
   test("createArtifactWithZip should create artifact and version for valid ZIP size", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const result = await t
       .withIdentity({ subject: userId })
@@ -139,9 +160,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const t = convexTest(schema);
 
     // Create owner and artifact
-    const ownerId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const ownerId = await createTestUser(t, "owner@example.com");
 
     const { artifactId } = await t
       .withIdentity({ subject: ownerId })
@@ -179,9 +198,7 @@ describe("ZIP Upload - Add Version Flow", () => {
   test("addZipVersion should validate ZIP size", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { artifactId } = await t
       .withIdentity({ subject: userId })
@@ -203,9 +220,7 @@ describe("ZIP Upload - Add Version Flow", () => {
     const t = convexTest(schema);
 
     // Create owner and artifact
-    const ownerId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const ownerId = await createTestUser(t, "owner@example.com");
 
     const { artifactId } = await t
       .withIdentity({ subject: ownerId })
@@ -215,9 +230,7 @@ describe("ZIP Upload - Add Version Flow", () => {
       });
 
     // Different user tries to add version
-    const otherId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "other@example.com" })
-    );
+    const otherId = await createTestUser(t, "other@example.com");
 
     await expect(
       t.withIdentity({ subject: otherId }).mutation(api.zipUpload.addZipVersion, {
@@ -230,9 +243,7 @@ describe("ZIP Upload - Add Version Flow", () => {
   test("addZipVersion should require authentication", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { artifactId } = await t
       .withIdentity({ subject: userId })
@@ -252,9 +263,7 @@ describe("ZIP Upload - Add Version Flow", () => {
   test("addZipVersion should reject if artifact is deleted", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { artifactId } = await t
       .withIdentity({ subject: userId })
@@ -281,9 +290,7 @@ describe("canWriteArtifact Permission Helper", () => {
   test("should return true for artifact owner", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const userId = await createTestUser(t, "owner@example.com");
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
@@ -308,13 +315,9 @@ describe("canWriteArtifact Permission Helper", () => {
   test("should return false for non-owner", async () => {
     const t = convexTest(schema);
 
-    const ownerId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const ownerId = await createTestUser(t, "owner@example.com");
 
-    const otherId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "other@example.com" })
-    );
+    const otherId = await createTestUser(t, "other@example.com");
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
@@ -340,9 +343,7 @@ describe("canWriteArtifact Permission Helper", () => {
   test("should return false for deleted artifact", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const userId = await createTestUser(t, "owner@example.com");
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
@@ -367,9 +368,7 @@ describe("canWriteArtifact Permission Helper", () => {
   test("should return false when not authenticated", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "owner@example.com" })
-    );
+    const userId = await createTestUser(t, "owner@example.com");
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
@@ -395,9 +394,7 @@ describe("ZIP Processing Error Handling", () => {
   test("markProcessingError should soft-delete version on failure", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const artifactId = await t.run(async (ctx) =>
       ctx.db.insert("artifacts", {
@@ -461,9 +458,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     const t = convexTest(schema);
 
     // Create user
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     // Create artifact and version for ZIP
     const { artifactId, versionId, uploadUrl } = await t
@@ -550,9 +545,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
   test("should reject ZIP with forbidden file types", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { versionId } = await t
       .withIdentity({ subject: userId })
@@ -630,9 +623,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     // This test verifies the file count validation logic
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { versionId } = await t
       .withIdentity({ subject: userId })
@@ -663,9 +654,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
   test("should reject ZIP with oversized individual files", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { versionId } = await t
       .withIdentity({ subject: userId })
@@ -693,9 +682,7 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
     // This test verifies entry point detection priority logic
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     // Test case 1: index.html in root
     const { versionId: v1 } = await t

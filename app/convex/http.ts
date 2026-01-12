@@ -3,6 +3,8 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
 import { resend } from "./lib/resend";
+import { stripe } from "./stripe";
+import { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
 
@@ -210,6 +212,90 @@ http.route({
         },
       });
     }
+  }),
+});
+
+
+/**
+ * Stripe Webhook Handler
+ */
+http.route({
+  path: "/stripe", // Standard endpoint
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const signature = request.headers.get("Stripe-Signature");
+    if (!signature) {
+      return new Response("Missing Signature", { status: 400 });
+    }
+
+    const payload = await request.text();
+    let event;
+
+    try {
+      event = await stripe.webhooks.constructEventAsync(
+        payload,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err) {
+      console.error(err);
+      return new Response("Webhook Signature Verification Failed", { status: 400 });
+    }
+
+    switch (event.type) {
+      // 1. Checkout Completed -> Link Org to Customer
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const organizationId = session.metadata?.organizationId as Id<"organizations">;
+        const customerId = session.customer as string;
+
+        if (organizationId && customerId) {
+          await ctx.runMutation(internal.stripe.internalUpdateCustomerId, {
+            organizationId,
+            customerId
+          });
+        }
+        break;
+      }
+
+      // 2. Subscription Updated -> Sync DB
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const sub = event.data.object;
+        const customerId = sub.customer as string;
+
+        // Find Org by Customer ID
+        const org = await ctx.runQuery(internal.stripe.internalGetOrganizationByCustomerId, {
+          customerId
+        });
+
+        if (org) {
+          await ctx.runMutation(internal.stripe.internalCreateSubscription, {
+            organizationId: org._id,
+            priceStripeId: sub.items.data[0].price.id,
+            stripeSubscriptionId: sub.id,
+            status: sub.status,
+            currentPeriodStart: sub.current_period_start * 1000, // Stripe is seconds, we want ms
+            currentPeriodEnd: sub.current_period_end * 1000,
+            cancelAtPeriodEnd: sub.cancel_at_period_end,
+            currency: sub.currency,
+            interval: sub.items.data[0].plan.interval,
+          });
+        }
+        break;
+      }
+
+      // 3. Subscription Deleted -> Remove from DB
+      case "customer.subscription.deleted": {
+        const sub = event.data.object;
+        await ctx.runMutation(internal.stripe.internalDeleteSubscription, {
+          stripeSubscriptionId: sub.id
+        });
+        break;
+      }
+    }
+
+    return new Response("OK", { status: 200 });
   }),
 });
 

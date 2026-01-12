@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DOCS_DIR = path.resolve(__dirname, '../../docs');
+const TASKS_DIR = path.resolve(__dirname, '../../tasks');
 const OUTPUT_FILE = path.resolve(__dirname, '../public/docs-manifest.json');
 
 function getFileTree(dir, relativePath = '') {
@@ -43,8 +44,30 @@ function getFileTree(dir, relativePath = '') {
 }
 
 try {
-    console.log(`Scanning docs directory: ${DOCS_DIR}`);
-    const tree = getFileTree(DOCS_DIR);
+    const tree = [];
+
+    // Process docs directory
+    if (fs.existsSync(DOCS_DIR)) {
+        console.log(`Scanning docs directory: ${DOCS_DIR}`);
+        tree.push({
+            name: 'docs',
+            type: 'directory',
+            path: 'docs',
+            children: getFileTree(DOCS_DIR, 'docs')
+        });
+    }
+
+    // Process tasks directory
+    if (fs.existsSync(TASKS_DIR)) {
+        console.log(`Scanning tasks directory: ${TASKS_DIR}`);
+        tree.push({
+            name: 'tasks',
+            type: 'directory',
+            path: 'tasks',
+            children: getFileTree(TASKS_DIR, 'tasks')
+        });
+    }
+
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(tree, null, 2));
     console.log(`Manifest generated at: ${OUTPUT_FILE}`);
 } catch (error) {

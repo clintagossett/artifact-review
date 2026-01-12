@@ -32,6 +32,30 @@ import {
 } from "../../convex/lib/fileTypes";
 import { getMimeType } from "../../convex/lib/mimeTypes";
 
+// Helper to create user with organization
+async function createTestUser(t: ReturnType<typeof convexTest>) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {
+      createdAt: Date.now(),
+      email: "test@example.com",
+      name: "Test User",
+    });
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
+  });
+}
+
 // Sample ZIP file paths
 const SAMPLES_DIR = path.join(__dirname, "../../../samples");
 const VALID_ZIP = {
@@ -152,9 +176,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
     const t = convexTest(schema);
 
     // Create user and artifact
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { artifactId, versionId } = await t
       .withIdentity({ subject: userId })
@@ -228,9 +250,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
   test("should extract charting/v2.zip with updated files", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     // Create v1 first
     const { artifactId, versionId: v1Id } = await t
@@ -299,9 +319,7 @@ describe("Backend Integration: Real ZIP Extraction", () => {
   test("should handle multi-page site with entry point detection", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { versionId } = await t
       .withIdentity({ subject: userId })
@@ -395,7 +413,7 @@ describe("Backend Integration: ZIP Validation with Real Files", () => {
       } else if (file.path.endsWith(".js")) {
         expect(
           file.mimeType === "application/javascript" ||
-            file.mimeType === "text/javascript"
+          file.mimeType === "text/javascript"
         ).toBe(true);
       } else if (file.path.endsWith(".css")) {
         expect(file.mimeType).toBe("text/css");
@@ -427,9 +445,7 @@ describe("Backend Integration: Multi-Version Workflow", () => {
   test("should support uploading 3 versions with real ZIP files", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     // Version 1
     const { artifactId, versionId: v1Id } = await t
