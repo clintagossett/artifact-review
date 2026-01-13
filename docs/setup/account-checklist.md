@@ -63,6 +63,7 @@ This checklist uses a **Just-In-Time (JIT)** approach - you only set up accounts
 - [ ] Domain registrar
 - [ ] Convex Professional ($25/mo)
 - [ ] Vercel Pro ($20/mo)
+- [ ] Resend Pro ($20/mo)
 - [ ] Resend Production API key
 **Setup time:** 1-2 hours
 
@@ -356,7 +357,7 @@ npx convex env ls --project prod
 
 **Purpose:** Transactional email (magic links, notifications)
 
-**Plan Required:** Free tier (3,000 emails/month) for MVP
+**Plan Required:** Pro ($20/month) - 50,000 emails/month
 
 #### Phase 3: Test API Key (Hosted Dev)
 
@@ -777,11 +778,11 @@ Before going to production, verify:
 | Service | Phase 1-2 | Phase 3 | Phase 4 |
 |---------|-----------|---------|---------|
 | **GitHub** | Free | Free | Free |
-| **Convex** | Free | Free | $25/month (prod only) |
-| **Resend** | N/A | Free | Free → $20/month |
+| **Convex** | Free | Free | $25/month |
+| **Resend** | N/A | Free (local dev) | $20/month |
 | **Vercel** | N/A | Free | $20/month |
 | **Domain** | N/A | N/A | $10-20/year |
-| **Total/month** | **$0** | **$0** | **$45-65** |
+| **Total/month** | **$0** | **$0** | **~$65** |
 
 ---
 

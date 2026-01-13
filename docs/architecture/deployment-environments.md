@@ -626,9 +626,9 @@ steps:
 - **Cost:** Typically $0-50/month for MVP/early growth
 
 **Resend:**
-- **Free tier:** 3,000 emails/month
-- **Covers:** Dev (test mode) + Staging (limited recipients) + light production usage
-- **Paid tier:** $20/month for 50K emails if needed
+- **Plan:** Pro ($20/month)
+- **Includes:** 50,000 emails/month, dedicated IP options, and higher rate limits.
+- **Usage:** Covers all environments (Dev/Staging/Prod). Local Dev is bypassed via Mailpit.
 
 **Convex File Storage (MVP):**
 - **Included in Professional plan:** 100GB storage, 50GB bandwidth/month
@@ -642,8 +642,8 @@ steps:
 |-----------|-------------|
 | Vercel Pro | $20 |
 | Convex Professional | $25 |
-| Resend (free tier) | $0 |
-| **Total** | **~$45/month** |
+| Resend Pro | $20 |
+| **Total** | **~$65/month** |
 
 **As you scale:**
 - Convex: Fixed $25/month until you exceed Professional plan limits

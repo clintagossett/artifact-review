@@ -13,8 +13,8 @@ Use Resend for all transactional email via `@convex-dev/resend` component. Use c
 | Item | Value |
 |------|-------|
 | **Provider** | Resend |
-| **Free tier** | 3,000 emails/month |
-| **Paid tier** | $20/month for 50K emails |
+| **Plan** | Pro ($20/month) |
+| **Capacity** | 50,000 emails/month |
 | **Local dev** | Mailpit (Docker) |
 | **Inbound email** | Not configured (MVP) |
 
@@ -53,8 +53,8 @@ The platform needs email for multiple use cases:
 | Aspect | Details |
 |--------|---------|
 | **Provider** | Resend |
-| **Free tier** | 3,000 emails/month |
-| **Paid tier** | $20/month for 50K emails |
+| **Current Plan** | Pro ($20/month) |
+| **Capacity** | 50,000 emails/month |
 | **Integration** | Official Convex Auth support |
 | **API style** | Modern REST/SDK |
 
@@ -206,7 +206,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 | Stage | Emails/Month | Cost |
 |-------|--------------|------|
-| MVP | ~500 | Free |
+| MVP | ~500 | $20/mo (Pro) |
 | Growth (1K users) | ~5K | $20/mo |
 | Scale (10K users) | ~30K | $20/mo |
 | Scale (50K users) | ~100K | ~$50/mo |
