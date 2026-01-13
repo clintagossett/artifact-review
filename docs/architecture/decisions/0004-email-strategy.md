@@ -15,7 +15,7 @@ Use Resend for all transactional email via `@convex-dev/resend` component. Use c
 | **Provider** | Resend |
 | **Free tier** | 3,000 emails/month |
 | **Paid tier** | $20/month for 50K emails |
-| **Local dev** | Resend Component (Test Mode) |
+| **Local dev** | Mailpit (Docker) |
 | **Inbound email** | Not configured (MVP) |
 
 ## Decision Drivers (Priority Order)
@@ -68,31 +68,25 @@ The platform needs email for multiple use cases:
 | AWS SES | Pay-per-use | Manual setup | Poor DX | Too low-level |
 | Mailgun | 5K/month (3 months) | Manual setup | Good | Free tier expires |
 
-### Local Development: Resend Component (Test Mode)
+### Local Development: Mailpit (Docker)
 
-**Use the `@convex-dev/resend` component's built-in test mode.**
+**Use a local Mailpit instance for all local development.**
 
-The component defaults to `testMode: true`, which restricts email delivery to the "delivered@resend.dev" address only. This ensures no emails are sent to real users during development while still verifying the Convex -> Resend integration.
-
-**Configuration:**
-Set `RESEND_TEST_MODE` environment variable to control this behavior.
-
-- `RESEND_TEST_MODE=true` (Default): Safe mode. Emails are accepted but only delivered to test inboxes.
-- `RESEND_TEST_MODE=false`: Live mode. Emails are delivered to actual recipients.
+When running locally via Docker Compose, all emails are routed to Mailpit. This provides an immediate, visual way to verify email content without any external API calls or account requirements.
 
 **Benefits:**
-- **Zero infrastructure**: No need to run local Docker containers (Mailpit).
-- **Production parity**: Local dev uses the exact same code path and component as production.
-- **Verification**: Emails are logged in the Convex dashboard and Resend `emails` table.
+- **Zero external dependencies**: Work offline or without a Resend key.
+- **Visual Verification**: Inspect HTML emails in http://localhost:8025.
+- **Fast Feedback**: Near-instant capture compared to polling external APIs.
 
 ### Environment Configuration
 
 | Environment | Mode | Configuration | Behavior |
 |-------------|------|---------------|----------|
-| **Local** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
-| **Hosted Dev** | Live | `RESEND_TEST_MODE=false` | Real delivery (Verified Domain) |
-| **Staging** | Live | `RESEND_TEST_MODE=false` | Real delivery |
-| **Production** | Live | `RESEND_TEST_MODE=false` | Real delivery |
+| **Local** | Mailpit | `docker compose up` | Captured locally in Mailpit UI |
+| **Hosted Dev** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery (Verified Domain) |
+| **Staging** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery |
+| **Production** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery |
 
 ### Resend Configuration
 

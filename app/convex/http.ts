@@ -2,7 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
-import { resend } from "./lib/resend";
+import { sendEmail } from "./lib/email";
 import { stripeClient } from "./stripe";
 import type Stripe from "stripe";
 import { Id } from "./_generated/dataModel";
@@ -46,7 +46,7 @@ http.route({
     }
 
     try {
-      await resend.sendEmail(ctx, {
+      await sendEmail(ctx, {
         to: email,
         subject: subject,
         html: html,

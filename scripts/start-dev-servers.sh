@@ -119,24 +119,25 @@ NEXT_PID=""
 CONVEX_RUNNING=false
 NEXTJS_RUNNING=false
 
-# Check and start Convex
-echo "Checking Convex (port $CONVEX_PORT)..."
-if check_port $CONVEX_PORT; then
-    EXISTING_PID=$(get_port_process $CONVEX_PORT)
-    echo "  [SKIP] Convex already running on port $CONVEX_PORT (PID: $EXISTING_PID)"
-    CONVEX_RUNNING=true
+# Check and start Docker services (Convex, Mailpit)
+echo "Checking Docker services (Convex, Mailpit)..."
+if ! docker compose ps | grep -q "Up"; then
+    echo "  [START] Starting Docker services..."
+    docker compose up -d
 else
-    echo "  [START] Starting Convex dev server..."
-    > logs/convex.log
-    npx convex dev --tail-logs always 2>&1 | tee logs/convex.log &
-    CONVEX_PID=$!
-    sleep 2
-    if check_port $CONVEX_PORT; then
-        echo "  [OK] Convex started successfully (PID: $CONVEX_PID)"
-    else
-        echo "  [WARN] Convex may still be starting..."
-    fi
+    echo "  [SKIP] Docker services already running"
 fi
+
+# Set up local Convex functions
+echo "Initializing local Convex functions..."
+npx convex dev --once || { echo "ERROR: Failed to push to local Convex"; exit 1; }
+
+# Start Convex watching in background
+echo "Starting Convex function watcher..."
+> logs/convex.log
+npx convex dev --tail-logs always 2>&1 | tee logs/convex.log &
+CONVEX_PID=$!
+CONVEX_RUNNING=true
 
 echo ""
 

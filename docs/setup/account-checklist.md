@@ -14,20 +14,28 @@ This checklist uses a **Just-In-Time (JIT)** approach - you only set up accounts
 
 ## JIT Setup Phases
 
-### Phase 1: Local Development
+### Phase 1: Local Development (Docker-based)
 **When:** Starting local development
-**What you're building:** Authentication and core features working locally
+**What you're building:** Authentication and core features working locally with isolated services
 **Accounts needed:**
-- [ ] Convex account (free tier)
+- [ ] Convex account (for deployment to cloud later)
 - [ ] GitHub account
+**System tools needed:**
+- [ ] Docker Desktop
 **Setup time:** 15-20 minutes
 
 #### Step-by-Step Setup
-1. **GitHub Auth**: `gh auth login`
-2. **Convex Auth**: `npx convex login`
-3. **Init Project**: `npx convex dev` (creates dev project + `.env.local`)
+1. **Docker**: Start Docker Desktop and run `docker compose up -d` in the project root. This starts the Convex backend, dashboard, and Mailpit.
+2. **Admin Key**: Generated automatically or run `docker compose exec backend ./generate_admin_key.sh` to get it.
+3. **Environment**: Ensure `.env.local` has `CONVEX_SELF_HOSTED_URL` and `CONVEX_SELF_HOSTED_ADMIN_KEY`.
+4. **Init Functions**: Run `npx convex dev` (to watch) or `npx convex dev --once` (to push once).
 
-**Move to Phase 2 when:** You're ready to deploy to a hosted environment.
+**Verification:**
+- Visit Convex Dashboard: http://localhost:6791
+- Visit Mailpit: http://localhost:8025
+- Run App: `npm run dev` and sign in. Emails should appear in Mailpit.
+
+**Move to Phase 2 when:** You're ready to deploy to the shared hosted environment.
 
 ---
 
