@@ -151,7 +151,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 - ✅ **Official Convex integration** - Magic links work out of the box
 - ✅ **Generous free tier** - 3K emails covers MVP + early growth
-- ✅ **Simple local testing** - Mailpit captures everything
+- ✅ **Simple local testing** - Resend Test Mode logs everything in the dashboard
 - ✅ **Modern API** - Clean SDK, good TypeScript support
 - ✅ **Reasonable scaling** - $20/mo for 50K is cost-effective
 
@@ -211,4 +211,3 @@ Resend pricing is predictable and reasonable for transactional email volume.
 - [Resend + Convex Auth Integration](https://labs.convex.dev/auth/config/email)
 - [Resend Pricing](https://resend.com/pricing)
 - [Resend Inbound Email](https://resend.com/docs/dashboard/emails/inbound-emails) (future reference)
-- [Mailpit Documentation](https://mailpit.axllent.org/)
