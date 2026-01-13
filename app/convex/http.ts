@@ -3,7 +3,8 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
 import { resend } from "./lib/resend";
-import { stripe } from "./stripe";
+import { stripeClient } from "./stripe";
+import type Stripe from "stripe";
 import { Id } from "./_generated/dataModel";
 
 const http = httpRouter();
@@ -229,10 +230,10 @@ http.route({
     }
 
     const payload = await request.text();
-    let event;
+    let event: Stripe.Event;
 
     try {
-      event = await stripe.webhooks.constructEventAsync(
+      event = await stripeClient.webhooks.constructEventAsync(
         payload,
         signature,
         process.env.STRIPE_WEBHOOK_SECRET!
@@ -245,7 +246,7 @@ http.route({
     switch (event.type) {
       // 1. Checkout Completed -> Link Org to Customer
       case "checkout.session.completed": {
-        const session = event.data.object;
+        const session = event.data.object as Stripe.Checkout.Session;
         const organizationId = session.metadata?.organizationId as Id<"organizations">;
         const customerId = session.customer as string;
 
@@ -261,11 +262,11 @@ http.route({
       // 2. Subscription Updated -> Sync DB
       case "customer.subscription.created":
       case "customer.subscription.updated": {
-        const sub = event.data.object;
+        const sub = event.data.object as Stripe.Subscription;
         const customerId = sub.customer as string;
 
         // Find Org by Customer ID
-        const org = await ctx.runQuery(internal.stripe.internalGetOrganizationByCustomerId, {
+        const org: any = await ctx.runQuery(internal.stripe.internalGetOrganizationByCustomerId, {
           customerId
         });
 
@@ -275,11 +276,11 @@ http.route({
             priceStripeId: sub.items.data[0].price.id,
             stripeSubscriptionId: sub.id,
             status: sub.status,
-            currentPeriodStart: sub.current_period_start * 1000, // Stripe is seconds, we want ms
-            currentPeriodEnd: sub.current_period_end * 1000,
-            cancelAtPeriodEnd: sub.cancel_at_period_end,
+            currentPeriodStart: (sub as any).current_period_start * 1000, // Stripe is seconds, we want ms
+            currentPeriodEnd: (sub as any).current_period_end * 1000,
+            cancelAtPeriodEnd: (sub as any).cancel_at_period_end,
             currency: sub.currency,
-            interval: sub.items.data[0].plan.interval,
+            interval: (sub.items.data[0].plan as any).interval,
           });
         }
         break;
@@ -287,7 +288,7 @@ http.route({
 
       // 3. Subscription Deleted -> Remove from DB
       case "customer.subscription.deleted": {
-        const sub = event.data.object;
+        const sub = event.data.object as Stripe.Subscription;
         await ctx.runMutation(internal.stripe.internalDeleteSubscription, {
           stripeSubscriptionId: sub.id
         });

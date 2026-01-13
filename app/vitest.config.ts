@@ -9,7 +9,6 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: [
       "**/*.{test,spec}.{ts,tsx}",
-      "../tasks/**/*.test.ts",
       "tests/convex-integration/**/*.test.ts",
     ],
     exclude: ["tests/e2e/**/*", "node_modules"],

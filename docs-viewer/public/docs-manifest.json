@@ -103,6 +103,12 @@
                 "type": "file",
                 "path": "docs/architecture/decisions/0014-pii-safe-relational-tracking.md",
                 "ext": ".md"
+              },
+              {
+                "name": "0015-organization-first-architecture.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0015-organization-first-architecture.md",
+                "ext": ".md"
               }
             ]
           },

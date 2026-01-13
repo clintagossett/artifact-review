@@ -51,8 +51,8 @@ async function createTestArtifact(
 ): Promise<Id<"artifacts">> {
   return await t.run(async (ctx) => {
     // Resolve Organization
-    const membership = await ctx.db.query("members")
-      .withIndex("by_userId", q => q.eq("userId", userId))
+    const membership: any = await (ctx.db.query("members") as any)
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId as any))
       .first();
 
     if (!membership) throw new Error("Test User missing organization");

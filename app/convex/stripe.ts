@@ -8,8 +8,8 @@ import {
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
-export const stripe = new Stripe(process.env.STRIPE_KEY!, {
-    apiVersion: "2024-06-20",
+export const stripeClient = new Stripe(process.env.STRIPE_KEY!, {
+    apiVersion: "2025-12-15.clover" as any,
     typescript: true,
 });
 
@@ -107,14 +107,14 @@ export const createCheckoutSession = action({
         priceId: v.string(), // "price_..."
     },
     handler: async (ctx, args) => {
-        const org = await ctx.runQuery(internal.stripe.internalGetOrganizationById, {
+        const org: any = await ctx.runQuery(internal.stripe.internalGetOrganizationById, {
             organizationId: args.organizationId
         });
         if (!org) throw new Error("Organization not found");
 
         const domain = process.env.CONVEX_SITE_URL || "http://localhost:3000";
 
-        const session = await stripe.checkout.sessions.create({
+        const session: Stripe.Checkout.Session = await stripeClient.checkout.sessions.create({
             mode: "subscription",
             line_items: [{ price: args.priceId, quantity: 1 }],
             customer: org.stripeCustomerId, // Reuse if exists

@@ -292,16 +292,18 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const userId = await createTestUser(t, "owner@example.com");
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: member!.organizationId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const { canWriteArtifact } = await import("../../convex/lib/permissions");
     // Must set identity context for auth check to work
@@ -319,16 +321,18 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const otherId = await createTestUser(t, "other@example.com");
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", ownerId)).first();
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: ownerId,
+        organizationId: member!.organizationId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const { canWriteArtifact } = await import("../../convex/lib/permissions");
 
@@ -345,17 +349,19 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const userId = await createTestUser(t, "owner@example.com");
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: member!.organizationId,
         shareToken: "abc12345",
         isDeleted: true,  // Deleted
         deletedAt: Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const { canWriteArtifact } = await import("../../convex/lib/permissions");
     const result = await t.withIdentity({ subject: userId }).run(async (ctx) =>
@@ -370,16 +376,18 @@ describe("canWriteArtifact Permission Helper", () => {
 
     const userId = await createTestUser(t, "owner@example.com");
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: member!.organizationId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const { canWriteArtifact } = await import("../../convex/lib/permissions");
     const result = await t.run(async (ctx) =>
@@ -396,16 +404,18 @@ describe("ZIP Processing Error Handling", () => {
 
     const userId = await createTestUser(t);
 
-    const artifactId = await t.run(async (ctx) =>
-      ctx.db.insert("artifacts", {
+    const artifactId = await t.run(async (ctx) => {
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      return ctx.db.insert("artifacts", {
         name: "Test",
         createdBy: userId,
+        organizationId: member!.organizationId,
         shareToken: "abc12345",
         isDeleted: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      })
-    );
+      });
+    });
 
     const versionId = await t.run(async (ctx) =>
       ctx.db.insert("artifactVersions", {

@@ -17,6 +17,7 @@ import type { Comment } from '@/components/comments/types';
 import { Id } from '@/convex/_generated/dataModel';
 import { useCommentReplies } from '@/hooks/useCommentReplies';
 import { useReplyActions } from '@/hooks/useReplyActions';
+import Image from 'next/image';
 
 interface CommentCardProps {
   comment: Comment;
@@ -183,10 +184,13 @@ export function CommentCard({
           {/* Image Preview for Image Comments */}
           {comment.elementType === 'image' && comment.elementPreview && (
             <div className="mb-2 relative group">
-              <img
+              <Image
                 src={comment.elementPreview}
                 alt="Referenced element"
+                width={400}
+                height={128}
                 className="w-full h-32 object-cover rounded border-2 border-purple-200"
+                unoptimized
               />
               <div className="absolute top-2 right-2 bg-purple-600 text-white px-2 py-1 rounded text-xs opacity-90">
                 📍 Linked Image

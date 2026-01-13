@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   ArrowLeft,
   Share2,
@@ -24,6 +24,7 @@ import {
   Trash2,
   FolderTree, // Added icon if needed
 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -488,7 +489,7 @@ export function DocumentViewer({
   };
 
   // Global click handler to block ALL clicks when comment mode is active
-  const handleGlobalClick = (e: Event) => {
+  const handleGlobalClick = useCallback((e: Event) => {
     // Only intercept when comment mode is active
     if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
       return; // Let clicks work normally
@@ -509,7 +510,7 @@ export function DocumentViewer({
     if (target.id) {
       handleElementClick(e);
     }
-  };
+  }, [handleElementClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -632,7 +633,7 @@ export function DocumentViewer({
         iframe.contentDocument.removeEventListener('mouseup', handleTextSelection);
       }
     };
-  }, [currentVersionId, artifactUrl, currentPage]);
+  }, [currentVersionId, artifactUrl, currentPage, currentVersionComments, handleElementClick, handleGlobalClick, handleTextSelection, historyIndex, navigationHistory]);
 
   // Reset to index page when version changes
   useEffect(() => {
@@ -641,7 +642,7 @@ export function DocumentViewer({
     setHistoryIndex(0);
   }, [currentVersionId]);
 
-  const handleTextSelection = (e: MouseEvent) => {
+  const handleTextSelection = useCallback((e: MouseEvent) => {
     // Block commenting on old versions
     if (isViewingOldVersion) {
       return;
@@ -674,9 +675,9 @@ export function DocumentViewer({
     } else {
       setShowCommentTooltip(false);
     }
-  };
+  }, [isViewingOldVersion]);
 
-  const handleElementClick = (e: Event) => {
+  const handleElementClick = useCallback((e: Event) => {
     // Block commenting on old versions
     if (isViewingOldVersion) {
       return;
@@ -733,7 +734,7 @@ export function DocumentViewer({
         y: iframeRect.top + rect.top,
       });
     }
-  };
+  }, [isViewingOldVersion]);
 
   const handleAddComment = async () => {
     if (!newCommentText.trim()) return;
@@ -907,7 +908,7 @@ export function DocumentViewer({
         }
       });
     }
-  }, [hoveredComment, commentLocations]);
+  }, [hoveredComment, commentLocations, comments]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -1325,10 +1326,13 @@ export function DocumentViewer({
                     </Badge>
                     <span className="text-xs">Click to comment on this image</span>
                   </div>
-                  <img
+                  <Image
                     src={selectedElement.preview}
                     alt="Selected element"
+                    width={320}
+                    height={160}
                     className="w-full h-40 object-cover rounded border-2 border-purple-200 mb-2"
+                    unoptimized
                   />
                 </>
               ) : selectedElement?.text ? (

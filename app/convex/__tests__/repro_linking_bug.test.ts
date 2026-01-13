@@ -23,7 +23,7 @@ test("reproduce bug: invited user id not linked after signup", async () => {
 
     // 2. Create Artifact
     const artifactId = await t.run(async (ctx) => {
-        const member = await ctx.db.query("members").withIndex("by_userId_orgId", q => q.eq("userId", ownerId)).first();
+
         // Since we didn't index by userId alone above (wait, createOrgAndMember creates it), we can look it up.
         // Actually best to look up by user.
         const mem = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", ownerId)).first();
