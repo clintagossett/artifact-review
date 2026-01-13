@@ -16,6 +16,7 @@ services:
       - INSTANCE_SECRET=0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b
       - DO_NOT_REQUIRE_SSL=true
       - DISABLE_BEACON=true
+      - MAX_UDF_EXECUTION_SEC=10
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3210/version"]
       interval: 5s

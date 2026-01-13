@@ -2,7 +2,7 @@ import { Resend } from "@convex-dev/resend";
 import { components } from "../_generated/api";
 import { ActionCtx } from "../_generated/server";
 
-const resend = new Resend(components.resend, {
+export const resend = new Resend(components.resend, {
     testMode: process.env.RESEND_TEST_MODE !== "false",
 });
 
@@ -18,6 +18,18 @@ export async function sendEmail(
     const isLocal = process.env.CONVEX_SELF_HOSTED_URL !== undefined;
 
     if (isLocal) {
+        console.log(`Sending email to ${args.to} via Mailpit. Args:`, JSON.stringify(args));
+
+        // Parse "Name <email@domain.com>" or just "email@domain.com"
+        let fromAddress = args.from || "hello@artifactreview-local.xyz";
+        let fromName = "";
+
+        const match = fromAddress.match(/^(.*)<(.*)>$/);
+        if (match) {
+            fromName = match[1].trim();
+            fromAddress = match[2].trim();
+        }
+
         // Local: Send to Mailpit via API
         // In the docker network, mailpit is reachable at http://mailpit:8025
         try {
@@ -25,8 +37,8 @@ export async function sendEmail(
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    From: { Address: args.from || "hello@artifactreview-local.xyz" },
-                    To: [{ Address: args.to }],
+                    From: { Email: fromAddress, Name: fromName },
+                    To: [{ Email: args.to }],
                     Subject: args.subject,
                     HTML: args.html,
                 }),
@@ -35,17 +47,18 @@ export async function sendEmail(
             if (!response.ok) {
                 const text = await response.text();
                 console.error("Failed to send to Mailpit:", text);
-                // Fallback to Resend component if Mailpit fails? 
-                // No, let's keep it clean.
             } else {
                 console.log(`Email to ${args.to} sent to Mailpit`);
-                return;
             }
         } catch (error) {
             console.error("Error sending to Mailpit:", error);
         }
+        return; // Always return in local dev to avoid Resend fall-through
     }
 
     // Default: Use Resend component
-    await resend.sendEmail(ctx, args);
+    await resend.sendEmail(ctx, {
+        ...args,
+        from: args.from || process.env.RESEND_FROM_EMAIL || "hello@artifactreview-early.xyz",
+    });
 }

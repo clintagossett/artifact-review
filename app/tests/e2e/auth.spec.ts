@@ -4,23 +4,10 @@ import { getLatestEmail, extractMagicLink } from '../utils/resend';
 // Helper to generate unique users
 const generateUser = () => {
     const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 10000);
-    // Use a unique email for each test run to avoid "Email already in use" errors.
-    // For password signup, we can use any domain.
-    // For magic link, we need a domain that Resend accepts.
-    // If the user is in "Test Mode" on Resend, they can usually only send to their own email.
-    // However, if they have a domain set up, we can use that.
-    // Use `delivered@resend.dev` for guaranteed "delivery" simulation in Resend, 
-    // but we need unique emails for signup.
-    // Let's try attempting with a + alias on the configured FROM address if possible, 
-    // or just a standard example.com and rely on Resend Test Mode "sink" behavior if configured?
-    // The user said: "check received email in resend via API".
-    // If we use `example.com`, Resend might drop it in test mode?
-    // Safeguard: Use a random email at example.com. 
-    // If the Resend API call returns the email (even if "bounced" or "test mode limited"), we are good.
+    const random = Math.floor(Math.random() * 1000000);
     return {
         name: `Test User ${timestamp}`,
-        email: `test.user+${timestamp}${random}@tolauante.resend.app`,
+        email: `test.user+${timestamp}-${random}@tolauante.resend.app`,
         password: `Pass${timestamp}!${random}`,
     };
 };
@@ -78,9 +65,9 @@ test.describe('Authentication Flows', () => {
         await expect(page.getByText('Check Your Email')).toBeVisible();
         await expect(page.getByText(user.email)).toBeVisible();
 
-        // Fetch email from Resend (This is the critical "integration" part)
+        // Fetch email (This handles Mailpit locally and Resend in hosted)
         // We poll until we find an email to this address
-        console.log(`Polling Resend for email to ${user.email}...`);
+        console.log(`Polling for email to ${user.email}...`);
         const emailData = await getLatestEmail(user.email);
         expect(emailData).toBeTruthy();
 

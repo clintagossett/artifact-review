@@ -2,7 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { auth } from "./auth";
-import { sendEmail } from "./lib/email";
+import { sendEmail, resend } from "./lib/email";
 import { stripeClient } from "./stripe";
 import type Stripe from "stripe";
 import { Id } from "./_generated/dataModel";
