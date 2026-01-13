@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.RESEND_API_KEY);
 
-export async function getLatestEmail(toEmail: string) {
+export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
     const isLocal = process.env.NEXT_PUBLIC_CONVEX_URL?.includes('127.0.0.1') || process.env.NEXT_PUBLIC_CONVEX_URL?.includes('localhost');
 
     // Wait a bit for email to arrive
@@ -23,7 +23,8 @@ export async function getLatestEmail(toEmail: string) {
 
                 // Find matching email
                 const match = messages.find((m: any) =>
-                    m.To.some((t: any) => t.Address.includes(toEmail))
+                    m.To.some((t: any) => t.Address.includes(toEmail)) &&
+                    (!subjectFilter || m.Subject.includes(subjectFilter))
                 );
 
                 if (match) {
@@ -49,6 +50,7 @@ export async function getLatestEmail(toEmail: string) {
 
                 const recentEmail = response.data.data.find((email) =>
                     email.to.includes(toEmail) &&
+                    (!subjectFilter || email.subject.includes(subjectFilter)) &&
                     new Date(email.created_at).getTime() > Date.now() - 60000 // Within last minute
                 );
 

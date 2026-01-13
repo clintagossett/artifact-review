@@ -300,6 +300,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
                         size="sm"
                         onClick={() => openRevokeDialog(reviewer.accessId)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        aria-label="Revoke access"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -368,6 +369,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
                         size="sm"
                         onClick={() => openRevokeDialog(reviewer.accessId)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        aria-label="Revoke access"
                       >
                         Revoke
                       </Button>

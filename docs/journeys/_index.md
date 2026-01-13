@@ -16,6 +16,7 @@ These journeys reflect current production features and are mapped to E2E tests w
 | ID | Journey | Persona | Test Alignment |
 |---|---------|---------|----------------|
 | 001 | [Signup & Login](./001-signup-and-login.md) | All Users | `auth.spec.ts` |
+| 001.01 | [Expired Link Recovery](./001.01-expired-link-handling.md) | All Users | *Pending* |
 | 002 | [Artifact Upload & View](./002-artifact-upload-and-view.md) | Creator | `artifact-workflow.spec.ts` |
 | 003 | [Reviewer Comments](./003-reviewer-comments-and-feedback.md) | Reviewer | `artifact-workflow.spec.ts` |
 | 003.01 | [Invitee Onboarding](./003.01-unauthenticated-reviewer-deep-link.md) | Reviewer | *Pending* |
@@ -33,3 +34,4 @@ Future state workflows currently in design or development.
 | 007 | [GitHub Manual Pull](./007-github-manual-pull.md) | Creator | Integrations |
 | 008 | [Team Workspace](./008-team-workspace-onboarding.md) | Admin | Organizations |
 | 009 | [Version Comparison](./009-version-comparison-and-diff.md) | All Users | Collaboration |
+| 010 | [Email Verification on Sharing](./010-email-verification-on-sharing.md) | Creator | Security |

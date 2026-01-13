@@ -260,6 +260,12 @@
             "ext": ".md"
           },
           {
+            "name": "001.01-expired-link-handling.md",
+            "type": "file",
+            "path": "docs/journeys/001.01-expired-link-handling.md",
+            "ext": ".md"
+          },
+          {
             "name": "002-artifact-upload-and-view.md",
             "type": "file",
             "path": "docs/journeys/002-artifact-upload-and-view.md",
@@ -323,6 +329,12 @@
             "name": "009-version-comparison-and-diff.md",
             "type": "file",
             "path": "docs/journeys/009-version-comparison-and-diff.md",
+            "ext": ".md"
+          },
+          {
+            "name": "010-email-verification-on-sharing.md",
+            "type": "file",
+            "path": "docs/journeys/010-email-verification-on-sharing.md",
             "ext": ".md"
           }
         ]
@@ -1276,6 +1288,32 @@
             "name": "README.md",
             "type": "file",
             "path": "tasks/00034-claude-desktop-and-chatgpt-integration/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00035-research-notification-infrastructure",
+        "type": "directory",
+        "path": "tasks/00035-research-notification-infrastructure",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00035-research-notification-infrastructure/output",
+            "children": [
+              {
+                "name": "notification-research.md",
+                "type": "file",
+                "path": "tasks/00035-research-notification-infrastructure/output/notification-research.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00035-research-notification-infrastructure/README.md",
             "ext": ".md"
           }
         ]

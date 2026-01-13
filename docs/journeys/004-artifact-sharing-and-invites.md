@@ -46,4 +46,5 @@ flowchart TD
 ## Status & Actual State
 - **Share Link:** (Proposed) Public/Team link sharing in design.
 - **Email Invites:** Implemented via Resend.
+- **Verification:** (Proposed) Email verification required before sharing ([See 010](./010-email-verification-on-sharing.md)).
 - **Permissions:** Basic Viewer/Editor roles in progress.

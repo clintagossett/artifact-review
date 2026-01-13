@@ -45,6 +45,7 @@ flowchart TD
 | 2 | Auth Form | Toggle between Password and Magic Link; Social buttons |
 | 3 | Verification | "Check Your Email" screen for Magic Link |
 | 4 | Dashboard | Default land for creators |
+| 5 | Error (Proposed) | [Expired Link Recovery](./001.01-expired-link-handling.md) |
 
 ## Feature Alignment (E2E Test)
 Matches `app/tests/e2e/auth.spec.ts`.
