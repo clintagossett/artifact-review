@@ -182,10 +182,11 @@ Vercel deploys frontend
 | **Frontend** | Local dev server (`npm run dev`) |
 | **Frontend URL** | `http://localhost:3000` |
 | **Convex** | **Self-hosted Docker backend** |
-| **Convex URL** | `http://127.0.0.1:3210` |
+| **Convex URL** | `http://127.0.0.1:3210` (API) / `http://127.0.0.1:3211` (Site) |
+| **Dashboard URL** | `http://localhost:6791` |
 | **Database** | **SQLite (local container)** |
 | **Auth** | Convex Auth with dev OAuth apps |
-| **Mail Send** | Mailpit (Docker API: `http://localhost:8025/api/v1/send`) |
+| **Mail Send** | Mailpit (API: `http://localhost:8025/api/v1/send` / UI: `http://localhost:8025`) |
 | **Mail Receive** | Not configured |
 | **Data** | Isolated local SQLite data |
 
