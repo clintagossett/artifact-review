@@ -114,3 +114,40 @@ export const triggerZipProcessingForTest = internalAction({
         });
     },
 });
+
+/**
+ * Helper to expire the latest magic link in the database for a specific email
+ */
+export const expireLatestMagicLink = internalMutation({
+    args: { email: v.string() },
+    handler: async (ctx, args) => {
+        // 1. Find the auth account for this email (resend provider)
+        const account = await ctx.db.query("authAccounts")
+            .withIndex("providerAndAccountId", q =>
+                q.eq("provider", "resend").eq("providerAccountId", args.email)
+            )
+            .first();
+
+        if (!account) {
+            throw new Error(`No auth account found for email: ${args.email}`);
+        }
+
+        // 2. Find the most recent verification code for this account
+        const code = await ctx.db.query("authVerificationCodes")
+            .withIndex("accountId", q => q.eq("accountId", account._id))
+            .order("desc")
+            .first();
+
+        if (!code) {
+            throw new Error(`No verification code found for account: ${account._id}`);
+        }
+
+        // 3. Expire it (set expiration to 1 second ago)
+        await ctx.db.patch(code._id, {
+            expirationTime: Date.now() - 1000
+        });
+
+        console.log(`Expired magic link for ${args.email} (ID: ${code._id})`);
+        return { success: true, codeId: code._id };
+    },
+});
