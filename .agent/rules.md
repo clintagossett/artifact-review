@@ -16,7 +16,10 @@ These rules are mirrored from `CLAUDE.md` and `docs/architecture/convex-rules.md
     *   ALWAYS use validators (`args`, `returns`).
     *   NEVER use `filter` (use `withIndex`).
     *   Action cannot access `ctx.db`.
-4.  **Test Accounts**: ALL test user accounts MUST use the domain `@tolauante.resend.app`. Usage of `@example.com` or other domains is strictly PROHIBITED for functional tests that involve email delivery.
+4.  **Test Accounts & Emails**: ALL test accounts and emails used in testing (manual or automated) MUST use the domain `@tolauante.resend.app`. 
+    *   **NEVER** use `example.com`, `test.com`, or other placeholder domains. 
+    *   **ALWAYS** use a timestamped prefix (e.g., `test.user.1768226084936@tolauante.resend.app`) to ensure uniqueness and prevent collisions. 
+    *   Do NOT pollute the project with improper or made-up domains.
 
 ## 🛠️ Common Commands
 

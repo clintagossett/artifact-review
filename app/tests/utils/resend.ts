@@ -6,7 +6,7 @@ const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.
 export async function getLatestEmail(toEmail: string) {
     // Wait a bit for email to arrive
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 30; // 30 seconds total
     const delayMs = 1000;
 
     while (attempts < maxAttempts) {
