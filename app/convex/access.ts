@@ -9,7 +9,7 @@ import {
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
-import { resend as resendClient } from "./lib/resend";
+import { sendEmail } from "./lib/email";
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -1015,7 +1015,7 @@ export const sendEmailInternal = internalAction({
         process.env.EMAIL_FROM_NOTIFICATIONS ||
         "notifications@artifactreview-early.xyz";
 
-      await resendClient.sendEmail(ctx, {
+      await sendEmail(ctx, {
         from: fromEmail,
         to: recipientEmail,
         subject: `You've been invited to review "${artifact.name}"`,

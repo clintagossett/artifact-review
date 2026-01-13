@@ -4,6 +4,8 @@ import { Resend } from 'resend';
 const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.RESEND_API_KEY);
 
 export async function getLatestEmail(toEmail: string) {
+    const isLocal = process.env.NEXT_PUBLIC_CONVEX_URL?.includes('127.0.0.1') || process.env.NEXT_PUBLIC_CONVEX_URL?.includes('localhost');
+
     // Wait a bit for email to arrive
     let attempts = 0;
     const maxAttempts = 30; // 30 seconds total
@@ -11,25 +13,49 @@ export async function getLatestEmail(toEmail: string) {
 
     while (attempts < maxAttempts) {
         try {
-            const response = await resend.emails.list({
-                limit: 10,
-            });
+            if (isLocal) {
+                // Fetch from Mailpit API
+                const response = await fetch('http://localhost:8025/api/v1/messages');
+                if (!response.ok) throw new Error('Failed to fetch from Mailpit');
 
-            if (!response.data) {
-                throw new Error('No data in resend response');
-            }
+                const data = await response.json();
+                const messages = data.messages || [];
 
-            // Filter for the specific email
-            // Note: In a real test env, we might want to be more specific with subject/time
-            const recentEmail = response.data.data.find((email) =>
-                email.to.includes(toEmail) &&
-                new Date(email.created_at).getTime() > Date.now() - 60000 // Within last minute
-            );
+                // Find matching email
+                const match = messages.find((m: any) =>
+                    m.To.some((t: any) => t.Address.includes(toEmail))
+                );
 
-            if (recentEmail) {
-                // Fetch the email content
-                const emailContent = await resend.emails.get(recentEmail.id);
-                return emailContent.data;
+                if (match) {
+                    // Fetch full message content
+                    const msgResponse = await fetch(`http://localhost:8025/api/v1/message/${match.ID}`);
+                    const msgData = await msgResponse.json();
+                    return {
+                        html: msgData.HTML,
+                        subject: msgData.Subject,
+                        from: msgData.From.Address,
+                        to: msgData.To[0].Address,
+                    };
+                }
+            } else {
+                // Fetch from Resend API
+                const response = await resend.emails.list({
+                    limit: 10,
+                });
+
+                if (!response.data) {
+                    throw new Error('No data in resend response');
+                }
+
+                const recentEmail = response.data.data.find((email) =>
+                    email.to.includes(toEmail) &&
+                    new Date(email.created_at).getTime() > Date.now() - 60000 // Within last minute
+                );
+
+                if (recentEmail) {
+                    const emailContent = await resend.emails.get(recentEmail.id);
+                    return emailContent.data;
+                }
             }
         } catch (e) {
             console.log('Error fetching emails, retrying...', e);
@@ -39,7 +65,7 @@ export async function getLatestEmail(toEmail: string) {
         attempts++;
     }
 
-    throw new Error(`Time out waiting for email to ${toEmail}`);
+    throw new Error(`Time out waiting for email to ${toEmail} (isLocal=${isLocal})`);
 }
 
 export function extractMagicLink(htmlContent: string): string | null {

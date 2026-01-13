@@ -13,16 +13,15 @@ Local Dev → Hosted Dev (Integration) → Staging (Validation) → Production
 
 ## Architectural Decisions
 
-### Backend: Hosted Convex
+### Backend: Hybrid Strategy (Self-hosted Local, Cloud Hosted)
 
-**Decision:** Use Convex's hosted cloud service for all environments (not self-hosted Docker).
+**Decision:** Use a self-hosted Docker stack for **Local Dev** and Convex's hosted cloud service for **Hosted Dev, Staging, and Production**.
 
 **Rationale:**
-- **Automatic scaling** — Convex handles load balancing, no single-machine limits
-- **Managed infrastructure** — No ops burden for backups, monitoring, upgrades
-- **Official support** — Full support plan available (self-hosted has no support)
-- **Cost-effective** — Cheaper than running and maintaining own infrastructure
-- **Local deployments available** — Can still run locally for development via `npx convex dev` with local deployment option
+- **Local Isolation** — Complete control over the local environment, offline-capable, and faster sync.
+- **Hosted Parity** — Cloud-hosted environments mirror production-grade infrastructure with multi-tenant isolation.
+- **Cost-effective** — Local dev costs zero; production uses the Managed service for specialized features and scale.
+- **Managed Production** — Production benefits from Convex's automatic scaling, backups, and official support.
 
 **When self-hosted would be considered:**
 - ❌ Data sovereignty requirements (none for this project)
@@ -62,18 +61,18 @@ This matrix ensures all components are compatible across environments.
 | Component | Local Dev | Hosted Dev | Staging | Production |
 |-----------|-----------|------------|---------|------------|
 | **Frontend Hosting** | Local dev server (`npm run dev`) | Vercel (auto-deploy from `dev` branch) | Vercel (deploy from `staging` branch) | Vercel (deploy from `main` branch) |
-| **Frontend Domain** | `localhost:5173` | `dev.yourdomain.com` (or Vercel preview URL) | `staging.yourdomain.com` | `app.yourdomain.com` |
-| **Convex Backend** | Hosted cloud (local deployment mode) | Hosted cloud (`dev` project) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
-| **Convex URL** | Auto-generated (e.g., `local-animal-123.convex.cloud`) | Auto-generated (e.g., `happy-horse-456.convex.cloud`) | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
-| **Database** | Convex managed (isolated dev data) | Convex managed (shared dev data) | Convex managed (staging data) | Convex managed (production data) |
-| **HTML Storage** | Convex File Storage | Convex File Storage | Convex File Storage | Convex File Storage |
-| **Mail Send** | Mailpit SMTP (localhost:1025) | Resend test mode | Resend live (restricted) | Resend live (all users) |
-| **Mail Receive** | Not configured (not needed for MVP) | Not configured | Not configured | Not configured* |
-| **Email Domain** | N/A (Mailpit captures all) | `dev.yourdomain.com` (test mode, no delivery) | `staging.yourdomain.com` | `yourdomain.com` |
-| **Resend API Key** | N/A (no Resend) | Test key | Staging key | Production key |
+| **Frontend Domain** | `http://localhost:3000` | `dev.yourdomain.com` (or Vercel preview URL) | `staging.yourdomain.com` | `app.yourdomain.com` |
+| **Convex Backend** | **Self-hosted Docker** | Hosted cloud (`dev` project) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
+| **Convex URL** | `http://127.0.0.1:3210` | Auto-generated (e.g., `happy-horse-456.convex.cloud`) | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
+| **Database** | **SQLite (local container)** | Convex managed (shared dev data) | Convex managed (staging data) | Convex managed (production data) |
+| **HTML Storage** | Local File Storage | Convex File Storage | Convex File Storage | Convex File Storage |
+| **Mail Send** | **Mailpit (Docker API)** | Resend (Test Mode) | Resend live (restricted) | Resend live (all users) |
+| **Mail Receive** | Not configured | Not configured | Not configured | Not configured* |
+| **Email Domain** | N/A (Mailpit capture) | `dev.yourdomain.com` (test mode) | `staging.yourdomain.com` | `yourdomain.com` |
+| **Resend API Key** | N/A (bypassed locally) | Test key | Staging key | Production key |
 | **Auth Provider** | Convex Auth | Convex Auth | Convex Auth | Convex Auth |
 | **OAuth Apps** | Dev credentials | Dev credentials | Staging credentials | Production credentials |
-| **OAuth Redirects** | `http://localhost:5173/auth/callback` | `https://dev.yourdomain.com/auth/callback` | `https://staging.yourdomain.com/auth/callback` | `https://app.yourdomain.com/auth/callback` |
+| **OAuth Redirects** | `http://localhost:3000/auth/callback` | `https://dev.yourdomain.com/auth/callback` | `https://staging.yourdomain.com/auth/callback` | `https://app.yourdomain.com/auth/callback` |
 
 **\*Note on Mail Receive:** Inbound email handling (e.g., reply-to-comment via email) is not required for MVP. If needed in future, consider:
 - Resend supports inbound email via webhooks
@@ -106,11 +105,19 @@ vercel link
 
 #### Convex Setup
 
+#### Local Dev (Self-hosted Docker)
+
 ```bash
-# Local Dev (uses local deployment mode)
-npx convex dev
-# No RESEND_API_KEY needed (uses Mailpit)
-# HTML files stored in Convex File Storage (included in plan)
+# 1. Start Docker stack
+docker compose up -d
+
+# 2. Push functions to local backend
+npx convex dev --once
+```
+
+- **Environment**: Managed via `CONVEX_SELF_HOSTED_URL` and `CONVEX_SELF_HOSTED_ADMIN_KEY` in `.env.local`.
+- **Emails**: Automatically routed to Mailpit API via `app/convex/lib/email.ts`.
+- **Dashboard**: Accessed via `http://localhost:6791`.
 
 # Hosted Dev
 npx convex deploy --project dev
@@ -172,15 +179,15 @@ Vercel deploys frontend
 
 | Aspect | Configuration |
 |--------|--------------|
-| **Frontend** | Local dev server (`npm run dev` via Vite or Next.js) |
-| **Frontend URL** | `http://localhost:5173` (Vite) or `http://localhost:3000` (Next.js) |
-| **Convex** | Hosted cloud (local deployment mode via `npx convex dev`) |
-| **Convex URL** | Auto-generated `*.convex.cloud` (e.g., `local-animal-123.convex.cloud`) |
-| **Database** | Convex managed (isolated per developer) |
+| **Frontend** | Local dev server (`npm run dev`) |
+| **Frontend URL** | `http://localhost:3000` |
+| **Convex** | **Self-hosted Docker backend** |
+| **Convex URL** | `http://127.0.0.1:3210` |
+| **Database** | **SQLite (local container)** |
 | **Auth** | Convex Auth with dev OAuth apps |
-| **Mail Send** | Mailpit (Docker: `localhost:1025` SMTP, `localhost:8025` web UI) |
+| **Mail Send** | Mailpit (Docker API: `http://localhost:8025/api/v1/send`) |
 | **Mail Receive** | Not configured |
-| **Data** | Seed data, can be reset freely |
+| **Data** | Isolated local SQLite data |
 
 **Testing:**
 - Unit tests run locally with Vitest
@@ -297,29 +304,25 @@ Vercel deploys frontend
 
 ### Convex Deployments
 
-**All environments use Convex's hosted cloud service** (not self-hosted Docker). Each environment uses a separate project/deployment:
-
+#### Local Dev (Self-hosted Docker)
+Runs entirely on your local machine via Docker Compose.
 ```bash
-# Local Dev (hosted cloud with local deployment mode)
-# Runs on your machine but backend is Convex-managed
-npx convex dev
-# Benefits: faster sync, no quota limits, isolated per developer
-
-# Hosted Dev
-npx convex deploy --project dev
-
-# Staging
-npx convex deploy --project staging
-
-# Production
-npx convex deploy --project prod
+docker compose up -d
+npx convex dev --once
 ```
+**Benefits:** Absolute isolation, offline-capable, zero Convex cloud usage.
 
-**Key points:**
-- All deployments run on Convex's infrastructure (even "local" mode)
-- Local mode runs a subprocess on your machine but data lives in Convex cloud
-- Each environment gets an auto-generated `*.convex.cloud` URL
-- Convex handles: scaling, backups, monitoring, load balancing
+#### Hosted Dev (Cloud)
+Traditional cloud deployment for integration testing.
+```bash
+npx convex deploy --project dev
+```
+**Benefits:** Matches production infrastructure, shared team access.
+
+- **Local Dev** uses a self-hosted Docker container with a local SQLite database.
+- **Hosted/Staging/Prod** environments use Convex's managed cloud infrastructure.
+- Each cloud environment gets its own `*.convex.cloud` URL.
+- Convex Managed handles: scaling, backups, monitoring, load balancing in the cloud.
 
 **Environment variables** managed per deployment:
 ```bash

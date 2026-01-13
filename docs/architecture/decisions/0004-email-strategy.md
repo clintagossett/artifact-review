@@ -81,12 +81,26 @@ When running locally via Docker Compose, all emails are routed to Mailpit. This 
 
 ### Environment Configuration
 
-| Environment | Mode | Configuration | Behavior |
-|-------------|------|---------------|----------|
-| **Local** | Mailpit | `docker compose up` | Captured locally in Mailpit UI |
-| **Hosted Dev** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery (Verified Domain) |
-| **Staging** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery |
-| **Production** | Resend (Live) | `RESEND_TEST_MODE=false` | Real delivery |
+| Environment | Infrastructure | Email Strategy | Primary Purpose |
+|-------------|----------------|----------------|-----------------|
+| **Local Dev** | Docker Compose (Self-hosted Convex + Mailpit) | **Capture**: Bypasses Resend; routed to Mailpit. | Fast, isolated, offline-capable feature development. |
+| **Hosted Dev** | Convex Cloud (Dev Project) + Resend | **Log/Deliver**: Uses Resend (Test Mode OR Live). | Shared preview, integration testing, team collaboration. |
+| **Staging** | Convex Cloud (Staging Project) + Resend | **Live**: Real delivery to verified domains. | Final QA and stakeholder sign-off. |
+| **Production** | Convex Cloud (Prod Project) + Resend | **Live**: Real delivery to all users. | Live application traffic. |
+
+### Environment Definitions
+
+#### Local Dev ("The Sandboxed Machine")
+- **Backend**: Self-hosted Convex running in Docker.
+- **Data**: Local SQLite database; isolated per developer.
+- **Email**: Mailpit captures all traffic. No external API keys or secrets required for core auth.
+- **Dashboard**: Accessed via `localhost:6791`.
+
+#### Hosted Dev ("The Collective Sandbox")
+- **Backend**: Standard Convex Cloud deployment.
+- **Data**: Shared development database in the cloud.
+- **Email**: Routes through Resend. Usually uses `RESEND_TEST_MODE=true` to log emails in the cloud dashboard without sending, but can be toggled to `false` for end-to-end delivery testing.
+- **Dashboard**: Accessed via the Convex web dashboard.
 
 ### Resend Configuration
 
