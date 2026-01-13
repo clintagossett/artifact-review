@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { validateReturnTo } from "@/lib/validateReturnTo";
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -26,9 +27,20 @@ function VerifyEmailContent() {
       return;
     }
 
-    // If authenticated, redirect to dashboard
+    // If authenticated, redirect to destination
     if (!isLoading && isAuthenticated) {
-      router.push("/dashboard");
+      const queryReturnTo = searchParams.get("returnTo");
+      const localReturnTo = localStorage.getItem("returnTo");
+      const returnTo = queryReturnTo || localReturnTo;
+
+      const validatedReturnTo = validateReturnTo(returnTo);
+
+      if (validatedReturnTo) {
+        localStorage.removeItem("returnTo");
+        router.push(validatedReturnTo);
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [isAuthenticated, isLoading, router, searchParams]);
 

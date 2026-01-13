@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GradientLogo } from "@/components/shared/GradientLogo";
 import { IconInput } from "@/components/shared/IconInput";
 import { AuthMethodToggle } from "./AuthMethodToggle";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogIn, Mail, Lock, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 
 interface LoginFormProps {
@@ -17,6 +18,9 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const { signIn } = useAuthActions();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+
   const [authMethod, setAuthMethod] = useState<"password" | "magic-link">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,7 +76,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
     try {
       if (authMethod === "magic-link") {
-        await signIn("resend", { email, redirectTo: "/dashboard" });
+        await signIn("resend", { email, redirectTo: returnTo || "/dashboard" });
         setEmailSent(true);
         // Don't call onSuccess - user is not authenticated yet
       } else {
@@ -261,7 +265,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           <p className="text-sm text-gray-600">
             {"Don't have an account? "}
             <Link
-              href="/register"
+              href={returnTo ? `/register?returnTo=${encodeURIComponent(returnTo)}` : "/register"}
               className="text-blue-600 hover:text-blue-700 font-semibold transition"
             >
               Sign up

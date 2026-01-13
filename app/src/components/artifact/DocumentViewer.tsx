@@ -77,8 +77,9 @@ import { useRouter } from 'next/navigation';
 import { usePresence } from '@/hooks/usePresence';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import { PresenceAvatars } from './PresenceAvatars';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+import { logger, LOG_TOPICS } from '@/lib/logger';
 
 interface DocumentViewerProps {
   documentId: string;
@@ -206,14 +207,10 @@ export function DocumentViewer({
   const activeToolModeRef = useRef<ToolMode>(null);
   const commentBadgeRef = useRef<ToolBadge>(null);
 
-  // Keep refs in sync with state
-  useEffect(() => {
-    activeToolModeRef.current = activeToolMode;
-  }, [activeToolMode]);
+  // Refs for iframe listeners to avoid dependency loops
+  // Refs for iframe listeners to avoid dependency loops moved below definitions to avoid TDZ errors
 
-  useEffect(() => {
-    commentBadgeRef.current = commentBadge;
-  }, [commentBadge]);
+  // Refs for iframe listeners sync moved below definition to avoid TDZ errors
 
   // Version management state
   // Use the real versionId prop instead of mock version IDs
@@ -241,13 +238,42 @@ export function DocumentViewer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Filter comments by current version and page
-  const currentVersionComments = comments.filter(
-    comment => comment.versionId === currentVersionId &&
-      (!comment.page || comment.page === currentPage) // Filter by page if specified
-  );
+  const currentVersionComments = useMemo(() => {
+    return comments.filter(
+      comment => comment.versionId === currentVersionId &&
+        (!comment.page || comment.page === currentPage) // Filter by page if specified
+    );
+  }, [comments, currentVersionId, currentPage]);
 
-  const currentVersion = versions.find(v => v._id === currentVersionId);
-  const isViewingOldVersion = !currentVersion?.isLatest;
+  // Refs for iframe listeners (moved from above to avoid TDZ errors)
+  const currentPageRef = useRef(currentPage);
+  const currentVersionCommentsRef = useRef(currentVersionComments);
+  const historyIndexRef = useRef(historyIndex);
+
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    currentVersionCommentsRef.current = currentVersionComments;
+  }, [currentVersionComments]);
+
+  useEffect(() => {
+    historyIndexRef.current = historyIndex;
+  }, [historyIndex]);
+
+  useEffect(() => {
+    activeToolModeRef.current = activeToolMode;
+  }, [activeToolMode]);
+
+  useEffect(() => {
+    commentBadgeRef.current = commentBadge;
+  }, [commentBadge]);
+
+
+
+  const currentVersion = useMemo(() => versions.find(v => v._id === currentVersionId), [versions, currentVersionId]);
+  const isViewingOldVersion = useMemo(() => !currentVersion?.isLatest, [currentVersion]);
 
   // Track the view once the version object is confirmed to exist
   useViewTracker(documentId as Id<"artifacts">, versionId, !!currentVersion);
@@ -488,6 +514,99 @@ export function DocumentViewer({
     }, 350);
   };
 
+  const handleTextSelection = useCallback((e: MouseEvent) => {
+    // Block commenting on old versions
+    if (isViewingOldVersion) {
+      return;
+    }
+
+    // Only show comment tooltip if comment tool is active (via button or badge)
+    // Use refs to get current values (fixes closure issue)
+    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
+      return;
+    }
+
+    const selection = iframeRef.current?.contentWindow?.getSelection();
+    const selectedTextValue = selection?.toString().trim() || '';
+
+    if (selection && selectedTextValue.length > 0) {
+      setSelectedText(selection.toString());
+      setSelectedElement(null);
+      setShowCommentTooltip(true);
+
+      // Position tooltip relative to iframe position
+      const iframeRect = iframeRef.current?.getBoundingClientRect();
+      if (iframeRect) {
+        setTooltipPosition({
+          x: iframeRect.left + e.clientX,
+          y: iframeRect.top + e.clientY
+        });
+      } else {
+        setTooltipPosition({ x: e.clientX, y: e.clientY });
+      }
+    } else {
+      setShowCommentTooltip(false);
+    }
+  }, [isViewingOldVersion]);
+
+  const handleElementClick = useCallback((e: Event) => {
+    // Block commenting on old versions
+    if (isViewingOldVersion) {
+      return;
+    }
+
+    // Only allow commenting when comment tool is active
+    // Use refs to get current values (fixes closure issue)
+    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
+      return;
+    }
+
+    // When comment mode is active, prevent normal element behavior
+    e.preventDefault();
+    e.stopPropagation();
+
+    const target = (e.target as HTMLElement).closest('[id]') as HTMLElement;
+    if (!target) return;
+    const elementId = target.id;
+
+    let elementType: 'image' | 'heading' | 'button' | 'section' = 'section';
+    let elementPreview: string | undefined;
+    let elementText: string | undefined;
+
+    // Determine element type
+    if (target.tagName === 'IMG') {
+      elementType = 'image';
+      elementPreview = (target as HTMLImageElement).src;
+    } else if (target.tagName.match(/^H[1-6]$/)) {
+      elementType = 'heading';
+      elementText = target.textContent || undefined;
+    } else if (target.tagName === 'A' || target.tagName === 'BUTTON') {
+      elementType = 'button';
+      elementText = target.textContent || undefined;
+    }
+
+    setSelectedElement({
+      type: elementType,
+      id: elementId,
+      preview: elementPreview,
+      text: elementText,
+    });
+
+    setSelectedText('');
+    setShowCommentTooltip(true);
+
+    // Get position relative to the viewport
+    const rect = target.getBoundingClientRect();
+    const iframeRect = iframeRef.current?.getBoundingClientRect();
+
+    if (iframeRect) {
+      setTooltipPosition({
+        x: iframeRect.left + rect.right + 10,
+        y: iframeRect.top + rect.top,
+      });
+    }
+  }, [isViewingOldVersion]);
+
   // Global click handler to block ALL clicks when comment mode is active
   const handleGlobalClick = useCallback((e: Event) => {
     // Only intercept when comment mode is active
@@ -506,11 +625,20 @@ export function DocumentViewer({
     e.preventDefault();
     e.stopPropagation();
 
-    // If element has an ID, trigger comment creation
-    if (target.id) {
+    // If element or its parent has an ID, trigger comment creation
+    if (target.closest('[id]')) {
       handleElementClick(e);
     }
-  }, [handleElementClick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [handleElementClick]);
+
+  // Stable refs for handlers to avoid iframe listener churn
+  const handleGlobalClickRef = useRef(handleGlobalClick);
+  const handleTextSelectionRef = useRef(handleTextSelection);
+  const handleElementClickRef = useRef(handleElementClick);
+
+  useEffect(() => { handleGlobalClickRef.current = handleGlobalClick; }, [handleGlobalClick]);
+  useEffect(() => { handleTextSelectionRef.current = handleTextSelection; }, [handleTextSelection]);
+  useEffect(() => { handleElementClickRef.current = handleElementClick; }, [handleElementClick]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -518,37 +646,22 @@ export function DocumentViewer({
 
     const setupIframeListeners = () => {
       const doc = iframe.contentDocument;
-      if (!doc) return;
+      if (!doc || (doc as any).__listenersAttached) return;
+      (doc as any).__listenersAttached = true;
 
-      // Add global click handler with capture phase (runs before element handlers)
-      doc.addEventListener('click', handleGlobalClick, true);
+      logger.debug(LOG_TOPICS.Artifact, 'DocumentViewer', 'Attaching iframe listeners', { url: artifactUrl });
+
+      // Add global click and contextmenu handlers with capture phase
+      doc.addEventListener('click', (e) => handleGlobalClickRef.current(e), true);
+      doc.addEventListener('contextmenu', (e) => handleGlobalClickRef.current(e), true);
 
       // Add selection listener for text
-      doc.addEventListener('mouseup', handleTextSelection);
+      doc.addEventListener('mouseup', (e) => handleTextSelectionRef.current(e));
 
-      // Add click listeners for images and other elements (for comment creation)
-      const images = doc.querySelectorAll('img[id]');
-      images.forEach((img) => {
-        img.addEventListener('click', handleElementClick);
-        img.addEventListener('contextmenu', handleElementClick);
-        // Add hover effect styling
-        (img as HTMLElement).style.cursor = 'pointer';
-      });
-
-      // Add click listeners for buttons
-      const buttons = doc.querySelectorAll('a.cta-button[id], button[id]');
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', handleElementClick);
-        btn.addEventListener('contextmenu', handleElementClick);
-        (btn as HTMLElement).style.cursor = 'pointer';
-      });
-
-      // Add click listeners for headings
-      const headings = doc.querySelectorAll('h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
-      headings.forEach((heading) => {
-        heading.addEventListener('click', handleElementClick);
-        heading.addEventListener('contextmenu', handleElementClick);
-        (heading as HTMLElement).style.cursor = 'pointer';
+      // Add hover effect styling for interactive elements with IDs
+      const interactiveWithIds = doc.querySelectorAll('img[id], a.cta-button[id], button[id], h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]');
+      interactiveWithIds.forEach((el) => {
+        (el as HTMLElement).style.cursor = 'pointer';
       });
 
       // Add navigation handling for links
@@ -563,17 +676,19 @@ export function DocumentViewer({
             setCurrentPage(newPage);
 
             // Update navigation history
-            const newHistory = navigationHistory.slice(0, historyIndex + 1);
-            newHistory.push(newPage);
-            setNavigationHistory(newHistory);
-            setHistoryIndex(newHistory.length - 1);
+            setNavigationHistory(prev => {
+              const newHistory = prev.slice(0, historyIndexRef.current + 1);
+              newHistory.push(newPage);
+              return newHistory;
+            });
+            setHistoryIndex(prev => prev + 1);
           }
         });
       });
 
       // Detect location context for all comments with elementIds
       const locations: Record<string, Comment['location']> = {};
-      currentVersionComments.forEach(comment => {
+      currentVersionCommentsRef.current.forEach(comment => {
         if (comment.elementId) {
           const location = detectElementLocation(comment.elementId, doc);
           if (location) {
@@ -629,11 +744,14 @@ export function DocumentViewer({
     return () => {
       iframe.removeEventListener('load', setupIframeListeners);
       if (iframe.contentDocument) {
-        iframe.contentDocument.removeEventListener('click', handleGlobalClick, true);
-        iframe.contentDocument.removeEventListener('mouseup', handleTextSelection);
+        // Cleanup is less critical here as the document itself is replaced on navigation,
+        // but we'll remove the specific capture phase listeners we added if possible
+        const doc = iframe.contentDocument;
+        doc.removeEventListener('click', (e) => handleGlobalClickRef.current(e), true);
+        doc.removeEventListener('contextmenu', (e) => handleGlobalClickRef.current(e), true);
       }
     };
-  }, [currentVersionId, artifactUrl, currentPage, currentVersionComments, handleElementClick, handleGlobalClick, handleTextSelection, historyIndex, navigationHistory]);
+  }, [artifactUrl]);
 
   // Reset to index page when version changes
   useEffect(() => {
@@ -642,104 +760,17 @@ export function DocumentViewer({
     setHistoryIndex(0);
   }, [currentVersionId]);
 
-  const handleTextSelection = useCallback((e: MouseEvent) => {
-    // Block commenting on old versions
-    if (isViewingOldVersion) {
-      return;
-    }
-
-    // Only show comment tooltip if comment tool is active (via button or badge)
-    // Use refs to get current values (fixes closure issue)
-    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
-      return;
-    }
-
-    const selection = iframeRef.current?.contentWindow?.getSelection();
-    const selectedTextValue = selection?.toString().trim() || '';
-
-    if (selection && selectedTextValue.length > 0) {
-      setSelectedText(selection.toString());
-      setSelectedElement(null);
-      setShowCommentTooltip(true);
-
-      // Position tooltip relative to iframe position
-      const iframeRect = iframeRef.current?.getBoundingClientRect();
-      if (iframeRect) {
-        setTooltipPosition({
-          x: iframeRect.left + e.clientX,
-          y: iframeRect.top + e.clientY
-        });
-      } else {
-        setTooltipPosition({ x: e.clientX, y: e.clientY });
-      }
-    } else {
-      setShowCommentTooltip(false);
-    }
-  }, [isViewingOldVersion]);
-
-  const handleElementClick = useCallback((e: Event) => {
-    // Block commenting on old versions
-    if (isViewingOldVersion) {
-      return;
-    }
-
-    // Only allow commenting when comment tool is active
-    // Use refs to get current values (fixes closure issue)
-    if (activeToolModeRef.current !== 'comment' && commentBadgeRef.current === null) {
-      return;
-    }
-
-    // When comment mode is active, prevent normal element behavior
-    e.preventDefault();
-    e.stopPropagation();
-
-    const target = e.target as HTMLElement;
-    const elementId = target.id;
-
-    if (!elementId) return;
-
-    let elementType: 'image' | 'heading' | 'button' | 'section' = 'section';
-    let elementPreview: string | undefined;
-    let elementText: string | undefined;
-
-    // Determine element type
-    if (target.tagName === 'IMG') {
-      elementType = 'image';
-      elementPreview = (target as HTMLImageElement).src;
-    } else if (target.tagName.match(/^H[1-6]$/)) {
-      elementType = 'heading';
-      elementText = target.textContent || undefined;
-    } else if (target.tagName === 'A' || target.tagName === 'BUTTON') {
-      elementType = 'button';
-      elementText = target.textContent || undefined;
-    }
-
-    setSelectedElement({
-      type: elementType,
-      id: elementId,
-      preview: elementPreview,
-      text: elementText,
-    });
-
-    setSelectedText('');
-    setShowCommentTooltip(true);
-
-    // Get position relative to the viewport
-    const rect = target.getBoundingClientRect();
-    const iframeRect = iframeRef.current?.getBoundingClientRect();
-
-    if (iframeRect) {
-      setTooltipPosition({
-        x: iframeRect.left + rect.right + 10,
-        y: iframeRect.top + rect.top,
-      });
-    }
-  }, [isViewingOldVersion]);
 
   const handleAddComment = async () => {
     if (!newCommentText.trim()) return;
 
     try {
+      logger.debug(LOG_TOPICS.Artifact, 'DocumentViewer', 'Creating comment', {
+        selectedElement,
+        selectedText,
+        page: currentPage
+      });
+
       // Build target metadata object for backend
       let target: any;
 
@@ -765,6 +796,7 @@ export function DocumentViewer({
       }
 
       // Save to backend (Convex will broadcast update via useComments hook)
+      logger.debug(LOG_TOPICS.Artifact, 'DocumentViewer', 'Final target metadata', { target });
       await createComment(versionId, newCommentText, target);
 
       // Clear form
@@ -952,37 +984,43 @@ export function DocumentViewer({
     }
   };
 
-  const filteredComments = currentVersionComments.filter(comment => {
-    if (filter === 'all') return true;
-    if (filter === 'resolved') return comment.resolved;
-    if (filter === 'unresolved') return !comment.resolved;
-    return true;
-  });
+  const filteredComments = useMemo(() => {
+    return currentVersionComments.filter(comment => {
+      if (filter === 'all') return true;
+      if (filter === 'resolved') return comment.resolved;
+      if (filter === 'unresolved') return !comment.resolved;
+      return true;
+    });
+  }, [currentVersionComments, filter]);
+
+  // Artifact status (defaulting to in-review as it is currently not stored in the schema)
+  const status = 'in-review' as string;
 
   return (
-    <>
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.8);
+    <TooltipProvider>
+      <div className="flex flex-col h-screen bg-gray-50 overflow-hidden relative">
+        <style>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: scale(0.8);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1);
+            }
           }
-          to {
-            opacity: 1;
-            transform: scale(1);
+          
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 1;
+              transform: scale(1);
+            }
+            50% {
+              opacity: 0.8;
+              transform: scale(1.05);
+            }
           }
-        }
-        
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.7;
-            transform: scale(0.9);
-          }
-        }
         
         @keyframes presenceBlink {
           0%, 100% {
@@ -1012,204 +1050,203 @@ export function DocumentViewer({
         }
       `}</style>
 
-      {/* Activity Notification */}
-      {recentActivity && (
-        <div
-          className="fixed top-20 right-6 z-50 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[200px]"
-          style={{
-            animation: 'slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards',
-          }}
-        >
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-gray-900 font-medium">{recentActivity.message}</span>
-        </div>
-      )}
+        {/* Activity Notification */}
+        {recentActivity && (
+          <div
+            className="fixed top-20 right-6 z-50 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[200px]"
+            style={{
+              animation: 'slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards',
+            }}
+          >
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-gray-900 font-medium">{recentActivity.message}</span>
+          </div>
+        )}
 
-      <div className="h-screen flex flex-col bg-white">
-        {/* Top Bar */}
-        <header className="border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={onBack}>
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back
-              </Button>
-              <div className="h-6 w-px bg-gray-300" />
+        <div className="h-screen flex flex-col bg-white">
+          {/* Top Bar */}
+          <header className="border-b border-gray-200 bg-white">
+            <div className="flex items-center justify-between px-6 py-4">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="sm" onClick={onBack}>
+                  <ChevronLeft className="w-4 h-4 mr-1" />
+                  Back
+                </Button>
+                <div className="h-6 w-px bg-gray-300" />
 
-              {/* Version Selector */}
-              {versions.length > 0 && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <History className="w-4 h-4" />
-                          {currentVersion?.name && currentVersion.name !== `v${currentVersion.number}`
-                            ? `v${currentVersion?.number || 1} - ${currentVersion.name}`
-                            : `v${currentVersion?.number || 1}`}
-                          {currentVersion?.isLatest && (
-                            <Badge className="bg-green-100 text-green-800 text-xs ml-1">
-                              Latest
-                            </Badge>
-                          )}
-                          <ChevronDown className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-80">
-                        <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
-                        <DropdownMenuSeparator />
-                        {[...versions].sort((a, b) => b.number - a.number).map((version) => (
-                          <DropdownMenuItem
-                            key={version._id}
-                            onClick={() => handleVersionChange(version.number)}
-                            className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
-                          >
-                            <div className="flex items-start justify-between w-full gap-2">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">
-                                    {version.name && version.name !== `v${version.number}`
-                                      ? `v${version.number} - ${version.name}`
-                                      : `v${version.number}`}
-                                  </span>
-                                  {version.isLatest && (
-                                    <Badge className="bg-green-100 text-green-800 text-xs">
-                                      Latest
-                                    </Badge>
-                                  )}
-                                  {currentVersionId === version._id && (
-                                    <Check className="w-4 h-4 text-purple-600" />
-                                  )}
-                                </div>
-                                <div className="text-xs text-gray-500 mt-0.5">
-                                  {new Date(version.createdAt).toLocaleDateString()}
+                {/* Version Selector */}
+                {versions.length > 0 && (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <History className="w-4 h-4" />
+                            {currentVersion?.name && currentVersion.name !== `v${currentVersion.number}`
+                              ? `v${currentVersion?.number || 1} - ${currentVersion.name}`
+                              : `v${currentVersion?.number || 1}`}
+                            {currentVersion?.isLatest && (
+                              <Badge className="bg-green-100 text-green-800 text-xs ml-1">
+                                Latest
+                              </Badge>
+                            )}
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-80">
+                          <div className="px-2 py-1.5 text-sm font-semibold text-gray-900">Version History</div>
+                          <DropdownMenuSeparator />
+                          {[...versions].sort((a, b) => b.number - a.number).map((version) => (
+                            <DropdownMenuItem
+                              key={version._id}
+                              onClick={() => handleVersionChange(version.number)}
+                              className={`${currentVersionId === version._id ? 'bg-purple-50' : ''}`}
+                            >
+                              <div className="flex items-start justify-between w-full gap-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">
+                                      {version.name && version.name !== `v${version.number}`
+                                        ? `v${version.number} - ${version.name}`
+                                        : `v${version.number}`}
+                                    </span>
+                                    {version.isLatest && (
+                                      <Badge className="bg-green-100 text-green-800 text-xs">
+                                        Latest
+                                      </Badge>
+                                    )}
+                                    {currentVersionId === version._id && (
+                                      <Check className="w-4 h-4 text-purple-600" />
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {new Date(version.createdAt).toLocaleDateString()}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-purple-600"
+                            onClick={() => {
+                              if (!isOwner) {
+                                showPermissionModal('upload');
+                                return;
+                              }
+                              onNavigateToVersions?.();
+                            }}
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload New Version
                           </DropdownMenuItem>
-                        ))}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-purple-600"
-                          onClick={() => {
-                            if (!isOwner) {
-                              showPermissionModal('upload');
-                              return;
-                            }
-                            onNavigateToVersions?.();
-                          }}
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload New Version
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </>
-              )}
-
-              {versions.length === 0 && <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>}
-
-              <Badge className={getStatusColor(status)}>
-                {status === 'in-review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
-              </Badge>
-
-              {/* Live Presence Face Pile */}
-              <PresenceAvatars activeUsers={activeUsers} currentVersionId={versionId} />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                {onNavigateToShare && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (!isOwner) {
-                        showPermissionModal('share');
-                        return;
-                      }
-                      onNavigateToShare();
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share
-                  </Button>
-                )}
-                {onNavigateToSettings && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (!isOwner) {
-                        showPermissionModal('manage');
-                        return;
-                      }
-                      onNavigateToSettings();
-                    }}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Manage
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Comment Toolbar */}
-        <CommentToolbar
-          activeToolMode={activeToolMode}
-          commentBadge={commentBadge}
-          onToolChange={handleToolChange}
-          onBadgeClick={handleBadgeClick}
-          filter={filter}
-          onFilterChange={setFilter}
-          activeCount={filteredComments.filter(c => !c.resolved).length}
-          isViewingOldVersion={isViewingOldVersion}
-          currentVersionNumber={currentVersion?.number}
-          latestVersionNumber={versions.find(v => v.isLatest)?.number}
-          onSwitchToLatest={() => handleVersionChange(latestVersionNumber)}
-        />
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* ZIP File Tree Sidebar (Left Side) */}
-          {currentVersion?.fileType === "zip" && fileTreeData.length > 0 && (
-            <div
-              className={`border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ease-in-out ${isFileTreeOpen ? 'w-64' : 'w-12 items-center'
-                }`}
-            >
-              <div className={`p-3 border-b border-gray-200 flex items-center ${isFileTreeOpen ? 'justify-between' : 'justify-center'} h-12`}>
-                {isFileTreeOpen ? (
-                  <>
-                    <div className="flex items-center gap-2 font-medium text-xs text-gray-500 uppercase tracking-wider">
-                      <FolderTree className="w-4 h-4" />
-                      Files
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(false)}>
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
                   </>
-                ) : (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(true)}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
                 )}
+
+                {versions.length === 0 && <h1 className="font-semibold text-gray-900">{artifactTitle}</h1>}
+
+                <Badge className={getStatusColor(status)}>
+                  {status === 'in-review' ? 'In Review' : status.charAt(0).toUpperCase() + status.slice(1)}
+                </Badge>
+
+                {/* Live Presence Face Pile */}
+                <PresenceAvatars activeUsers={activeUsers} currentVersionId={versionId} />
               </div>
 
-              {isFileTreeOpen ? (
-                <div className="flex-1 overflow-y-auto p-2">
-                  <FileTree
-                    data={fileTreeData}
-                    onSelectFile={handleFileSelect}
-                    selectedFileId={zipFiles?.find(f => f.path === currentPage)?._id || zipFiles?.find(f => f.path === currentPage.replace(/^\//, ''))?._id}
-                  />
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {onNavigateToShare && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!isOwner) {
+                          showPermissionModal('share');
+                          return;
+                        }
+                        onNavigateToShare();
+                      }}
+                    >
+                      <Share2 className="w-4 h-4 mr-2" />
+                      Share
+                    </Button>
+                  )}
+                  {onNavigateToSettings && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!isOwner) {
+                          showPermissionModal('manage');
+                          return;
+                        }
+                        onNavigateToSettings();
+                      }}
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Manage
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <div className="py-4 flex flex-col items-center gap-4">
-                  <TooltipProvider>
+              </div>
+            </div>
+          </header>
+
+          {/* Comment Toolbar */}
+          <CommentToolbar
+            activeToolMode={activeToolMode}
+            commentBadge={commentBadge}
+            onToolChange={handleToolChange}
+            onBadgeClick={handleBadgeClick}
+            filter={filter}
+            onFilterChange={setFilter}
+            activeCount={filteredComments.filter(c => !c.resolved).length}
+            isViewingOldVersion={isViewingOldVersion}
+            currentVersionNumber={currentVersion?.number}
+            latestVersionNumber={versions.find(v => v.isLatest)?.number}
+            onSwitchToLatest={() => handleVersionChange(latestVersionNumber)}
+          />
+
+          {/* Main Content Area */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* ZIP File Tree Sidebar (Left Side) */}
+            {currentVersion?.fileType === "zip" && fileTreeData.length > 0 && (
+              <div
+                className={`border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ease-in-out ${isFileTreeOpen ? 'w-64' : 'w-12 items-center'
+                  }`}
+              >
+                <div className={`p-3 border-b border-gray-200 flex items-center ${isFileTreeOpen ? 'justify-between' : 'justify-center'} h-12`}>
+                  {isFileTreeOpen ? (
+                    <>
+                      <div className="flex items-center gap-2 font-medium text-xs text-gray-500 uppercase tracking-wider">
+                        <FolderTree className="w-4 h-4" />
+                        Files
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(false)}>
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-900" onClick={() => setIsFileTreeOpen(true)}>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {isFileTreeOpen ? (
+                  <div className="flex-1 overflow-y-auto p-2">
+                    <FileTree
+                      data={fileTreeData}
+                      onSelectFile={handleFileSelect}
+                      selectedFileId={zipFiles?.find(f => f.path === currentPage)?._id || zipFiles?.find(f => f.path === currentPage.replace(/^\//, ''))?._id}
+                    />
+                  </div>
+                ) : (
+                  <div className="py-4 flex flex-col items-center gap-4">
                     <Tooltip>
                       <TooltipTrigger>
                         <FolderTree className="w-5 h-5 text-gray-400" />
@@ -1218,170 +1255,170 @@ export function DocumentViewer({
                         <p>Files</p>
                       </TooltipContent>
                     </Tooltip>
-                  </TooltipProvider>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Document Display */}
-          <div className="flex-1 overflow-auto bg-gray-50 p-8">
-            <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-              {/* Conditional rendering based on file type */}
-              {currentVersion?.fileType === 'markdown' ||
-                (currentVersion?.fileType === 'zip' && (currentPage.toLowerCase().endsWith('.md') || currentPage.toLowerCase().endsWith('.markdown'))) ? (
-                <MarkdownViewer
-                  src={artifactUrl}
-                  className="min-h-[1000px]"
-                  onLinkClick={handleLinkClick}
-                />
-              ) : (
-                <iframe
-                  ref={iframeRef}
-                  src={artifactUrl}
-                  className="w-full h-[1000px] border-0"
-                  title="HTML Document Preview"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* Comments Sidebar */}
-          {sidebarOpen && (
-            <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-gray-700" />
-                  <h2 className="font-semibold text-gray-900">
-                    Comments ({filteredComments.length})
-                  </h2>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
+                  </div>
+                )}
               </div>
+            )}
 
-              <div className="flex-1 overflow-auto p-4 space-y-4">
-                {/* Comments List */}
-                {filteredComments.map((comment) => (
-                  <CommentCard
-                    key={comment.id}
-                    comment={comment}
-                    currentUserId={currentUserId}
-                    artifactOwnerId={artifactOwnerId}
-                    hoveredComment={hoveredComment}
-                    commentLocation={commentLocations[comment.id]}
-                    onMouseEnter={() => setHoveredComment(comment.id)}
-                    onMouseLeave={() => setHoveredComment(null)}
-                    onClick={() => {
-                      if (comment.elementId) {
-                        const location = commentLocations[comment.id];
-                        navigateToElement(comment.elementId, location);
-                      }
-                    }}
-                    onReply={handleAddReply}
-                    onEdit={handleEditComment}
-                    onSaveEdit={handleSaveEdit}
-                    onCancelEdit={handleCancelEdit}
-                    onToggleResolve={toggleResolve}
-                    onDelete={handleDeleteComment}
-                    editingCommentId={editingComment}
-                    editText={editText}
-                    setEditText={setEditText}
+            {/* Document Display */}
+            <div className="flex-1 overflow-auto bg-gray-50 p-8">
+              <div className="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+                {/* Conditional rendering based on file type */}
+                {currentVersion?.fileType === 'markdown' ||
+                  (currentVersion?.fileType === 'zip' && (currentPage.toLowerCase().endsWith('.md') || currentPage.toLowerCase().endsWith('.markdown'))) ? (
+                  <MarkdownViewer
+                    src={artifactUrl}
+                    className="min-h-[1000px]"
+                    onLinkClick={handleLinkClick}
                   />
-                ))}
+                ) : (
+                  <iframe
+                    ref={iframeRef}
+                    src={artifactUrl}
+                    className="w-full h-[1000px] border-0"
+                    title="HTML Document Preview"
+                  />
+                )}
               </div>
             </div>
-          )}
 
-          {/* Collapsed Sidebar Toggle */}
-          {!sidebarOpen && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute right-4 top-20"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Comments ({filteredComments.length})
-            </Button>
-          )}
-        </div>
-
-        {/* Comment Tooltip */}
-        {showCommentTooltip && (
-          <div
-            className="fixed bg-white shadow-lg rounded-lg p-4 z-50 w-80 border border-gray-200"
-            style={{
-              left: Math.min(tooltipPosition.x, window.innerWidth - 340),
-              top: tooltipPosition.y + 10,
-            }}
-          >
-            <div className="mb-3">
-              {selectedElement?.type === 'image' && selectedElement.preview ? (
-                <>
-                  <div className="text-gray-600 mb-2 flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      {selectedElement.type}
-                    </Badge>
-                    <span className="text-xs">Click to comment on this image</span>
+            {/* Comments Sidebar */}
+            {sidebarOpen && (
+              <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-gray-700" />
+                    <h2 className="font-semibold text-gray-900">
+                      Comments ({filteredComments.length})
+                    </h2>
                   </div>
-                  <Image
-                    src={selectedElement.preview}
-                    alt="Selected element"
-                    width={320}
-                    height={160}
-                    className="w-full h-40 object-cover rounded border-2 border-purple-200 mb-2"
-                    unoptimized
-                  />
-                </>
-              ) : selectedElement?.text ? (
-                <>
-                  <div className="text-gray-600 mb-2 flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs capitalize">
-                      {selectedElement.type}
-                    </Badge>
-                    <span className="text-xs">Commenting on this element</span>
-                  </div>
-                  <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                    {`"${selectedElement.text.substring(0, 50)}${selectedElement.text.length > 50 ? '...' : ''}"`}
-                  </div>
-                </>
-              ) : selectedText ? (
-                <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
-                  {`"${selectedText.substring(0, 50)}${selectedText.length > 50 ? '...' : ''}"`}
+                  <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              ) : null}
-            </div>
-            <Textarea
-              placeholder="Add a comment..."
-              value={newCommentText}
-              onChange={(e) => setNewCommentText(e.target.value)}
-              className="mb-2"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleAddComment}>
-                <Send className="w-3 h-3 mr-1" />
-                Comment
-              </Button>
+
+                <div className="flex-1 overflow-auto p-4 space-y-4">
+                  {/* Comments List */}
+                  {filteredComments.map((comment) => (
+                    <CommentCard
+                      key={comment.id}
+                      comment={comment}
+                      currentUserId={currentUserId}
+                      artifactOwnerId={artifactOwnerId}
+                      hoveredComment={hoveredComment}
+                      commentLocation={commentLocations[comment.id]}
+                      onMouseEnter={() => setHoveredComment(comment.id)}
+                      onMouseLeave={() => setHoveredComment(null)}
+                      onClick={() => {
+                        if (comment.elementId) {
+                          const location = commentLocations[comment.id];
+                          navigateToElement(comment.elementId, location);
+                        }
+                      }}
+                      onReply={handleAddReply}
+                      onEdit={handleEditComment}
+                      onSaveEdit={handleSaveEdit}
+                      onCancelEdit={handleCancelEdit}
+                      onToggleResolve={toggleResolve}
+                      onDelete={handleDeleteComment}
+                      editingCommentId={editingComment}
+                      editText={editText}
+                      setEditText={setEditText}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Collapsed Sidebar Toggle */}
+            {!sidebarOpen && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setShowCommentTooltip(false);
-                  setNewCommentText('');
-                  setSelectedText('');
-                  setSelectedElement(null);
-                }}
+                className="absolute right-4 top-20"
+                onClick={() => setSidebarOpen(true)}
               >
-                Cancel
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Comments ({filteredComments.length})
               </Button>
-            </div>
+            )}
           </div>
-        )}
 
+          {/* Comment Tooltip */}
+          {showCommentTooltip && (
+            <div
+              className="fixed bg-white shadow-lg rounded-lg p-4 z-50 w-80 border border-gray-200"
+              style={{
+                left: Math.min(tooltipPosition.x, window.innerWidth - 340),
+                top: tooltipPosition.y + 10,
+              }}
+            >
+              <div className="mb-3">
+                {selectedElement?.type === 'image' && selectedElement.preview ? (
+                  <>
+                    <div className="text-gray-600 mb-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {selectedElement.type}
+                      </Badge>
+                      <span className="text-xs">Click to comment on this image</span>
+                    </div>
+                    <Image
+                      src={selectedElement.preview}
+                      alt="Selected element"
+                      width={320}
+                      height={160}
+                      className="w-full h-40 object-cover rounded border-2 border-purple-200 mb-2"
+                      unoptimized
+                    />
+                  </>
+                ) : selectedElement?.text ? (
+                  <>
+                    <div className="text-gray-600 mb-2 flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {selectedElement.type}
+                      </Badge>
+                      <span className="text-xs">Commenting on this element</span>
+                    </div>
+                    <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
+                      {`"${selectedElement.text.substring(0, 50)}${selectedElement.text.length > 50 ? '...' : ''}"`}
+                    </div>
+                  </>
+                ) : selectedText ? (
+                  <div className="text-purple-600 bg-purple-50 px-2 py-1 rounded mb-2 font-mono">
+                    {`"${selectedText.substring(0, 50)}${selectedText.length > 50 ? '...' : ''}"`}
+                  </div>
+                ) : null}
+              </div>
+              <Textarea
+                placeholder="Add a comment..."
+                value={newCommentText}
+                onChange={(e) => setNewCommentText(e.target.value)}
+                className="mb-2"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleAddComment}>
+                  <Send className="w-3 h-3 mr-1" />
+                  Comment
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCommentTooltip(false);
+                    setNewCommentText('');
+                    setSelectedText('');
+                    setSelectedElement(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
-    </>
+    </TooltipProvider>
   );
 }

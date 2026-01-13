@@ -7,18 +7,30 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { PublicOnlyPage } from "@/components/auth/PublicOnlyPage";
 import { validateReturnTo } from "@/lib/validateReturnTo";
 
-import { Suspense } from "react";
+import { useEffect, Suspense } from "react";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Handle returnTo from query params or localStorage
+  useEffect(() => {
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo) {
+      localStorage.setItem("returnTo", returnTo);
+    }
+  }, [searchParams]);
+
   const handleSuccess = () => {
     // Check for returnTo parameter and validate it
-    const returnTo = searchParams.get("returnTo");
+    const queryReturnTo = searchParams.get("returnTo");
+    const localReturnTo = localStorage.getItem("returnTo");
+    const returnTo = queryReturnTo || localReturnTo;
+
     const validatedReturnTo = validateReturnTo(returnTo);
 
     if (validatedReturnTo) {
+      localStorage.removeItem("returnTo");
       router.push(validatedReturnTo);
     } else {
       router.push("/dashboard");

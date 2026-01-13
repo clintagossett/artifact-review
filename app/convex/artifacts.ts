@@ -201,6 +201,7 @@ export const get = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -316,6 +317,7 @@ export const getByShareToken = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -353,6 +355,7 @@ export const list = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     })
   ),
   handler: async (ctx, args) => {
@@ -1048,6 +1051,7 @@ export const getByIdInternal = internalQuery({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -1076,6 +1080,7 @@ export const getByShareTokenInternal = internalQuery({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),

@@ -10,6 +10,7 @@ import { GradientLogo } from "@/components/shared/GradientLogo";
 import { IconInput } from "@/components/shared/IconInput";
 import { AuthMethodToggle } from "./AuthMethodToggle";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
+import { useRouter, useSearchParams } from "next/navigation";
 import { UserPlus, Mail, Lock, User, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 
 interface RegisterFormProps {
@@ -23,6 +24,9 @@ interface PasswordRequirement {
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const { signIn } = useAuthActions();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+
   const [authMethod, setAuthMethod] = useState<"password" | "magic-link">("password");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +34,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const passwordRequirements: PasswordRequirement[] = [
     { label: "At least 8 characters", met: password.length >= 8 },
@@ -53,8 +58,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       // Magic link signup flow
       setIsLoading(true);
       try {
-        await signIn("resend", { email });
-        onSuccess();
+        await signIn("resend", { email, redirectTo: returnTo || "/dashboard" });
+        setEmailSent(true);
+        // Don't call onSuccess - user is not authenticated yet
       } catch {
         setError("Failed to send magic link");
       } finally {
@@ -91,6 +97,58 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       }
     }
   };
+
+  // Show success message after magic link sent
+  if (emailSent) {
+    return (
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <GradientLogo icon={Mail} />
+        </div>
+
+        {/* Success Message */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-gray-900">Check Your Email</h1>
+          <p className="text-gray-600">
+            We sent a sign-up link to <span className="font-medium text-gray-900">{email}</span>
+          </p>
+        </div>
+
+        {/* Info Panel */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
+          <p className="text-sm text-blue-900">
+            Click the link in your email to complete your registration. The link expires in 10 minutes.
+          </p>
+          <p className="text-sm text-blue-800">
+            {"Didn't receive it? Check your spam folder or request a new link."}
+          </p>
+        </div>
+
+        {/* Back to Login Link */}
+        <div className="text-center">
+          <Link
+            href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : "/login"}
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold transition"
+          >
+            Return to Sign In
+          </Link>
+        </div>
+
+        {/* Terms Footer */}
+        <p className="text-center text-sm text-gray-500">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md space-y-6">
@@ -278,7 +336,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : "/login"}
               className="text-blue-600 hover:text-blue-700 font-semibold transition"
             >
               Sign in

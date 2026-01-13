@@ -254,33 +254,75 @@
             "ext": ".md"
           },
           {
-            "name": "account-upgrade.md",
+            "name": "001-signup-and-login.md",
             "type": "file",
-            "path": "docs/journeys/account-upgrade.md",
+            "path": "docs/journeys/001-signup-and-login.md",
             "ext": ".md"
           },
           {
-            "name": "plan-upgrade.md",
+            "name": "002-artifact-upload-and-view.md",
             "type": "file",
-            "path": "docs/journeys/plan-upgrade.md",
+            "path": "docs/journeys/002-artifact-upload-and-view.md",
             "ext": ".md"
           },
           {
-            "name": "reviewer-comments.md",
+            "name": "003-reviewer-comments-and-feedback.md",
             "type": "file",
-            "path": "docs/journeys/reviewer-comments.md",
+            "path": "docs/journeys/003-reviewer-comments-and-feedback.md",
             "ext": ".md"
           },
           {
-            "name": "signup.md",
+            "name": "003.01-unauthenticated-reviewer-deep-link.md",
             "type": "file",
-            "path": "docs/journeys/signup.md",
+            "path": "docs/journeys/003.01-unauthenticated-reviewer-deep-link.md",
             "ext": ".md"
           },
           {
-            "name": "upload-and-share.md",
+            "name": "003.02-access-denied-and-revocation.md",
             "type": "file",
-            "path": "docs/journeys/upload-and-share.md",
+            "path": "docs/journeys/003.02-access-denied-and-revocation.md",
+            "ext": ".md"
+          },
+          {
+            "name": "004-artifact-sharing-and-invites.md",
+            "type": "file",
+            "path": "docs/journeys/004-artifact-sharing-and-invites.md",
+            "ext": ".md"
+          },
+          {
+            "name": "004.01-reviewer-lifecycle-and-invites.md",
+            "type": "file",
+            "path": "docs/journeys/004.01-reviewer-lifecycle-and-invites.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005-plan-upgrade-and-limits.md",
+            "type": "file",
+            "path": "docs/journeys/005-plan-upgrade-and-limits.md",
+            "ext": ".md"
+          },
+          {
+            "name": "006-account-settings-and-security.md",
+            "type": "file",
+            "path": "docs/journeys/006-account-settings-and-security.md",
+            "ext": ".md"
+          },
+          {
+            "name": "007-github-manual-pull.md",
+            "type": "file",
+            "path": "docs/journeys/007-github-manual-pull.md",
+            "ext": ".md"
+          },
+          {
+            "name": "008-team-workspace-onboarding.md",
+            "type": "file",
+            "path": "docs/journeys/008-team-workspace-onboarding.md",
+            "ext": ".md"
+          },
+          {
+            "name": "009-version-comparison-and-diff.md",
+            "type": "file",
+            "path": "docs/journeys/009-version-comparison-and-diff.md",
             "ext": ".md"
           }
         ]

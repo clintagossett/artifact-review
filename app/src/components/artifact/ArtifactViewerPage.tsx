@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
 import { DocumentViewer } from "./DocumentViewer";
@@ -21,6 +21,7 @@ export function ArtifactViewerPage({
   versionNumber,
 }: ArtifactViewerPageProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Fetch artifact by share token
@@ -28,6 +29,13 @@ export function ArtifactViewerPage({
 
   // Check user authentication and permission
   const currentUser = useQuery(api.users.getCurrentUser);
+
+  // Save returnTo path for unauthenticated users
+  useEffect(() => {
+    if (currentUser === null) {
+      localStorage.setItem("returnTo", pathname);
+    }
+  }, [currentUser, pathname]);
   const userPermission = useQuery(
     api.access.getPermission,
     artifact ? { artifactId: artifact._id } : "skip"
