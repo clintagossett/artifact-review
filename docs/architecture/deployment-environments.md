@@ -61,18 +61,18 @@ This matrix ensures all components are compatible across environments.
 | Component | Local Dev | Hosted Dev | Staging | Production |
 |-----------|-----------|------------|---------|------------|
 | **Frontend Hosting** | Local dev server (`npm run dev`) | Vercel (auto-deploy from `dev` branch) | Vercel (deploy from `staging` branch) | Vercel (deploy from `main` branch) |
-| **Frontend Domain** | `http://localhost:3000` | `dev.yourdomain.com` (or Vercel preview URL) | `staging.yourdomain.com` | `app.yourdomain.com` |
+| **Frontend Domain** | `http://localhost:3000` | `https://artifactreview-early.xyz/` | `staging.yourdomain.com` | `app.yourdomain.com` |
 | **Convex Backend** | **Self-hosted Docker** | Hosted cloud (`dev` project) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
-| **Convex URL** | `http://127.0.0.1:3210` | Auto-generated (e.g., `happy-horse-456.convex.cloud`) | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
+| **Convex URL** | `http://127.0.0.1:3210` | `https://beaming-oriole-310.convex.cloud` | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
 | **Database** | **SQLite (local container)** | Convex managed (shared dev data) | Convex managed (staging data) | Convex managed (production data) |
 | **HTML Storage** | Local File Storage | Convex File Storage | Convex File Storage | Convex File Storage |
 | **Mail Send** | **Mailpit (Docker API)** | Resend (Test Mode) | Resend live (restricted) | Resend live (all users) |
 | **Mail Receive** | Not configured | Not configured | Not configured | Not configured* |
-| **Email Domain** | N/A (Mailpit capture) | `dev.yourdomain.com` (test mode) | `staging.yourdomain.com` | `yourdomain.com` |
+| **Email Domain** | N/A (Mailpit capture) | `artifactreview-early.xyz` (test mode) | `staging.yourdomain.com` | `yourdomain.com` |
 | **Resend API Key** | N/A (bypassed locally) | Test key | Staging key | Production key |
 | **Auth Provider** | Convex Auth | Convex Auth | Convex Auth | Convex Auth |
 | **OAuth Apps** | Dev credentials | Dev credentials | Staging credentials | Production credentials |
-| **OAuth Redirects** | `http://localhost:3000/auth/callback` | `https://dev.yourdomain.com/auth/callback` | `https://staging.yourdomain.com/auth/callback` | `https://app.yourdomain.com/auth/callback` |
+| **OAuth Redirects** | `http://localhost:3000/auth/callback` | `https://artifactreview-early.xyz/auth/callback` | `https://staging.yourdomain.com/auth/callback` | `https://app.yourdomain.com/auth/callback` |
 
 **\*Note on Mail Receive:** Inbound email handling (e.g., reply-to-comment via email) is not required for MVP. If needed in future, consider:
 - Resend supports inbound email via webhooks
