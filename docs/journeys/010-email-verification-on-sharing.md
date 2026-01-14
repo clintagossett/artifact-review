@@ -11,15 +11,15 @@ Users who sign up via password authentication may not have verified their email 
 
 ```mermaid
 flowchart TD
-    A[View Artifact] --> B[Click 'Share' Button]
+    A["View Artifact"] --> B["Click 'Share' Button"]
     B --> C{Email Verified?}
-    C -->|Yes| D[Show Sharing Settings/Modal]
-    C -->|No| E[Display 'Verify Email Required' Message]
-    E --> F[Click 'Send Verification Link']
-    F --> G[System Sends Magic Link Email]
-    G --> H[User Clicks Link in Email]
-    H --> I[Email Verified & Redirect back to Artifact]
-    I --> J[Sharing Now Available]
+    C -->|Yes| D["Show Sharing Settings/Modal"]
+    C -->|No| E["Display 'Verify Email Required' Message"]
+    E --> F["Click 'Send Verification Link'"]
+    F --> G["System Sends Magic Link Email"]
+    G --> H["User Clicks Link in Email"]
+    H --> I["Email Verified & Redirect back to Artifact"]
+    I --> J["Sharing Now Available"]
 ```
 
 ## User Experience Details

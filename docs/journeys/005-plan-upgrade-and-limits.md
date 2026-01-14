@@ -1,4 +1,4 @@
-# 005 Plan Upgrade & Limits Journey
+# 005 Plan Upgrade & Limits Journey (Actual)
 
 **Persona:** Document Creator
 **Goal:** Remove usage limits by upgrading to a Pro plan
@@ -17,14 +17,14 @@ Free tier users have limits on the number of active documents and versions. This
 
 ```mermaid
 flowchart TD
-    A[Upload Attempt] --> B{Limit Reached?}
-    B -->|Yes| C[Blocking Modal]
-    C --> D[View Pricing]
-    D --> E[Stripe Checkout]
+    A["Upload Attempt"] --> B{"Limit Reached?"}
+    B -->|Yes| C["Blocking Modal"]
+    C --> D["View Pricing"]
+    D --> E["Stripe Checkout"]
     E --> F{Payment Success?}
-    F -->|Yes| G[Plan Activated]
-    G --> H[Return to Dashboard]
-    H --> I[Resume Upload]
+    F -->|Yes| G["Plan Activated"]
+    G --> H["Return to Dashboard"]
+    H --> I["Resume Upload"]
 ```
 
 ## Screens
@@ -40,6 +40,6 @@ flowchart TD
 *Pending* - Needs E2E test for Stripe redirects and limit handling.
 
 ## Status & Actual State
-- **Usage Tracking:** Implemented in Convex schema.
-- **Stripe Integration:** Sandbox integration in progress.
-- **Limit Modals:** Component drafted.
+- **Usage Tracking:** Implemented in Convex schema and enforced during upload.
+- **Stripe Integration:** Fully functional in production and sandbox.
+- **Limit Modals:** Implemented and active.

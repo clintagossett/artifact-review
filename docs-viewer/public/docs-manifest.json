@@ -308,6 +308,24 @@
             "ext": ".md"
           },
           {
+            "name": "005.01-stripe-checkout-flow.md",
+            "type": "file",
+            "path": "docs/journeys/005.01-stripe-checkout-flow.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005.02-customer-billing-portal.md",
+            "type": "file",
+            "path": "docs/journeys/005.02-customer-billing-portal.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005.03-subscription-renewal-failure.md",
+            "type": "file",
+            "path": "docs/journeys/005.03-subscription-renewal-failure.md",
+            "ext": ".md"
+          },
+          {
             "name": "006-account-settings-and-security.md",
             "type": "file",
             "path": "docs/journeys/006-account-settings-and-security.md",
@@ -335,6 +353,24 @@
             "name": "010-email-verification-on-sharing.md",
             "type": "file",
             "path": "docs/journeys/010-email-verification-on-sharing.md",
+            "ext": ".md"
+          },
+          {
+            "name": "011-agent-powered-workflows.md",
+            "type": "file",
+            "path": "docs/journeys/011-agent-powered-workflows.md",
+            "ext": ".md"
+          },
+          {
+            "name": "012-free-tier-paywall-experience.md",
+            "type": "file",
+            "path": "docs/journeys/012-free-tier-paywall-experience.md",
+            "ext": ".md"
+          },
+          {
+            "name": "BACKLOG.md",
+            "type": "file",
+            "path": "docs/journeys/BACKLOG.md",
             "ext": ".md"
           }
         ]
@@ -603,665 +639,6 @@
         ]
       },
       {
-        "name": "00033-integrate-stripe-for-dev-sandbox",
-        "type": "directory",
-        "path": "tasks/00033-integrate-stripe-for-dev-sandbox",
-        "children": [
-          {
-            "name": "convex-saas",
-            "type": "directory",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas",
-            "children": [
-              {
-                "name": "convex",
-                "type": "directory",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex",
-                "children": [
-                  {
-                    "name": "_generated",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated",
-                    "children": [
-                      {
-                        "name": "api.d.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated/api.d.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "api.js",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated/api.js",
-                        "ext": ".js"
-                      },
-                      {
-                        "name": "dataModel.d.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated/dataModel.d.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "server.d.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated/server.d.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "server.js",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/_generated/server.js",
-                        "ext": ".js"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "email",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/email",
-                    "children": [
-                      {
-                        "name": "templates",
-                        "type": "directory",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/email/templates",
-                        "children": [
-                          {
-                            "name": "subscriptionEmail.tsx",
-                            "type": "file",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/email/templates/subscriptionEmail.tsx",
-                            "ext": ".tsx"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "index.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/email/index.ts",
-                        "ext": ".ts"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "otp",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/otp",
-                    "children": [
-                      {
-                        "name": "ResendOTP.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/otp/ResendOTP.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "VerificationCodeEmail.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/otp/VerificationCodeEmail.tsx",
-                        "ext": ".tsx"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "app.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/app.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "auth.config.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/auth.config.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "auth.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/auth.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "env.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/env.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "http.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/http.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "init.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/init.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "README.md",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/README.md",
-                    "ext": ".md"
-                  },
-                  {
-                    "name": "schema.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/schema.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "stripe.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/stripe.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "tsconfig.json",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/convex/tsconfig.json",
-                    "ext": ".json"
-                  }
-                ]
-              },
-              {
-                "name": "docs",
-                "type": "directory",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/docs",
-                "children": [
-                  {
-                    "name": "README.md",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/docs/README.md",
-                    "ext": ".md"
-                  }
-                ]
-              },
-              {
-                "name": "public",
-                "type": "directory",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public",
-                "children": [
-                  {
-                    "name": "images",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/images",
-                    "children": [
-                      {
-                        "name": "convex-email-logo.jpg",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/images/convex-email-logo.jpg",
-                        "ext": ".jpg"
-                      },
-                      {
-                        "name": "shadow.png",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/images/shadow.png",
-                        "ext": ".png"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "locales",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/locales",
-                    "children": [
-                      {
-                        "name": "en",
-                        "type": "directory",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/locales/en",
-                        "children": [
-                          {
-                            "name": "translation.json",
-                            "type": "file",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/locales/en/translation.json",
-                            "ext": ".json"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "es",
-                        "type": "directory",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/locales/es",
-                        "children": [
-                          {
-                            "name": "translation.json",
-                            "type": "file",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/locales/es/translation.json",
-                            "ext": ".json"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "name": "favicon.ico",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/public/favicon.ico",
-                    "ext": ".ico"
-                  }
-                ]
-              },
-              {
-                "name": "src",
-                "type": "directory",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src",
-                "children": [
-                  {
-                    "name": "assets",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/assets",
-                    "children": [
-                      {
-                        "name": "react.svg",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/assets/react.svg",
-                        "ext": ".svg"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "routes",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes",
-                    "children": [
-                      {
-                        "name": "_app",
-                        "type": "directory",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app",
-                        "children": [
-                          {
-                            "name": "_auth",
-                            "type": "directory",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth",
-                            "children": [
-                              {
-                                "name": "dashboard",
-                                "type": "directory",
-                                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard",
-                                "children": [
-                                  {
-                                    "name": "_layout.checkout.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.checkout.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.index.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.index.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.settings.billing.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.settings.billing.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.settings.index.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.settings.index.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.settings.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.settings.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/_layout.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "-ui.navigation.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/dashboard/-ui.navigation.tsx",
-                                    "ext": ".tsx"
-                                  }
-                                ]
-                              },
-                              {
-                                "name": "onboarding",
-                                "type": "directory",
-                                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/onboarding",
-                                "children": [
-                                  {
-                                    "name": "_layout.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/onboarding/_layout.tsx",
-                                    "ext": ".tsx"
-                                  },
-                                  {
-                                    "name": "_layout.username.tsx",
-                                    "type": "file",
-                                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth/onboarding/_layout.username.tsx",
-                                    "ext": ".tsx"
-                                  }
-                                ]
-                              }
-                            ]
-                          },
-                          {
-                            "name": "login",
-                            "type": "directory",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/login",
-                            "children": [
-                              {
-                                "name": "_layout.index.tsx",
-                                "type": "file",
-                                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/login/_layout.index.tsx",
-                                "ext": ".tsx"
-                              },
-                              {
-                                "name": "_layout.tsx",
-                                "type": "file",
-                                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/login/_layout.tsx",
-                                "ext": ".tsx"
-                              }
-                            ]
-                          },
-                          {
-                            "name": "_auth.tsx",
-                            "type": "file",
-                            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app/_auth.tsx",
-                            "ext": ".tsx"
-                          }
-                        ]
-                      },
-                      {
-                        "name": "__root.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/__root.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "_app.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/_app.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "index.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routes/index.tsx",
-                        "ext": ".tsx"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "ui",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui",
-                    "children": [
-                      {
-                        "name": "button-util.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/button-util.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "button.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/button.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "dropdown-menu.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/dropdown-menu.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "header.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/header.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "input.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/input.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "language-switcher.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/language-switcher.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "logo.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/logo.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "select.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/select.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "switch.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/switch.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "theme-switcher.tsx",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/theme-switcher.tsx",
-                        "ext": ".tsx"
-                      },
-                      {
-                        "name": "use-double-check.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/ui/use-double-check.ts",
-                        "ext": ".ts"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "utils",
-                    "type": "directory",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/utils",
-                    "children": [
-                      {
-                        "name": "misc.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/utils/misc.ts",
-                        "ext": ".ts"
-                      },
-                      {
-                        "name": "validators.ts",
-                        "type": "file",
-                        "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/utils/validators.ts",
-                        "ext": ".ts"
-                      }
-                    ]
-                  },
-                  {
-                    "name": "app.tsx",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/app.tsx",
-                    "ext": ".tsx"
-                  },
-                  {
-                    "name": "i18n.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/i18n.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "index.css",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/index.css",
-                    "ext": ".css"
-                  },
-                  {
-                    "name": "main.tsx",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/main.tsx",
-                    "ext": ".tsx"
-                  },
-                  {
-                    "name": "router.tsx",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/router.tsx",
-                    "ext": ".tsx"
-                  },
-                  {
-                    "name": "routeTree.gen.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/routeTree.gen.ts",
-                    "ext": ".ts"
-                  },
-                  {
-                    "name": "vite-env.d.ts",
-                    "type": "file",
-                    "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/src/vite-env.d.ts",
-                    "ext": ".ts"
-                  }
-                ]
-              },
-              {
-                "name": "errors.ts",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/errors.ts",
-                "ext": ".ts"
-              },
-              {
-                "name": "eslint.config.js",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/eslint.config.js",
-                "ext": ".js"
-              },
-              {
-                "name": "index.html",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/index.html",
-                "ext": ".html"
-              },
-              {
-                "name": "LICENSE",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/LICENSE",
-                "ext": ""
-              },
-              {
-                "name": "netlify.toml",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/netlify.toml",
-                "ext": ".toml"
-              },
-              {
-                "name": "package-lock.json",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/package-lock.json",
-                "ext": ".json"
-              },
-              {
-                "name": "package.json",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/package.json",
-                "ext": ".json"
-              },
-              {
-                "name": "postcss.config.js",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/postcss.config.js",
-                "ext": ".js"
-              },
-              {
-                "name": "README_orig.md",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/README_orig.md",
-                "ext": ".md"
-              },
-              {
-                "name": "README.md",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/README.md",
-                "ext": ".md"
-              },
-              {
-                "name": "site.config.ts",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/site.config.ts",
-                "ext": ".ts"
-              },
-              {
-                "name": "tailwind.config.ts",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/tailwind.config.ts",
-                "ext": ".ts"
-              },
-              {
-                "name": "tsconfig.app.json",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/tsconfig.app.json",
-                "ext": ".json"
-              },
-              {
-                "name": "tsconfig.json",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/tsconfig.json",
-                "ext": ".json"
-              },
-              {
-                "name": "tsconfig.node.json",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/tsconfig.node.json",
-                "ext": ".json"
-              },
-              {
-                "name": "types.ts",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/types.ts",
-                "ext": ".ts"
-              },
-              {
-                "name": "vite.config.ts",
-                "type": "file",
-                "path": "tasks/00033-integrate-stripe-for-dev-sandbox/convex-saas/vite.config.ts",
-                "ext": ".ts"
-              }
-            ]
-          },
-          {
-            "name": "output",
-            "type": "directory",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/output",
-            "children": []
-          },
-          {
-            "name": "tests",
-            "type": "directory",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/tests",
-            "children": []
-          },
-          {
-            "name": "README.md",
-            "type": "file",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/README.md",
-            "ext": ".md"
-          },
-          {
-            "name": "saas_template_analysis.md",
-            "type": "file",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/saas_template_analysis.md",
-            "ext": ".md"
-          },
-          {
-            "name": "STRIPE_INTEGRATION_PLAN.md",
-            "type": "file",
-            "path": "tasks/00033-integrate-stripe-for-dev-sandbox/STRIPE_INTEGRATION_PLAN.md",
-            "ext": ".md"
-          }
-        ]
-      },
-      {
         "name": "00034-claude-desktop-and-chatgpt-integration",
         "type": "directory",
         "path": "tasks/00034-claude-desktop-and-chatgpt-integration",
@@ -1314,6 +691,58 @@
             "name": "README.md",
             "type": "file",
             "path": "tasks/00035-research-notification-infrastructure/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00036-notification-platform-pricing-and-resend-replacement",
+        "type": "directory",
+        "path": "tasks/00036-notification-platform-pricing-and-resend-replacement",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/output",
+            "children": [
+              {
+                "name": "notification-pricing-report.md",
+                "type": "file",
+                "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/output/notification-pricing-report.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00037-workflow-enrichment-with-novu",
+        "type": "directory",
+        "path": "tasks/00037-workflow-enrichment-with-novu",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00037-workflow-enrichment-with-novu/output",
+            "children": [
+              {
+                "name": "novu-enrichment-integration-plan.md",
+                "type": "file",
+                "path": "tasks/00037-workflow-enrichment-with-novu/output/novu-enrichment-integration-plan.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00037-workflow-enrichment-with-novu/README.md",
             "ext": ".md"
           }
         ]
