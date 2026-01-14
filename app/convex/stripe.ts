@@ -8,7 +8,9 @@ import {
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 
-export const stripeClient = new Stripe(process.env.STRIPE_KEY!, {
+// Initialize Stripe client. We use a placeholder if the key is missing to allow
+// the module to be analyzed by Convex during deployment.
+export const stripeClient = new Stripe(process.env.STRIPE_KEY || "sk_test_placeholder", {
     apiVersion: "2025-12-15.clover" as any,
     typescript: true,
 });
