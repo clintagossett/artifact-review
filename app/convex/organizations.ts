@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { checkSeatLimit } from "./lib/billing";
+import { getPlanConfig, PLANS } from "./stripe/plans";
 
 export const create = mutation({
     args: { name: v.string() },
@@ -81,4 +82,86 @@ export const addMember = mutation({
             createdBy: currentUserId
         });
     }
+});
+
+/**
+ * Returns the billing status for the user's primary organization.
+ */
+export const getBillingStatus = query({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) return null;
+
+        const membership = await ctx.db
+            .query("members")
+            .withIndex("by_userId", (q) => q.eq("userId", userId))
+            .filter((q) => q.eq(q.field("roles"), ["owner"]))
+            .first();
+
+        if (!membership) return null;
+
+        const org = await ctx.db.get(membership.organizationId);
+        if (!org) return null;
+
+        const subscription = await ctx.db
+            .query("subscriptions")
+            .withIndex("by_organizationId", (q) => q.eq("organizationId", org._id))
+            .unique();
+
+        const plan = getPlanConfig(subscription?.stripePriceId);
+
+        return {
+            organizationId: org._id,
+            organizationName: org.name,
+            stripeCustomerId: org.stripeCustomerId,
+            plan,
+            subscriptionStatus: subscription?.status || "none",
+            isPro: plan.key === "PRO",
+            proPriceId: PLANS.PRO.stripePriceId,
+            proPriceIdAnnual: PLANS.PRO.stripePriceIdAnnual,
+            cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd || false,
+            currentPeriodEnd: subscription?.currentPeriodEnd || null,
+            interval: subscription?.interval || null,
+            currency: subscription?.currency || "usd",
+        };
+    },
+});
+
+/**
+ * Ensures the user has a personal organization.
+ */
+export const ensurePersonalOrganization = mutation({
+    args: {},
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx);
+        if (!userId) throw new Error("Not authenticated");
+
+        const existing = await ctx.db
+            .query("members")
+            .withIndex("by_userId", (q) => q.eq("userId", userId))
+            .filter((q) => q.eq(q.field("roles"), ["owner"]))
+            .first();
+
+        if (existing) return existing.organizationId;
+
+        const user = await ctx.db.get(userId);
+        const orgName = user?.name ? `${user.name}'s Organization` : "Personal Organization";
+
+        const orgId = await ctx.db.insert("organizations", {
+            name: orgName,
+            createdAt: Date.now(),
+            createdBy: userId,
+        });
+
+        await ctx.db.insert("members", {
+            userId,
+            organizationId: orgId,
+            roles: ["owner"],
+            createdAt: Date.now(),
+            createdBy: userId,
+        });
+
+        return orgId;
+    },
 });

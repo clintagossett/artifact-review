@@ -35,12 +35,20 @@ export default function Home() {
     await signOut();
   };
 
-  // Redirect authenticated users to dashboard
+  // Redirect authenticated users to dashboard or settings
   // This handles magic link callbacks (/?code=...) and any other case
   // where an authenticated user lands on the home page
   useEffect(() => {
     if (currentUser !== undefined && currentUser !== null) {
-      router.push("/dashboard");
+      const urlParams = new URLSearchParams(window.location.search);
+      const success = urlParams.get("success");
+      const canceled = urlParams.get("canceled");
+
+      if (success === "true" || canceled === "true") {
+        router.push(`/settings?${urlParams.toString()}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
   }, [currentUser, router]);
 

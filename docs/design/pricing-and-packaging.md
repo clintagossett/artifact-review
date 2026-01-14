@@ -135,7 +135,6 @@ We will deliver value in 4 distinct phases to minimize "wasteful" engineering on
 **Upgrade Triggers:**
 **Upgrade Triggers (MVP):**
 - 4th document upload → Blocked, upgrade modal
-- 6th version upload → Blocked, upgrade modal
 - *Removed for MVP: Time-based review periods (Wasteful engineering)*
 
 **Revenue Impact:** None (acquisition funnel)
@@ -270,7 +269,7 @@ We will deliver value in 4 distinct phases to minimize "wasteful" engineering on
 
 | Feature | Free | Pro ($12) | Team ($18/user) | Enterprise |
 |---------|------|-----------|-----------------|------------|
-| **Core Limits** | 3 Docs, 5 Versions | Unlimited | Unlimited | Unlimited |
+| **Core Limits** | 3 Docs, Unlimited Versions | Unlimited | Unlimited | Unlimited |
 | **Reviewers** | Unlimited | Unlimited | Unlimited | Unlimited |
 | **Agent API** | Read-Only | **Read + Write** | Read + Write | Custom Limits |
 | **Access Control** | Public Links | Public Links | **Team Workspace** | **SSO / SAML** |
@@ -529,7 +528,7 @@ Trigger 3: Sales cycle signals:
 |----------|------|--------|-------|
 | Pro plan: $12/mo (monthly), $10/mo (annual) | 2024-12-24 | **Proposed** | Aligns with Figma ($12), between Notion ($8) and Adobe ($15-20) |
 | Team plan: $18/mo (monthly), $15/mo (annual) | 2024-12-24 | **Proposed** | Matches Slack Business+ ($15), Notion Business ($15) |
-| Free tier: 3 docs, 5 versions, 7-day review | 2024-12-24 | **Proposed** | Generous enough to prove value, restrictive enough to drive upgrades |
+| Free tier: 3 docs, unlimited versions, 7-day review | 2024-12-24 | **Proposed** | Generous enough to prove value, restrictive enough to drive upgrades |
 | Reviewers always free | 2024-12-24 | **Accepted** | Critical for viral growth and stakeholder access |
 | Team minimum: 3 seats | 2024-12-24 | **Proposed** | Industry standard, encourages team adoption |
 | MCP integration: Pro+ feature | 2024-12-24 | **Proposed** | Drives Pro conversions, differentiates from Free |

@@ -6,13 +6,13 @@ import {
     internalQuery,
 } from "./_generated/server";
 import { v } from "convex/values";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
+import { StripeSubscriptions } from "@convex-dev/stripe";
+import { getAppUrl } from "./lib/urls";
 
-// Initialize Stripe client. We use a placeholder if the key is missing to allow
-// the module to be analyzed by Convex during deployment.
-export const stripeClient = new Stripe(process.env.STRIPE_KEY || "sk_test_placeholder", {
-    apiVersion: "2025-12-15.clover" as any,
-    typescript: true,
+// Initialize Stripe component helper
+export const subscriptions = new StripeSubscriptions(components.stripe, {
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || "sk_test_placeholder",
 });
 
 /**
@@ -102,6 +102,7 @@ export const internalDeleteSubscription = internalMutation({
 
 /**
  * Checkout Action: Creates a Session to upgrade an Org.
+ * Now using the Stripe component's StripeSubscriptions helper.
  */
 export const createCheckoutSession = action({
     args: {
@@ -114,24 +115,119 @@ export const createCheckoutSession = action({
         });
         if (!org) throw new Error("Organization not found");
 
-        const domain = process.env.CONVEX_SITE_URL || "http://localhost:3000";
+        // The domain is used for redirects
+        const domain = getAppUrl();
+        console.log("Stripe checkout domain:", domain);
 
-        const session: Stripe.Checkout.Session = await stripeClient.checkout.sessions.create({
+        // Create the checkout session using the component helper
+        // This automatically handles 'orgId' metadata if we pass it correctly
+        const session = await subscriptions.createCheckoutSession(ctx, {
+            customerId: org.stripeCustomerId, // Use existing Stripe customer if available
+            priceId: args.priceId,
             mode: "subscription",
-            line_items: [{ price: args.priceId, quantity: 1 }],
-            customer: org.stripeCustomerId, // Reuse if exists
-            // If no customer ID, Stripe creates a new one.
-            // We need to capture it in the webhook!
-            customer_creation: org.stripeCustomerId ? undefined : "always",
-            customer_email: undefined, // Let user enter email, or pass org owner email if known
-            success_url: `${domain}/dashboard?success=true`,
-            cancel_url: `${domain}/dashboard?canceled=true`,
+            successUrl: `${domain}/settings?success=true`,
+            cancelUrl: `${domain}/settings?canceled=true`,
             metadata: {
-                organizationId: args.organizationId, // Pass OrgID to webhook via metadata
+                organizationId: args.organizationId,
+            },
+            subscriptionMetadata: {
+                organizationId: args.organizationId,
             },
         });
 
         return session.url;
+    },
+});
+
+/**
+ * Creates a Billing Portal session for the organization's customer.
+ */
+export const createBillingPortalSession = action({
+    args: {
+        organizationId: v.id("organizations"),
+    },
+    handler: async (ctx, args) => {
+        const org: any = await ctx.runQuery(internal.stripe.internalGetOrganizationById, {
+            organizationId: args.organizationId
+        });
+        if (!org || !org.stripeCustomerId) {
+            throw new Error("No Stripe customer found for this organization");
+        }
+
+        // The domain is used for redirects
+        const domain = getAppUrl();
+
+        // Initialize direct stripe client for portal (component doesn't expose portal yet)
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY!, {
+            apiVersion: "2024-12-18.acacia" as any,
+        });
+
+        const session = await stripe.billingPortal.sessions.create({
+            customer: org.stripeCustomerId,
+            return_url: `${domain}/settings`,
+        });
+
+        return session.url;
+    },
+});
+
+/**
+ * Action to sync a Stripe subscription to our local database.
+ * This is called by the webhook handlers.
+ */
+export const internalSyncSubscription = internalAction({
+    args: {
+        stripeSubscriptionId: v.string(),
+    },
+    handler: async (ctx, args) => {
+        console.log(`Syncing subscription: ${args.stripeSubscriptionId}`);
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY!, {
+            apiVersion: "2024-12-18.acacia" as any,
+        });
+
+        // Fetch the full subscription object from Stripe
+        const subscription = await stripe.subscriptions.retrieve(args.stripeSubscriptionId);
+        const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+        const organizationIdMetadata = subscription.metadata?.organizationId;
+
+        // Find the organization
+        let org: any = null;
+
+        // Strategy 1: Use metadata if available (most reliable for first-time conversion)
+        if (organizationIdMetadata) {
+            org = await ctx.runQuery(internal.stripe.internalGetOrganizationById, {
+                organizationId: organizationIdMetadata as any,
+            });
+        }
+
+        // Strategy 2: Use Customer ID
+        if (!org) {
+            org = await ctx.runQuery(internal.stripe.internalGetOrganizationByCustomerId, {
+                customerId,
+            });
+        }
+
+        if (!org) {
+            console.error(`❌ No organization found for subscription ${subscription.id} (customer: ${customerId}, meta: ${organizationIdMetadata})`);
+            return;
+        }
+
+        console.log(`✅ Found organization ${org._id} (${org.name}). Syncing local record...`);
+
+        // Update the local subscriptions table
+        await ctx.runMutation(internal.stripe.internalCreateSubscription, {
+            organizationId: org._id,
+            stripeSubscriptionId: subscription.id,
+            priceStripeId: subscription.items.data[0].price.id,
+            status: subscription.status,
+            currentPeriodStart: (subscription.items.data[0].current_period_start || 0) * 1000,
+            currentPeriodEnd: (subscription.items.data[0].current_period_end || 0) * 1000,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end || !!subscription.cancel_at,
+            currency: subscription.currency,
+            interval: subscription.items.data[0].price.recurring?.interval || "month",
+        });
+
+        console.log(`✨ Successfully synced subscription ${subscription.id} to org ${org._id}`);
     },
 });
 
@@ -141,3 +237,4 @@ export const internalGetOrganizationById = internalQuery({
         return await ctx.db.get(args.organizationId);
     }
 });
+

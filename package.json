@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "stripe:listen": "stripe listen --forward-to localhost:3000/stripe",
+    "stripe:listen": "stripe listen --forward-to localhost:3211/stripe/webhook",
     "dev": "npx convex dev"
   },
   "dependencies": {

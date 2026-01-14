@@ -6,7 +6,7 @@ User journey maps documenting key workflows and interactions, numbered for align
 
 | Tier | Who | Limits |
 |------|-----|--------|
-| Free | All users (reviewers stay here) | 3 docs, 3 versions, 5-day review |
+| Free | All users (reviewers stay here) | 3 docs, Unlimited versions, 5-day review |
 | Pro | Document Creators | Unlimited |
 | Team | Organizations | Unlimited + admin features |
 
@@ -24,6 +24,8 @@ These journeys reflect current production features and are mapped to E2E tests w
 | 004 | [Sharing & Invites](./004-artifact-sharing-and-invites.md) | Creator | *Pending* |
 | 004.01 | [Reviewer Lifecycle](./004.01-reviewer-lifecycle-and-invites.md) | Creator | *Pending* |
 | 005 | [Plan Upgrade & Limits](./005-plan-upgrade-and-limits.md) | Creator | *Pending* |
+| 005.01 | [Stripe Checkout Flow](./005.01-stripe-checkout-flow.md) | Creator | *Pending* |
+| 005.02 | [Customer Billing Portal](./005.02-customer-billing-portal.md) | Creator | *Manual* |
 | 006 | [Account Settings](./006-account-settings-and-security.md) | All Users | *Manual* |
 
 ## Proposed Feature Journeys
@@ -35,3 +37,5 @@ Future state workflows currently in design or development.
 | 008 | [Team Workspace](./008-team-workspace-onboarding.md) | Admin | Organizations |
 | 009 | [Version Comparison](./009-version-comparison-and-diff.md) | All Users | Collaboration |
 | 010 | [Email Verification on Sharing](./010-email-verification-on-sharing.md) | Creator | Security |
+| 011 | [Agent-Powered Workflows (PROPOSED)](./011-agent-powered-workflows.md) | Agent/Creator | AI Automation |
+| 005.03 | [Subscription Renewal Failure (PROPOSED)](./005.03-subscription-renewal-failure.md) | Creator | Payments |

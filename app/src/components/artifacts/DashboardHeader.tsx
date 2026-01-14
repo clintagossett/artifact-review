@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useRouter } from "next/navigation";
 
 export interface DashboardHeaderProps {
   onUploadClick: () => void;
@@ -27,6 +28,7 @@ export function DashboardHeader({
   userName,
 }: DashboardHeaderProps) {
   const { signOut } = useAuthActions();
+  const router = useRouter();
 
   return (
     <header className="border-b bg-white px-4 py-4">
@@ -72,7 +74,9 @@ export function DashboardHeader({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut()}>
                 Sign out
               </DropdownMenuItem>

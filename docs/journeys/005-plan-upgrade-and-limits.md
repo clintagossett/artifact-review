@@ -10,7 +10,7 @@ Free tier users have limits on the number of active documents and versions. This
 
 | Tier | Documents | Versions | Price |
 |------|-----------|----------|-------|
-| **Free** | 3 | 3 per doc | $0 |
+| **Free** | 3 | Unlimited | $0 |
 | **Pro** | Unlimited | Unlimited | $15/mo |
 
 ## Flow: Hitting a Limit

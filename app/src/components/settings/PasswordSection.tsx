@@ -22,8 +22,8 @@ import { useToast } from "@/hooks/use-toast";
  *
  * Password validation matches RegisterForm exactly.
  */
-export function PasswordSection() {
-  const { isWithinGracePeriod } = useGracePeriod();
+export function PasswordSection({ debugOverride }: { debugOverride?: "auto" | "fresh" | "stale" }) {
+  const { isWithinGracePeriod } = useGracePeriod(debugOverride);
   const changePassword = useMutation(api.settings.changePassword);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -101,7 +101,7 @@ export function PasswordSection() {
       </CardHeader>
       <CardContent>
         {/* Grace Period Banner */}
-        <GracePeriodBanner />
+        <GracePeriodBanner debugOverride={debugOverride} />
 
         {/* Password Change Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,6 +114,7 @@ export function PasswordSection() {
                 <Input
                   id="currentPassword"
                   type="password"
+                  autoComplete="current-password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required={!isWithinGracePeriod}
@@ -133,6 +134,7 @@ export function PasswordSection() {
               <Input
                 id="newPassword"
                 type="password"
+                autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -192,6 +194,7 @@ export function PasswordSection() {
               <Input
                 id="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required

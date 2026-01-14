@@ -1,27 +1,30 @@
----
-description: start or restart the development servers (Next.js and Convex)
----
+# Dev Setup Workflow
 
-This workflow uses the project's helper script to manage the local development environment.
+This workflow uses the project's helper script to manage the entire local development environment, including Docker, Next.js, Convex, and the Stripe CLI tunnel.
 
 // turbo
-1. Run the startup script to ensure both servers are active:
+1. **Start the environment**:
    ```bash
    ./scripts/start-dev-servers.sh
    ```
+   *   **Docker**: If Docker Desktop isn't running, the script will attempt to `open` it and wait for initialization.
+   *   **Stripe**: It starts a `stripe listen` tunnel and forwards webhooks to your local Convex backend.
 
-2. To force a restart (killing any existing processes on ports 3000 or 8188), run:
+2. **Sync Stripe Webhook Secret (First Time / New Tunnel)**:
+   If this is a new setup or your tunnel secret has changed:
+   - Check the logs: `cat app/logs/stripe.log`
+   - Look for the line: `Your webhook signing secret is whsec_...`
+   - Set it in Convex:
+     ```bash
+     cd app && npx convex env set STRIPE_WEBHOOK_SECRET whsec_...
+     ```
+
+3. **Monitor Status**:
+   - Next.js: `tail -f app/logs/nextjs.log`
+   - Convex: `tail -f app/logs/convex.log`
+   - Stripe: `tail -f app/logs/stripe.log`
+
+4. **Restart Servers**: (Kill existing and start fresh)
    ```bash
    ./scripts/start-dev-servers.sh --restart
    ```
-
-3. **Docs Viewer**: To start the documentation viewer (live-syncing with `docs/`), run:
-   ```bash
-   cd docs-viewer && npm run dev
-   ```
-   Open [http://localhost:5111](http://localhost:5111) to view.
-
-4. Monitor the status of the servers:
-   - Next.js: `app/logs/nextjs.log`
-   - Convex: `app/logs/convex.log`
-   - Docs Viewer: Check terminal output in `docs-viewer`

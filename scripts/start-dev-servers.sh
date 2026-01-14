@@ -119,6 +119,20 @@ NEXT_PID=""
 CONVEX_RUNNING=false
 NEXTJS_RUNNING=false
 
+# Check and start Docker App (Desktop)
+echo "Checking Docker Desktop..."
+if ! pgrep -x "Docker" > /dev/null; then
+    echo "  [START] Docker Desktop is not running. Starting..."
+    open -a Docker
+    while ! docker info > /dev/null 2>&1; do
+        echo "  [WAIT] Waiting for Docker to initialize..."
+        sleep 5
+    done
+    echo "  [OK] Docker Desktop is ready"
+else
+    echo "  [SKIP] Docker Desktop is already running"
+fi
+
 # Check and start Docker services (Convex, Mailpit)
 echo "Checking Docker services (Convex, Mailpit)..."
 if ! docker compose ps | grep -q "Up"; then
@@ -131,6 +145,31 @@ fi
 # Set up local Convex functions
 echo "Initializing local Convex functions..."
 npx convex dev --once || { echo "ERROR: Failed to push to local Convex"; exit 1; }
+
+# Start Stripe Tunnel (NEW)
+echo "Checking Stripe CLI tunnel..."
+if ! pgrep -x "stripe" > /dev/null; then
+    echo "  [START] Starting Stripe CLI tunnel..."
+    # We need to get the site URL for the webhook
+    CONVEX_SITE_URL=$(npx convex env get CONVEX_SITE_URL 2>/dev/null || echo "")
+    if [ -z "$CONVEX_SITE_URL" ]; then
+        # Fallback: site URLs usually follow a pattern or we can extract from 'convex dev'
+        echo "  [INFO] Getting Convex Site URL..."
+        CONVEX_SITE_URL=$(npx convex dev --once | grep "site URL:" | awk '{print $NF}')
+    fi
+
+    if [ -n "$CONVEX_SITE_URL" ]; then
+        echo "  [OK] Forwarding to: $CONVEX_SITE_URL/stripe/webhook"
+        > logs/stripe.log
+        stripe listen --forward-to "$CONVEX_SITE_URL/stripe/webhook" 2>&1 | tee logs/stripe.log &
+        STRIPE_PID=$!
+        echo "  [HINT] Check logs/stripe.log for the 'whsec_...' key if it's new"
+    else
+        echo "  [ERROR] Could not determine CONVEX_SITE_URL. Skipping Stripe tunnel."
+    fi
+else
+    echo "  [SKIP] Stripe CLI tunnel already active"
+fi
 
 # Start Convex watching in background
 echo "Starting Convex function watcher..."
@@ -185,6 +224,7 @@ cleanup() {
     echo "Stopping servers..."
     [ -n "$CONVEX_PID" ] && kill $CONVEX_PID 2>/dev/null && echo "  Stopped Convex (PID: $CONVEX_PID)"
     [ -n "$NEXT_PID" ] && kill $NEXT_PID 2>/dev/null && echo "  Stopped Next.js (PID: $NEXT_PID)"
+    [ -n "$STRIPE_PID" ] && kill $STRIPE_PID 2>/dev/null && echo "  Stopped Stripe CLI (PID: $STRIPE_PID)"
     exit 0
 }
 

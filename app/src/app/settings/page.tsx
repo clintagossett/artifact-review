@@ -6,6 +6,7 @@ import { ProtectedPage } from "@/components/auth/ProtectedPage";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings as SettingsIcon } from "lucide-react";
 import { AccountInfoSection } from "@/components/settings/AccountInfoSection";
+import { BillingSection } from "@/components/settings/BillingSection";
 import { PasswordSection } from "@/components/settings/PasswordSection";
 import { DebugToggle } from "@/components/settings/DebugToggle";
 import { useGracePeriod } from "@/hooks/useGracePeriod";
@@ -42,10 +43,6 @@ export default function SettingsPage() {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-6 py-12">
-          {/* Debug Toggle (dev only) */}
-          {process.env.NODE_ENV === "development" && (
-            <DebugToggle onOverride={setDebugOverride} />
-          )}
 
           {/* Page Title */}
           <div className="mb-8">
@@ -63,7 +60,11 @@ export default function SettingsPage() {
           {/* Sections */}
           <div className="space-y-6">
             <AccountInfoSection />
+            <BillingSection />
             <PasswordSectionWithDebug debugOverride={debugOverride} />
+            {process.env.NODE_ENV === "development" && (
+              <DebugToggle onOverride={setDebugOverride} />
+            )}
           </div>
         </div>
       </div>
@@ -78,10 +79,10 @@ export default function SettingsPage() {
 function PasswordSectionWithDebug({ debugOverride }: { debugOverride: "auto" | "fresh" | "stale" }) {
   // In production or auto mode, just use the regular PasswordSection
   if (process.env.NODE_ENV !== "development" || debugOverride === "auto") {
-    return <PasswordSection />;
+    return <PasswordSection debugOverride="auto" />;
   }
 
   // In development with debug override, we need to wrap PasswordSection
   // to override the grace period state
-  return <PasswordSection key={debugOverride} />;
+  return <PasswordSection key={debugOverride} debugOverride={debugOverride} />;
 }

@@ -16,8 +16,8 @@ import { useToast } from "@/hooks/use-toast";
  * - Fresh (green): Within 15-minute grace period, shows countdown
  * - Stale (orange): Outside grace period, offers re-authentication
  */
-export function GracePeriodBanner() {
-  const { isWithinGracePeriod, timeRemaining, isLoading } = useGracePeriod();
+export function GracePeriodBanner({ debugOverride }: { debugOverride?: "auto" | "fresh" | "stale" }) {
+  const { isWithinGracePeriod, timeRemaining, isLoading } = useGracePeriod(debugOverride);
   const sendReauthMagicLink = useAction(api.settings.sendReauthMagicLink);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();

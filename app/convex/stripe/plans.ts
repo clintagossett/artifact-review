@@ -4,7 +4,7 @@ export const PLANS = {
         name: "Free Tier",
         limits: {
             documents: 3,
-            versionsPerDoc: 5,
+            versionsPerDoc: Infinity,
             publicLinks: true,
             agentApi: false, // Read-Only
             seats: 1, // Personal only
@@ -21,13 +21,18 @@ export const PLANS = {
             agentApi: true, // Read+Write
             seats: 1, // Still Personal only
         },
-        // Map to the actual Stripe Price ID
-        // Sandbox Price ID: price_1Soahn2NJVHamenmujQQRlNm
+        // Map to the actual Stripe Price IDs
         stripePriceId: process.env.STRIPE_PRICE_ID_PRO,
+        stripePriceIdAnnual: process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
     },
 };
 
 export const getPlanConfig = (stripePriceId?: string) => {
-    if (stripePriceId && stripePriceId === PLANS.PRO.stripePriceId) return PLANS.PRO;
+    if (
+        stripePriceId &&
+        (stripePriceId === PLANS.PRO.stripePriceId || stripePriceId === PLANS.PRO.stripePriceIdAnnual)
+    ) {
+        return PLANS.PRO;
+    }
     return PLANS.FREE;
 };
