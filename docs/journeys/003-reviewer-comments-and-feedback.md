@@ -29,14 +29,27 @@ flowchart TD
 
 ## Notifications
 
-### In-App
-- **Comment posted:** Toast - "Comment added"
-- **Reply received:** Toast - "[Name] replied to your comment"
+Notifications are powered by [Novu](https://novu.co/) with both in-app and email channels.
 
-### Email
-- **Recipient:** Creator
-- **Trigger:** New comment posted
-- **Content:** Comment preview, document link, and context.
+### In-App (Bell Icon)
+Real-time notifications appear in the notification center (bell icon in header).
+
+| Event | Recipient | Message |
+|-------|-----------|---------|
+| **New Comment** | Artifact Owner | "[Author] commented on [Artifact]" |
+| **Reply to Comment** | Comment Author | "[Author] replied to your comment" |
+| **Reply in Thread** | Thread Participants | "[Author] replied in a thread you follow" |
+
+### Email (Digest)
+Emails are batched using Novu's digest feature. `NOVU_DIGEST_INTERVAL` controls the window (default: 10 min, set to 1 for testing).
+
+| Event | Recipient | Subject |
+|-------|-----------|---------|
+| **New Comment(s)** | Artifact Owner | "X new comments on [Artifact]" |
+| **Reply/Replies** | Comment/Thread Participants | "X new replies on [Artifact]" |
+
+### E2E Test Coverage
+- `tests/e2e/notification.spec.ts` - Validates in-app notification bell badge appears after comment/reply
 
 ## Feature Alignment (E2E Test)
 Matches `app/tests/e2e/artifact-workflow.spec.ts` (Steps 4 & 5).

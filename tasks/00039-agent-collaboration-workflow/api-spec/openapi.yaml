@@ -1,0 +1,771 @@
+openapi: 3.0.3
+info:
+  title: Artifact Review Agent API
+  description: |
+    REST API for AI agents and external tools to interact with Artifact Review.
+    
+    ## Authentication
+    All endpoints require an API key passed via the `X-API-Key` header.
+    
+    ## Use Cases
+    - **AI Agents**: Claude Code, Claude Desktop, ChatGPT, Cursor, Copilot
+    - **CI/CD**: Automated artifact publishing from pipelines
+    - **Integrations**: Slack bots, custom tools
+    
+    ## Rate Limits
+    - Free tier: 100 requests/hour
+    - Pro tier: 1,000 requests/hour
+    - Team tier: 10,000 requests/hour
+    
+  version: 1.0.0
+  contact:
+    name: Artifact Review Support
+    url: https://artifact.review/support
+
+servers:
+  - url: https://artifact.review/api/v1
+    description: Production
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Artifacts
+    description: Create and manage artifacts
+  - name: Versions
+    description: Add and retrieve artifact versions
+  - name: Comments
+    description: Read and respond to comments
+  - name: Auth
+    description: API key management
+
+paths:
+  # ============================================================================
+  # ARTIFACTS
+  # ============================================================================
+  /artifacts:
+    post:
+      tags: [Artifacts]
+      summary: Create a new artifact
+      description: |
+        Upload content (markdown, HTML) and create a new artifact.
+        Returns a share URL that can be sent to reviewers.
+      operationId: createArtifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArtifactRequest'
+            examples:
+              markdown:
+                summary: Markdown document
+                value:
+                  name: "RBAC Planning Doc"
+                  description: "Team accounts and permissions design"
+                  fileType: "markdown"
+                  content: "# Team Accounts\n\n## Overview\n..."
+              html:
+                summary: HTML document
+                value:
+                  name: "Product Roadmap"
+                  fileType: "html"
+                  content: "<html><body><h1>Roadmap</h1></body></html>"
+      responses:
+        '201':
+          description: Artifact created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    get:
+      tags: [Artifacts]
+      summary: List your artifacts
+      description: Returns all artifacts owned by the API key holder
+      operationId: listArtifacts
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of artifacts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactListResponse'
+
+  /artifacts/{shareToken}:
+    get:
+      tags: [Artifacts]
+      summary: Get artifact by share token
+      operationId: getArtifact
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+      responses:
+        '200':
+          description: Artifact details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtifactDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Artifacts]
+      summary: Delete an artifact
+      operationId: deleteArtifact
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+      responses:
+        '204':
+          description: Artifact deleted
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================================
+  # VERSIONS
+  # ============================================================================
+  /artifacts/{shareToken}/versions:
+    post:
+      tags: [Versions]
+      summary: Add a new version
+      description: |
+        Upload updated content as a new version. Comments on previous
+        versions are preserved.
+      operationId: addVersion
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddVersionRequest'
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      tags: [Versions]
+      summary: List all versions
+      operationId: listVersions
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionListResponse'
+
+  /artifacts/{shareToken}/versions/{versionNumber}:
+    get:
+      tags: [Versions]
+      summary: Get specific version
+      operationId: getVersion
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - $ref: '#/components/parameters/VersionNumber'
+      responses:
+        '200':
+          description: Version details with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionDetailResponse'
+
+  # ============================================================================
+  # COMMENTS
+  # ============================================================================
+  /artifacts/{shareToken}/comments:
+    get:
+      tags: [Comments]
+      summary: Get all comments on latest version
+      description: |
+        Returns all comments on the latest version of the artifact.
+        Useful for AI agents to understand reviewer feedback.
+      operationId: getComments
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - name: includeResolved
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Include resolved comments
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, markdown]
+            default: json
+          description: |
+            Output format. Use 'markdown' for a human-readable 
+            summary suitable for AI agent context.
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+            text/markdown:
+              schema:
+                type: string
+                example: |
+                  # Comments on "RBAC Planning Doc"
+                  
+                  ## Open Comments (3)
+                  
+                  ### Comment by Sarah Chen (2 hours ago)
+                  > Should we support multiple orgs per user?
+                  
+                  **Replies:**
+                  - John: "Yes, common in B2B SaaS"
+                  
+                  ---
+
+  /artifacts/{shareToken}/versions/{versionNumber}/comments:
+    get:
+      tags: [Comments]
+      summary: Get comments on specific version
+      operationId: getVersionComments
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - $ref: '#/components/parameters/VersionNumber'
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [json, markdown]
+            default: json
+      responses:
+        '200':
+          description: List of comments for this version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+
+    post:
+      tags: [Comments]
+      summary: Add a comment (as the API key owner)
+      operationId: addComment
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - $ref: '#/components/parameters/VersionNumber'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCommentRequest'
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+
+  /artifacts/{shareToken}/comments/{commentId}/replies:
+    post:
+      tags: [Comments]
+      summary: Reply to a comment
+      operationId: replyToComment
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddReplyRequest'
+      responses:
+        '201':
+          description: Reply created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplyResponse'
+
+  /artifacts/{shareToken}/comments/{commentId}/resolve:
+    post:
+      tags: [Comments]
+      summary: Mark comment as resolved
+      operationId: resolveComment
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comment resolved
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================================
+  # AUTH
+  # ============================================================================
+  /auth/keys:
+    get:
+      tags: [Auth]
+      summary: List API keys
+      description: Returns all API keys for the authenticated user
+      operationId: listApiKeys
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyListResponse'
+
+    post:
+      tags: [Auth]
+      summary: Create a new API key
+      operationId: createApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApiKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyResponse'
+
+  /auth/keys/{keyId}:
+    delete:
+      tags: [Auth]
+      summary: Revoke an API key
+      operationId: revokeApiKey
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: API key revoked
+
+# ============================================================================
+# COMPONENTS
+# ============================================================================
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+  parameters:
+    ShareToken:
+      name: shareToken
+      in: path
+      required: true
+      description: Unique identifier for the artifact (from share URL)
+      schema:
+        type: string
+        example: "abc123xy"
+
+    VersionNumber:
+      name: versionNumber
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      example: 1
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "invalid_api_key"
+            message: "API key is missing or invalid"
+
+    Forbidden:
+      description: Not authorized to perform this action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "rate_limit_exceeded"
+            message: "Rate limit exceeded. Try again in 60 seconds."
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per hour
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests this hour
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Unix timestamp when limit resets
+
+  schemas:
+    # Request schemas
+    CreateArtifactRequest:
+      type: object
+      required: [name, fileType, content]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "RBAC Planning Doc"
+        description:
+          type: string
+          maxLength: 500
+        fileType:
+          type: string
+          enum: [markdown, html]
+          example: "markdown"
+        content:
+          type: string
+          description: The artifact content (markdown or HTML)
+          example: "# Team Accounts\n\n## Overview\n..."
+        versionName:
+          type: string
+          maxLength: 100
+          description: Optional label for this version
+          example: "Initial draft"
+
+    AddVersionRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          description: Updated content
+        fileType:
+          type: string
+          enum: [markdown, html]
+          description: Override file type (optional)
+        name:
+          type: string
+          maxLength: 100
+          description: Label for this version
+          example: "Addressed feedback"
+
+    AddCommentRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 10000
+          example: "Looks good! One suggestion..."
+
+    AddReplyRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          maxLength: 5000
+
+    CreateApiKeyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          example: "Claude Code Integration"
+        expiresIn:
+          type: string
+          enum: [30d, 90d, 1y, never]
+          default: "90d"
+
+    # Response schemas
+    ArtifactResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        shareToken:
+          type: string
+          example: "abc123xy"
+        shareUrl:
+          type: string
+          format: uri
+          example: "https://artifact.review/a/abc123xy"
+        name:
+          type: string
+        description:
+          type: string
+        latestVersion:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    ArtifactListResponse:
+      type: object
+      properties:
+        artifacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArtifactResponse'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    ArtifactDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/ArtifactResponse'
+        - type: object
+          properties:
+            versions:
+              type: array
+              items:
+                $ref: '#/components/schemas/VersionSummary'
+            commentCount:
+              type: integer
+            unresolvedCommentCount:
+              type: integer
+
+    VersionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: integer
+        name:
+          type: string
+        fileType:
+          type: string
+        size:
+          type: integer
+          description: Size in bytes
+        createdAt:
+          type: string
+          format: date-time
+
+    VersionSummary:
+      type: object
+      properties:
+        number:
+          type: integer
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        isLatest:
+          type: boolean
+
+    VersionListResponse:
+      type: object
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VersionSummary'
+
+    VersionDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/VersionResponse'
+        - type: object
+          properties:
+            content:
+              type: string
+              description: The full content of this version
+            contentUrl:
+              type: string
+              format: uri
+              description: URL to fetch raw content
+
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        author:
+          $ref: '#/components/schemas/Author'
+        isResolved:
+          type: boolean
+        replyCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        editedAt:
+          type: string
+          format: date-time
+
+    CommentListResponse:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/CommentResponse'
+              - type: object
+                properties:
+                  replies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReplyResponse'
+        total:
+          type: integer
+        unresolvedCount:
+          type: integer
+
+    ReplyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+        author:
+          $ref: '#/components/schemas/Author'
+        createdAt:
+          type: string
+          format: date-time
+
+    Author:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+
+    ApiKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        key:
+          type: string
+          description: Only returned on creation, never shown again
+          example: "ar_live_abc123..."
+        prefix:
+          type: string
+          description: First 8 chars for identification
+          example: "ar_live_"
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    ApiKeyListResponse:
+      type: object
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              prefix:
+                type: string
+              lastUsedAt:
+                type: string
+                format: date-time
+              createdAt:
+                type: string
+                format: date-time
+              expiresAt:
+                type: string
+                format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object

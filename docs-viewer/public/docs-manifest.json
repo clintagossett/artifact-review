@@ -644,18 +644,6 @@
         "path": "tasks/00034-claude-desktop-and-chatgpt-integration",
         "children": [
           {
-            "name": "output",
-            "type": "directory",
-            "path": "tasks/00034-claude-desktop-and-chatgpt-integration/output",
-            "children": []
-          },
-          {
-            "name": "tests",
-            "type": "directory",
-            "path": "tasks/00034-claude-desktop-and-chatgpt-integration/tests",
-            "children": []
-          },
-          {
             "name": "claude-desktop-research.md",
             "type": "file",
             "path": "tasks/00034-claude-desktop-and-chatgpt-integration/claude-desktop-research.md",
@@ -749,6 +737,69 @@
             "name": "README.md",
             "type": "file",
             "path": "tasks/00037-workflow-enrichment-with-novu/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00038-team-accounts-rbac",
+        "type": "directory",
+        "path": "tasks/00038-team-accounts-rbac",
+        "children": [
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00038-team-accounts-rbac/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00039-agent-collaboration-workflow",
+        "type": "directory",
+        "path": "tasks/00039-agent-collaboration-workflow",
+        "children": [
+          {
+            "name": "api-spec",
+            "type": "directory",
+            "path": "tasks/00039-agent-collaboration-workflow/api-spec",
+            "children": [
+              {
+                "name": "api-keys-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/api-keys-design.md",
+                "ext": ".md"
+              },
+              {
+                "name": "notifications-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/notifications-design.md",
+                "ext": ".md"
+              },
+              {
+                "name": "openapi.yaml",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/openapi.yaml",
+                "ext": ".yaml"
+              },
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/README.md",
+                "ext": ".md"
+              },
+              {
+                "name": "versioning-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/versioning-design.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/README.md",
             "ext": ".md"
           }
         ]

@@ -38,3 +38,45 @@ export const triggerCommentNotification = internalAction({
         });
     },
 });
+
+/**
+ * Trigger a reply notification via Novu.
+ * Notifies the comment author or thread participants when someone replies.
+ */
+export const triggerReplyNotification = internalAction({
+    args: {
+        subscriberId: v.string(),
+        artifactDisplayTitle: v.string(),
+        artifactUrl: v.string(),
+        authorName: v.string(),
+        authorAvatarUrl: v.optional(v.string()),
+        commentPreview: v.string(),
+        isCommentAuthor: v.boolean(), // true if recipient is the original comment author
+    },
+    handler: async (ctx, args) => {
+        const apiKey = process.env.NOVU_SECRET_KEY;
+        if (!apiKey) {
+            console.error("Missing NOVU_SECRET_KEY. Skipping reply notification.");
+            return;
+        }
+
+        const novu = new Novu(apiKey);
+
+        // Use the same workflow but with a different event context
+        // The workflow can use payload.isReply to differentiate messaging
+        await novu.trigger("new-comment", {
+            to: {
+                subscriberId: args.subscriberId,
+            },
+            payload: {
+                artifactDisplayTitle: args.artifactDisplayTitle,
+                artifactUrl: args.artifactUrl,
+                authorName: args.authorName,
+                authorAvatarUrl: args.authorAvatarUrl,
+                commentPreview: args.commentPreview,
+                isReply: true,
+                isCommentAuthor: args.isCommentAuthor,
+            },
+        });
+    },
+});
