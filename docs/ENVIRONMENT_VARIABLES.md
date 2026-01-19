@@ -55,6 +55,23 @@ These variables must be set in your local `.env.local` file and in your Frontend
 | `NEXT_PUBLIC_CONVEX_HTTP_URL` | **Configuration**. The HTTP Actions URL of your Convex Backend (e.g., `https://mild-ptarmigan-109.convex.site`). Used for proxying artifacts. | `src/app/api/artifact/.../route.ts` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Stripe Key**. Publicly accessible key (starts with `pk_test_`) for the Stripe Elements / Checkout client. | `src/components/settings/BillingSection.tsx` |
 
+### 🔔 Notifications (Novu)
+These are set in **Vercel** (or `.env.local` for local dev).
+| Variable Name | Description | Used In Files |
+| :--- | :--- | :--- |
+| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts` |
+| `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
+
+### Local Self-Hosted Mode (Docker)
+To run Novu entirely locally (offline/agentic mode) with Mailpit integration:
+1. Run: `./scripts/start-dev-servers.sh --novu-local`
+2. Access Dashboard: `http://localhost:4200`
+3. Configure SMTP: Host `mailpit`, Port `1025`
+4. Emails appear in: `http://localhost:8025`
+
+This spins up the full Novu stack (API, Worker, Web, Redis, MongoDB). **Expect high resource usage.**
+| `NOVU_DIGEST_INTERVAL` | **Configuration**. Digest window in minutes (Default: `10`). Set to `0` or `1` for E2E tests. | `src/app/api/novu/workflows/comment-workflow.ts` |
+
 ### ℹ️ Optional
 | Variable Name | Description | Default |
 | :--- | :--- | :--- |

@@ -72,6 +72,7 @@ export default function DashboardPage() {
             onUploadClick={handleUploadClick}
             userEmail={currentUser.email}
             userName={currentUser.name}
+            userId={currentUser._id}
           />
 
           <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-12">

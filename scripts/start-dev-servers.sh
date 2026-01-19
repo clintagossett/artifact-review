@@ -16,12 +16,16 @@
 set +e
 
 # Parse arguments
+# Parse arguments
 RESTART_MODE=false
+NOVU_LOCAL_MODE=false
 for arg in "$@"; do
     case $arg in
         --restart|-r|--force|-f)
             RESTART_MODE=true
-            shift
+            ;;
+        --novu-local)
+            NOVU_LOCAL_MODE=true
             ;;
     esac
 done
@@ -34,6 +38,7 @@ APP_DIR="$PROJECT_ROOT/app"
 # Port configuration
 NEXTJS_PORT=3000
 CONVEX_PORT=8188
+NOVU_PORT=2022
 
 # Verify app directory exists
 if [ ! -d "$APP_DIR" ]; then
@@ -111,11 +116,23 @@ if [ "$RESTART_MODE" = true ]; then
     fi
 
     echo ""
+
+    if check_port $NOVU_PORT; then
+        EXISTING_PID=$(get_port_process $NOVU_PORT)
+        echo "  Killing Novu on port $NOVU_PORT (PID: $EXISTING_PID)..."
+        kill_port $NOVU_PORT
+        echo "  [OK] Novu stopped"
+    else
+        echo "  Novu not running"
+    fi
+
+    echo ""
 fi
 
 # Track which servers we start
 CONVEX_PID=""
 NEXT_PID=""
+NOVU_PID=""
 CONVEX_RUNNING=false
 NEXTJS_RUNNING=false
 
@@ -135,12 +152,39 @@ fi
 
 # Check and start Docker services (Convex, Mailpit)
 echo "Checking Docker services (Convex, Mailpit)..."
-if ! docker compose ps | grep -q "Up"; then
-    echo "  [START] Starting Docker services..."
-    docker compose up -d
+if [ "$NOVU_LOCAL_MODE" = true ]; then
+    echo "  [INFO] Novu Local Mode ENABLED (Loading docker-compose.novu.yml)"
+    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.novu.yml"
 else
-    echo "  [SKIP] Docker services already running"
+    COMPOSE_FILES="-f docker-compose.yml"
 fi
+
+# Change to project root for compose if needed, or use relative paths
+# NOTE: The script is running from APP_DIR ($PROJECT_ROOT/app).
+# The compose files are in PROJECT_ROOT.
+# We need to be careful about context.
+# Best approach: Run compose from PROJECT_ROOT context.
+
+pushd "$PROJECT_ROOT" > /dev/null
+
+if ! docker compose $COMPOSE_FILES ps | grep -q "Up"; then
+    echo "  [START] Starting Docker services..."
+    docker compose $COMPOSE_FILES up -d
+else
+    # If using novu-local, ensure those specific services are up
+    if [ "$NOVU_LOCAL_MODE" = true ]; then
+        if ! docker compose $COMPOSE_FILES ps | grep -q "novu-api"; then
+            echo "  [START] Starting additional Novu services..."
+             docker compose $COMPOSE_FILES up -d
+        else
+            echo "  [SKIP] Docker services already running"
+        fi
+    else
+        echo "  [SKIP] Docker services already running"
+    fi
+fi
+
+popd > /dev/null
 
 # Set up local Convex functions
 echo "Initializing local Convex functions..."
@@ -200,6 +244,22 @@ else
 fi
 
 echo ""
+
+# Check and start Novu Studio (port 2022)
+echo "Checking Novu Studio (port $NOVU_PORT)..."
+if check_port $NOVU_PORT; then
+    EXISTING_PID=$(get_port_process $NOVU_PORT)
+    echo "  [SKIP] Novu Studio already running on port $NOVU_PORT (PID: $EXISTING_PID)"
+else
+    echo "  [START] Starting Novu Studio..."
+    > logs/novu.log
+    # npx prompt handling: echo "y" | ...
+    echo "y" | npx novu@latest dev -p $NEXTJS_PORT 2>&1 | tee logs/novu.log &
+    NOVU_PID=$!
+    echo "  [OK] Novu Studio started (PID: $NOVU_PID)"
+fi
+
+echo ""
 echo "========================================"
 
 # Summary
@@ -214,6 +274,7 @@ fi
 echo "Logs:"
 [ -n "$CONVEX_PID" ] && echo "  - app/logs/convex.log"
 [ -n "$NEXT_PID" ] && echo "  - app/logs/nextjs.log"
+[ -n "$NOVU_PID" ] && echo "  - app/logs/novu.log"
 echo ""
 echo "Press Ctrl+C to stop started services"
 echo "========================================"
@@ -224,6 +285,7 @@ cleanup() {
     echo "Stopping servers..."
     [ -n "$CONVEX_PID" ] && kill $CONVEX_PID 2>/dev/null && echo "  Stopped Convex (PID: $CONVEX_PID)"
     [ -n "$NEXT_PID" ] && kill $NEXT_PID 2>/dev/null && echo "  Stopped Next.js (PID: $NEXT_PID)"
+    [ -n "$NOVU_PID" ] && kill $NOVU_PID 2>/dev/null && echo "  Stopped Novu (PID: $NOVU_PID)"
     [ -n "$STRIPE_PID" ] && kill $STRIPE_PID 2>/dev/null && echo "  Stopped Stripe CLI (PID: $STRIPE_PID)"
     exit 0
 }

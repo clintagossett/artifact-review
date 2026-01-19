@@ -740,6 +740,12 @@
             ]
           },
           {
+            "name": "architecture.md",
+            "type": "file",
+            "path": "tasks/00037-workflow-enrichment-with-novu/architecture.md",
+            "ext": ".md"
+          },
+          {
             "name": "README.md",
             "type": "file",
             "path": "tasks/00037-workflow-enrichment-with-novu/README.md",

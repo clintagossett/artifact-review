@@ -6,6 +6,7 @@
  */
 
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import {
@@ -149,6 +150,35 @@ export const create = mutation({
       isDeleted: false,
       createdAt: now,
     });
+
+    // NOTIFICATION LOGIC
+    // We want to notify the Artifact Owner when a new comment is posted.
+    // (Future: Notify other commenters via "follow" logic)
+    const artifact = await ctx.db.get(version.artifactId);
+    if (!artifact) {
+      console.error("Artifact not found for notification");
+      return commentId;
+    }
+
+    // Don't notify if the author is commenting on their own artifact
+    if (artifact.createdBy !== userId) {
+      const author = await ctx.db.get(userId);
+      const siteUrl = process.env.CONVEX_SITE_URL || "";
+
+      // Construct the artifact URL using ID 
+      const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
+
+      await ctx.scheduler.runAfter(0, internal.novu.triggerCommentNotification, {
+        subscriberId: artifact.createdBy, // Notify the owner
+        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
+        artifactUrl,
+        authorName: author?.name || "Someone",
+        authorAvatarUrl: author?.image,
+        commentPreview: trimmedContent.length > 50
+          ? `${trimmedContent.slice(0, 50)}...`
+          : trimmedContent,
+      });
+    }
 
     return commentId;
   },

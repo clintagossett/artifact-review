@@ -9,16 +9,16 @@
 
 **Last Updated:** 2026-01-13
 
-### Current Status: 📝 PLANNED
+### Current Status: 🚧 IN PROGRESS
 
-**Phase:** Strategic Planning
+**Phase:** Implementation Setup
 
 ### Next Steps
 
-1. **Map Notifications to User Journeys**: Create a matrix of event -> notification type (In-app, Email, Slack).
-2. **Design Multi-Environment Integration Plan**: Document the strategy for Local, Dev, and Prod.
+1. **~~Map Notifications to User Journeys~~** (Done)
+2. **~~Design Multi-Environment Integration Plan~~** (Done)
 3. **Define Novu "Bridge" Architecture**: Plan the endpoint in Convex/Next.js for Novu to talk to.
-4. **Produce Enrichment & Integration Plan**.
+4. **Initialize Novu SDK**: Install dependencies and setup the bridge route.
 
 ---
 
