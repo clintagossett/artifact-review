@@ -149,7 +149,7 @@ export function BillingSection() {
                                 . You will not be charged again.
                             </p>
                             <p className="text-sm text-amber-700 mt-3 p-2 bg-white/50 rounded-lg border border-amber-100">
-                                <span className="font-semibold text-amber-900 underline">Changed your mind?</span> Click "Manage Billing" below and select <span className="italic font-bold text-amber-900">"Don't Cancel My Subscription"</span> to keep your access.
+                                <span className="font-semibold text-amber-900 underline">Changed your mind?</span> Click &quot;Manage Billing&quot; below and select <span className="italic font-bold text-amber-900">&quot;Don&apos;t Cancel My Subscription&quot;</span> to keep your access.
                             </p>
                         </div>
                     </div>
@@ -314,7 +314,7 @@ export function BillingSection() {
                                     <Check className="w-10 h-10 text-green-500" />
                                     <div className="absolute inset-0 bg-green-500/10 rounded-3xl blur-xl animate-pulse" />
                                 </div>
-                                <h4 className="text-xl font-bold text-gray-900 mb-2">You're all set!</h4>
+                                <h4 className="text-xl font-bold text-gray-900 mb-2">You&apos;re all set!</h4>
                                 <p className="text-sm text-gray-500 leading-relaxed">
                                     Your upgrade was successful. You now have full access to all Pro features and unlimited documents.
                                 </p>

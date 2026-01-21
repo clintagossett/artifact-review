@@ -23,7 +23,7 @@ export const NotificationCenter = ({ subscriberId }: { subscriberId: string }) =
                 {({ unseenCount }) => (
                     <div className="relative cursor-pointer">
                         <Bell className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
-                        {unseenCount > 0 && (
+                        {(unseenCount || 0) > 0 && (
                             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white ring-2 ring-background">
                                 {unseenCount}
                             </span>

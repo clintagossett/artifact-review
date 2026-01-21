@@ -1003,7 +1003,6 @@ export function DocumentViewer({
     if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
       setupIframeListeners();
     }
-
     return () => {
       iframe.removeEventListener('load', setupIframeListeners);
       if (iframe.contentDocument) {
@@ -1012,9 +1011,10 @@ export function DocumentViewer({
         const doc = iframe.contentDocument;
         doc.removeEventListener('click', (e) => handleGlobalClickRef.current(e), true);
         doc.removeEventListener('contextmenu', (e) => handleGlobalClickRef.current(e), true);
+        doc.removeEventListener('mouseup', (e) => handleTextSelectionRef.current(e));
       }
     };
-  }, [artifactUrl]);
+  }, [artifactUrl, setCurrentPage, handleGlobalClickRef, handleTextSelectionRef]);
 
   // Reset history when version changes
   useEffect(() => {

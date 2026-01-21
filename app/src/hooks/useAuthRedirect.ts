@@ -48,22 +48,21 @@ export function useAuthRedirect(
   // We are authenticated if the provider says so AND we have a user record (or it's still loading)
   const isAuthenticated = isConvexAuthenticated;
 
-  // Memoize config to avoid unnecessary effect triggers
-  const memoConfig = useMemo(() => config, [config.ifAuthenticated, config.ifUnauthenticated]);
+  const { ifAuthenticated, ifUnauthenticated } = config;
 
   useEffect(() => {
     if (isLoading) return;
 
-    if (isAuthenticated && memoConfig.ifAuthenticated) {
-      console.log(`[useAuthRedirect] Redirecting to ${memoConfig.ifAuthenticated} because authenticated`);
-      router.replace(memoConfig.ifAuthenticated);
+    if (isAuthenticated && ifAuthenticated) {
+      console.log(`[useAuthRedirect] Redirecting to ${ifAuthenticated} because authenticated`);
+      router.replace(ifAuthenticated);
     }
 
-    if (!isAuthenticated && memoConfig.ifUnauthenticated) {
-      console.log(`[useAuthRedirect] Redirecting to ${memoConfig.ifUnauthenticated} because unauthenticated`);
-      router.replace(memoConfig.ifUnauthenticated);
+    if (!isAuthenticated && ifUnauthenticated) {
+      console.log(`[useAuthRedirect] Redirecting to ${ifUnauthenticated} because unauthenticated`);
+      router.replace(ifUnauthenticated);
     }
-  }, [isLoading, isAuthenticated, memoConfig, router]);
+  }, [isLoading, isAuthenticated, ifAuthenticated, ifUnauthenticated, router]);
 
   return {
     isLoading,
