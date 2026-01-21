@@ -164,19 +164,28 @@ export function DocumentViewer({
   useEffect(() => {
     if (!documentId) return;
 
-    // Only load from local storage on initial mount or when documentId changes
+    // Attempt to load from local storage
     const saved = localStorage.getItem(`artifact_comments_sidebar_open_${documentId}`);
+
     if (saved !== null) {
+      // If we have a saved value, use it
       setSidebarOpen(saved === 'true');
     }
 
-    isInitialLoad.current = false;
+    // Mark initial load as done after a short delay to allow state to settle
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 100);
   }, [documentId]);
 
   // Save sidebar preference
   useEffect(() => {
-    if (!documentId) return;
-    localStorage.setItem(`artifact_comments_sidebar_open_${documentId}`, String(sidebarOpen));
+    // Only save if it's NOT the initial load to prevent overwriting with default
+    if (!isInitialLoad.current && documentId) {
+      // Double check we aren't saving the default 'true' before the load effect runs
+      // Logic: If isInitialLoad is false, it means the extraction effect has run at least once.
+      localStorage.setItem(`artifact_comments_sidebar_open_${documentId}`, String(sidebarOpen));
+    }
   }, [sidebarOpen, documentId]);
 
   // Load backend comments when they arrive
