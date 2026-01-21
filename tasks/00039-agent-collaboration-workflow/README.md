@@ -325,3 +325,33 @@ node scripts/agent-upload.js --file planning.md --artifact xyz123abc --new-versi
 2. **Comment test** - Add comment via UI, verify script can retrieve it
 3. **Version test** - Upload new version, verify comments on old version preserved
 4. **E2E test** - Full workflow from agent perspective
+
+---
+
+### Update: 2026-01-20 (Session 2) - COMPLETION
+
+**Current Status:** ✅ IMPLEMENTED
+
+**Summary of Work:**
+We have successfully implemented the "Agent Collaboration Workflow" using a REST API approach with a dedicated Agent Identity system.
+
+**Key Deliverables:**
+1.  **Backend Infrastructure:**
+    -   `agents` table: Stores Agent identities (Name, Role).
+    -   `apiKeys` table: Manages secure access tokens (hashed, scoped).
+    -   `http.ts`: Middleware to validate API keys and endpoints for `POST /api/v1/artifacts` and `GET /api/v1/artifacts/:token/comments`.
+
+2.  **Frontend UI:**
+    -   **Settings > Agents**: Create and manage AI Agent profiles.
+    -   **Settings > Developer**: Generate and revoke API keys (attributed to an Agent or specific User).
+    -   **Sidebar Navigation**: Refactored Settings page for better information architecture.
+
+3.  **API Documentation:**
+    -   **OpenAPI 3.0 Spec**: Created and published at `/openapi.yaml` (accessible [here](http://localhost:3000/openapi.yaml)).
+    -   Standard, machine-readable documentation for tools like ChatGPT or Cursor.
+
+4.  **Verification:**
+    -   `scripts/agent-demo.ts`: End-to-end test script handling the full loop (Upload, Comment, Retrieve) using the REST API.
+
+**Ready for Use:**
+You can now use your own AI Agents to upload planning documents to Artifact Review, receive comments from humans, and read those comments back to iterate on the work.
