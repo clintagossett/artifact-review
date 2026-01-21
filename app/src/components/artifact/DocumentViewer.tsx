@@ -73,7 +73,7 @@ import { useCommentActions } from '@/hooks/useCommentActions';
 import { useReplyActions } from '@/hooks/useReplyActions';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { usePresence } from '@/hooks/usePresence';
 import { useViewTracker } from '@/hooks/useViewTracker';
 import { PresenceAvatars } from './PresenceAvatars';
@@ -96,6 +96,7 @@ interface DocumentViewerProps {
   artifactOwnerId: Id<"users">; // For delete permissions
   convexUrl: string;
   userPermission?: "owner" | "can-comment" | null;
+  filePath?: string;
 }
 
 
@@ -112,7 +113,8 @@ export function DocumentViewer({
   versionId,
   artifactOwnerId,
   convexUrl,
-  userPermission
+  userPermission,
+  filePath
 }: DocumentViewerProps) {
   const router = useRouter();
 
@@ -155,6 +157,27 @@ export function DocumentViewer({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isFileTreeOpen, setIsFileTreeOpen] = useState(true);
   const [comments, setComments] = useState<Comment[]>([]);
+
+  // Load sidebar preference
+  const isInitialLoad = useRef(true);
+
+  useEffect(() => {
+    if (!documentId) return;
+
+    // Only load from local storage on initial mount or when documentId changes
+    const saved = localStorage.getItem(`artifact_comments_sidebar_open_${documentId}`);
+    if (saved !== null) {
+      setSidebarOpen(saved === 'true');
+    }
+
+    isInitialLoad.current = false;
+  }, [documentId]);
+
+  // Save sidebar preference
+  useEffect(() => {
+    if (!documentId) return;
+    localStorage.setItem(`artifact_comments_sidebar_open_${documentId}`, String(sidebarOpen));
+  }, [sidebarOpen, documentId]);
 
   // Load backend comments when they arrive
   useEffect(() => {
@@ -231,9 +254,212 @@ export function DocumentViewer({
   } | null>(null);
 
   // Multi-page navigation state
-  const [currentPage, setCurrentPage] = useState('/index.html');
+  const pathname = usePathname();
+  // filePath comes from prop (via Next.js dynamic route)
+  // Ensure it starts with / if not present
+  const currentPage = filePath ? (filePath.startsWith('/') ? filePath : `/${filePath}`) : '/index.html';
+
+  const setCurrentPage = useCallback((page: string) => {
+    // Navigate to new URL structure: /a/[token]/v/[version]/[...path]
+    // Clean path (remove leading slash)
+    const cleanPage = page.startsWith('/') ? page.substring(1) : page;
+
+    // Construct new URL
+    // We need to know the base URL. We can construct it from props.
+    if (versionNumber) {
+      router.push(`/a/${shareToken}/v/${versionNumber}/${cleanPage}`, { scroll: false });
+    } else {
+      // Fallback for latest version if not using v/[num] route
+      // For now, if no version number in URL, we can't easily append path unless we change root route.
+      // But we can fallback to query param or just log warning?
+      // Or maybe force redirect to explicit version?
+      console.warn("Navigation on implicit latest version route not deeply supported yet");
+    }
+  }, [shareToken, versionNumber, router]);
   const [navigationHistory, setNavigationHistory] = useState<string[]>(['/index.html']);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  // --- FILE TREE STATE ---
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [isTreeStateLoaded, setIsTreeStateLoaded] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Handle sidebar resize
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        // Limit width between 160px and 600px
+        const newWidth = Math.max(160, Math.min(600, e.clientX));
+        setSidebarWidth(newWidth);
+      }
+    },
+    [isResizing]
+  );
+
+  // --- COMMENTS SIDEBAR STATE ---
+  const [commentsSidebarWidth, setCommentsSidebarWidth] = useState(384);
+  const [isResizingComments, setIsResizingComments] = useState(false);
+
+  const startResizingComments = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingComments(true);
+  }, []);
+
+  const stopResizingComments = useCallback(() => {
+    setIsResizingComments(false);
+  }, []);
+
+  const resizeComments = useCallback(
+    (e: MouseEvent) => {
+      if (isResizingComments) {
+        // Limit width between 250px and 800px
+        // Calculate width from right edge: windowWidth - mouseX
+        const newWidth = Math.max(250, Math.min(800, window.innerWidth - e.clientX));
+        setCommentsSidebarWidth(newWidth);
+      }
+    },
+    [isResizingComments]
+  );
+
+  // Load comments sidebar width preference
+  useEffect(() => {
+    if (!documentId) return;
+    const savedWidth = localStorage.getItem(`artifact_comments_sidebar_width_${documentId}`);
+    if (savedWidth !== null) {
+      const width = parseInt(savedWidth, 10);
+      if (!isNaN(width)) {
+        setCommentsSidebarWidth(width);
+      }
+    }
+  }, [documentId]);
+
+  // Save comments sidebar width preference
+  useEffect(() => {
+    if (!isResizingComments && documentId) {
+      localStorage.setItem(`artifact_comments_sidebar_width_${documentId}`, String(commentsSidebarWidth));
+    }
+  }, [isResizingComments, commentsSidebarWidth, documentId]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", resize);
+      window.addEventListener("mouseup", stopResizing);
+      // Prevent selection during resize
+      document.body.style.userSelect = "none";
+    } else {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+      // Don't reset if other resize is active
+      if (!isResizingComments) {
+        document.body.style.userSelect = "";
+      }
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizing, resize, stopResizing, isResizingComments]);
+
+  // Separate effect for comments resize to handle both independently if needed
+  useEffect(() => {
+    if (isResizingComments) {
+      window.addEventListener("mousemove", resizeComments);
+      window.addEventListener("mouseup", stopResizingComments);
+      document.body.style.userSelect = "none";
+    } else {
+      window.removeEventListener("mousemove", resizeComments);
+      window.removeEventListener("mouseup", stopResizingComments);
+      // Don't reset if other resize is active
+      if (!isResizing) {
+        document.body.style.userSelect = "";
+      }
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", resizeComments);
+      window.removeEventListener("mouseup", stopResizingComments);
+    };
+  }, [isResizingComments, resizeComments, stopResizingComments, isResizing]);
+
+  // Load state from session storage
+  useEffect(() => {
+    if (!currentVersionId) return;
+    try {
+      const key = `artifact_tree_${currentVersionId}`;
+      const stored = sessionStorage.getItem(key);
+      if (stored) {
+        setExpandedIds(new Set(JSON.parse(stored)));
+      }
+      setIsTreeStateLoaded(true);
+    } catch (e) {
+      console.error("Failed to load tree state", e);
+      setIsTreeStateLoaded(true);
+    }
+  }, [currentVersionId]);
+
+  // Save state helper
+  const updateExpandedIds = useCallback((newIds: Set<string>) => {
+    setExpandedIds(newIds);
+    if (!currentVersionId) return;
+    try {
+      const key = `artifact_tree_${currentVersionId}`;
+      sessionStorage.setItem(key, JSON.stringify(Array.from(newIds)));
+    } catch (e) {
+      console.error("Failed to save tree state", e);
+    }
+  }, [currentVersionId]);
+
+  const handleToggleExpand = useCallback((id: string) => {
+    const newIds = new Set(expandedIds);
+    if (newIds.has(id)) {
+      newIds.delete(id);
+    } else {
+      newIds.add(id);
+    }
+    updateExpandedIds(newIds);
+  }, [expandedIds, updateExpandedIds]);
+
+  // Auto-expand current page path
+  useEffect(() => {
+    if (!isTreeStateLoaded || !currentPage || currentPage === '/index.html' || currentPage === '/') return;
+
+    // Clean path
+    const cleanPath = currentPage.startsWith('/') ? currentPage.substring(1) : currentPage;
+    const parts = cleanPath.split('/').filter(p => p !== '');
+
+    // Remove filename to get directories
+    parts.pop();
+
+    if (parts.length === 0) return;
+
+    const newIds = new Set(expandedIds);
+    let currentPath = '';
+    let changed = false;
+
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      const folderId = `folder-${currentPath}`;
+      if (!newIds.has(folderId)) {
+        newIds.add(folderId);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      updateExpandedIds(newIds);
+    }
+  }, [currentPage, isTreeStateLoaded, expandedIds, updateExpandedIds]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -376,6 +602,23 @@ export function DocumentViewer({
 
   // Handle internal markdown links
   const handleLinkClick = (href: string) => {
+    // Handle anchor tags
+    if (href.startsWith('#')) {
+      const id = href.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        window.history.pushState(null, '', href);
+      }
+      return;
+    }
+
+    // Check for external links
+    if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('mailto:')) {
+      window.open(href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     // Only handle relative links
     if (!zipFiles || !currentVersion || currentVersion.fileType !== 'zip') return;
 
@@ -406,13 +649,24 @@ export function DocumentViewer({
 
       // Check if file exists in our zip file list
       // Try exact match, or case-insensitive match
+      // Also try appending .md or .html if missing extension
+      const possiblePaths = [
+        targetPath,
+        targetPath + '.md',
+        targetPath + '.markdown',
+        targetPath + '.html',
+        targetPath + '/index.html',
+        targetPath + '/README.md'
+      ];
+
       const fileExists = zipFiles.find(f =>
-        f.path === targetPath ||
-        f.path.toLowerCase() === targetPath.toLowerCase()
+        possiblePaths.some(p => p.toLowerCase() === f.path.toLowerCase() || p.toLowerCase() === `/${f.path.toLowerCase()}`)
       );
 
       if (fileExists) {
-        setCurrentPage(fileExists.path);
+        // Use clean path (no leading slash for setCurrentPage logic, but let's be consistent)
+        // fileExists.path doesn't have leading slash usually
+        setCurrentPage('/' + fileExists.path);
       } else {
         console.warn(`File not found in ZIP: ${targetPath}`);
         // Optionally show a toast or alert
@@ -753,9 +1007,9 @@ export function DocumentViewer({
     };
   }, [artifactUrl]);
 
-  // Reset to index page when version changes
+  // Reset history when version changes
   useEffect(() => {
-    setCurrentPage('/index.html');
+    // currentPage is handled by URL
     setNavigationHistory(['/index.html']);
     setHistoryIndex(0);
   }, [currentVersionId]);
@@ -1216,8 +1470,12 @@ export function DocumentViewer({
             {/* ZIP File Tree Sidebar (Left Side) */}
             {currentVersion?.fileType === "zip" && fileTreeData.length > 0 && (
               <div
-                className={`border-r border-gray-200 bg-gray-50 flex flex-col transition-all duration-300 ease-in-out ${isFileTreeOpen ? 'w-64' : 'w-12 items-center'
-                  }`}
+                className={`border-r border-gray-200 bg-gray-50 flex flex-col relative transition-all duration-300 ease-in-out`}
+                style={{
+                  width: isFileTreeOpen ? sidebarWidth : 48,
+                  // Disable transition during resize to avoid lag/jank
+                  transition: isResizing ? 'none' : 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
               >
                 <div className={`p-3 border-b border-gray-200 flex items-center ${isFileTreeOpen ? 'justify-between' : 'justify-center'} h-12`}>
                   {isFileTreeOpen ? (
@@ -1242,7 +1500,9 @@ export function DocumentViewer({
                     <FileTree
                       data={fileTreeData}
                       onSelectFile={handleFileSelect}
-                      selectedFileId={zipFiles?.find(f => f.path === currentPage)?._id || zipFiles?.find(f => f.path === currentPage.replace(/^\//, ''))?._id}
+                      selectedFileId={zipFiles?.find(f => f.path === currentPage || f.path === currentPage.replace(/^\//, ''))?._id}
+                      expandedIds={expandedIds}
+                      onToggleExpand={handleToggleExpand}
                     />
                   </div>
                 ) : (
@@ -1256,6 +1516,14 @@ export function DocumentViewer({
                       </TooltipContent>
                     </Tooltip>
                   </div>
+                )}
+
+                {/* Resize Handle */}
+                {isFileTreeOpen && (
+                  <div
+                    className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-400 z-10"
+                    onMouseDown={startResizing}
+                  />
                 )}
               </div>
             )}
@@ -1284,7 +1552,19 @@ export function DocumentViewer({
 
             {/* Comments Sidebar */}
             {sidebarOpen && (
-              <div className="w-96 border-l border-gray-200 bg-white flex flex-col">
+              <div
+                className="border-l border-gray-200 bg-white flex flex-col relative"
+                style={{
+                  width: commentsSidebarWidth,
+                  transition: isResizingComments ? 'none' : 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                {/* Resize Handle */}
+                <div
+                  className="absolute top-0 left-0 w-1 h-full cursor-col-resize hover:bg-blue-400 z-10"
+                  onMouseDown={startResizingComments}
+                />
+
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-gray-700" />

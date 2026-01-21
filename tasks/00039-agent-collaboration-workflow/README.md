@@ -355,3 +355,24 @@ We have successfully implemented the "Agent Collaboration Workflow" using a REST
 
 **Ready for Use:**
 You can now use your own AI Agents to upload planning documents to Artifact Review, receive comments from humans, and read those comments back to iterate on the work.
+
+---
+
+### Optional: Local DNS Mocking
+
+To simulate a production-like environment with custom domains:
+
+1.  **Update `/etc/hosts`**:
+    ```bash
+    echo "127.0.0.1 ar.local.com api.ar.local.com" | sudo tee -a /etc/hosts
+    ```
+
+2.  **Run Local Proxy** (Requires Node.js in `app` directory):
+    ```bash
+    cd app
+    sudo node scripts/local-proxy.js
+    ```
+
+    *   App: [http://ar.local.com](http://ar.local.com)
+    *   API: [http://api.ar.local.com](http://api.ar.local.com)
+

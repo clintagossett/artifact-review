@@ -182,11 +182,92 @@ export function DocViewer({ path }: DocViewerProps) {
                                 </code>
                             );
                         }
+                    },
+                        // Custom heading renderers to support deep linking
+                        h1: ({children, ...props }) => <HeadingTag tag="h1" {...props}>{children}</HeadingTag>,
+                h2: ({children, ...props }) => <HeadingTag tag="h2" {...props}>{children}</HeadingTag>,
+                h3: ({children, ...props }) => <HeadingTag tag="h3" {...props}>{children}</HeadingTag>,
+                h4: ({children, ...props }) => <HeadingTag tag="h4" {...props}>{children}</HeadingTag>,
+                h5: ({children, ...props }) => <HeadingTag tag="h5" {...props}>{children}</HeadingTag>,
+                h6: ({children, ...props }) => <HeadingTag tag="h6" {...props}>{children}</HeadingTag>
                     }}
                 >
-                    {content}
-                </ReactMarkdown>
-            </div>
+                {content}
+            </ReactMarkdown>
         </div>
+    </div >
+    );
+}
+
+// Helper component for headings with copy-on-click
+function HeadingTag({ tag, children, id, ...props }: { tag: keyof JSX.IntrinsicElements, children: React.ReactNode, id?: string } & React.HTMLAttributes<HTMLHeadingElement>) {
+    const [showCopied, setShowCopied] = useState(false);
+    const Tag = tag as any;
+
+    // Generate ID if missing (fallback)
+    const getTextFromChildren = (children: React.ReactNode): string => {
+        if (typeof children === 'string') return children;
+        if (typeof children === 'number') return String(children);
+        if (Array.isArray(children)) return children.map(getTextFromChildren).join('');
+        if (typeof children === 'object' && children && 'props' in children) return getTextFromChildren((children as any).props.children);
+        return '';
+    };
+
+    const effectiveId = id || getTextFromChildren(children).toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+
+    const handleCopyLink = (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (effectiveId) {
+            const url = new URL(window.location.href);
+            url.hash = effectiveId;
+
+            const copyToClipboard = async () => {
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(url.toString());
+                    } else {
+                        // Fallback for insecure contexts
+                        const textArea = document.createElement("textarea");
+                        textArea.value = url.toString();
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                    }
+                    setShowCopied(true);
+                    setTimeout(() => setShowCopied(false), 2000);
+                } catch (err) {
+                    console.error("Failed to copy link: ", err);
+                }
+            };
+
+            copyToClipboard();
+
+            // Also update URL without scrolling if possible, or just push state
+            window.history.pushState(null, '', url.toString());
+
+            // Scroll to view
+            const element = document.getElementById(effectiveId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    };
+
+    return (
+        <Tag
+            id={id}
+            {...props}
+            className={cn("group relative flex items-center gap-2 cursor-pointer no-underline", props.className)}
+            onClick={handleCopyLink}
+        >
+            {children}
+            <span className={cn(
+                "opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 font-normal text-sm ml-2 select-none",
+                showCopied && "opacity-100 text-green-500"
+            )}>
+                {showCopied ? "Copied!" : "#"}
+            </span>
+        </Tag>
     );
 }

@@ -13,7 +13,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "NODE_PATH=./node_modules playwright test",
     "test:e2e:ui": "NODE_PATH=./node_modules playwright test --ui",
-    "test:e2e:headed": "NODE_PATH=./node_modules playwright test --headed"
+    "test:e2e:headed": "NODE_PATH=./node_modules playwright test --headed",
+    "proxy": "node scripts/local-proxy.js"
   },
   "dependencies": {
     "@apache-annotator/dom": "^0.2.0",
@@ -55,6 +56,8 @@
     "react-dom": "^18",
     "react-hook-form": "^7.69.0",
     "react-markdown": "^10.1.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.6.0",
     "tailwind-merge": "^3.4.0",
@@ -77,6 +80,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.23",
+    "http-proxy": "^1.18.1",
     "jsdom": "^27.3.0",
     "playwright": "^1.57.0",
     "postcss": "^8",

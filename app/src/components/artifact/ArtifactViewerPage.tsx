@@ -14,11 +14,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface ArtifactViewerPageProps {
   shareToken: string;
   versionNumber?: number;
+  filePath?: string;
 }
 
 export function ArtifactViewerPage({
   shareToken,
   versionNumber,
+  filePath,
 }: ArtifactViewerPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -161,6 +163,7 @@ export function ArtifactViewerPage({
         artifactOwnerId={artifact.createdBy}
         convexUrl={convexUrl}
         userPermission={userPermission}
+        filePath={filePath}
       />
 
       <ShareModal

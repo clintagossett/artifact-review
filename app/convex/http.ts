@@ -146,6 +146,29 @@ http.route({
 // API V1 - AGENT ENDPOINTS
 // ============================================================================
 
+import { OPENAPI_SPEC } from "./lib/openapi";
+
+/**
+ * GET /api/v1/openapi.yaml
+ * Protected Documentation
+ */
+http.route({
+  path: "/api/v1/openapi.yaml",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response("Unauthorized", { status: 401 });
+
+    return new Response(OPENAPI_SPEC, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/yaml",
+        "Cache-Control": "no-cache"
+      }
+    });
+  }),
+});
+
 /**
  * POST /api/v1/artifacts
  * Create a new artifact via API Key
@@ -171,9 +194,30 @@ http.route({
       agentName = agent?.name;
     }
 
-    const blob = new Blob([content], { type: "text/plain" });
+    let blob: Blob;
+    let mimeType: string;
+    let entryPoint: string;
+
+    if (fileType === "zip") {
+      try {
+        const binaryString = atob(content);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        blob = new Blob([bytes], { type: "application/zip" });
+        mimeType = "application/zip";
+        entryPoint = "index.html"; // Will be updated by processor
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Invalid Base64 content for ZIP" }), { status: 400 });
+      }
+    } else {
+      blob = new Blob([content], { type: "text/plain" });
+      mimeType = fileType === "html" ? "text/html" : "text/markdown";
+      entryPoint = fileType === "html" ? "index.html" : "README.md";
+    }
+
     const storageId = await ctx.storage.store(blob);
-    const mimeType = fileType === "html" ? "text/html" : "text/markdown";
 
     try {
       const result = await ctx.runMutation(internal.artifacts.createInternal, {
@@ -183,12 +227,20 @@ http.route({
         name,
         description,
         fileType,
-        path: fileType === "html" ? "index.html" : "README.md",
+        path: entryPoint,
         storageId: storageId,
         mimeType,
         size: blob.size,
         organizationId: organizationId as any,
       });
+
+      if (fileType === "zip") {
+        // Trigger extraction
+        await ctx.runAction(internal.zipProcessor.processZipFile, {
+          versionId: result.versionId,
+          storageId: storageId,
+        });
+      }
 
       return new Response(JSON.stringify({
         id: result.artifactId,

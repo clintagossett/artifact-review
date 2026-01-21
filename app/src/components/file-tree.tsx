@@ -16,6 +16,8 @@ interface FileTreeProps {
   data: FileNode[]
   onSelectFile: (file: FileNode) => void
   selectedFileId?: string
+  expandedIds?: Set<string>
+  onToggleExpand?: (id: string) => void
 }
 
 interface FileTreeNodeProps {
@@ -23,17 +25,34 @@ interface FileTreeNodeProps {
   depth: number
   onSelect: (file: FileNode) => void
   selectedFileId?: string
+  expandedIds?: Set<string>
+  onToggleExpand?: (id: string) => void
 }
 
-const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, onSelect, selectedFileId }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  
+const FileTreeNode: React.FC<FileTreeNodeProps> = ({
+  node,
+  depth,
+  onSelect,
+  selectedFileId,
+  expandedIds,
+  onToggleExpand
+}) => {
+  // Fallback to local state if no controlled props provided (for backward compatibility if needed, though we'll update usage)
+  const [localIsOpen, setLocalIsOpen] = useState(false)
+
+  const isControlled = expandedIds !== undefined
+  const isOpen = isControlled ? expandedIds.has(node.id) : localIsOpen
+
   const isSelected = selectedFileId === node.id
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (node.type === "folder") {
-      setIsOpen(!isOpen)
+      if (isControlled && onToggleExpand) {
+        onToggleExpand(node.id)
+      } else {
+        setLocalIsOpen(!localIsOpen)
+      }
     } else {
       onSelect(node)
     }
@@ -43,29 +62,29 @@ const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, onSelect, sele
     <div>
       <div
         className={cn(
-          "flex items-center py-1 px-2 cursor-pointer hover:bg-muted/50 text-sm select-none",
-          isSelected && "bg-muted text-foreground font-medium",
-          depth > 0 && `pl-[${(depth * 12) + 8}px]` // Dynamic padding based on depth
+          "flex items-center py-1 px-2 cursor-pointer hover:bg-muted/50 text-sm select-none rounded-r-md border-l-2 border-transparent",
+          isSelected && "bg-blue-50 text-blue-700 font-semibold border-blue-500",
+          // depth > 0 && `pl-[${(depth * 12) + 8}px]` // Dynamic padding handled by style below
         )}
-        style={{ paddingLeft: `${depth * 1.2 + 0.5}rem` }} // Fallback / alternative to dynamic tailwind classes which might be purged
+        style={{ paddingLeft: `${depth * 1.2 + 0.5}rem` }}
         onClick={handleClick}
       >
-        <span className="mr-1 opacity-70">
+        <span className={cn("mr-1 opacity-70", isSelected && "opacity-100 text-blue-500")}>
           {node.type === "folder" ? (
-             isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
           ) : (
-            <span className="w-4 inline-block" /> // Spacer for alignment
+            <span className="w-4 inline-block" />
           )}
         </span>
-        
-        <span className="mr-2 text-muted-foreground">
+
+        <span className={cn("mr-2 text-muted-foreground", isSelected && "text-blue-600")}>
           {node.type === "folder" ? (
             isOpen ? <FolderOpen className="h-4 w-4 text-blue-400" /> : <Folder className="h-4 w-4 text-blue-400" />
           ) : (
             <File className="h-4 w-4" />
           )}
         </span>
-        
+
         <span className="truncate">{node.name}</span>
       </div>
 
@@ -78,6 +97,8 @@ const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, onSelect, sele
               depth={depth + 1}
               onSelect={onSelect}
               selectedFileId={selectedFileId}
+              expandedIds={expandedIds}
+              onToggleExpand={onToggleExpand}
             />
           ))}
         </div>
@@ -86,7 +107,13 @@ const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, depth, onSelect, sele
   )
 }
 
-export function FileTree({ data, onSelectFile, selectedFileId }: FileTreeProps) {
+export function FileTree({
+  data,
+  onSelectFile,
+  selectedFileId,
+  expandedIds,
+  onToggleExpand
+}: FileTreeProps) {
   return (
     <div className="w-full">
       {data.map((node) => (
@@ -96,6 +123,8 @@ export function FileTree({ data, onSelectFile, selectedFileId }: FileTreeProps) 
           depth={0}
           onSelect={onSelectFile}
           selectedFileId={selectedFileId}
+          expandedIds={expandedIds}
+          onToggleExpand={onToggleExpand}
         />
       ))}
     </div>

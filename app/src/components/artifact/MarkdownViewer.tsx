@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -60,6 +61,19 @@ export function MarkdownViewer({ src, isLoading = false, className, onLinkClick 
     fetchContent();
   }, [src, isLoading]);
 
+  // Handle scrolling to anchor
+  useEffect(() => {
+    if (!loading && window.location.hash) {
+      const id = window.location.hash.substring(1);
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [loading, content]);
+
   // Show loading skeleton
   if (loading || isLoading) {
     return (
@@ -103,6 +117,7 @@ export function MarkdownViewer({ src, isLoading = false, className, onLinkClick 
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSlug]}
         components={{
           a({ node, className, children, href, ...props }) {
             // Handle relative links
@@ -141,7 +156,7 @@ export function MarkdownViewer({ src, isLoading = false, className, onLinkClick 
                 {children}
               </code>
             );
-          }
+          },
         }}
       >
         {content}

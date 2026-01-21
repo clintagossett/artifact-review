@@ -1,15 +1,38 @@
 openapi: 3.0.0
 info:
-  title: Artifact Review Agent API
+  title: Artifact Review Agent API (Discovery)
   description: |
-    API for AI Agents to publish artifacts and receive feedback (comments) from human reviewers.
-    Authentication is via API Key.
+    This is the discovery endpoint for the Artifact Review Agent API.
+    
+    **Full API Access:**
+    To access the full API capabilities (creating artifacts, reading comments), you must first obtain an API Key from the Artifact Review Settings page.
+    
+    Once existing, authenticate via the `X-API-Key` header implies fetching the full specification from `/api/v1/openapi.yaml`.
   version: 1.0.0
 servers:
   - url: https://api.artifact.review
     description: Production Server
-  - url: http://localhost:3211
+  - url: http://api.ar.local.com
     description: Local Development Server
+
+paths:
+  /api/v1/openapi.yaml:
+    get:
+      summary: Retrieve the Full API Specification
+      description: |
+        Returns the complete OpenAPI 3.0 specification for all Agent API endpoints.
+        Requires a valid API Key.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Full YAML Specification
+          content:
+            text/yaml:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized (Invalid or missing API Key)
 
 components:
   securitySchemes:
@@ -17,116 +40,3 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
-    BearerAuth:
-      type: http
-      scheme: bearer
-
-security:
-  - ApiKeyAuth: []
-  - BearerAuth: []
-
-paths:
-  /api/v1/artifacts:
-    post:
-      summary: Publish a new artifact
-      description: Create a new artifact (web page or document) visible to reviewers.
-      operationId: createArtifact
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - fileType
-                - content
-              properties:
-                name:
-                  type: string
-                  example: "Landing Page V1"
-                  description: Title of the artifact.
-                description:
-                  type: string
-                  example: "Initial draft of the marketing landing page."
-                fileType:
-                  type: string
-                  enum: [html, markdown]
-                  example: "html"
-                content:
-                  type: string
-                  description: The raw string content of the artifact (HTML or Markdown).
-                  example: "<h1>Hello World</h1>"
-                organizationId:
-                  type: string
-                  description: Optional ID of the organization to attribute this artifact to.
-      responses:
-        '201':
-          description: Artifact created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: Internal ID of the artifact.
-                  shareToken:
-                    type: string
-                    description: The public token used in the share URL.
-                  latestVersionId:
-                    type: string
-                    description: ID of the created version.
-                  shareUrl:
-                    type: string
-                    description: Full URL to view the artifact.
-        '401':
-          description: Unauthorized (Invalid or missing API Key)
-        '400':
-          description: Invalid Request (Missing fields or bad JSON)
-
-  /api/v1/artifacts/{shareToken}/comments:
-    get:
-      summary: Get comments for an artifact
-      description: Retrieve all feedback comments posted by users on the latest version of the specified artifact.
-      operationId: getArtifactComments
-      parameters:
-        - in: path
-          name: shareToken
-          schema:
-            type: string
-          required: true
-          description: The share token of the artifact (returned during creation).
-      responses:
-        '200':
-          description: List of comments
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  comments:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        _id:
-                          type: string
-                        content:
-                          type: string
-                        x:
-                          type: number
-                        y:
-                          type: number
-                        resolved:
-                          type: boolean
-                        authorName:
-                          type: string
-                        createdAt:
-                          type: number
-        '401':
-          description: Unauthorized
-        '403':
-          description: Forbidden (You do not own this artifact)
-        '404':
-          description: Artifact not found
