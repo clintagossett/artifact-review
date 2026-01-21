@@ -99,6 +99,12 @@
                 "ext": ".md"
               },
               {
+                "name": "0013-rbac-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0013-rbac-strategy.md",
+                "ext": ".md"
+              },
+              {
                 "name": "0014-pii-safe-relational-tracking.md",
                 "type": "file",
                 "path": "docs/architecture/decisions/0014-pii-safe-relational-tracking.md",
@@ -747,6 +753,64 @@
         "path": "tasks/00038-team-accounts-rbac",
         "children": [
           {
+            "name": "01_organizational-hierarchy",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/01_organizational-hierarchy",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/01_organizational-hierarchy/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "02_roles-and-permissions",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/02_roles-and-permissions",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/02_roles-and-permissions/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "03_license-tiers",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/03_license-tiers",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/03_license-tiers/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "04_database-schema",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/04_database-schema",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/04_database-schema/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "05_migration-strategy",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/05_migration-strategy",
+            "children": []
+          },
+          {
             "name": "README.md",
             "type": "file",
             "path": "tasks/00038-team-accounts-rbac/README.md",
@@ -795,6 +859,37 @@
                 "ext": ".md"
               }
             ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "path": "tasks/00039-agent-collaboration-workflow/research",
+            "children": [
+              {
+                "name": "api-key-naming.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/research/api-key-naming.md",
+                "ext": ".md"
+              },
+              {
+                "name": "polymorphism-in-convex.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/research/polymorphism-in-convex.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/ARCHITECTURE.md",
+            "ext": ".md"
+          },
+          {
+            "name": "rate-limiting-research.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/rate-limiting-research.md",
+            "ext": ".md"
           },
           {
             "name": "README.md",

@@ -25,6 +25,7 @@ export function BillingSection() {
     const [isLoading, setIsLoading] = useState(false);
     const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("annual");
     const { toast } = useToast();
+    const searchParams = useSearchParams();
 
     // Auto-bootstrap org if none exists
     useEffect(() => {
@@ -106,7 +107,7 @@ export function BillingSection() {
     }
 
     const { plan, isPro, cancelAtPeriodEnd, currentPeriodEnd, interval, currency } = billingStatus;
-    const searchParams = useSearchParams();
+
     const isSuccess = searchParams.get("success") === "true";
 
     return (

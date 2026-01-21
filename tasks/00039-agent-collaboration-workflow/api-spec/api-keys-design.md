@@ -24,13 +24,11 @@ ar_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 
 | Property | Description |
 |----------|-------------|
-| **Name** | User-provided label (e.g., "Claude Code", "CI/CD Pipeline") |
+| **Label** | Friendly name for the key (e.g., "Laptop Key", "CI Server") |
+| **Agent** | **[Optional]** The Agent Profile this key acts as (e.g., "Claude") |
 | **Prefix** | First 8 chars shown for identification after creation |
 | **Scopes** | What the key can do (see below) |
 | **Expiration** | Optional expiry date |
-| **Last Used** | Timestamp of most recent API call |
-| **Created At** | When the key was created |
-| **Created By** | User who created it |
 
 ---
 
@@ -43,18 +41,6 @@ ar_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 | `full` | Full access to user's artifacts, comments, versions |
 
 **Rationale:** Simpler to implement and understand. Most AI agent use cases need full access.
-
-### Option B: Granular (Future Enhancement)
-
-| Scope | Description |
-|-------|-------------|
-| `artifacts:read` | List and view artifacts |
-| `artifacts:write` | Create, update, delete artifacts |
-| `versions:write` | Add new versions |
-| `comments:read` | View comments |
-| `comments:write` | Add comments and replies |
-
-**When to add:** If users request it or for team/enterprise security requirements.
 
 ---
 
@@ -86,13 +72,24 @@ ar_live_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 - Prevents accidental exposure in UI
 - Forces secure storage practices
 
-### UX Flow
-1. User clicks "Create API Key"
-2. User enters name, selects expiration
-3. Modal shows full key with copy button
-4. Warning: "This key won't be shown again"
-5. User copies and closes modal
-6. List view shows only prefix + last used
+### UX Flow: Generating a Key
+
+1. **User navigates to Settings > API Keys**
+2. **Click "Generate New Key"**
+3. **Modal Form:**
+   - **Label:** (e.g., "Cursor on Macbook")
+   - **Act As:** [Dropdown]
+     - "Me (Clint Gossett)" (Default)
+     - "Claude (Agent)"
+     - "Auto-Fixer (Agent)"
+     - *+ Create New Agent Profile*
+   - **Expiration:** [Never]
+4. **Click "Generate"**
+5. **Success Modal:**
+   - Shows key: `ar_live_...`
+   - Copy button
+6. **List View:**
+   - Shows key prefix, label, and **Actor** ("Me" or "Claude").
 
 ### If Key is Lost
 - User must delete and create a new key

@@ -309,6 +309,19 @@ const schema = defineSchema({
     createdBy: v.id("users"),
 
     /**
+     * Agent identity who created this version (if applicable).
+     * Optional - set only if action performed by an agent.
+     * Task 00039 - Agent Collaboration
+     */
+    agentId: v.optional(v.id("agents")),
+
+    /**
+     * Agent name at time of creation (denormalized).
+     * Used for display without extra lookups.
+     */
+    agentName: v.optional(v.string()),
+
+    /**
      * Optional version label/name.
      * User-friendly name like "Initial draft", "Final v2", etc.
      * Max 100 characters (enforced in updateName mutation).
@@ -558,6 +571,17 @@ const schema = defineSchema({
     createdBy: v.id("users"),
 
     /**
+     * Agent identity who created this comment (if applicable).
+     * Optional - set only if action performed by an agent.
+     */
+    agentId: v.optional(v.id("agents")),
+
+    /**
+     * Agent name at time of creation (denormalized).
+     */
+    agentName: v.optional(v.string()),
+
+    /**
      * Comment text content.
      * Required, max 10,000 characters, trimmed before storage.
      */
@@ -688,6 +712,16 @@ const schema = defineSchema({
      * Determines edit permissions (only creator can edit content).
      */
     createdBy: v.id("users"),
+
+    /**
+     * Agent identity who created this reply (if applicable).
+     */
+    agentId: v.optional(v.id("agents")),
+
+    /**
+     * Agent name at time of creation (denormalized).
+     */
+    agentName: v.optional(v.string()),
 
     /**
      * Reply text content.
@@ -1081,6 +1115,135 @@ const schema = defineSchema({
     .index("by_artifactId_versionId", ["artifactId", "versionId"])
     .index("by_userId_artifactId", ["userId", "artifactId"])
     .index("by_versionId_userId", ["versionId", "userId"]),
+
+  // ============================================================================
+  // AGENTS & API KEYS (Task 39)
+  // ============================================================================
+  /**
+   * Agent Profiles - "First-Class Teammates" owned by users.
+   *
+   * ## Purpose
+   * Represents an AI agent identity ("Claude", "Auto-Fixer") distinct from the user.
+   * Actions are attributed to `createdBy` (User) via `agentId` (Agent).
+   *
+   * ## Lifecycle
+   * - **Created**: `agents.create` mutation
+   * - **Deleted**: `agents.delete` (soft delete)
+   */
+  agents: defineTable({
+    /**
+     * User who owns this agent.
+     * The agent acts on behalf of this user.
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Display name for the agent (e.g. "Claude").
+     * Non-unique.
+     */
+    name: v.string(),
+
+    /**
+     * Optional avatar URL or emoji.
+     */
+    avatar: v.optional(v.string()),
+
+    /**
+     * Role/Type of agent (e.g. "coding", "qa").
+     */
+    role: v.string(),
+
+    /**
+     * Description of agent's purpose.
+     */
+    description: v.optional(v.string()),
+
+    /**
+     * Creation timestamp.
+     * ADR 12 required field.
+     */
+    createdAt: v.number(),
+
+    /**
+     * Update timestamp.
+     */
+    updatedAt: v.optional(v.number()),
+
+    /**
+     * Soft delete fields (ADR 0011).
+     */
+    isDeleted: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+  })
+    .index("by_createdBy_active", ["createdBy", "isDeleted"]),
+
+  /**
+   * API Keys for Agent/User authentication.
+   *
+   * ## Purpose
+   * Credentials for programmatic access.
+   * Can be linked to a specific Agent Profile.
+   *
+   * ## Security
+   * - Keys are hashed (`keyHash`) using Argon2id (implementation detail).
+   * - `prefix` stored for lookup.
+   * - Original key never stored.
+   */
+  apiKeys: defineTable({
+    /**
+     * User who owns this key.
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Optional Agent this key acts as.
+     * If set, actions are attributed to this agentId.
+     */
+    agentId: v.optional(v.id("agents")),
+
+    /**
+     * Key Label (e.g. "Laptop Key").
+     */
+    name: v.string(),
+
+    /**
+     * First 8 characters of key for display/lookup.
+     */
+    prefix: v.string(),
+
+    /**
+     * Secure hash of the full key.
+     */
+    keyHash: v.string(),
+
+    /**
+     * Permission scopes (e.g. ["editor", "readonly"]).
+     */
+    scopes: v.array(v.string()),
+
+    /**
+     * Expiration timestamp (undefined = never).
+     */
+    expiresAt: v.optional(v.number()),
+
+    /**
+     * Usage tracking.
+     */
+    lastUsedAt: v.optional(v.number()),
+    lastUsedIp: v.optional(v.string()),
+
+    /**
+     * Audit fields.
+     */
+    createdAt: v.number(),
+    isDeleted: v.boolean(),
+    deletedAt: v.optional(v.number()),
+    deletedBy: v.optional(v.id("users")),
+  })
+    .index("by_createdBy_active", ["createdBy", "isDeleted"])
+    .index("by_prefix", ["prefix"])
+    .index("by_keyHash", ["keyHash"]),
 
   // ============================================================================
   // STRIPE / BILLING TABLES (Task 33)

@@ -197,18 +197,22 @@ artifact-review update --artifact xyz123 --file plan-v2.md
 
 Based on research and your stated goals:
 
-### 🏆 Recommended: Option D (REST API) + Option A (Scripts) Hybrid
+### 🏆 Recommended: Option D (REST API) + Agent Profiles
+
+**Architecture Decision (Session 2):**
+- **Treat Agents as Profiles:** We upleveled Agents to "First-Class Entities" (`agents` table).
+- **Stable Identity:** The Agent ID remains constant.
+- **Rotatable Keys:** We can now rotate API keys endlessly without losing the Agent's comment history or identity. This confirms the **REST API** choice as the correct interface for these credentials.
 
 **Phase 1 (Now - Dogfooding):**
-- Build simple Node.js scripts (Option A) for immediate use
-- You and I use this to collaborate on #38 planning
+- Build `agents` table and simple Node.js scripts
+- Implement API Key generation for specific Agent Profiles
 - Fast to implement, leverages existing Convex APIs
 
 **Phase 2 (Product Feature):**
 - Add public REST API with OpenAPI spec (Option D)
 - Enables ChatGPT plugins, Cursor, any HTTP client
-- Proper API key auth with rate limiting
-- Becomes a product differentiator
+- Proper API key auth with rate limiting and rotation
 
 **Why Not MCP (for now):**
 - ❌ ChatGPT users can't use it

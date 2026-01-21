@@ -137,17 +137,35 @@ CONVEX_RUNNING=false
 NEXTJS_RUNNING=false
 
 # Check and start Docker App (Desktop)
-echo "Checking Docker Desktop..."
-if ! pgrep -x "Docker" > /dev/null; then
-    echo "  [START] Docker Desktop is not running. Starting..."
-    open -a Docker
+# Check and start Docker Daemon (Linux/Ubuntu friendly)
+echo "Checking Docker Daemon..."
+if ! docker info > /dev/null 2>&1; then
+    echo "  [START] Docker daemon is not running. Attempting to start..."
+    # Try systemd (standard on Ubuntu)
+    if command -v systemctl >/dev/null 2>&1; then
+        sudo systemctl start docker
+    elif command -v service >/dev/null 2>&1; then
+        sudo service docker start
+    else
+        echo "  [ERROR] Could not start Docker. Please start it manually."
+        exit 1
+    fi
+
+    # Wait for Docker to be ready
+    MAX_RETRIES=30
+    COUNT=0
     while ! docker info > /dev/null 2>&1; do
+        if [ $COUNT -ge $MAX_RETRIES ]; then
+            echo "  [ERROR] Docker failed to start after checking."
+            exit 1
+        fi
         echo "  [WAIT] Waiting for Docker to initialize..."
-        sleep 5
+        sleep 2
+        COUNT=$((COUNT+1))
     done
-    echo "  [OK] Docker Desktop is ready"
+    echo "  [OK] Docker Daemon is ready"
 else
-    echo "  [SKIP] Docker Desktop is already running"
+    echo "  [SKIP] Docker Daemon is already running"
 fi
 
 # Check and start Docker services (Convex, Mailpit)

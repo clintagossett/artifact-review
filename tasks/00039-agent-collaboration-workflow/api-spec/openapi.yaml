@@ -343,8 +343,54 @@ paths:
           $ref: '#/components/responses/Forbidden'
 
   # ============================================================================
-  # AUTH
+  # AUTH & AGENTS
   # ============================================================================
+  /auth/agents:
+    get:
+      tags: [Auth]
+      summary: List Agent Profiles
+      operationId: listAgents
+      responses:
+        '200':
+          description: List of agent profiles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentListResponse'
+
+    post:
+      tags: [Auth]
+      summary: Create a new Agent Profile
+      operationId: createAgent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+      responses:
+        '201':
+          description: Agent created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+
+  /auth/agents/{agentId}:
+    delete:
+      tags: [Auth]
+      summary: Delete an Agent Profile
+      operationId: deleteAgent
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Agent deleted (soft delete)
+
   /auth/keys:
     get:
       tags: [Auth]
@@ -546,6 +592,10 @@ components:
           type: string
           maxLength: 100
           example: "Claude Code Integration"
+        agentId:
+          type: string
+          description: "Optional: ID of the Agent Profile this key acts as"
+          example: "jh7b..."
         expiresIn:
           type: string
           enum: [30d, 90d, 1y, never]
@@ -711,8 +761,20 @@ components:
       properties:
         name:
           type: string
+    Author:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Display name (e.g., 'Clint via Claude')"
         email:
           type: string
+        agentId:
+          type: string
+          description: "If action performed by agent, the Agent ID"
+        agentName:
+          type: string
+          description: "If action performed by agent, the Agent Name"
 
     ApiKeyResponse:
       type: object
@@ -721,6 +783,8 @@ components:
           type: string
         name:
           type: string
+        agent:
+          $ref: '#/components/schemas/AgentSummary'
         key:
           type: string
           description: Only returned on creation, never shown again
@@ -748,6 +812,8 @@ components:
                 type: string
               name:
                 type: string
+              agent:
+                $ref: '#/components/schemas/AgentSummary'
               prefix:
                 type: string
               lastUsedAt:

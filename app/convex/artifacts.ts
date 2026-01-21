@@ -109,6 +109,8 @@ export const createInternal = internalMutation({
     mimeType: v.string(),
     size: v.number(),
     organizationId: v.optional(v.id("organizations")),
+    agentId: v.optional(v.id("agents")),
+    agentName: v.optional(v.string()), // Denormalized name
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -158,6 +160,8 @@ export const createInternal = internalMutation({
       size: args.size,
       isDeleted: false,
       createdAt: now,
+      agentId: args.agentId,
+      agentName: args.agentName,
       // Keep inline content fields undefined (not used in new pattern)
     });
 
@@ -481,6 +485,8 @@ export const addVersionInternal = internalMutation({
     storageId: v.id("_storage"),
     mimeType: v.string(),
     size: v.number(),
+    agentId: v.optional(v.id("agents")),
+    agentName: v.optional(v.string()), // Denormalized name
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
