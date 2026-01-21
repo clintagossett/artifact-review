@@ -49,14 +49,6 @@ export default function DashboardPage() {
   const handleArtifactClick = (id: Id<"artifacts">) => {
     // Navigate to artifact viewer
     // Find in either artifacts or sharedWithMe
-    const startTime = Date.now();
-    console.log(`[Performance] Artifact Clicked: ${id} at ${startTime}`);
-
-    // Store start time in sessionStorage to pick up on the next page
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('artifactLoadStartTime', startTime.toString());
-      sessionStorage.setItem('artifactLoadId', id);
-    }
     const artifact = artifacts?.find((a) => a._id === id) ||
       sharedWithMe?.find((s) => s.artifact._id === id)?.artifact;
 

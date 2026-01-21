@@ -66,26 +66,7 @@ export function ArtifactViewerPage({
   // Determine which version to show based on whether versionNumber was provided
   const targetVersion = versionNumber ? specificVersion : latestVersion;
 
-  useEffect(() => {
-    if (artifact && targetVersion) {
-      const now = Date.now();
-      const clickTime = sessionStorage.getItem('artifactLoadStartTime');
-      const loadId = sessionStorage.getItem('artifactLoadId');
 
-      if (clickTime && loadId === artifact._id) {
-        const duration = now - parseInt(clickTime);
-        console.log(`[Performance] Data Fetch Completed in ${duration}ms for ${artifact._id}`);
-      } else if (clickTime) {
-        console.log(`[Performance] Data Fetch Completed (ID mismatch or no ID) at ${now}`);
-      }
-    }
-
-    // Cleanup sessionStorage when leaving the page or when the component unmounts
-    return () => {
-      sessionStorage.removeItem('artifactLoadStartTime');
-      sessionStorage.removeItem('artifactLoadId');
-    };
-  }, [artifact, targetVersion]);
 
   // Handle loading states
   if (isAuthLoading || artifact === undefined || versions === undefined || targetVersion === undefined || userPermission === undefined) {

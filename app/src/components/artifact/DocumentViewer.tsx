@@ -912,14 +912,7 @@ export function DocumentViewer({
       if (!doc || (doc as any).__listenersAttached) return;
       (doc as any).__listenersAttached = true;
 
-      const now = Date.now();
-      console.log(`[Performance] Iframe Interactive at ${now}`);
-      const clickTime = sessionStorage.getItem('artifactLoadStartTime');
-      const loadId = sessionStorage.getItem('artifactLoadId');
-      if (clickTime && loadId === documentId) {
-        const duration = now - parseInt(clickTime);
-        console.log(`[Performance] Total Time to Interactive (Iframe): ${duration}ms`);
-      }
+
 
       logger.debug(LOG_TOPICS.Artifact, 'DocumentViewer', 'Attaching iframe listeners', { url: artifactUrl });
 

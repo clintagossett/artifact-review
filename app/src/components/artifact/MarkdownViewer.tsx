@@ -52,13 +52,7 @@ export function MarkdownViewer({ src, isLoading = false, className, onLinkClick 
         const text = await response.text();
         setContent(text);
 
-        const now = Date.now();
-        console.log(`[Performance] Markdown Content Fetched at ${now}`);
-        const clickTime = sessionStorage.getItem('artifactLoadStartTime');
-        if (clickTime) {
-          const duration = now - parseInt(clickTime);
-          console.log(`[Performance] Total Time to Markdown Ready: ${duration}ms`);
-        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load markdown content');
       } finally {
