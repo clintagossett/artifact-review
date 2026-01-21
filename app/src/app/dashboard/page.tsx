@@ -33,25 +33,37 @@ export default function DashboardPage() {
     setIsNewArtifactOpen(true);
   };
 
-  const handleArtifactClick = (id: Id<"artifacts">) => {
-    // Navigate to artifact viewer
-    // Find in either artifacts or sharedWithMe
-    const artifact = artifacts?.find((a) => a._id === id) ||
-      sharedWithMe?.find((s) => s.artifact._id === id)?.artifact;
-
-    if (artifact) {
-      router.push(`/a/${artifact.shareToken}`);
-    }
-  };
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleCreateArtifact = async (data: {
     file: File;
     name: string;
     description?: string;
   }) => {
+    setIsNavigating(true);
     const result = await uploadFile(data);
     // Navigate to the newly created artifact
     router.push(`/a/${result.shareToken}`);
+  };
+
+  const handleArtifactClick = (id: Id<"artifacts">) => {
+    // Navigate to artifact viewer
+    // Find in either artifacts or sharedWithMe
+    const startTime = Date.now();
+    console.log(`[Performance] Artifact Clicked: ${id} at ${startTime}`);
+
+    // Store start time in sessionStorage to pick up on the next page
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('artifactLoadStartTime', startTime.toString());
+      sessionStorage.setItem('artifactLoadId', id);
+    }
+    const artifact = artifacts?.find((a) => a._id === id) ||
+      sharedWithMe?.find((s) => s.artifact._id === id)?.artifact;
+
+    if (artifact) {
+      setIsNavigating(true);
+      router.push(`/a/${artifact.shareToken}`);
+    }
   };
 
   const isLoading = currentUser === undefined || artifacts === undefined || sharedWithMe === undefined;
@@ -87,6 +99,7 @@ export default function DashboardPage() {
                     versionsMap={{}}
                     onArtifactClick={handleArtifactClick}
                     onNewArtifact={handleNewArtifact}
+                    isLoading={isNavigating}
                   />
                 )}
 
@@ -97,6 +110,7 @@ export default function DashboardPage() {
                     artifacts={sharedWithMe.map(s => s.artifact)}
                     versionsMap={{}}
                     onArtifactClick={handleArtifactClick}
+                    isLoading={isNavigating}
                   />
                 )}
               </>

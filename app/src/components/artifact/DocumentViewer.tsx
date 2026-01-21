@@ -912,6 +912,15 @@ export function DocumentViewer({
       if (!doc || (doc as any).__listenersAttached) return;
       (doc as any).__listenersAttached = true;
 
+      const now = Date.now();
+      console.log(`[Performance] Iframe Interactive at ${now}`);
+      const clickTime = sessionStorage.getItem('artifactLoadStartTime');
+      const loadId = sessionStorage.getItem('artifactLoadId');
+      if (clickTime && loadId === documentId) {
+        const duration = now - parseInt(clickTime);
+        console.log(`[Performance] Total Time to Interactive (Iframe): ${duration}ms`);
+      }
+
       logger.debug(LOG_TOPICS.Artifact, 'DocumentViewer', 'Attaching iframe listeners', { url: artifactUrl });
 
       // Add global click and contextmenu handlers with capture phase
@@ -1014,7 +1023,7 @@ export function DocumentViewer({
         doc.removeEventListener('mouseup', (e) => handleTextSelectionRef.current(e));
       }
     };
-  }, [artifactUrl, setCurrentPage, handleGlobalClickRef, handleTextSelectionRef]);
+  }, [artifactUrl, setCurrentPage, handleGlobalClickRef, handleTextSelectionRef, documentId]);
 
   // Reset history when version changes
   useEffect(() => {

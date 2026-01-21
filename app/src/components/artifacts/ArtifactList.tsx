@@ -23,6 +23,7 @@ export interface ArtifactListProps {
   >;
   onArtifactClick: (id: Id<"artifacts">) => void;
   onNewArtifact?: () => void;
+  isLoading?: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export function ArtifactList({
   versionsMap,
   onArtifactClick,
   onNewArtifact,
+  isLoading = false,
 }: ArtifactListProps) {
   // Sort by updatedAt, newest first
   const sortedArtifacts = [...artifacts].sort(
@@ -42,7 +44,7 @@ export function ArtifactList({
   );
 
   return (
-    <div>
+    <div className={isLoading ? "opacity-60 pointer-events-none" : ""}>
       {/* Section Header */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
