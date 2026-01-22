@@ -112,6 +112,9 @@ paths:
               schema:
                 type: object
                 properties:
+                  version:
+                    type: string
+                    description: The version of the artifact these comments belong to (e.g. "v1").
                   comments:
                     type: array
                     items:

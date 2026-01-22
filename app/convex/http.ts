@@ -282,6 +282,7 @@ http.route({
     }
 
     let versionId: any;
+    let versionNumber: number;
 
     if (versionParam) {
       const match = versionParam.match(/^v(\d+)$/);
@@ -293,14 +294,20 @@ http.route({
       });
       if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
       versionId = version._id;
+      versionNumber = version.number;
     } else {
-      versionId = await ctx.runQuery(internal.agentApi.getLatestVersionId, { artifactId: artifact._id });
-      if (!versionId) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+      const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+      if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+      versionId = version._id;
+      versionNumber = version.number;
     }
 
     const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
 
-    return new Response(JSON.stringify({ comments }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({
+      version: `v${versionNumber}`,
+      comments
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
   }),
 });
 
@@ -352,8 +359,9 @@ http.route({
       if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
       versionId = version._id;
     } else {
-      versionId = await ctx.runQuery(internal.agentApi.getLatestVersionId, { artifactId: artifact._id });
-      if (!versionId) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+      const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+      if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+      versionId = version._id;
     }
 
     let agentName: string | undefined;

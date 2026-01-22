@@ -3,10 +3,10 @@ import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 /**
- * Get the latest version ID for an artifact.
+ * Get the latest version for an artifact.
  * Used by HTTP API to resolve artifact -> version -> comments.
  */
-export const getLatestVersionId = internalQuery({
+export const getLatestVersion = internalQuery({
     args: {
         artifactId: v.id("artifacts"),
     },
@@ -19,7 +19,7 @@ export const getLatestVersionId = internalQuery({
             .order("desc")
             .first();
 
-        return version?._id ?? null;
+        return version ? { _id: version._id, number: version.number } : null;
     },
 });
 
