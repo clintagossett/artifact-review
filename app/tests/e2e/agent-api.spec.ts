@@ -46,7 +46,8 @@ test.describe('Agent API Integration', () => {
         await page.getByRole('button', { name: 'Send Magic Link' }).click();
 
         const email = await getLatestEmail(user.email);
-        const magicLink = extractMagicLink(email.html);
+        expect(email).not.toBeNull();
+        const magicLink = extractMagicLink(email!.html);
         await page.goto(magicLink!);
         await expect(page).toHaveURL(/\/dashboard/);
 
@@ -66,16 +67,11 @@ test.describe('Agent API Integration', () => {
 
         // 3. Generate API Key
         console.log('Generating API Key...');
-        await page.goto('/dashboard/settings'); // Assuming settings link exists or direct nav works
-        // Click on Developer settings if it's a sub-tab, or just look for Generate Key
-        // Based on DeveloperSection.tsx, "Generate Key" button is visible.
-        // It might be in a "Developer" tab.
-        // Let's check tab triggers if they exist, otherwise assume single page settings for now or try to finding the button.
-        // If settings has tabs:
-        const devTab = page.getByRole('tab', { name: /Developer/i });
-        if (await devTab.count() > 0) {
-            await devTab.click();
-        }
+        await page.goto('/settings');
+
+        // Switch to Developer tab
+        // Use exact text match or look for the button within the sidebar
+        await page.getByRole('button', { name: 'Developer' }).click();
 
         await page.getByRole('button', { name: 'Generate Key' }).click();
         await page.getByLabel('Key Name').fill('E2E Test Key');
@@ -93,7 +89,9 @@ test.describe('Agent API Integration', () => {
 
     test('Full CRUD Lifecycle via API', async ({ request }) => {
         const headers = { 'X-API-Key': apiKey };
-        const baseUrl = 'http://localhost:3000'; // Or process.env.NEXT_PUBLIC_CONVEX_URL if strictly API? No, Next.js handles API routes.
+        const baseUrl = 'http://api.ar.local.com';
+
+        console.log(`Using API Base URL: ${baseUrl}`);
 
         // 1. Verify Protected Spec Access
         const specParams = await request.get(`${baseUrl}/api/v1/openapi.yaml`, { headers });
