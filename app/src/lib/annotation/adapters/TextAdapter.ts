@@ -48,15 +48,20 @@ export class TextAdapter implements SelectionAdapter {
         // Wait for selection to settle
         setTimeout(async () => {
             const selection = window.getSelection();
+
+            // Case 1: Active Selection made
             if (selection && !selection.isCollapsed) {
                 const selector = await this.createSelector();
                 if (selector) {
-                    // console.debug("[TextAdapter] Created selector:", selector);
                     if (selection && selection.rangeCount > 0) {
                         const rect = selection.getRangeAt(0).getBoundingClientRect();
                         this.manager.emit({ type: "selection:create", payload: selector, domRect: rect });
                     }
                 }
+            }
+            // Case 2: Clicked away (Selection cleared)
+            else {
+                this.manager.emit({ type: "selection:cancel" });
             }
         }, 10);
     };

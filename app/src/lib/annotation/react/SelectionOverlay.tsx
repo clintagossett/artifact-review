@@ -39,18 +39,31 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
                             range: match,
                             style: selector.style || "comment"
                         });
-                        console.log("[SelectionOverlay] Matched range:", match);
                     }
                 } catch (e) {
                     console.error("Failed to re-anchor text selector:", selector, e);
                 }
             }
-            console.log("[SelectionOverlay] Setting ranges:", results.length);
             setTextRanges(results);
         };
 
         findRanges();
     }, [textSelectors, textContainer]);
+
+    // Handle Window Resize/Scroll to update highlight positions
+    const [_, setTick] = useState(0);
+    useEffect(() => {
+        const handleLayoutChange = () => {
+            setTick(t => t + 1);
+        };
+        window.addEventListener("resize", handleLayoutChange);
+        window.addEventListener("scroll", handleLayoutChange, { capture: true }); // Capture needed for scrolling elements
+
+        return () => {
+            window.removeEventListener("resize", handleLayoutChange);
+            window.removeEventListener("scroll", handleLayoutChange, { capture: true });
+        };
+    }, []);
 
     return (
         <>

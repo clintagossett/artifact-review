@@ -10,7 +10,7 @@ export interface Comment {
     id: string;
     target: AnnotationTarget;
     content: string;
-    style: "comment" | "highlight" | "strike";
+    style: "comment" | "strike";
     createdAt: number;
 }
 
@@ -32,8 +32,10 @@ export function InteractiveArtifactViewer({
     const [comments, setComments] = useState<Comment[]>(initialComments);
 
     // Interaction State
-    const [draftSelector, setDraftSelector] = useState<W3CSelector | null>(null);
+    const [pendingSelector, setPendingSelector] = useState<W3CSelector | null>(null); // Menu visible, waiting for user action
+    const [draftSelector, setDraftSelector] = useState<W3CSelector | null>(null);     // Composing comment
     const [draftContent, setDraftContent] = useState("");
+    const [draftStyle, setDraftStyle] = useState<"comment" | "strike">("comment");
     const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
     const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
 
@@ -43,8 +45,8 @@ export function InteractiveArtifactViewer({
 
     const { registerTextContainer, registerSVGContainer } = useSelectionLayer({
         onSelectionCreate: (selector, domRect) => {
-            console.log("Selection Created:", selector);
-            setDraftSelector(selector);
+            console.log("Selection Created (Pending):", selector);
+            setPendingSelector(selector); // Just store it, don't start draft yet
 
             if (domRect) {
                 // Calculate position relative to viewport
@@ -53,28 +55,32 @@ export function InteractiveArtifactViewer({
                     y: domRect.top + window.scrollY
                 });
             }
+        },
+        onSelectionCancel: () => {
+            console.log("Selection Cancelled");
+            setPendingSelector(null);
+            setDraftSelector(null);
+            setMenuPosition(null);
         }
     });
 
     // Actions
-    const handleAction = (style: "comment" | "highlight" | "strike") => {
-        if (!draftSelector) return;
+    const handleAction = (style: "comment" | "strike") => {
+        if (!pendingSelector) return;
 
-        if (style === "comment") {
-            setMenuPosition(null);
-            setIsSidePanelOpen(true);
-        } else {
-            // Immediate save
-            saveComment("", style);
-        }
+        setDraftSelector(pendingSelector); // Promote pending to draft
+        setPendingSelector(null);          // Consumed
+        setDraftStyle(style);
+        setMenuPosition(null);
+        setIsSidePanelOpen(true);
     };
 
     const handleSaveComment = () => {
-        if (!draftSelector || !draftContent.trim()) return;
-        saveComment(draftContent, "comment");
+        if (!draftSelector) return;
+        saveComment(draftContent, draftStyle);
     };
 
-    const saveComment = (content: string, style: "comment" | "highlight" | "strike") => {
+    const saveComment = (content: string, style: "comment" | "strike") => {
         if (!draftSelector) return;
 
         // Attempt to find line number (naive implementation)
@@ -111,9 +117,31 @@ export function InteractiveArtifactViewer({
         setMenuPosition(null);
     };
 
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState("");
+
+    const handleEditStart = (comment: Comment) => {
+        setEditingCommentId(comment.id);
+        setEditContent(comment.content);
+    };
+
+    const handleEditSave = () => {
+        if (!editingCommentId) return;
+        setComments(prev => prev.map(c =>
+            c.id === editingCommentId ? { ...c, content: editContent } : c
+        ));
+        setEditingCommentId(null);
+        setEditContent("");
+    };
+
+    const handleEditCancel = () => {
+        setEditingCommentId(null);
+        setEditContent("");
+    };
+
     const handleCloseMenu = () => {
         setMenuPosition(null);
-        setDraftSelector(null);
+        setPendingSelector(null);
     };
 
     const handleCancelComment = () => {
@@ -124,7 +152,7 @@ export function InteractiveArtifactViewer({
     // Derived selectors list for overlay
     const selectorsToRender = [
         ...comments.map(c => Object.assign({}, c.target.selector, { style: c.style })),
-        ...(draftSelector ? [draftSelector] : [])
+        ...(draftSelector ? [Object.assign({}, draftSelector, { style: draftStyle })] : [])
     ];
     const enrichedSelectors = selectorsToRender as any[];
 
@@ -136,7 +164,6 @@ export function InteractiveArtifactViewer({
                     x={menuPosition.x}
                     y={menuPosition.y}
                     onComment={() => handleAction("comment")}
-                    onHighlight={() => handleAction("highlight")}
                     onStrike={() => handleAction("strike")}
                     onClose={handleCloseMenu}
                 />
@@ -218,11 +245,24 @@ export function InteractiveArtifactViewer({
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
                         {draftSelector && (
-                            <div className="bg-blue-50 border border-blue-200 rounded p-4">
+                            <div className={`border rounded p-4 ${draftStyle === 'strike' ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+                                <div className="flex items-center gap-2 mb-2 text-sm font-semibold opacity-70">
+                                    {draftStyle === 'strike' ? (
+                                        <>
+                                            <span>❌</span>
+                                            <span className="text-red-700">Cross out Selection</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>💬</span>
+                                            <span className="text-blue-700">Add Comment</span>
+                                        </>
+                                    )}
+                                </div>
                                 <textarea
-                                    className="w-full p-2 border border-blue-200 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    className={`w-full p-2 border rounded text-sm focus:ring-2 focus:outline-none ${draftStyle === 'strike' ? 'border-red-200 focus:ring-red-500' : 'border-blue-200 focus:ring-blue-500'}`}
                                     rows={3}
-                                    placeholder="Type your comment..."
+                                    placeholder={draftStyle === 'strike' ? "Reason for removal..." : "Type your comment..."}
                                     value={draftContent}
                                     onChange={(e) => setDraftContent(e.target.value)}
                                     autoFocus
@@ -231,10 +271,9 @@ export function InteractiveArtifactViewer({
                                     <button onClick={handleCancelComment} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
                                     <button
                                         onClick={handleSaveComment}
-                                        disabled={!draftContent.trim()}
-                                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                                        className={`text-white px-3 py-1 rounded text-sm transition-colors ${draftStyle === 'strike' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                                     >
-                                        Save
+                                        {draftStyle === 'strike' ? 'Cross out' : 'Comment'}
                                     </button>
                                 </div>
                             </div>
@@ -251,8 +290,7 @@ export function InteractiveArtifactViewer({
                                 <div className="flex justify-between items-start mb-1">
                                     <div className="flex items-center gap-2">
                                         {comment.style === 'comment' && <span title="Comment">💬</span>}
-                                        {comment.style === 'highlight' && <span title="Highlight">✨</span>}
-                                        {comment.style === 'strike' && <span title="Strike">❌</span>}
+                                        {comment.style === 'strike' && <span title="Cross out">❌</span>}
                                         <span className="text-xs font-medium text-gray-500 capitalize">
                                             {/* Show Line Number if we tracked it? For now just Selector Type */}
                                             {comment.target.source}
@@ -261,13 +299,46 @@ export function InteractiveArtifactViewer({
                                     <span className="text-xs text-gray-400">
                                         {new Date(comment.createdAt).toLocaleTimeString()}
                                     </span>
+                                    <div className="flex gap-1 ml-2">
+                                        <button
+                                            onClick={() => handleEditStart(comment)}
+                                            className="text-gray-400 hover:text-blue-500"
+                                            title="Edit annotation"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            onClick={() => setComments(prev => prev.filter(c => c.id !== comment.id))}
+                                            className="text-gray-400 hover:text-red-500"
+                                            title="Delete annotation"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
                                 </div>
                                 {comment.target.selector.type === "TextQuoteSelector" && (
                                     <blockquote className={`text-xs text-gray-400 mb-2 pl-2 border-l-2 ${comment.style === 'strike' ? 'border-red-400 line-through' : 'border-gray-200'} italic truncate`}>
                                         {`"${(comment.target.selector as any).exact}"`}
                                     </blockquote>
                                 )}
-                                {comment.content && <p className="text-sm text-gray-800">{comment.content}</p>}
+
+                                {editingCommentId === comment.id ? (
+                                    <div className="mt-2">
+                                        <textarea
+                                            className="w-full p-2 border border-blue-200 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none mb-2"
+                                            rows={2}
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={handleEditCancel} className="text-xs text-gray-500 hover:text-gray-700">Cancel</button>
+                                            <button onClick={handleEditSave} className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Save</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    comment.content && <p className="text-sm text-gray-800 break-words">{comment.content}</p>
+                                )}
                             </div>
                         ))}
                     </div>
