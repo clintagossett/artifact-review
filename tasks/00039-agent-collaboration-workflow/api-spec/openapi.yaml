@@ -276,8 +276,8 @@ paths:
 
   /api/v1/comments/{commentId}:
     patch:
-      summary: Update comment status
-      description: Mark a comment as resolved or unresolved.
+      summary: Update comment
+      description: Update comment content or status (resolved/unresolved).
       operationId: updateComment
       parameters:
         - in: path
@@ -292,11 +292,82 @@ paths:
             schema:
               type: object
               properties:
+                content:
+                  type: string
+                  description: New text content for the comment.
                 resolved:
                   type: boolean
                   description: Set to true to resolve, false to unresolve.
       responses:
         '200':
-          description: Status updated
+          description: Updated successfully
+        '403':
+          description: Unauthorized (Not your comment)
         '404':
           description: Comment not found
+
+    delete:
+      summary: Delete comment
+      description: Soft delete a comment and its replies.
+      operationId: deleteComment
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Deleted successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Comment not found
+
+  /api/v1/replies/{replyId}:
+    patch:
+      summary: Update reply
+      description: Update reply content.
+      operationId: updateReply
+      parameters:
+        - in: path
+          name: replyId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Updated successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Reply not found
+
+    delete:
+      summary: Delete reply
+      description: Soft delete a reply.
+      operationId: deleteReply
+      parameters:
+        - in: path
+          name: replyId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Deleted successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Reply not found

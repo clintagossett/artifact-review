@@ -211,3 +211,121 @@ export const updateCommentStatus = internalMutation({
         });
     }
 });
+
+/**
+ * Edit comment content (Agent).
+ */
+export const editComment = internalMutation({
+    args: {
+        commentId: v.id("comments"),
+        content: v.string(),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const comment = await ctx.db.get(args.commentId);
+        if (!comment || comment.isDeleted) throw new Error("Comment not found");
+
+        if (comment.createdBy !== args.userId) {
+            throw new Error("Unauthorized: Can only edit own comments");
+        }
+
+        const now = Date.now();
+        await ctx.db.patch(args.commentId, {
+            content: args.content,
+            isEdited: true,
+            editedAt: now,
+        });
+    }
+});
+
+/**
+ * Delete comment (Agent).
+ */
+export const deleteComment = internalMutation({
+    args: {
+        commentId: v.id("comments"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const comment = await ctx.db.get(args.commentId);
+        if (!comment || comment.isDeleted) throw new Error("Comment not found");
+
+        if (comment.createdBy !== args.userId) {
+            throw new Error("Unauthorized: Can only delete own comments");
+        }
+
+        const now = Date.now();
+        await ctx.db.patch(args.commentId, {
+            isDeleted: true,
+            deletedAt: now,
+            deletedBy: args.userId,
+        });
+
+        // Cascade to replies
+        const replies = await ctx.db
+            .query("commentReplies")
+            .withIndex("by_commentId_active", (q) =>
+                q.eq("commentId", args.commentId).eq("isDeleted", false)
+            )
+            .collect();
+
+        for (const reply of replies) {
+            await ctx.db.patch(reply._id, {
+                isDeleted: true,
+                deletedAt: now,
+                deletedBy: args.userId,
+            });
+        }
+    }
+});
+
+/**
+ * Edit reply (Agent).
+ */
+export const editReply = internalMutation({
+    args: {
+        replyId: v.id("commentReplies"),
+        content: v.string(),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const reply = await ctx.db.get(args.replyId);
+        if (!reply || reply.isDeleted) throw new Error("Reply not found");
+
+        if (reply.createdBy !== args.userId) {
+            throw new Error("Unauthorized: Can only edit own replies");
+        }
+
+        const now = Date.now();
+        await ctx.db.patch(args.replyId, {
+            content: args.content,
+            isEdited: true,
+            editedAt: now,
+        });
+    }
+});
+
+/**
+ * Delete reply (Agent).
+ */
+export const deleteReply = internalMutation({
+    args: {
+        replyId: v.id("commentReplies"),
+        userId: v.id("users"),
+    },
+    handler: async (ctx, args) => {
+        const reply = await ctx.db.get(args.replyId);
+        if (!reply || reply.isDeleted) throw new Error("Reply not found");
+
+        if (reply.createdBy !== args.userId) {
+            throw new Error("Unauthorized: Can only delete own replies");
+        }
+
+        const now = Date.now();
+        await ctx.db.patch(args.replyId, {
+            isDeleted: true,
+            deletedAt: now,
+            deletedBy: args.userId,
+        });
+    }
+});

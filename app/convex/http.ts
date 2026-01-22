@@ -433,14 +433,16 @@ http.route({
  * PATCH /api/v1/comments/:commentId
  * Update comment status
  */
+/**
+ * PATCH /api/v1/comments/:commentId
+ * Update comment status or content
+ */
 http.route({
   pathPrefix: "/api/v1/comments/",
   method: "PATCH",
   handler: httpAction(async (ctx, req) => {
     const url = new URL(req.url);
     const path = url.pathname;
-    // Expect: /api/v1/comments/:commentId
-    // Remove trailing slash if any
     const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
     const match = cleanPath.match(/\/api\/v1\/comments\/([^\/]+)$/);
     if (!match) return new Response("Not found", { status: 404 });
@@ -453,20 +455,129 @@ http.route({
     let body;
     try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
 
-    if (typeof body.resolved !== "boolean") {
-      return new Response(JSON.stringify({ error: "Missing or invalid 'resolved' boolean" }), { status: 400 });
+    if (body.content === undefined && body.resolved === undefined) {
+      return new Response(JSON.stringify({ error: "No fields to update (content or resolved)" }), { status: 400 });
     }
 
     try {
-      await ctx.runMutation(internal.agentApi.updateCommentStatus, {
-        commentId,
-        resolved: body.resolved,
-        userId: identity.userId,
-      });
+      if (body.content !== undefined) {
+        await ctx.runMutation(internal.agentApi.editComment, {
+          commentId,
+          content: body.content,
+          userId: identity.userId,
+        });
+      }
+
+      if (body.resolved !== undefined) {
+        if (typeof body.resolved !== "boolean") return new Response(JSON.stringify({ error: "Invalid 'resolved' boolean" }), { status: 400 });
+        await ctx.runMutation(internal.agentApi.updateCommentStatus, {
+          commentId,
+          resolved: body.resolved,
+          userId: identity.userId,
+        });
+      }
 
       return new Response(JSON.stringify({ status: "updated" }), { status: 200, headers: { "Content-Type": "application/json" } });
     } catch (e: any) {
-      console.error(e);
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
+  }),
+});
+
+/**
+ * DELETE /api/v1/comments/:commentId
+ * Soft delete comment
+ */
+http.route({
+  pathPrefix: "/api/v1/comments/",
+  method: "DELETE",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const match = cleanPath.match(/\/api\/v1\/comments\/([^\/]+)$/);
+    if (!match) return new Response("Not found", { status: 404 });
+
+    const commentId = match[1] as any;
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    try {
+      await ctx.runMutation(internal.agentApi.deleteComment, {
+        commentId,
+        userId: identity.userId,
+      });
+      return new Response(JSON.stringify({ status: "deleted" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
+  }),
+});
+
+/**
+ * PATCH /api/v1/replies/:replyId
+ * Update reply content
+ */
+http.route({
+  pathPrefix: "/api/v1/replies/",
+  method: "PATCH",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const match = cleanPath.match(/\/api\/v1\/replies\/([^\/]+)$/);
+    if (!match) return new Response("Not found", { status: 404 });
+
+    const replyId = match[1] as any;
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    let body;
+    try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
+
+    if (!body.content) return new Response(JSON.stringify({ error: "Missing content" }), { status: 400 });
+
+    try {
+      await ctx.runMutation(internal.agentApi.editReply, {
+        replyId,
+        content: body.content,
+        userId: identity.userId,
+      });
+      return new Response(JSON.stringify({ status: "updated" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
+  }),
+});
+
+/**
+ * DELETE /api/v1/replies/:replyId
+ * Soft delete reply
+ */
+http.route({
+  pathPrefix: "/api/v1/replies/",
+  method: "DELETE",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const match = cleanPath.match(/\/api\/v1\/replies\/([^\/]+)$/);
+    if (!match) return new Response("Not found", { status: 404 });
+
+    const replyId = match[1] as any;
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    try {
+      await ctx.runMutation(internal.agentApi.deleteReply, {
+        replyId,
+        userId: identity.userId,
+      });
+      return new Response(JSON.stringify({ status: "deleted" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
   }),
