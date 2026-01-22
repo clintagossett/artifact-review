@@ -8,7 +8,7 @@ Quick reference for setting up task-level tests.
 
 ```bash
 cd tasks/XXXXX-task-name
-mkdir -p tests/e2e tests/validation-videos
+mkdir -p tests/e2e tests/validation-trace
 ```
 
 ### 2. Create package.json
@@ -36,7 +36,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on',      // CRITICAL: Enables trace.zip
-    video: 'on',
     screenshot: 'on',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -80,10 +79,8 @@ test.describe('Feature Name', () => {
 npx playwright test
 
 # Copy trace to validation videos
-cp test-results/*/trace.zip validation-videos/feature-name-trace.zip
-
-# View trace interactively
-npx playwright show-trace validation-videos/feature-name-trace.zip
+# View trace interactively (find it in test-results/)
+npx playwright show-trace test-results/*/trace.zip
 ```
 
 ## Subtask E2E Tests Setup
@@ -115,7 +112,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on',
-    video: 'on',  // MANDATORY
+
   },
   webServer: {
     command: 'npm run dev',
@@ -148,8 +145,7 @@ See `testing-guide.md` for full upleveling criteria.
 ✅ **node_modules/ is gitignored** - recreate with `npm install`
 ✅ **Use trace.zip for validation** - NOT manual video recording
 ✅ **Trace = video + network + console + DOM** - much better for debugging
-✅ **Video recording is MANDATORY** - Playwright config must have `video: 'on'`
-✅ **Videos are gitignored** - `validation-videos/` and `*.webm`/`*.mp4` not committed
+
 ✅ **Subtask tests can be upleveled** - Move to task-level when they provide broader value
 
 ## Commands Cheat Sheet
@@ -164,7 +160,7 @@ cd tasks/XXXXX/tests && npx playwright test --headed
 cd tasks/XXXXX/tests && npx playwright test --ui
 
 # View trace
-cd tasks/XXXXX/tests && npx playwright show-trace validation-videos/*.zip
+cd tasks/XXXXX/tests && npx playwright show-trace test-results/*/trace.zip
 ```
 
 ## File Structure
@@ -177,7 +173,7 @@ tasks/XXXXX-task-name/
 │   ├── node_modules/         ← Gitignored
 │   ├── e2e/
 │   │   └── feature.spec.ts
-│   └── validation-videos/
+│   └── validation-trace/
 │       └── feature-trace.zip ← Primary validation artifact
 ├── test-report.md
 └── README.md
