@@ -7,6 +7,7 @@
     - **Intent-Based Decorations:** Distinct visual styles for "Comment" (Highlight) and "Cross Out" (Strikethrough).
     - **Full CRUD Lifecycle:** Create, Read, Update (Edit content), and Delete annotations.
     - **Responsive Re-anchoring:** Highlights automatically re-position when the window resizes or zooms.
+    - **Relative Path Support:** Handles deeply nested file paths (e.g. `docs/v2/spec.md`) correctly, displaying basenames in the UI with full paths on hover.
     - **Polished UX:** Context menu for creation, dedicated sidebar for drafting, and support for empty/quick annotations.
 - **Architecture:** Hybrid approach using `@apache-annotator` for text and custom logic for SVGs.
 

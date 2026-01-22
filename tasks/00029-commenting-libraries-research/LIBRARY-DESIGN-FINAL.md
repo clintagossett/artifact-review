@@ -131,6 +131,16 @@ We treat every persistent annotation as a **Comment**, but we attach a specific 
 The `Comment` object explicitly track this style:
 
 ```typescript
+export interface AnnotationTarget {
+    source: string; // Relative path to the artifact from project root (e.g. "docs/specs/v2/spec.html")
+    selector: W3CSelector;
+    schemaVersion: string; // e.g. "1.0.0"
+}
+
+// Note on Display:
+// - In the UI, usually only the basename (e.g. `spec.html`) is displayed to reduce noise.
+// - The full path should be accessible via tooltip or detailed view to disambiguate files with the same name.
+
 interface Comment {
     id: string;
     target: AnnotationTarget;
