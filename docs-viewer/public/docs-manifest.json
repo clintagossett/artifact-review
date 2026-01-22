@@ -631,6 +631,12 @@
             "ext": ".md"
           },
           {
+            "name": "INTEGRATION_PLAN.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/INTEGRATION_PLAN.md",
+            "ext": ".md"
+          },
+          {
             "name": "LIBRARY-DESIGN-FINAL.md",
             "type": "file",
             "path": "tasks/00029-commenting-libraries-research/LIBRARY-DESIGN-FINAL.md",

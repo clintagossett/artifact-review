@@ -35,6 +35,8 @@ export const getByVersion = query({
       resolved: v.boolean(),
       resolvedBy: v.optional(v.id("users")),
       resolvedAt: v.optional(v.number()),
+      resolvedUpdatedAt: v.optional(v.number()), // Correction: Added missing field
+      resolvedUpdatedBy: v.optional(v.id("users")), // Correction: Added missing field
       target: v.any(),
       isEdited: v.boolean(),
       editedAt: v.optional(v.number()),

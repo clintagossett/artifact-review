@@ -51,7 +51,7 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
     }, [textSelectors, textContainer]);
 
     // Handle Window Resize/Scroll to update highlight positions
-    const [_, setTick] = useState(0);
+    const [tick, setTick] = useState(0);
     useEffect(() => {
         const handleLayoutChange = () => {
             setTick(t => t + 1);
@@ -69,7 +69,7 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
         <>
             {/* IMPLEMENTATION: Text Highlights Layer */}
             {textRanges.map((item, i) => (
-                <TextHighlight key={i} range={item.range} style={item.style} container={textContainer!} />
+                <TextHighlight key={i} range={item.range} style={item.style} container={textContainer!} tick={tick} />
             ))}
 
             {/* SVG Highlights Layer */}
@@ -94,7 +94,7 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
     );
 }
 
-function TextHighlight({ range, style, container }: { range: Range, style: string, container: HTMLElement }) {
+function TextHighlight({ range, style, container, tick }: { range: Range, style: string, container: HTMLElement, tick: number }) {
     // Robustly get rects for ONLY visible text nodes, ignoring container blocks and empty whitespace
     const rects = useMemo(() => {
         const results: DOMRect[] = [];
@@ -149,7 +149,7 @@ function TextHighlight({ range, style, container }: { range: Range, style: strin
         }
 
         return results;
-    }, [range]);
+    }, [range, tick]); // Re-calculate when tick changes (resize/scroll)
 
     const containerRect = container.getBoundingClientRect();
 

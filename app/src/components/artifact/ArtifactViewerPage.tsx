@@ -5,7 +5,6 @@ import { useQuery, useConvexAuth } from "convex/react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
-import { DocumentViewer } from "./DocumentViewer";
 import { ShareModal } from "./ShareModal";
 import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
@@ -145,27 +144,18 @@ export function ArtifactViewerPage({
     }
   };
 
-  // Get Convex HTTP URL from environment (for serving artifact files)
-  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "";
-
   // Show DocumentViewer for users with permission
+  // REFACTOR: Now using the new ArtifactViewer directly instead of DocumentViewer
   return (
     <>
-      <DocumentViewer
-        documentId={artifact._id}
-        onBack={() => router.push("/dashboard")}
-        artifactTitle={artifact.name}
+      <ArtifactViewer
+        artifact={artifact}
+        version={targetVersion}
         versions={versions}
-        onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
-        onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
-        onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
-        shareToken={shareToken}
-        versionNumber={targetVersion.number}
-        versionId={targetVersion._id}
-        artifactOwnerId={artifact.createdBy}
-        convexUrl={convexUrl}
+        isLatestVersion={isLatestVersion}
+        onVersionChange={handleVersionChange}
+        currentUser={currentUser}
         userPermission={userPermission}
-        filePath={filePath}
       />
 
       <ShareModal
