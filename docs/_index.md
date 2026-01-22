@@ -17,6 +17,17 @@ Project documentation for **Artifact Review**.
 | [architecture/](./architecture/_index.md) | System architecture and technical decisions |
 | [design/](./design/_index.md) | Design system, UI/UX decisions, legal documentation, and pricing presentation |
 
+## Documentation Strategy: Decisions vs. Design
+
+To keep our documentation clear, we distinguish between **Decisions** and **Designs**:
+
+*   **[architecture/decisions (ADRs)](./architecture/decisions/):** Records of **architectural choices**.
+    *   *Purpose:* explains **WHY** we chose a specific path over alternatives.
+    *   *Content:* Trade-offs, constraints, and immutable records of agreement (e.g., "Why use W3C Annotations?", "Naming Conventions Decision").
+*   **[design/](./design/):** Specifications for **systems and features**.
+    *   *Purpose:* explains **WHAT** we are building and **HOW** it works.
+    *   *Content:* Detailed specifications, wireframes, living documents, and business logic (e.g., "Pricing Strategy", "Privacy Policy", "Feature Specs").
+
 ## Recent Updates
 
 **December 25, 2025** - Setup documentation:
