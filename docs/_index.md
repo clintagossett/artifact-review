@@ -25,8 +25,11 @@ To keep our documentation clear, we distinguish between **Decisions** and **Desi
     *   *Purpose:* explains **WHY** we chose a specific path over alternatives.
     *   *Content:* Trade-offs, constraints, and immutable records of agreement (e.g., "Why use W3C Annotations?", "Naming Conventions Decision").
 *   **[design/](./design/):** Specifications for **systems and features**.
-    *   *Purpose:* explains **WHAT** we are building and **HOW** it works.
+    *   *Purpose:* explains **WHAT** we are building and **HOW IT WORKS**.
     *   *Content:* Detailed specifications, wireframes, living documents, and business logic (e.g., "Pricing Strategy", "Privacy Policy", "Feature Specs").
+*   **[development/](./development/):** Guides for **developer workflow**.
+    *   *Purpose:* explains **HOW TO BUILD** it (Process).
+    *   *Content:* Testing guides, TDD workflows, logging standards, and quick-start manuals.
 
 ## Recent Updates
 
