@@ -129,7 +129,7 @@ export function LibraryTestViewer() {
                     x={menuPosition.x}
                     y={menuPosition.y}
                     onComment={() => handleAction("comment")}
-                    onHighlight={() => handleAction("highlight")}
+
                     onStrike={() => handleAction("strike")}
                     onClose={handleCloseMenu}
                 />

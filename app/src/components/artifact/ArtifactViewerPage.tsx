@@ -150,7 +150,10 @@ export function ArtifactViewerPage({
     <>
       <ArtifactViewer
         artifact={artifact}
-        version={targetVersion}
+        version={{
+          ...targetVersion,
+          fileType: targetVersion.fileType as "zip" | "html" | "markdown"
+        }}
         versions={versions}
         isLatestVersion={isLatestVersion}
         onVersionChange={handleVersionChange}

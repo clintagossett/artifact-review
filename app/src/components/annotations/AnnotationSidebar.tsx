@@ -112,7 +112,7 @@ export function AnnotationSidebar({
                         {/* Quote Preview */}
                         {draftSelector.type === 'TextQuoteSelector' && (
                             <blockquote className={`text-xs mb-3 pl-2 border-l-2 italic truncate opacity-70 ${draftStyle === 'strike' ? 'border-red-300' : 'border-blue-300'}`}>
-                                "{draftSelector.exact}"
+                                &quot;{draftSelector.exact}&quot;
                             </blockquote>
                         )}
 

@@ -135,7 +135,7 @@ export function AnnotationCard({
                     "text-xs mb-2 pl-2 border-l-2 py-1 font-mono text-gray-500 truncate",
                     isStrike ? "border-red-300 line-through bg-red-50/50" : "border-blue-300 bg-blue-50/50"
                 )}>
-                    "{quote}"
+                    &quot;{quote}&quot;
                 </div>
             )}
 
