@@ -95,16 +95,65 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
 }
 
 function TextHighlight({ range, style, container }: { range: Range, style: string, container: HTMLElement }) {
-    // Convert Range to client rects for rendering
-    const rects = Array.from(range.getClientRects());
+    // Robustly get rects for ONLY visible text nodes, ignoring container blocks and empty whitespace
+    const rects = useMemo(() => {
+        const results: DOMRect[] = [];
+        const commonAncestor = range.commonAncestorContainer;
+
+        // Optimization: Single text node
+        if (commonAncestor.nodeType === Node.TEXT_NODE) {
+            const text = commonAncestor.textContent?.substring(range.startOffset, range.endOffset) || "";
+            if (text.trim().length === 0) return [];
+            return Array.from(range.getClientRects());
+        }
+
+        const walker = document.createTreeWalker(
+            commonAncestor,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: (node) => {
+                    // Only accept nodes that are physically inside the range
+                    if (range.intersectsNode(node)) return NodeFilter.FILTER_ACCEPT;
+                    return NodeFilter.FILTER_REJECT;
+                }
+            }
+        );
+
+        let currentNode = walker.nextNode();
+        // If commonAncestor is an element, start checking its children.
+        // If walker returns nothing initially, check if we need to start at commonAncestor (if it was a text node, handled above)
+        // TreeWalker doesn't return the root if it's what we asked for, but here root is usually an Element (div/ul).
+
+        // Fallback for TreeWalker behavior on edge cases:
+        // If range is "Item A" -> "Item B", intersection handles it.
+
+        while (currentNode) {
+            const node = currentNode as Text;
+
+            // Determine intersection offsets
+            const start = (node === range.startContainer) ? range.startOffset : 0;
+            const end = (node === range.endContainer) ? range.endOffset : node.length;
+
+            if (end > start) {
+                const text = node.textContent?.substring(start, end) || "";
+                // Only render if there is visible text (non-whitespace)
+                if (text.trim().length > 0) {
+                    const spanRange = document.createRange();
+                    spanRange.setStart(node, start);
+                    spanRange.setEnd(node, end);
+                    results.push(...Array.from(spanRange.getClientRects()));
+                }
+            }
+
+            currentNode = walker.nextNode();
+        }
+
+        return results;
+    }, [range]);
+
     const containerRect = container.getBoundingClientRect();
 
     let bgClass = "bg-yellow-200"; // Fallback
-
-    // User Requirements:
-    // 1) Comment: Generic light highlight
-    // 2) Highlight: Yellow (default)
-    // 3) Strike: Red Strike through
 
     if (style === "comment") {
         bgClass = "bg-yellow-100"; // Light highlight
@@ -113,37 +162,54 @@ function TextHighlight({ range, style, container }: { range: Range, style: strin
     } else if (style === "strike") {
         // Strikethrough rendering
         return (
-            <div className="absolute top-0 left-0 pointer-events-none w-full h-full">
-                {rects.map((rect, i) => (
-                    <div
-                        key={i}
-                        className="absolute border-b-2 border-red-500 opacity-80"
-                        style={{
-                            top: rect.top - containerRect.top + (rect.height / 2),
-                            left: rect.left - containerRect.left,
-                            width: rect.width,
-                            height: 2,
-                        }}
-                    />
-                ))}
+            <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden">
+                {rects.map((rect, i) => {
+                    // Clip to container bounds to avoid drawing outside the "paper"
+                    const left = Math.max(rect.left, containerRect.left);
+                    const right = Math.min(rect.right, containerRect.right);
+                    const width = right - left;
+
+                    if (width <= 0) return null;
+
+                    return (
+                        <div
+                            key={i}
+                            className="absolute border-b-2 border-red-500 opacity-80"
+                            style={{
+                                top: rect.top - containerRect.top + (rect.height / 2),
+                                left: left - containerRect.left,
+                                width: width,
+                                height: 2,
+                            }}
+                        />
+                    );
+                })}
             </div>
         );
     }
 
     return (
-        <div className="absolute top-0 left-0 pointer-events-none w-full h-full">
-            {rects.map((rect, i) => (
-                <div
-                    key={i}
-                    className={`absolute opacity-30 mix-blend-multiply ${bgClass}`}
-                    style={{
-                        top: rect.top - containerRect.top,
-                        left: rect.left - containerRect.left,
-                        width: rect.width,
-                        height: rect.height,
-                    }}
-                />
-            ))}
+        <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden">
+            {rects.map((rect, i) => {
+                const left = Math.max(rect.left, containerRect.left);
+                const right = Math.min(rect.right, containerRect.right);
+                const width = right - left;
+
+                if (width <= 0) return null;
+
+                return (
+                    <div
+                        key={i}
+                        className={`absolute opacity-30 mix-blend-multiply ${bgClass}`}
+                        style={{
+                            top: rect.top - containerRect.top,
+                            left: left - containerRect.left,
+                            width: width,
+                            height: rect.height,
+                        }}
+                    />
+                );
+            })}
         </div>
     );
 }

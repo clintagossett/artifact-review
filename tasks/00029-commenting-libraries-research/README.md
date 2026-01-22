@@ -24,4 +24,5 @@
 ### 2. Validated Capabilities (Completed)
 - **Responsive Reactivity:** Implemented `ResizeObserver` / Event Listener logic in `SelectionOverlay`. Annotations now track text reflow perfectly.
 - **Visual Distinction:** Clear separation between "Comment" and "Correction" (Strike) intents.
+- **Artifact-Free Rendering:** Implemented robust `TreeWalker` based rendering to isolate visible text nodes, preventing block-level artifacts in lists and formatted text.
 - **State Management:** Robust handling of "Pending" vs "Draft" selections to prevent UI clutter.
