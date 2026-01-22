@@ -264,10 +264,12 @@ http.route({
   handler: httpAction(async (ctx, req) => {
     const url = new URL(req.url);
     const parts = url.pathname.split("/");
+    // Expect: /api/v1/artifacts/:shareToken/comments
     if (parts.length < 6 || parts[5] !== "comments") {
       return new Response("Not found", { status: 404 });
     }
     const shareToken = parts[4];
+    const versionParam = url.searchParams.get("version");
 
     const identity = await validateApiKey(ctx, req);
     if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
@@ -279,12 +281,186 @@ http.route({
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
     }
 
-    const versionId = await ctx.runQuery(internal.agentApi.getLatestVersionId, { artifactId: artifact._id });
-    if (!versionId) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+    let versionId: any;
+
+    if (versionParam) {
+      const match = versionParam.match(/^v(\d+)$/);
+      if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400 });
+      const number = parseInt(match[1]);
+      const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+        artifactId: artifact._id,
+        number
+      });
+      if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
+      versionId = version._id;
+    } else {
+      versionId = await ctx.runQuery(internal.agentApi.getLatestVersionId, { artifactId: artifact._id });
+      if (!versionId) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+    }
 
     const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
 
     return new Response(JSON.stringify({ comments }), { status: 200, headers: { "Content-Type": "application/json" } });
+  }),
+});
+
+/**
+ * POST /api/v1/artifacts/:shareToken/comments
+ * Create a comment on an artifact
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+    // Expect: /api/v1/artifacts/:shareToken/comments
+    if (parts.length < 6 || parts[5] !== "comments") {
+      return new Response("Not found", { status: 404 });
+    }
+    const shareToken = parts[4];
+    const versionParam = url.searchParams.get("version");
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    let body;
+    try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
+
+    const { content, target } = body;
+    if (!content || !target || !target.selector) {
+      return new Response(JSON.stringify({ error: "Missing required fields (content, target.selector)" }), { status: 400 });
+    }
+
+    const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+    if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+
+    if (artifact.createdBy !== identity.userId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
+    }
+
+    let versionId: any;
+
+    if (versionParam) {
+      const match = versionParam.match(/^v(\d+)$/);
+      if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400 });
+      const number = parseInt(match[1]);
+      const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+        artifactId: artifact._id,
+        number
+      });
+      if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
+      versionId = version._id;
+    } else {
+      versionId = await ctx.runQuery(internal.agentApi.getLatestVersionId, { artifactId: artifact._id });
+      if (!versionId) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
+    }
+
+    let agentName: string | undefined;
+    if (identity.agentId) {
+      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
+      agentName = agent?.name;
+    }
+
+    const commentId = await ctx.runMutation(internal.agentApi.createComment, {
+      versionId,
+      content,
+      target,
+      agentId: identity.agentId,
+      agentName,
+      userId: identity.userId,
+    });
+
+    return new Response(JSON.stringify({ id: commentId, status: "created" }), { status: 201, headers: { "Content-Type": "application/json" } });
+  }),
+});
+
+/**
+ * POST /api/v1/comments/:commentId/replies
+ * Create a reply
+ */
+http.route({
+  pathPrefix: "/api/v1/comments/",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    // Expect: /api/v1/comments/:commentId/replies
+    const match = path.match(/\/api\/v1\/comments\/([^\/]+)\/replies$/);
+    if (!match) return new Response("Not found", { status: 404 });
+
+    const commentId = match[1] as any; // Cast to Id
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    let body;
+    try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
+
+    if (!body.content) return new Response(JSON.stringify({ error: "Missing content" }), { status: 400 });
+
+    let agentName: string | undefined;
+    if (identity.agentId) {
+      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
+      agentName = agent?.name;
+    }
+
+    try {
+      const replyId = await ctx.runMutation(internal.agentApi.createReply, {
+        commentId,
+        content: body.content,
+        agentId: identity.agentId,
+        agentName,
+        userId: identity.userId,
+      });
+
+      return new Response(JSON.stringify({ id: replyId }), { status: 201, headers: { "Content-Type": "application/json" } });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 }); // e.g. Comment not found
+    }
+  }),
+});
+
+/**
+ * PATCH /api/v1/comments/:commentId
+ * Update comment status
+ */
+http.route({
+  pathPrefix: "/api/v1/comments/",
+  method: "PATCH",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    // Expect: /api/v1/comments/:commentId
+    // Remove trailing slash if any
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const match = cleanPath.match(/\/api\/v1\/comments\/([^\/]+)$/);
+    if (!match) return new Response("Not found", { status: 404 });
+
+    const commentId = match[1] as any;
+
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+
+    let body;
+    try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
+
+    if (typeof body.resolved !== "boolean") {
+      return new Response(JSON.stringify({ error: "Missing or invalid 'resolved' boolean" }), { status: 400 });
+    }
+
+    try {
+      await ctx.runMutation(internal.agentApi.updateCommentStatus, {
+        commentId,
+        resolved: body.resolved,
+        userId: identity.userId,
+      });
+
+      return new Response(JSON.stringify({ status: "updated" }), { status: 200, headers: { "Content-Type": "application/json" } });
+    } catch (e: any) {
+      console.error(e);
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
   }),
 });
 
