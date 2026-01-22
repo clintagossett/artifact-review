@@ -66,7 +66,7 @@ export default function TestMdPage() {
     return (
         <InteractiveArtifactViewer
             title="Complex Markdown Test"
-            fileName="phoenix-spec.md"
+            fileName="projects/phoenix/design/phoenix-spec.md"
             textContent={RENDERED_MARKDOWN}
         />
     );

@@ -291,9 +291,12 @@ export function InteractiveArtifactViewer({
                                     <div className="flex items-center gap-2">
                                         {comment.style === 'comment' && <span title="Comment">💬</span>}
                                         {comment.style === 'strike' && <span title="Cross out">❌</span>}
-                                        <span className="text-xs font-medium text-gray-500 capitalize">
-                                            {/* Show Line Number if we tracked it? For now just Selector Type */}
-                                            {comment.target.source}
+                                        <span
+                                            className="text-xs font-medium text-gray-500 capitalize cursor-help border-b border-dotted border-gray-300"
+                                            title={comment.target.source}
+                                        >
+                                            {/* Show only basename, full path in tooltip */}
+                                            {comment.target.source.split('/').pop()}
                                         </span>
                                     </div>
                                     <span className="text-xs text-gray-400">
