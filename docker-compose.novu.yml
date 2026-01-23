@@ -16,13 +16,6 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=root
-    ports:
-      - 27017:27017
-    volumes:
-      - novu_mongodb_data:/data/db
-    networks:
-      - novu-network
-
   # -------------------------
   # Novu Services
   # -------------------------
@@ -41,13 +34,13 @@ services:
       - SM_EMAIL_HOST=mailpit
       - SM_EMAIL_PORT=1025
     ports:
-      - "3002:3000" # Mapped to 3002 to avoid conflict with Next.js (3000)
+      - "${NOVU_API_PORT:-3002}:3000"
     depends_on:
       - mongodb
       - redis
     networks:
       - novu-network
-      - default # To talk to other app services (like Mailpit in main compose)
+      - default
 
   novu-worker:
     image: ghcr.io/novuhq/novu/worker:latest
@@ -69,10 +62,10 @@ services:
     image: ghcr.io/novuhq/novu/web:latest
     restart: unless-stopped
     environment:
-      - REACT_APP_API_URL=http://localhost:3002
-      - REACT_APP_WS_URL=http://localhost:3002
+      - REACT_APP_API_URL=http://localhost:${NOVU_API_PORT:-3002}
+      - REACT_APP_WS_URL=http://localhost:${NOVU_API_PORT:-3002}
     ports:
-      - "4200:4200"
+      - "${NOVU_WEB_PORT:-4200}:4200"
     networks:
       - novu-network
 
@@ -94,8 +87,7 @@ services:
 volumes:
   novu_mongodb_data:
 
+
 networks:
   novu-network:
-  default:
-    name: artifact-review_default
-    external: true
+  default: # No external name, just join project default
