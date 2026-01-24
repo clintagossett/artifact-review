@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { W3CSelector, TextQuoteSelector, SVGSelector } from "../types";
 // @ts-ignore
 import { createTextQuoteSelectorMatcher } from "@apache-annotator/dom";
@@ -22,12 +22,32 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
         selectors.filter(s => s.type === "SVGSelector") as (SVGSelector & { style?: string })[],
         [selectors]);
 
+    // Track content changes to re-anchor selectors
+    const [contentVersion, setContentVersion] = useState(0);
+
+    // Watch for DOM content changes in the text container
+    useEffect(() => {
+        if (!textContainer) return;
+
+        const observer = new MutationObserver(() => {
+            // Content changed, trigger re-anchor
+            setContentVersion(v => v + 1);
+        });
+
+        observer.observe(textContainer, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+
+        return () => observer.disconnect();
+    }, [textContainer]);
+
     // Effect: Match Text Selectors to DOM Ranges
     useEffect(() => {
         if (!textContainer || textSelectors.length === 0) return;
 
         const findRanges = async () => {
-            console.log("[SelectionOverlay] Finding ranges for", textSelectors.length, "selectors");
             const results: { range: Range, style: string }[] = [];
 
             for (const selector of textSelectors) {
@@ -48,7 +68,7 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
         };
 
         findRanges();
-    }, [textSelectors, textContainer]);
+    }, [textSelectors, textContainer, contentVersion]);
 
     // Handle Window Resize/Scroll to update highlight positions
     const [tick, setTick] = useState(0);
@@ -95,6 +115,7 @@ export function SelectionOverlay({ selectors, textContainer, svgContainer }: Sel
 }
 
 function TextHighlight({ range, style, container, tick }: { range: Range, style: string, container: HTMLElement, tick: number }) {
+
     // Robustly get rects for ONLY visible text nodes, ignoring container blocks and empty whitespace
     const rects = useMemo(() => {
         const results: DOMRect[] = [];
@@ -160,9 +181,9 @@ function TextHighlight({ range, style, container, tick }: { range: Range, style:
     } else if (style === "highlight") {
         bgClass = "bg-yellow-300"; // Stronger yellow
     } else if (style === "strike") {
-        // Strikethrough rendering
+        // Strikethrough rendering - red background + line through middle
         return (
-            <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden">
+            <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden" style={{ zIndex: 50 }}>
                 {rects.map((rect, i) => {
                     // Clip to container bounds to avoid drawing outside the "paper"
                     const left = Math.max(rect.left, containerRect.left);
@@ -172,16 +193,30 @@ function TextHighlight({ range, style, container, tick }: { range: Range, style:
                     if (width <= 0) return null;
 
                     return (
-                        <div
-                            key={i}
-                            className="absolute border-b-2 border-red-500 opacity-80"
-                            style={{
-                                top: rect.top - containerRect.top + (rect.height / 2),
-                                left: left - containerRect.left,
-                                width: width,
-                                height: 2,
-                            }}
-                        />
+                        <React.Fragment key={i}>
+                            {/* Red tinted background */}
+                            <div
+                                className="absolute"
+                                style={{
+                                    top: rect.top - containerRect.top,
+                                    left: left - containerRect.left,
+                                    width: width,
+                                    height: rect.height,
+                                    backgroundColor: "rgba(254, 202, 202, 0.5)", // red-200 with opacity
+                                }}
+                            />
+                            {/* Strikethrough line */}
+                            <div
+                                className="absolute"
+                                style={{
+                                    top: rect.top - containerRect.top + (rect.height / 2) - 1,
+                                    left: left - containerRect.left,
+                                    width: width,
+                                    height: 2,
+                                    backgroundColor: "rgba(220, 38, 38, 1)", // red-600 solid
+                                }}
+                            />
+                        </React.Fragment>
                     );
                 })}
             </div>
@@ -200,12 +235,16 @@ function TextHighlight({ range, style, container, tick }: { range: Range, style:
                 return (
                     <div
                         key={i}
-                        className={`absolute opacity-30 mix-blend-multiply ${bgClass}`}
+                        className="absolute"
                         style={{
                             top: rect.top - containerRect.top,
                             left: left - containerRect.left,
                             width: width,
                             height: rect.height,
+                            // Use semi-transparent background with border for visibility on any background
+                            backgroundColor: "rgba(253, 224, 71, 0.4)", // yellow-300 with opacity
+                            borderBottom: "2px solid rgba(234, 179, 8, 0.8)", // yellow-500 underline
+                            boxShadow: "0 0 0 1px rgba(234, 179, 8, 0.3)", // subtle outline
                         }}
                     />
                 );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -52,6 +52,8 @@ interface ArtifactViewerProps {
   onVersionChange: (versionNumber: number) => void;
   currentUser?: { _id: Id<"users">; name?: string } | null;
   userPermission?: "owner" | "can-comment" | null;
+  /** Initial file path from URL for deep linking */
+  filePath?: string;
 }
 
 export function ArtifactViewer({
@@ -62,13 +64,22 @@ export function ArtifactViewer({
   onVersionChange,
   currentUser,
   userPermission,
+  filePath,
 }: ArtifactViewerProps) {
   const router = useRouter();
 
-  // Navigation State
-  const [currentPage, setCurrentPage] = useState<string>(
-    version.entryPoint || "index.html"
+  // Navigation State - use filePath from URL if provided, otherwise entryPoint or default
+  const [currentPage, setCurrentPageState] = useState<string>(
+    filePath || version.entryPoint || "index.html"
   );
+
+  // Update URL when page changes (deep linking support)
+  const setCurrentPage = (page: string) => {
+    setCurrentPageState(page);
+    // Update URL to reflect current page
+    const cleanPage = page.startsWith("/") ? page.slice(1) : page;
+    router.push(`/a/${artifact.shareToken}/v/${version.number}/${cleanPage}`, { scroll: false });
+  };
   const [history, setHistory] = useState<string[]>([]);
   const [forwardHistory, setForwardHistory] = useState<string[]>([]);
 
@@ -105,15 +116,93 @@ export function ArtifactViewer({
   // Filter State
   const [filter, setFilter] = useState<FilterMode>('all');
 
+  // File Tree State (persisted to sessionStorage)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [isTreeStateLoaded, setIsTreeStateLoaded] = useState(false);
+
+  // Load tree state from sessionStorage
+  useEffect(() => {
+    if (!version._id) return;
+    try {
+      const key = `artifact_tree_${version._id}`;
+      const stored = sessionStorage.getItem(key);
+      if (stored) {
+        setExpandedIds(new Set(JSON.parse(stored)));
+      }
+      setIsTreeStateLoaded(true);
+    } catch (e) {
+      console.error("Failed to load tree state", e);
+      setIsTreeStateLoaded(true);
+    }
+  }, [version._id]);
+
+  // Save tree state helper
+  const updateExpandedIds = useCallback((newIds: Set<string>) => {
+    setExpandedIds(newIds);
+    if (!version._id) return;
+    try {
+      const key = `artifact_tree_${version._id}`;
+      sessionStorage.setItem(key, JSON.stringify(Array.from(newIds)));
+    } catch (e) {
+      console.error("Failed to save tree state", e);
+    }
+  }, [version._id]);
+
+  // Toggle folder expand/collapse
+  const handleToggleExpand = useCallback((id: string) => {
+    const newIds = new Set(expandedIds);
+    if (newIds.has(id)) {
+      newIds.delete(id);
+    } else {
+      newIds.add(id);
+    }
+    updateExpandedIds(newIds);
+  }, [expandedIds, updateExpandedIds]);
+
+  // Auto-expand path to current file
+  useEffect(() => {
+    if (!isTreeStateLoaded || !currentPage || currentPage === 'index.html' || currentPage === '/') return;
+
+    const cleanPath = currentPage.startsWith('/') ? currentPage.substring(1) : currentPage;
+    const parts = cleanPath.split('/').filter(p => p !== '');
+
+    // Remove filename to get directories
+    parts.pop();
+
+    if (parts.length === 0) return;
+
+    const newIds = new Set(expandedIds);
+    let currentPath = '';
+    let changed = false;
+
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      const folderId = `folder-${currentPath}`;
+      if (!newIds.has(folderId)) {
+        newIds.add(folderId);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      updateExpandedIds(newIds);
+    }
+  }, [currentPage, isTreeStateLoaded, expandedIds, updateExpandedIds]);
+
   const textContainerRef = useRef<HTMLDivElement | null>(null);
 
   // 2. Annotation State & Adapters
   // Convert Convex comments to UI Annotations
-  const annotations = useMemo(() => {
+  const allAnnotations = useMemo(() => {
     return convexComments.map(c => convexToAnnotation(c));
   }, [convexComments]);
 
-  // Filter annotations based on filter state
+  // Filter annotations by current page (for multi-file artifacts)
+  const annotations = useMemo(() => {
+    return allAnnotations.filter(a => a.target?.source === currentPage);
+  }, [allAnnotations, currentPage]);
+
+  // Filter annotations based on filter state (resolved/unresolved)
   const filteredAnnotations = useMemo(() => {
     if (filter === 'all') return annotations;
     if (filter === 'resolved') return annotations.filter(a => a.resolved);
@@ -183,6 +272,53 @@ export function ArtifactViewer({
     setMenuPosition(null);
     setIsSidebarOpen(true);
   };
+
+  // Handle relative link clicks in markdown
+  const handleMarkdownLinkClick = useCallback((href: string) => {
+    // Handle anchor links
+    if (href.startsWith('#')) {
+      const element = document.getElementById(href.substring(1));
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+
+    // Resolve relative path
+    const currentDir = currentPage.includes('/')
+      ? currentPage.substring(0, currentPage.lastIndexOf('/'))
+      : '';
+
+    let targetPath: string;
+    if (href.startsWith('/')) {
+      // Absolute path within artifact
+      targetPath = href.substring(1);
+    } else if (href.startsWith('./')) {
+      // Explicit relative
+      targetPath = currentDir ? `${currentDir}/${href.substring(2)}` : href.substring(2);
+    } else {
+      // Implicit relative
+      targetPath = currentDir ? `${currentDir}/${href}` : href;
+    }
+
+    // Normalize path (remove ./ and resolve ..)
+    const parts = targetPath.split('/').filter(p => p && p !== '.');
+    const resolved: string[] = [];
+    for (const part of parts) {
+      if (part === '..') {
+        resolved.pop();
+      } else {
+        resolved.push(part);
+      }
+    }
+
+    const finalPath = resolved.join('/');
+
+    // Navigate to the resolved path
+    setHistory([...history, currentPage]);
+    setForwardHistory([]);
+    setCurrentPage(finalPath);
+  }, [currentPage, history, setCurrentPage]);
 
   const handleCreateAnnotation = async (content: string) => {
     if (!draftSelector || !currentUser) return;
@@ -353,6 +489,8 @@ export function ArtifactViewer({
                 if (file) setCurrentPage(file.path);
               }}
               selectedFileId={files?.find(f => f.path === currentPage)?._id}
+              expandedIds={expandedIds}
+              onToggleExpand={handleToggleExpand}
             />
           </div>
         )}
@@ -395,7 +533,11 @@ export function ArtifactViewer({
                 registerTextContainer(el);
               }} className="relative z-10 min-h-[500px]">
                 {isMarkdown ? (
-                  <MarkdownViewer src={contentUrl} className="min-h-[500px]" />
+                  <MarkdownViewer
+                    src={contentUrl}
+                    className="min-h-[500px]"
+                    onLinkClick={handleMarkdownLinkClick}
+                  />
                 ) : (
                   // For HTML in Iframe, we can't easily overlay DIVs inside it from here unless 
                   // we inject the layer INTO the iframe. 
