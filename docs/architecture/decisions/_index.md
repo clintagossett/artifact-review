@@ -22,6 +22,7 @@ Record of significant architectural decisions made for this project.
 | [0014](./0014-pii-safe-relational-tracking.md) | PII-Safe Relational Tracking | Accepted | 2026-01-04 |
 | [0015](./0015-organization-first-architecture.md) | Organization-First Architecture | Accepted | 2026-01-11 |
 | [0016](./0016-agent-api-strategy.md) | Agent API Strategy | Accepted | 2026-01-21 |
+| [0017](./0017-annotation-overlay-rendering.md) | Annotation Overlay Rendering Strategy | Accepted | 2026-01-23 |
 
 ---
 
