@@ -86,6 +86,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         await signIn("password", {
           email,
           password,
+          name,
           flow: "signUp",
         });
         onSuccess();

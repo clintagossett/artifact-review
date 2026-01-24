@@ -1,6 +1,18 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
+import { DataModel } from "./_generated/dataModel";
+
+// Custom Password provider that accepts name field during signup
+const PasswordWithProfile = Password<DataModel>({
+  profile(params) {
+    return {
+      email: params.email as string,
+      name: (params as Record<string, unknown>).name as string | undefined,
+      createdAt: Date.now(),
+    };
+  },
+});
 import { query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
@@ -63,7 +75,7 @@ const MagicLinkEmail = Email({
 });
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, MagicLinkEmail],
+  providers: [PasswordWithProfile, MagicLinkEmail],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
       // Check if user already exists (for account linking)

@@ -7,8 +7,10 @@ import { AnnotationDisplay, Author, Reply } from "@/components/annotations/types
 type CommentWithAuthor = Doc<"comments"> & {
     author: {
         name?: string;
+        email?: string;
         avatar?: string;
-    }
+    };
+    agentName?: string;
 };
 
 type ReplyWithAuthor = Doc<"commentReplies"> & {
@@ -60,7 +62,8 @@ export function convexToAnnotation(
         id: r._id,
         content: r.content,
         author: {
-            name: r.author.name || "Anonymous",
+            // Fallback to "Unknown" if no name (email not available for replies currently)
+            name: r.author.name || "Unknown",
             avatar: r.author.avatar || "",
             id: r.createdBy
         },
@@ -82,7 +85,8 @@ export function convexToAnnotation(
         content: comment.content,
 
         author: {
-            name: comment.author?.name || "Anonymous",
+            // Prefer agentName for agent-created comments, then user name, then email
+            name: comment.agentName || comment.author?.name || comment.author?.email || "Unknown",
             avatar: comment.author?.avatar || "",
             id: comment.createdBy
         },
