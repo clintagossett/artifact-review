@@ -25,6 +25,7 @@ import { convexToAnnotation, selectionToConvexTarget } from "@/lib/annotation/ad
 import { AnnotationSidebar } from "@/components/annotations/AnnotationSidebar";
 import { SelectionMenu } from "@/components/annotations/SelectionMenu";
 import { AnnotationDisplay } from "@/components/annotations/types";
+import { CommentToolbar, FilterMode } from "@/components/comments/CommentToolbar";
 
 interface ArtifactViewerProps {
   artifact: {
@@ -101,6 +102,9 @@ export function ArtifactViewer({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
+  // Filter State
+  const [filter, setFilter] = useState<FilterMode>('all');
+
   const textContainerRef = useRef<HTMLDivElement | null>(null);
 
   // 2. Annotation State & Adapters
@@ -108,6 +112,13 @@ export function ArtifactViewer({
   const annotations = useMemo(() => {
     return convexComments.map(c => convexToAnnotation(c));
   }, [convexComments]);
+
+  // Filter annotations based on filter state
+  const filteredAnnotations = useMemo(() => {
+    if (filter === 'all') return annotations;
+    if (filter === 'resolved') return annotations.filter(a => a.resolved);
+    return annotations.filter(a => !a.resolved);
+  }, [annotations, filter]);
 
   // Extract selectors for the overlay
   // Filter out resolved ones if we want to hide them, currently showing all with visual distinction
@@ -307,6 +318,18 @@ export function ArtifactViewer({
         userPermission={userPermission}
       />
 
+      <CommentToolbar
+        filter={filter}
+        onFilterChange={setFilter}
+        totalCount={annotations.length}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isViewingOldVersion={!isLatestVersion}
+        currentVersionNumber={version.number}
+        latestVersionNumber={Math.max(...versions.map(v => v.number))}
+        onSwitchToLatest={() => onVersionChange(Math.max(...versions.map(v => v.number)))}
+      />
+
       <div className="flex flex-1 overflow-hidden relative">
 
         {/* Menu */}
@@ -405,7 +428,7 @@ export function ArtifactViewer({
         <AnnotationSidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
-          annotations={annotations}
+          annotations={filteredAnnotations}
           currentUser={currentUser ? { id: currentUser._id, name: currentUser.name || "Me" } : null}
           artifactOwnerId={artifact.createdBy}
 
