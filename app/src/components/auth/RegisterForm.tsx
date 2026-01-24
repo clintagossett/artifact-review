@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GradientLogo } from "@/components/shared/GradientLogo";
 import { IconInput } from "@/components/shared/IconInput";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { AuthMethodToggle } from "./AuthMethodToggle";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
 import { useRouter, useSearchParams } from "next/navigation";
-import { UserPlus, Mail, Lock, User, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
+import { UserPlus, Mail, User, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -24,6 +26,7 @@ interface PasswordRequirement {
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
 
@@ -35,6 +38,16 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [signupComplete, setSignupComplete] = useState(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  // Wait for auth state to propagate after password signup before redirecting
+  useEffect(() => {
+    if (signupComplete && isAuthenticated) {
+      onSuccessRef.current();
+    }
+  }, [signupComplete, isAuthenticated]);
 
   const passwordRequirements: PasswordRequirement[] = [
     { label: "At least 8 characters", met: password.length >= 8 },
@@ -89,13 +102,14 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           name,
           flow: "signUp",
         });
-        onSuccess();
+        // Signal that signup is complete - useEffect will redirect once auth state propagates
+        setSignupComplete(true);
       } catch (err) {
         console.error("Registration error:", err);
         setError("Registration failed. Email may already be in use.");
-      } finally {
         setIsLoading(false);
       }
+      // Note: Don't setIsLoading(false) on success - keep loading until redirect
     }
   };
 
@@ -215,10 +229,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {/* Password Input */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <IconInput
+              <PasswordInput
                 id="password"
-                type="password"
-                icon={Lock}
                 placeholder="Create a strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -270,10 +282,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {/* Confirm Password Input */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm password</Label>
-              <IconInput
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
-                icon={Lock}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

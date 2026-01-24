@@ -77,7 +77,7 @@ test.describe('Systems Integration Smoke Tests', () => {
             await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
             console.log('✓ Resend: Magic link email triggered');
 
-            // In local mode, we could also check Mailpit API at http://localhost:8025/api/v1/messages
+            // In local mode, we could also check Mailpit API via MAILPIT_API_URL env var
             // For smoke test, confirming the trigger is sufficient
         });
 
@@ -97,7 +97,7 @@ test.describe('Systems Integration Smoke Tests', () => {
                     console.warn('NOVU_SECRET_KEY not set, skipping API validation');
                     return [];
                 }
-                const baseUrl = 'http://localhost:3002'; // Local Novu API
+                const baseUrl = process.env.NOVU_API_URL || 'http://api.novu.loc'; // Shared Novu API
                 try {
                     const response = await fetch(`${baseUrl}/v1/notifications?subscriberId=${subscriberId}&limit=10`, {
                         headers: { 'Authorization': `ApiKey ${apiKey}` },

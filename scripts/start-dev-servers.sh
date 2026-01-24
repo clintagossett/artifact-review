@@ -2,11 +2,15 @@
 # Dev server startup with port checking and graceful handling
 # Run from project root: ./scripts/start-dev-servers.sh
 #
+# Configuration is read from ../.env.agent.local (agent directory)
+# Command-line args override config file values.
+#
 # Usage:
 #   ./scripts/start-dev-servers.sh                    # Start servers (skip if already running)
 #   ./scripts/start-dev-servers.sh --restart|--force  # Kill existing and restart fresh
 #
 # Features:
+# - Reads port configuration from .env.agent.local
 # - Checks if ports are already in use before starting
 # - Skips starting a server if it's already running (unless --restart/--force)
 # - Only kills processes it started on Ctrl+C
@@ -15,22 +19,39 @@
 # Don't exit on error - we handle errors gracefully
 set +e
 
-# Parse arguments
-RESTART_MODE=false
-NOVU_LOCAL_MODE=true # Default to TRUE
-AGENT_NAME="default"
-NEXTJS_PORT=3000
-CONVEX_HTTP_PORT=3211
-CONVEX_ADMIN_PORT=3210
-CONVEX_DASHBOARD_PORT=6791
-MAILPIT_WEB_PORT=8025
-MAILPIT_SMTP_PORT=1025
-# Novu Defaults
-NOVU_PORT=2022
-NOVU_API_PORT=3002
-NOVU_WEB_PORT=4200
-NOVU_MONGO_PORT=27017
+# Get script directory and project root early (needed for config loading)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+AGENT_DIR="$(dirname "$PROJECT_ROOT")"
+AGENT_CONFIG="$AGENT_DIR/.env.agent.local"
 
+# Load agent configuration from .env.agent.local
+if [ -f "$AGENT_CONFIG" ]; then
+    echo "Loading agent config from $AGENT_CONFIG"
+    # Source the config file to get variables
+    set -a  # Export all variables
+    source "$AGENT_CONFIG"
+    set +a
+else
+    echo "WARNING: No .env.agent.local found at $AGENT_CONFIG"
+    echo "Using defaults. Create .env.agent.local with AGENT_NAME and BASE_PORT."
+    echo ""
+fi
+
+# Set defaults (can be overridden by config or CLI)
+RESTART_MODE=false
+AGENT_NAME="${AGENT_NAME:-default}"
+BASE_PORT="${BASE_PORT:-3000}"
+
+# Calculate ports from BASE_PORT (can be overridden individually in config)
+NEXTJS_PORT="${NEXTJS_PORT:-$BASE_PORT}"
+CONVEX_HTTP_PORT="${CONVEX_HTTP_PORT:-$((BASE_PORT + 211))}"
+CONVEX_ADMIN_PORT="${CONVEX_ADMIN_PORT:-$((BASE_PORT + 210))}"
+CONVEX_DASHBOARD_PORT="${CONVEX_DASHBOARD_PORT:-$((BASE_PORT + 3791))}"
+MAILPIT_WEB_PORT="${MAILPIT_WEB_PORT:-$((BASE_PORT + 5025))}"
+MAILPIT_SMTP_PORT="${MAILPIT_SMTP_PORT:-$((BASE_PORT + 1025))}"
+
+# Parse command-line arguments (override config)
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
@@ -38,28 +59,18 @@ while [[ $# -gt 0 ]]; do
             RESTART_MODE=true
             shift
             ;;
-        --no-novu) # Option to DISABLE Novu
-            NOVU_LOCAL_MODE=false
-            shift
-            ;;
         --agent)
             AGENT_NAME="$2"
             shift 2
             ;;
-        --port) # Base port, other ports calculated from this or set explicitly
-            NEXTJS_PORT="$2"
-            CONVEX_HTTP_PORT=$((NEXTJS_PORT + 211))
-            CONVEX_ADMIN_PORT=$((NEXTJS_PORT + 210))
-            # Others can be calculated too if needed to avoid conflicts
-            CONVEX_DASHBOARD_PORT=$((NEXTJS_PORT + 3791)) 
-            MAILPIT_WEB_PORT=$((NEXTJS_PORT + 5025))
-            MAILPIT_SMTP_PORT=$((NEXTJS_PORT + 1025))
-            NOVU_PORT=$((NEXTJS_PORT + 1022)) # 3010 -> 4032 (Studio)
-            
-            # Novu Docker Ports
-            NOVU_API_PORT=$((NEXTJS_PORT + 900))   # 3910
-            NOVU_WEB_PORT=$((NEXTJS_PORT + 1200))  # 4210 (Console)
-            NOVU_MONGO_PORT=$((NEXTJS_PORT + 1700)) # 4710
+        --port) # Base port override, recalculates all ports
+            BASE_PORT="$2"
+            NEXTJS_PORT="$BASE_PORT"
+            CONVEX_HTTP_PORT=$((BASE_PORT + 211))
+            CONVEX_ADMIN_PORT=$((BASE_PORT + 210))
+            CONVEX_DASHBOARD_PORT=$((BASE_PORT + 3791))
+            MAILPIT_WEB_PORT=$((BASE_PORT + 5025))
+            MAILPIT_SMTP_PORT=$((BASE_PORT + 1025))
             shift 2
             ;;
         --convex-port)
@@ -79,9 +90,6 @@ export CONVEX_ADMIN_PORT
 export CONVEX_DASHBOARD_PORT
 export MAILPIT_WEB_PORT
 export MAILPIT_SMTP_PORT
-export NOVU_API_PORT
-export NOVU_WEB_PORT
-export NOVU_MONGO_PORT
 
 # Export for Next.js 
 # (Next.js picks up PORT env var automatically for `next start`, but `next dev` might need -p)
@@ -109,9 +117,77 @@ else
 fi
 echo "========================================"
 
-# Get script directory and project root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Calculate orchestrator directory (already have SCRIPT_DIR and PROJECT_ROOT from config loading)
+ORCHESTRATOR_DIR="$AGENT_DIR/../.."
+
+# DNS Check (skip in CI mode)
+# With dnsmasq configured, *.loc resolves automatically - just verify it works
+if [ -z "$CI" ] && [ -z "$HOSTED" ]; then
+    echo ""
+    echo "🔍 Checking DNS configuration..."
+
+    DNS_OK=true
+    # Production-like: {service}.{agent}.loc (for E2E tests)
+    # Dev-only: {agent}.{service}.loc (local tools only)
+    DNS_DOMAINS=(
+        "$AGENT_NAME.loc"              # App
+        "api.$AGENT_NAME.loc"          # API (production-like)
+        "$AGENT_NAME.mailpit.loc"      # Mailpit (dev-only)
+        "$AGENT_NAME.convex.loc"       # Convex Dashboard (dev-only)
+    )
+
+    # Test if .loc resolution works (dnsmasq wildcard or /etc/hosts)
+    if command -v getent &> /dev/null; then
+        for domain in "${DNS_DOMAINS[@]}"; do
+            if getent hosts "$domain" &> /dev/null; then
+                echo "  ✅ $domain resolves"
+            else
+                echo "  ❌ $domain does not resolve"
+                DNS_OK=false
+            fi
+        done
+    else
+        # Fallback: check /etc/hosts if getent not available
+        for domain in "${DNS_DOMAINS[@]}"; do
+            if grep -q "127.0.0.1.*$domain" /etc/hosts 2>/dev/null; then
+                echo "  ✅ $domain found in /etc/hosts"
+            else
+                echo "  ❌ $domain not found"
+                DNS_OK=false
+            fi
+        done
+    fi
+
+    if [ "$DNS_OK" = false ]; then
+        echo ""
+        echo "ERROR: DNS not configured for agent '$AGENT_NAME'"
+        echo ""
+        echo "Option 1 - Setup dnsmasq (recommended, one-time for ALL agents):"
+        echo "  sudo $ORCHESTRATOR_DIR/scripts/setup-dnsmasq.sh install"
+        echo ""
+        echo "Option 2 - Manual /etc/hosts entries:"
+        echo "  sudo $ORCHESTRATOR_DIR/scripts/setup-dns.sh add $AGENT_NAME"
+        echo ""
+        echo "Then retry this command."
+        exit 1
+    fi
+fi
+
+# Register with orchestrator
+echo ""
+echo "📡 Registering with orchestrator..."
+if [ -f "$ORCHESTRATOR_DIR/scripts/register-agent.js" ]; then
+    node "$ORCHESTRATOR_DIR/scripts/register-agent.js" \
+        "$AGENT_NAME" \
+        "$NEXTJS_PORT" \
+        "$CONVEX_HTTP_PORT" \
+        "$MAILPIT_WEB_PORT" \
+        "$CONVEX_DASHBOARD_PORT"
+else
+    echo "⚠️  Orchestrator not found at $ORCHESTRATOR_DIR"
+    echo "   Agent will work locally but won't be accessible via DNS"
+fi
+echo ""
 APP_DIR="$PROJECT_ROOT/app"
 
 # Verify app directory exists
@@ -123,39 +199,55 @@ fi
 # Change to app directory
 cd "$APP_DIR"
 
-# Update .env.local for Convex Client
-# We need to ensure the local client talks to the correct Docker port
+# Update .env.local for Convex
+# Server-side (CLI) uses localhost, browser uses DNS names for proxy routing
 if [ -f .env.local ]; then
-    # Simple sed replacement or append if missing. 
-    # For robustness, we'll just check if we need to update CONVEX_SELF_HOSTED_URL
-    # Note: sed differences between Mac/Linux can be tricky.
-    
     # Construct the URLs
+    # Server-side: direct localhost connection for CLI tools
     ADMIN_URL="http://127.0.0.1:$CONVEX_ADMIN_PORT"
-    CLIENT_URL="http://127.0.0.1:$CONVEX_HTTP_PORT"
-    
-    # Update CONVEX_SELF_HOSTED_URL (Admin Port)
+    # Browser-side: DNS name for proxy routing (works with orchestrator)
+    # Falls back to localhost if not using DNS routing
+    if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
+        CLIENT_URL="http://api.$AGENT_NAME.loc"
+    else
+        CLIENT_URL="http://127.0.0.1:$CONVEX_HTTP_PORT"
+    fi
+
+    # Update CONVEX_SELF_HOSTED_URL (Admin Port - server-side only)
     if grep -q "CONVEX_SELF_HOSTED_URL" .env.local; then
         sed -i "s|CONVEX_SELF_HOSTED_URL=.*|CONVEX_SELF_HOSTED_URL=$ADMIN_URL|" .env.local
     else
         echo "CONVEX_SELF_HOSTED_URL=$ADMIN_URL" >> .env.local
     fi
 
-    # Update NEXT_PUBLIC_CONVEX_URL (Client Port)
+    # Update NEXT_PUBLIC_CONVEX_URL (Client - browser-side, uses DNS)
     if grep -q "NEXT_PUBLIC_CONVEX_URL" .env.local; then
         sed -i "s|NEXT_PUBLIC_CONVEX_URL=.*|NEXT_PUBLIC_CONVEX_URL=$CLIENT_URL|" .env.local
     else
         echo "NEXT_PUBLIC_CONVEX_URL=$CLIENT_URL" >> .env.local
     fi
-    
+
+    # Update NEXT_PUBLIC_CONVEX_HTTP_URL (same as client URL)
+    if grep -q "NEXT_PUBLIC_CONVEX_HTTP_URL" .env.local; then
+        sed -i "s|NEXT_PUBLIC_CONVEX_HTTP_URL=.*|NEXT_PUBLIC_CONVEX_HTTP_URL=$CLIENT_URL|" .env.local
+    else
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=$CLIENT_URL" >> .env.local
+    fi
+
     # Disable CONVEX_DEPLOYMENT if present (causes conflicts with self-hosted)
     if grep -q "^CONVEX_DEPLOYMENT" .env.local; then
         sed -i "s|^CONVEX_DEPLOYMENT|# CONVEX_DEPLOYMENT|" .env.local
     fi
 else
-    # Create if missing
+    # Create if missing - use DNS names for browser if agent name is set
     echo "CONVEX_SELF_HOSTED_URL=http://127.0.0.1:$CONVEX_ADMIN_PORT" > .env.local
-    echo "NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
+    if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
+        echo "NEXT_PUBLIC_CONVEX_URL=http://api.$AGENT_NAME.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://api.$AGENT_NAME.loc" >> .env.local
+    else
+        echo "NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
+    fi
 fi
 
 # EXPORT the URL to ensure npx convex dev picks it up
@@ -198,7 +290,6 @@ kill_port() {
 
 # Use the configured port variables for checks
 CONVEX_PORT=$CONVEX_HTTP_PORT 
-NOVU_PORT=2022 
 
 # If restart mode, kill existing servers first
 if [ "$RESTART_MODE" = true ]; then
@@ -220,17 +311,6 @@ if [ "$RESTART_MODE" = true ]; then
         echo "  [OK] Next.js stopped"
     else
         echo "  Next.js not running on $NEXTJS_PORT"
-    fi
-
-    echo ""
-
-    if check_port $NOVU_PORT; then
-        EXISTING_PID=$(get_port_process $NOVU_PORT)
-        echo "  Killing Novu on port $NOVU_PORT (PID: $EXISTING_PID)..."
-        kill_port $NOVU_PORT
-        echo "  [OK] Novu stopped"
-    else
-        echo "  Novu not running"
     fi
 
     echo ""
@@ -275,14 +355,22 @@ else
     echo "  [SKIP] Docker Daemon is already running"
 fi
 
-# Check and start Docker services (Convex, Mailpit)
-echo "Checking Docker services (Convex, Mailpit)..."
-if [ "$NOVU_LOCAL_MODE" = true ]; then
-    echo "  [INFO] Novu Local Mode ENABLED (Loading docker-compose.novu.yml)"
-    COMPOSE_FILES="-f docker-compose.yml -f docker-compose.novu.yml"
+# Check for shared Novu instance (info only - orchestrator manages it)
+echo "Checking for shared Novu..."
+if docker ps --filter "name=novu-api" --format '{{.Names}}' 2>/dev/null | grep -q "^novu-api$"; then
+    echo "  ✅ Shared Novu available"
+    echo "     Web: http://novu.loc (or http://localhost:4200)"
+    echo "     API: http://api.novu.loc (or http://localhost:3002)"
 else
-    COMPOSE_FILES="-f docker-compose.yml"
+    echo "  ⚠️  Shared Novu not running"
+    echo "     Start orchestrator: cd $ORCHESTRATOR_DIR/orchestrator && ./start.sh"
 fi
+
+# Check and start Docker services (Convex, Mailpit only)
+# NOTE: Novu is NOT managed by agents - it's orchestrator infrastructure
+echo ""
+echo "Checking Docker services (Convex, Mailpit)..."
+COMPOSE_FILES="-f docker-compose.yml"
 
 # Change to project root for compose if needed, or use relative paths
 # NOTE: The script is running from APP_DIR ($PROJECT_ROOT/app).
@@ -296,17 +384,7 @@ if ! docker compose $COMPOSE_FILES ps | grep -q "Up"; then
     echo "  [START] Starting Docker services..."
     docker compose $COMPOSE_FILES up -d
 else
-    # If using novu-local, ensure those specific services are up
-    if [ "$NOVU_LOCAL_MODE" = true ]; then
-        if ! docker compose $COMPOSE_FILES ps | grep -q "novu-api"; then
-            echo "  [START] Starting additional Novu services..."
-             docker compose $COMPOSE_FILES up -d
-        else
-            echo "  [SKIP] Docker services already running"
-        fi
-    else
-        echo "  [SKIP] Docker services already running"
-    fi
+    echo "  [SKIP] Docker services already running"
 fi
 
 popd > /dev/null
@@ -374,23 +452,6 @@ else
 fi
 
 echo ""
-
-# Check and start Novu Studio (port 2022)
-echo "Checking Novu Studio (port $NOVU_PORT)..."
-if check_port $NOVU_PORT; then
-    EXISTING_PID=$(get_port_process $NOVU_PORT)
-    echo "  [SKIP] Novu Studio already running on port $NOVU_PORT (PID: $EXISTING_PID)"
-else
-    echo "  [START] Starting Novu Studio on port $NOVU_PORT..."
-    > logs/novu.log
-    # npx prompt handling: echo "y" | ...
-    # -sp = Studio Port (The dashboard UI)
-    echo "y" | npx novu@latest dev -p $NEXTJS_PORT -sp $NOVU_PORT 2>&1 | tee logs/novu.log &
-    NOVU_PID=$!
-    echo "  [OK] Novu Studio started (PID: $NOVU_PID)"
-fi
-
-echo ""
 echo "========================================"
 
 # Summary
@@ -405,7 +466,6 @@ fi
 echo "Logs:"
 [ -n "$CONVEX_PID" ] && echo "  - app/logs/convex.log"
 [ -n "$NEXT_PID" ] && echo "  - app/logs/nextjs.log"
-[ -n "$NOVU_PID" ] && echo "  - app/logs/novu.log"
 echo ""
 echo "Press Ctrl+C to stop started services"
 echo "========================================"
@@ -416,7 +476,6 @@ cleanup() {
     echo "Stopping servers..."
     [ -n "$CONVEX_PID" ] && kill $CONVEX_PID 2>/dev/null && echo "  Stopped Convex (PID: $CONVEX_PID)"
     [ -n "$NEXT_PID" ] && kill $NEXT_PID 2>/dev/null && echo "  Stopped Next.js (PID: $NEXT_PID)"
-    [ -n "$NOVU_PID" ] && kill $NOVU_PID 2>/dev/null && echo "  Stopped Novu (PID: $NOVU_PID)"
     [ -n "$STRIPE_PID" ] && kill $STRIPE_PID 2>/dev/null && echo "  Stopped Stripe CLI (PID: $STRIPE_PID)"
     exit 0
 }

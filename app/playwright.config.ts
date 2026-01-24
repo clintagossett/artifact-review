@@ -6,22 +6,30 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 
 /**
+ * Get base URL from environment with fallback chain:
+ * 1. TEST_BASE_URL - explicit test override
+ * 2. SITE_URL - configured site URL (e.g., http://mark.loc, https://staging.example.com)
+ * 3. localhost:3000 - CI/fallback default
+ */
+const baseURL = process.env.TEST_BASE_URL || process.env.SITE_URL || 'http://localhost:3000';
+
+/**
  * Playwright configuration for e2e testing
  * See https://playwright.dev/docs/test-configuration
  *
- * IMPORTANT: Before running tests, ensure both servers are running:
- *   cd app && ./scripts/dev.sh
+ * Environment-driven configuration - works across:
+ * - Local dev with DNS routing (SITE_URL=http://{agent}.loc)
+ * - CI environments (defaults to localhost:3000)
+ * - Preview/staging deployments (SITE_URL from deployment)
+ * - Production (SITE_URL from deployment)
  *
- * Or separately:
- *   npx convex dev (in one terminal)
- *   npm run dev (in another terminal)
+ * Required env vars in .env.local:
+ *   SITE_URL        - Base app URL (e.g., http://mark.loc)
+ *   MAILPIT_API_URL - Mailpit API for email testing (optional, local only)
+ *   NOVU_API_URL    - Novu API for notifications (optional)
  */
 export default defineConfig({
-  // Tests live in task folders, not app/
-  // Override with: npx playwright test --config=playwright.config.ts path/to/tests
-  // Point to the local e2e tests
   testDir: './tests/e2e',
-  // Run all spec files
   testMatch: ['*.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -30,12 +38,10 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: process.env.TEST_BASE_URL || 'http://localhost:3000',
-    // Always record for validation videos
+    baseURL,
     trace: 'on',
     screenshot: 'on',
     video: 'on',
-    // Consistent viewport for video output
     viewport: { width: 1280, height: 720 },
   },
 
@@ -46,11 +52,11 @@ export default defineConfig({
     },
   ],
 
-  // Only start local server if we are testing localhost
-  webServer: (process.env.TEST_BASE_URL && process.env.TEST_BASE_URL !== 'http://localhost:3000') ? undefined : {
+  // Start server only if not already running
+  webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true, // Always reuse - assumes servers are already running
+    url: baseURL,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });

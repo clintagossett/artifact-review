@@ -10,5 +10,9 @@
     "novuConsolePort": 4210,
     "mailpitPort": 8035,
     "convexDashboardPort": 6801
+  },
+  "novu": {
+    "appPort": 4200,
+    "apiPort": 3002
   }
 }

@@ -3,8 +3,19 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.RESEND_API_KEY);
 
+/**
+ * Mailpit API URL from environment.
+ * Set MAILPIT_API_URL in .env.local for local development:
+ *   - DNS routing: http://{agent}.mailpit.loc/api/v1
+ *   - Direct port: http://localhost:8025/api/v1
+ * Leave unset for hosted environments (uses Resend API instead).
+ */
+const MAILPIT_API_URL = process.env.MAILPIT_API_URL;
+
 export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
-    const isLocal = process.env.NEXT_PUBLIC_CONVEX_URL?.includes('127.0.0.1') || process.env.NEXT_PUBLIC_CONVEX_URL?.includes('localhost');
+    // Use Mailpit if MAILPIT_API_URL is explicitly set (local dev)
+    // Otherwise use Resend API (hosted environments)
+    const useMailpit = !!MAILPIT_API_URL;
 
     // Wait a bit for email to arrive
     let attempts = 0;
@@ -13,9 +24,9 @@ export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
 
     while (attempts < maxAttempts) {
         try {
-            if (isLocal) {
+            if (useMailpit && MAILPIT_API_URL) {
                 // Fetch from Mailpit API
-                const response = await fetch('http://localhost:8025/api/v1/messages');
+                const response = await fetch(`${MAILPIT_API_URL}/messages`);
                 if (!response.ok) throw new Error('Failed to fetch from Mailpit');
 
                 const data = await response.json();
@@ -29,7 +40,7 @@ export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
 
                 if (match) {
                     // Fetch full message content
-                    const msgResponse = await fetch(`http://localhost:8025/api/v1/message/${match.ID}`);
+                    const msgResponse = await fetch(`${MAILPIT_API_URL}/message/${match.ID}`);
                     const msgData = await msgResponse.json();
                     return {
                         html: msgData.HTML,
@@ -67,7 +78,7 @@ export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
         attempts++;
     }
 
-    throw new Error(`Time out waiting for email to ${toEmail} (isLocal=${isLocal})`);
+    throw new Error(`Timeout waiting for email to ${toEmail} (source=${useMailpit ? 'Mailpit' : 'Resend'})`);
 }
 
 export function extractMagicLink(htmlContent: string): string | null {
