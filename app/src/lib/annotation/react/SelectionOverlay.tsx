@@ -183,7 +183,7 @@ function TextHighlight({ range, style, container, tick }: { range: Range, style:
     } else if (style === "strike") {
         // Strikethrough rendering - red background + line through middle
         return (
-            <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden" style={{ zIndex: 50 }}>
+            <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden" style={{ zIndex: 10 }}>
                 {rects.map((rect, i) => {
                     // Clip to container bounds to avoid drawing outside the "paper"
                     const left = Math.max(rect.left, containerRect.left);
@@ -224,7 +224,7 @@ function TextHighlight({ range, style, container, tick }: { range: Range, style:
     }
 
     return (
-        <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden">
+        <div className="absolute top-0 left-0 pointer-events-none w-full h-full overflow-hidden" style={{ zIndex: 10 }}>
             {rects.map((rect, i) => {
                 const left = Math.max(rect.left, containerRect.left);
                 const right = Math.min(rect.right, containerRect.right);
