@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GradientLogo } from "@/components/shared/GradientLogo";
 import { IconInput } from "@/components/shared/IconInput";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { AuthMethodToggle } from "./AuthMethodToggle";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LogIn, Mail, Lock, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
+import { LogIn, Mail, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -18,6 +20,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo");
 
@@ -29,6 +32,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
+  const [loginComplete, setLoginComplete] = useState(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  // Wait for auth state to propagate after password login before redirecting
+  useEffect(() => {
+    if (loginComplete && isAuthenticated) {
+      onSuccessRef.current();
+    }
+  }, [loginComplete, isAuthenticated]);
 
   // Email validation regex - requires something@domain.ext format
   const validateEmail = (emailValue: string): boolean => {
@@ -78,6 +91,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       if (authMethod === "magic-link") {
         await signIn("resend", { email, redirectTo: returnTo || "/dashboard" });
         setEmailSent(true);
+        setIsLoading(false);
         // Don't call onSuccess - user is not authenticated yet
       } else {
         await signIn("password", {
@@ -85,12 +99,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           password,
           flow: "signIn",
         });
-        onSuccess();
+        // Signal that login is complete - useEffect will redirect once auth state propagates
+        setLoginComplete(true);
+        // Note: Don't setIsLoading(false) on success - keep loading until redirect
       }
     } catch (err) {
       console.error("Login error:", err);
       setError("Invalid email or password");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -205,10 +220,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                 Forgot password?
               </Link>
             </div>
-            <IconInput
+            <PasswordInput
               id="password"
-              type="password"
-              icon={Lock}
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

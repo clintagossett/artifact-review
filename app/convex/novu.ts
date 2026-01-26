@@ -20,7 +20,10 @@ export const triggerCommentNotification = internalAction({
             return;
         }
 
-        const novu = new Novu(apiKey);
+        const novuOptions = process.env.NOVU_API_URL
+            ? { backendUrl: process.env.NOVU_API_URL }
+            : undefined;
+        const novu = new Novu(apiKey, novuOptions);
 
         // We do NOT try/catch here. If this fails (e.g. rate limit, network),
         // we want the Convex Action to fail so the scheduler retries it automatically.
@@ -60,7 +63,10 @@ export const triggerReplyNotification = internalAction({
             return;
         }
 
-        const novu = new Novu(apiKey);
+        const novuOptions = process.env.NOVU_API_URL
+            ? { backendUrl: process.env.NOVU_API_URL }
+            : undefined;
+        const novu = new Novu(apiKey, novuOptions);
 
         // Use the same workflow but with a different event context
         // The workflow can use payload.isReply to differentiate messaging

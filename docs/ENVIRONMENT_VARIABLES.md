@@ -59,17 +59,29 @@ These variables must be set in your local `.env.local` file and in your Frontend
 These are set in **Vercel** (or `.env.local` for local dev).
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
-| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts` |
+| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts`, `convex/novu.ts` |
+| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL. For local dev with shared orchestrator: `http://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
 
-### Local Self-Hosted Mode (Docker)
-To run Novu entirely locally (offline/agentic mode) with Mailpit integration:
-1. Run: `./scripts/start-dev-servers.sh --novu-local`
-2. Access Dashboard: `http://localhost:4200`
-3. Configure SMTP: Host `mailpit`, Port `1025`
-4. Emails appear in: `http://localhost:8025`
+### Local Development Mode (Shared Orchestrator)
+The agentic-dev infrastructure runs a **shared Novu instance** managed by the orchestrator:
 
-This spins up the full Novu stack (API, Worker, Web, Redis, MongoDB). **Expect high resource usage.**
+| Service | URL |
+|---------|-----|
+| Novu Dashboard | `http://novu.loc` |
+| Novu API | `http://api.novu.loc` |
+
+To use the shared instance:
+1. Start the orchestrator: `cd /path/to/agentic-dev/orchestrator && ./start.sh`
+2. Set in `.env.local`: `NOVU_API_URL=http://api.novu.loc`
+3. Start your dev servers: `./scripts/start-dev-servers.sh`
+
+**Note:** The shared Novu is DNS-routed via dnsmasq. No per-agent Novu containers needed.
+
+### 📬 Mailpit (Local Email Testing)
+| Variable Name | Description | Used In Files |
+| :--- | :--- | :--- |
+| `MAILPIT_API_URL` | **Configuration**. Mailpit API endpoint for local email testing. Set for local dev only (e.g., `http://{agent}.mailpit.loc/api/v1`). Leave unset for hosted environments. | `tests/utils/resend.ts` |
 | `NOVU_DIGEST_INTERVAL` | **Configuration**. Digest window in minutes (Default: `10`). Set to `0` or `1` for E2E tests. | `src/app/api/novu/workflows/comment-workflow.ts` |
 
 ### ℹ️ Optional

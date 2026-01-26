@@ -41,7 +41,7 @@ describe("RegisterForm", () => {
     it("should display AuthMethodToggle", () => {
       render(<RegisterForm onSuccess={mockOnSuccess} />);
 
-      expect(screen.getByRole("button", { name: /password/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^password$/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /magic link/i })).toBeInTheDocument();
     });
 
@@ -321,7 +321,7 @@ describe("RegisterForm", () => {
 
       // Tab through form elements
       await user.tab();
-      expect(screen.getByRole("button", { name: /password/i })).toHaveFocus();
+      expect(screen.getByRole("button", { name: /^password$/i })).toHaveFocus();
 
       await user.tab();
       expect(screen.getByRole("button", { name: /magic link/i })).toHaveFocus();

@@ -41,7 +41,7 @@ describe("LoginForm", () => {
     it("should display AuthMethodToggle", () => {
       render(<LoginForm onSuccess={mockOnSuccess} />);
 
-      expect(screen.getByRole("button", { name: /password/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^password$/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /magic link/i })).toBeInTheDocument();
     });
 
@@ -279,7 +279,7 @@ describe("LoginForm", () => {
 
       // Tab through form elements
       await user.tab();
-      expect(screen.getByRole("button", { name: /password/i })).toHaveFocus();
+      expect(screen.getByRole("button", { name: /^password$/i })).toHaveFocus();
 
       await user.tab();
       expect(screen.getByRole("button", { name: /magic link/i })).toHaveFocus();

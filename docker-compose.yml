@@ -4,21 +4,22 @@ services:
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
-      - "3210:3210"
-      - "3211:3211"
+      - "${CONVEX_ADMIN_PORT:-3210}:3210"
+      - "${CONVEX_HTTP_PORT:-3211}:3211"
     volumes:
       - convex_data:/convex/data
     environment:
+      # Container-internal URLs (always use container ports 3210/3211, not host-mapped ports)
       - CONVEX_CLOUD_ORIGIN=http://127.0.0.1:3210
       - CONVEX_SITE_ORIGIN=http://127.0.0.1:3211
       - RUST_LOG=info
-      - INSTANCE_NAME=artifact-review-local
-      - INSTANCE_SECRET=0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b
+      - INSTANCE_NAME=${INSTANCE_NAME:-artifact-review-local}
+      - INSTANCE_SECRET=${INSTANCE_SECRET:-0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b}
       - DO_NOT_REQUIRE_SSL=true
       - DISABLE_BEACON=true
       - MAX_UDF_EXECUTION_SEC=10
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3210/version"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3210/version" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -27,9 +28,9 @@ services:
   dashboard:
     image: ghcr.io/get-convex/convex-dashboard:latest
     ports:
-      - "6791:6791"
+      - "${CONVEX_DASHBOARD_PORT:-6791}:6791"
     environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:3210
+      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:${CONVEX_ADMIN_PORT:-3210}
     depends_on:
       backend:
         condition: service_healthy
@@ -37,8 +38,8 @@ services:
   mailpit:
     image: axllent/mailpit
     ports:
-      - "8025:8025" # Web UI
-      - "1025:1025" # SMTP server
+      - "${MAILPIT_WEB_PORT:-8025}:8025" # Web UI
+      - "${MAILPIT_SMTP_PORT:-1025}:1025" # SMTP server
     restart: unless-stopped
 
 volumes:
