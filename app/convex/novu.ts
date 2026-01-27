@@ -4,6 +4,42 @@ import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import { Novu } from "@novu/node";
 
+/**
+ * Create or update a Novu subscriber.
+ * This is called when a user signs up or updates their profile.
+ * Novu's identify() is idempotent - it creates or updates the subscriber.
+ */
+export const createOrUpdateSubscriber = internalAction({
+    args: {
+        userId: v.id("users"),
+        email: v.optional(v.string()),
+        name: v.optional(v.string()),
+        avatarUrl: v.optional(v.string()),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const apiKey = process.env.NOVU_SECRET_KEY;
+        if (!apiKey) {
+            console.warn("Missing NOVU_SECRET_KEY. Skipping subscriber sync.");
+            return null;
+        }
+
+        const novuOptions = process.env.NOVU_API_URL
+            ? { backendUrl: process.env.NOVU_API_URL }
+            : undefined;
+        const novu = new Novu(apiKey, novuOptions);
+
+        // identify() is idempotent - creates or updates subscriber
+        await novu.subscribers.identify(args.userId, {
+            email: args.email,
+            firstName: args.name,
+            avatar: args.avatarUrl,
+        });
+
+        return null;
+    },
+});
+
 export const triggerCommentNotification = internalAction({
     args: {
         subscriberId: v.string(),

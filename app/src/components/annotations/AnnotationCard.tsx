@@ -163,6 +163,7 @@ export function AnnotationCard({
                     size="sm"
                     className="h-6 px-2 text-xs text-gray-500 hover:text-gray-900"
                     onClick={() => setReplyingTo(!replyingTo)}
+                    data-testid="annotation-reply-button"
                 >
                     <MessageSquare className="w-3 h-3 mr-1" /> Reply
                 </Button>
@@ -199,10 +200,11 @@ export function AnnotationCard({
                         onChange={(e) => setReplyText(e.target.value)}
                         className="text-sm min-h-[60px] mb-2"
                         autoFocus
+                        data-testid="annotation-reply-input"
                     />
                     <div className="flex gap-2 justify-end">
                         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setReplyingTo(false)}>Cancel</Button>
-                        <Button size="sm" className="h-7 text-xs" onClick={handleAddReply}>Reply</Button>
+                        <Button size="sm" className="h-7 text-xs" onClick={handleAddReply} data-testid="annotation-reply-submit">Reply</Button>
                     </div>
                 </div>
             )}

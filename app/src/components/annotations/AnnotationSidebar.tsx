@@ -123,13 +123,15 @@ export function AnnotationSidebar({
                             value={draftContent}
                             onChange={(e) => setDraftContent(e.target.value)}
                             autoFocus
+                            data-testid="annotation-comment-input"
                         />
                         <div className="flex justify-end gap-2">
-                            <Button size="sm" variant="ghost" onClick={onCancelDraft} className="text-gray-500 hover:text-gray-700">Cancel</Button>
+                            <Button size="sm" variant="ghost" onClick={onCancelDraft} className="text-gray-500 hover:text-gray-700" data-testid="annotation-cancel-button">Cancel</Button>
                             <Button
                                 size="sm"
                                 onClick={handleSave}
                                 className={draftStyle === 'strike' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}
+                                data-testid="annotation-submit-button"
                             >
                                 {draftStyle === 'strike' ? 'Cross out' : 'Comment'}
                             </Button>
