@@ -1,3 +1,52 @@
+# Scripts
+
+## Development Environment Scripts
+
+### start-dev-servers.sh (Primary)
+
+Starts all development services. **Always use this instead of docker compose directly.**
+
+```bash
+./scripts/start-dev-servers.sh           # Start (idempotent, skips if running)
+./scripts/start-dev-servers.sh --restart # Kill and restart fresh
+```
+
+What it does:
+- Starts Docker containers (Convex backend, Mailpit, Dashboard)
+- Starts tmux sessions (Next.js, Convex dev watcher)
+- Registers agent with orchestrator proxy
+- Sets correct `AGENT_NAME` and `COMPOSE_PROJECT_NAME`
+
+### setup-convex-env.sh
+
+Automates Convex environment setup including JWT keys.
+
+```bash
+./scripts/setup-convex-env.sh           # Setup or refresh admin key
+./scripts/setup-convex-env.sh --check   # View current env state
+./scripts/setup-convex-env.sh --regen   # Regenerate JWT keys (careful!)
+```
+
+What it does:
+- Generates RSA key pair for JWT signing (if missing)
+- Formats public key as JWKS
+- Sets all required Convex environment variables
+- Retrieves admin key from running container
+- Updates `.env.local`
+
+**Use when:** BadAdminKey errors, auth not working, fresh environment setup.
+
+### setup-novu-org.sh
+
+Creates Novu organization for notifications (first-time setup).
+
+```bash
+./scripts/setup-novu-org.sh         # Create org and get API keys
+./scripts/setup-novu-org.sh --check # Check if already configured
+```
+
+---
+
 # Video Assembly Scripts
 
 Scripts for assembling E2E test recordings into final validation videos with title slides.

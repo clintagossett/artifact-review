@@ -6,6 +6,8 @@ Documentation for setting up accounts, environments, and access for the Artifact
 
 | Document | Description |
 |----------|-------------|
+| [local-infrastructure.md](./local-infrastructure.md) | **Start here for local dev** - DNS routing, Convex endpoints, CORS handling |
+| [troubleshooting.md](./troubleshooting.md) | **When things break** - Auth issues, JWKS caching, Convex/Docker problems |
 | [account-checklist.md](./account-checklist.md) | Complete account setup and configuration guide |
 
 ## Quick Links
@@ -67,7 +69,7 @@ Agent access configuration:
 ## Support
 
 If you encounter issues:
-1. Check [Troubleshooting](./account-checklist.md#f-troubleshooting) section
+1. **Check [Troubleshooting Guide](./troubleshooting.md)** - Common auth, Convex, Novu, and Docker issues
 2. Review [Verification Steps](./account-checklist.md#d-verification-steps)
 3. Consult related ADRs for detailed decisions
 4. Open GitHub issue if problem persists

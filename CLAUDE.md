@@ -14,6 +14,56 @@ See `PRODUCT-DISCOVERY.md` for full product research and strategy.
 
 Uses direnv for environment management (`.envrc` with `source_up` to inherit from parent directory).
 
+### First-Time Environment Setup
+
+Before developing, ensure these shared services are configured.
+
+**Important:** Read [docs/setup/local-infrastructure.md](docs/setup/local-infrastructure.md) to understand:
+- DNS routing (`*.loc` domains instead of `localhost:port`)
+- Convex endpoint separation (`convex.cloud` vs `convex.site`)
+- Why CORS is handled in the orchestrator proxy
+
+#### 1. Start Orchestrator (Infrastructure)
+
+The orchestrator proxy provides DNS-based routing for all local services. **Required for local development.**
+
+```bash
+cd /home/clint-gossett/Documents/agentic-dev/orchestrator
+./start.sh
+```
+
+See also: [Infrastructure ADRs](/home/clint-gossett/Documents/agentic-dev/docs/adr/) for architecture decisions.
+
+#### 2. Configure Novu (Notifications)
+
+**IMPORTANT:** On first-time setup, the local Novu database is empty. You must create an organization before notifications will work (data persists after setup).
+
+**Run the setup script (recommended):**
+
+```bash
+./scripts/setup-novu-org.sh
+```
+
+This script will:
+- Check if Novu is available (fails gracefully if not)
+- Create user `admin@mark.loc` with password `Password123$`
+- Create organization `mark-artifact-review`
+- Retrieve API keys and update `app/.env.local` automatically
+
+**To check if already configured:**
+
+```bash
+./scripts/setup-novu-org.sh --check
+```
+
+See: `/home/clint-gossett/Documents/agentic-dev/docs/guides/shared-novu.md` for manual setup details.
+
+#### 3. Start Dev Servers
+
+```bash
+./scripts/start-dev-servers.sh
+```
+
 ### Creating a New Task (MANDATORY SEQUENCE)
 
 1. **Create GitHub Issue FIRST:**
@@ -157,6 +207,67 @@ npx convex dev          # Start Convex dev server
 npm run dev             # Start Next.js dev server
 npx convex deploy       # Deploy to production
 ```
+
+## Docker Rules (CRITICAL)
+
+The Convex backend runs in Docker. The Docker volume (`{AGENT_NAME}_convex_data`) contains critical data including JWT signing keys. **Destroying this volume requires complete environment re-setup.**
+
+### NEVER Run These Commands
+
+```bash
+# These destroy your data - NEVER run them:
+docker compose down -v                    # Deletes volumes, loses all data
+docker volume rm {AGENT_NAME}_convex_data # Destroys Convex data
+docker system prune                       # May remove critical volumes
+docker compose ...                        # NEVER run docker compose directly!
+```
+
+### ALWAYS Use These Scripts
+
+```bash
+# Correct way to manage services:
+./scripts/start-dev-servers.sh           # Start services (safe, idempotent)
+./scripts/start-dev-servers.sh --restart # Restart if needed (preserves volumes)
+
+# Fix environment/auth issues:
+./scripts/setup-convex-env.sh            # Refresh admin key, set env vars
+./scripts/setup-convex-env.sh --check    # View current state
+./scripts/setup-convex-env.sh --regen    # Regenerate JWT keys (invalidates sessions!)
+```
+
+### Why Never Run Docker Compose Directly
+
+Running `docker compose` without the script creates containers with wrong names (e.g., `artifact-review-backend` instead of `mark-backend`). This causes:
+- Volume attachment failures
+- Admin key mismatches
+- Complete auth breakdown
+
+The `start-dev-servers.sh` script sets required variables (`AGENT_NAME`, `COMPOSE_PROJECT_NAME`). See `docs/setup/troubleshooting.md` for details.
+
+### If You See Errors
+
+**`BadAdminKey` or authentication errors:**
+```bash
+./scripts/setup-convex-env.sh  # Refreshes admin key automatically
+```
+
+**Auth not working after container restart:**
+```bash
+./scripts/setup-convex-env.sh
+tmux kill-session -t mark-convex-dev
+./scripts/start-dev-servers.sh
+```
+
+**Docker "not running" or "connection refused":**
+1. The script will start Docker automatically
+2. If it fails, run `sudo systemctl start docker`
+3. Do NOT try to "fix" by removing containers or volumes
+
+**Why this matters:** Deleting the Docker volume destroys JWT signing keys, Convex data, and requires regenerating admin keys. This is NOT a quick fix - it breaks authentication for all existing sessions.
+
+### Troubleshooting Reference
+
+See `docs/setup/troubleshooting.md` for comprehensive troubleshooting guide.
 
 ## Figma Designs Reference
 

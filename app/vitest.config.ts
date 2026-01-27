@@ -10,6 +10,7 @@ export default defineConfig({
     include: [
       "**/*.{test,spec}.{ts,tsx}",
       "tests/convex-integration/**/*.test.ts",
+      "../tasks/**/*.test.ts",
     ],
     exclude: ["tests/e2e/**/*", "node_modules"],
     // Use node for Convex tests, jsdom for React component tests
@@ -31,6 +32,12 @@ export default defineConfig({
     alias: {
       "@/convex": path.resolve(__dirname, "./convex"),
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // Allow importing from outside app directory
+  server: {
+    fs: {
+      allow: [path.resolve(__dirname, "..")],
     },
   },
 });

@@ -110,8 +110,9 @@ echo "  Dev Server Startup ($AGENT_NAME)"
 echo "  Docker Project: $COMPOSE_PROJECT_NAME"
 echo "  App Port:    $NEXTJS_PORT"
 echo "  Convex Port: $CONVEX_HTTP_PORT (Admin: $CONVEX_ADMIN_PORT)"
+echo "  Tmux Sessions: ${AGENT_NAME}-nextjs, ${AGENT_NAME}-convex-dev, ${AGENT_NAME}-stripe"
 if [ "$RESTART_MODE" = true ]; then
-    echo "  Mode: RESTART (killing existing servers)"
+    echo "  Mode: RESTART (killing existing tmux sessions)"
 else
     echo "  Mode: START (skip if running)"
 fi
@@ -128,12 +129,15 @@ if [ -z "$CI" ] && [ -z "$HOSTED" ]; then
 
     DNS_OK=true
     # Production-like: {service}.{agent}.loc (for E2E tests)
+    # Convex: {agent}.convex.{cloud|site}.loc (mirrors production)
     # Dev-only: {agent}.{service}.loc (local tools only)
     DNS_DOMAINS=(
-        "$AGENT_NAME.loc"              # App
-        "api.$AGENT_NAME.loc"          # API (production-like)
-        "$AGENT_NAME.mailpit.loc"      # Mailpit (dev-only)
-        "$AGENT_NAME.convex.loc"       # Convex Dashboard (dev-only)
+        "$AGENT_NAME.loc"                    # App
+        "api.$AGENT_NAME.loc"                # Next.js API routes
+        "$AGENT_NAME.convex.cloud.loc"       # Convex sync (WebSocket)
+        "$AGENT_NAME.convex.site.loc"        # Convex HTTP/storage
+        "$AGENT_NAME.mailpit.loc"            # Mailpit (dev-only)
+        "$AGENT_NAME.convex.loc"             # Convex Dashboard (dev-only)
     )
 
     # Test if .loc resolution works (dnsmasq wildcard or /etc/hosts)
@@ -162,11 +166,11 @@ if [ -z "$CI" ] && [ -z "$HOSTED" ]; then
         echo ""
         echo "ERROR: DNS not configured for agent '$AGENT_NAME'"
         echo ""
-        echo "Option 1 - Setup dnsmasq (recommended, one-time for ALL agents):"
+        echo "Setup dnsmasq (one-time, handles ALL *.loc domains):"
         echo "  sudo $ORCHESTRATOR_DIR/scripts/setup-dnsmasq.sh install"
         echo ""
-        echo "Option 2 - Manual /etc/hosts entries:"
-        echo "  sudo $ORCHESTRATOR_DIR/scripts/setup-dns.sh add $AGENT_NAME"
+        echo "Also ensure orchestrator proxy is running (routes DNS to services):"
+        echo "  cd $ORCHESTRATOR_DIR/orchestrator && ./start.sh"
         echo ""
         echo "Then retry this command."
         exit 1
@@ -177,9 +181,13 @@ fi
 echo ""
 echo "📡 Registering with orchestrator..."
 if [ -f "$ORCHESTRATOR_DIR/scripts/register-agent.js" ]; then
+    # Port mapping:
+    # - CONVEX_ADMIN_PORT (3220) → convexCloudPort (WebSocket/sync)
+    # - CONVEX_HTTP_PORT (3221) → convexSitePort (HTTP/storage)
     node "$ORCHESTRATOR_DIR/scripts/register-agent.js" \
         "$AGENT_NAME" \
         "$NEXTJS_PORT" \
+        "$CONVEX_ADMIN_PORT" \
         "$CONVEX_HTTP_PORT" \
         "$MAILPIT_WEB_PORT" \
         "$CONVEX_DASHBOARD_PORT"
@@ -204,13 +212,17 @@ cd "$APP_DIR"
 if [ -f .env.local ]; then
     # Construct the URLs
     # Server-side: direct localhost connection for CLI tools
-    ADMIN_URL="http://127.0.0.1:$CONVEX_ADMIN_PORT"
-    # Browser-side: DNS name for proxy routing (works with orchestrator)
+    ADMIN_URL="http://${AGENT_NAME}.convex.cloud.loc"
+    # Browser-side: DNS names for proxy routing (works with orchestrator)
     # Falls back to localhost if not using DNS routing
     if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
-        CLIENT_URL="http://api.$AGENT_NAME.loc"
+        # Convex cloud (WebSocket/sync) - mirrors *.convex.cloud
+        CONVEX_CLOUD_URL="http://$AGENT_NAME.convex.cloud.loc"
+        # Convex site (HTTP/storage) - mirrors *.convex.site
+        CONVEX_SITE_URL="http://$AGENT_NAME.convex.site.loc"
     else
-        CLIENT_URL="http://127.0.0.1:$CONVEX_HTTP_PORT"
+        CONVEX_CLOUD_URL="http://${AGENT_NAME}.convex.cloud.loc"
+        CONVEX_SITE_URL="http://127.0.0.1:$CONVEX_HTTP_PORT"
     fi
 
     # Update CONVEX_SELF_HOSTED_URL (Admin Port - server-side only)
@@ -220,18 +232,18 @@ if [ -f .env.local ]; then
         echo "CONVEX_SELF_HOSTED_URL=$ADMIN_URL" >> .env.local
     fi
 
-    # Update NEXT_PUBLIC_CONVEX_URL (Client - browser-side, uses DNS)
+    # Update NEXT_PUBLIC_CONVEX_URL (Client - browser-side sync/WebSocket)
     if grep -q "NEXT_PUBLIC_CONVEX_URL" .env.local; then
-        sed -i "s|NEXT_PUBLIC_CONVEX_URL=.*|NEXT_PUBLIC_CONVEX_URL=$CLIENT_URL|" .env.local
+        sed -i "s|NEXT_PUBLIC_CONVEX_URL=.*|NEXT_PUBLIC_CONVEX_URL=$CONVEX_CLOUD_URL|" .env.local
     else
-        echo "NEXT_PUBLIC_CONVEX_URL=$CLIENT_URL" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_URL=$CONVEX_CLOUD_URL" >> .env.local
     fi
 
-    # Update NEXT_PUBLIC_CONVEX_HTTP_URL (same as client URL)
+    # Update NEXT_PUBLIC_CONVEX_HTTP_URL (Client - browser-side HTTP/storage)
     if grep -q "NEXT_PUBLIC_CONVEX_HTTP_URL" .env.local; then
-        sed -i "s|NEXT_PUBLIC_CONVEX_HTTP_URL=.*|NEXT_PUBLIC_CONVEX_HTTP_URL=$CLIENT_URL|" .env.local
+        sed -i "s|NEXT_PUBLIC_CONVEX_HTTP_URL=.*|NEXT_PUBLIC_CONVEX_HTTP_URL=$CONVEX_SITE_URL|" .env.local
     else
-        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=$CLIENT_URL" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=$CONVEX_SITE_URL" >> .env.local
     fi
 
     # Disable CONVEX_DEPLOYMENT if present (causes conflicts with self-hosted)
@@ -240,18 +252,18 @@ if [ -f .env.local ]; then
     fi
 else
     # Create if missing - use DNS names for browser if agent name is set
-    echo "CONVEX_SELF_HOSTED_URL=http://127.0.0.1:$CONVEX_ADMIN_PORT" > .env.local
+    echo "CONVEX_SELF_HOSTED_URL=http://${AGENT_NAME}.convex.cloud.loc" > .env.local
     if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
-        echo "NEXT_PUBLIC_CONVEX_URL=http://api.$AGENT_NAME.loc" >> .env.local
-        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://api.$AGENT_NAME.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_URL=http://$AGENT_NAME.convex.cloud.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://$AGENT_NAME.convex.site.loc" >> .env.local
     else
-        echo "NEXT_PUBLIC_CONVEX_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_URL=http://${AGENT_NAME}.convex.cloud.loc" >> .env.local
         echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
     fi
 fi
 
 # EXPORT the URL to ensure npx convex dev picks it up
-export CONVEX_SELF_HOSTED_URL="http://127.0.0.1:$CONVEX_ADMIN_PORT"
+export CONVEX_SELF_HOSTED_URL="http://${AGENT_NAME}.convex.cloud.loc"
 unset CONVEX_DEPLOYMENT
 
 
@@ -288,40 +300,7 @@ kill_port() {
     return 1
 }
 
-# Use the configured port variables for checks
-CONVEX_PORT=$CONVEX_HTTP_PORT 
-
-# If restart mode, kill existing servers first
-if [ "$RESTART_MODE" = true ]; then
-    echo "Stopping existing servers..."
-
-    if check_port $CONVEX_PORT; then
-        EXISTING_PID=$(get_port_process $CONVEX_PORT)
-        echo "  Killing Convex on port $CONVEX_PORT (PID: $EXISTING_PID)..."
-        kill_port $CONVEX_PORT
-        echo "  [OK] Convex stopped"
-    else
-        echo "  Convex not running on $CONVEX_PORT"
-    fi
-
-    if check_port $NEXTJS_PORT; then
-        EXISTING_PID=$(get_port_process $NEXTJS_PORT)
-        echo "  Killing Next.js on port $NEXTJS_PORT (PID: $EXISTING_PID)..."
-        kill_port $NEXTJS_PORT
-        echo "  [OK] Next.js stopped"
-    else
-        echo "  Next.js not running on $NEXTJS_PORT"
-    fi
-
-    echo ""
-fi
-
-# Track which servers we start
-CONVEX_PID=""
-NEXT_PID=""
-NOVU_PID=""
-CONVEX_RUNNING=false
-NEXTJS_RUNNING=false
+# Note: Restart mode is now handled in the tmux section below
 
 # Check and start Docker App (Desktop)
 # Check and start Docker Daemon (Linux/Ubuntu friendly)
@@ -396,95 +375,129 @@ echo "Initializing local Convex functions..."
 CONVEX_ADMIN_KEY="0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b"
 # Note: npx convex dev connects to the deployment. We need to point it to the value in CONVEX_SELF_HOSTED_URL.
 # However, for 'dev' specifically, we might need --url explicitly if CONVEX_DEPLOYMENT is unset.
-npx convex dev --once --url "http://127.0.0.1:$CONVEX_ADMIN_PORT" --admin-key "$CONVEX_ADMIN_KEY" || { echo "ERROR: Failed to push to local Convex"; exit 1; }
+npx convex dev --once --url "http://${AGENT_NAME}.convex.cloud.loc" --admin-key "$CONVEX_ADMIN_KEY" || { echo "ERROR: Failed to push to local Convex"; exit 1; }
 
-# Start Stripe Tunnel (NEW)
-echo "Checking Stripe CLI tunnel..."
-if ! pgrep -x "stripe" > /dev/null; then
-    echo "  [START] Starting Stripe CLI tunnel..."
-    # We need to get the site URL for the webhook
-    CONVEX_SITE_URL=$(npx convex env get CONVEX_SITE_URL 2>/dev/null || echo "")
-    if [ -z "$CONVEX_SITE_URL" ]; then
-        # Fallback: site URLs usually follow a pattern or we can extract from 'convex dev'
-        echo "  [INFO] Getting Convex Site URL..."
-        CONVEX_SITE_URL=$(npx convex dev --once | grep "site URL:" | awk '{print $NF}')
-    fi
+# =============================================================================
+# TMUX SESSION MANAGEMENT
+# =============================================================================
+# Sessions follow the pattern: {agent}-{service}
+# See: docs/design/tmux-sessions.md
+#
+# Sessions:
+#   {agent}-nextjs     - Next.js dev server
+#   {agent}-convex-dev - npx convex dev watcher
+#   {agent}-stripe     - Stripe CLI tunnel
 
-    if [ -n "$CONVEX_SITE_URL" ]; then
-        echo "  [OK] Forwarding to: $CONVEX_SITE_URL/stripe/webhook"
-        > logs/stripe.log
-        stripe listen --forward-to "$CONVEX_SITE_URL/stripe/webhook" 2>&1 | tee logs/stripe.log &
-        STRIPE_PID=$!
-        echo "  [HINT] Check logs/stripe.log for the 'whsec_...' key if it's new"
-    else
-        echo "  [ERROR] Could not determine CONVEX_SITE_URL. Skipping Stripe tunnel."
-    fi
-else
-    echo "  [SKIP] Stripe CLI tunnel already active"
-fi
+NEXTJS_SESSION="${AGENT_NAME}-nextjs"
+CONVEX_SESSION="${AGENT_NAME}-convex-dev"
+STRIPE_SESSION="${AGENT_NAME}-stripe"
 
-# Start Convex watching in background
-echo "Starting Convex function watcher..."
-> logs/convex.log
-npx convex dev --tail-logs always 2>&1 | tee logs/convex.log &
-CONVEX_PID=$!
-CONVEX_RUNNING=true
-
-echo ""
-
-# Check and start Next.js
-echo "Checking Next.js (port $NEXTJS_PORT)..."
-if check_port $NEXTJS_PORT; then
-    EXISTING_PID=$(get_port_process $NEXTJS_PORT)
-    echo "  [SKIP] Next.js already running on port $NEXTJS_PORT (PID: $EXISTING_PID)"
-    NEXTJS_RUNNING=true
-else
-    echo "  [START] Starting Next.js dev server..."
-    > logs/nextjs.log
-    npm run dev -- -p $NEXTJS_PORT 2>&1 | tee logs/nextjs.log &
-    NEXT_PID=$!
-    sleep 2
-    if check_port $NEXTJS_PORT; then
-        echo "  [OK] Next.js started successfully (PID: $NEXT_PID)"
-    else
-        echo "  [WARN] Next.js may still be starting..."
-    fi
-fi
-
-echo ""
-echo "========================================"
-
-# Summary
-if [ "$CONVEX_RUNNING" = true ] && [ "$NEXTJS_RUNNING" = true ]; then
-    echo "Both servers were already running."
-    echo "Nothing to do - exiting."
-    echo ""
-    echo "Use --restart or --force to force restart servers."
-    exit 0
-fi
-
-echo "Logs:"
-[ -n "$CONVEX_PID" ] && echo "  - app/logs/convex.log"
-[ -n "$NEXT_PID" ] && echo "  - app/logs/nextjs.log"
-echo ""
-echo "Press Ctrl+C to stop started services"
-echo "========================================"
-
-# Handle Ctrl+C to kill only the processes we started
-cleanup() {
-    echo ""
-    echo "Stopping servers..."
-    [ -n "$CONVEX_PID" ] && kill $CONVEX_PID 2>/dev/null && echo "  Stopped Convex (PID: $CONVEX_PID)"
-    [ -n "$NEXT_PID" ] && kill $NEXT_PID 2>/dev/null && echo "  Stopped Next.js (PID: $NEXT_PID)"
-    [ -n "$STRIPE_PID" ] && kill $STRIPE_PID 2>/dev/null && echo "  Stopped Stripe CLI (PID: $STRIPE_PID)"
-    exit 0
+# Helper: Check if tmux session exists
+session_exists() {
+    tmux has-session -t "$1" 2>/dev/null
 }
 
-trap cleanup SIGINT SIGTERM
+# Helper: Start tmux session if not running
+start_session() {
+    local session_name="$1"
+    local working_dir="$2"
+    local command="$3"
 
-# Wait for processes we started
-if [ -n "$CONVEX_PID" ] || [ -n "$NEXT_PID" ]; then
-    wait
-else
-    echo "No servers started by this script."
+    if session_exists "$session_name"; then
+        echo "  [SKIP] $session_name already running"
+        return 0
+    fi
+
+    echo "  [START] Creating tmux session: $session_name"
+    tmux new-session -d -s "$session_name" -c "$working_dir" "$command"
+
+    if session_exists "$session_name"; then
+        echo "  [OK] $session_name started"
+        return 0
+    else
+        echo "  [ERROR] Failed to start $session_name"
+        return 1
+    fi
+}
+
+# Helper: Kill tmux session
+kill_session() {
+    local session_name="$1"
+    if session_exists "$session_name"; then
+        echo "  Killing $session_name..."
+        tmux kill-session -t "$session_name" 2>/dev/null
+    fi
+}
+
+# If restart mode, kill existing tmux sessions
+if [ "$RESTART_MODE" = true ]; then
+    echo ""
+    echo "Stopping existing tmux sessions..."
+    kill_session "$NEXTJS_SESSION"
+    kill_session "$CONVEX_SESSION"
+    kill_session "$STRIPE_SESSION"
+    echo ""
 fi
+
+# -----------------------------------------------------------------------------
+# Start Convex Dev Watcher (tmux)
+# -----------------------------------------------------------------------------
+echo ""
+echo "Starting Convex function watcher..."
+start_session "$CONVEX_SESSION" "$APP_DIR" \
+    "npx convex dev --tail-logs always --url http://${AGENT_NAME}.convex.cloud.loc --admin-key $CONVEX_ADMIN_KEY"
+
+# -----------------------------------------------------------------------------
+# Start Next.js Dev Server (tmux)
+# -----------------------------------------------------------------------------
+echo ""
+echo "Starting Next.js dev server..."
+start_session "$NEXTJS_SESSION" "$APP_DIR" \
+    "npm run dev -- -p $NEXTJS_PORT"
+
+# Wait a moment for Next.js to bind port
+sleep 2
+
+# -----------------------------------------------------------------------------
+# Start Stripe CLI Tunnel (tmux)
+# -----------------------------------------------------------------------------
+echo ""
+echo "Starting Stripe CLI tunnel..."
+
+# Get the Convex site URL for webhook forwarding
+if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
+    WEBHOOK_URL="http://$AGENT_NAME.convex.site.loc/stripe/webhook"
+else
+    WEBHOOK_URL="http://127.0.0.1:$CONVEX_HTTP_PORT/stripe/webhook"
+fi
+
+start_session "$STRIPE_SESSION" "$APP_DIR" \
+    "stripe listen --forward-to $WEBHOOK_URL"
+
+# =============================================================================
+# SUMMARY
+# =============================================================================
+echo ""
+echo "========================================"
+echo "  Tmux Sessions for $AGENT_NAME"
+echo "========================================"
+echo ""
+echo "Status:"
+session_exists "$NEXTJS_SESSION" && echo "  ✅ $NEXTJS_SESSION" || echo "  ❌ $NEXTJS_SESSION"
+session_exists "$CONVEX_SESSION" && echo "  ✅ $CONVEX_SESSION" || echo "  ❌ $CONVEX_SESSION"
+session_exists "$STRIPE_SESSION" && echo "  ✅ $STRIPE_SESSION" || echo "  ❌ $STRIPE_SESSION"
+echo ""
+echo "URLs:"
+echo "  App:          http://$AGENT_NAME.loc"
+echo "  Convex Sync:  http://$AGENT_NAME.convex.cloud.loc"
+echo "  Convex HTTP:  http://$AGENT_NAME.convex.site.loc"
+echo "  Mailpit:      http://$AGENT_NAME.mailpit.loc"
+echo ""
+echo "Commands:"
+echo "  View logs:    tmux capture-pane -t $NEXTJS_SESSION -p -S -50"
+echo "  Attach:       tmux attach -t $NEXTJS_SESSION"
+echo "  List:         tmux ls"
+echo "  Stop all:     tmux kill-session -t $NEXTJS_SESSION && tmux kill-session -t $CONVEX_SESSION"
+echo ""
+echo "Sessions persist independently - safe to close this terminal."
+echo "========================================"

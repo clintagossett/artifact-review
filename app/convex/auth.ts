@@ -24,8 +24,10 @@ const MagicLinkEmail = Email({
   authorize: undefined,
   async sendVerificationRequest({ identifier, url }) {
     // Use internal bridge to send via Resend component (preserving context/tracking)
+    // For self-hosted Convex, use CONVEX_SITE_ORIGIN (Docker internal) instead of CONVEX_SITE_URL (host-mapped)
+    const siteUrl = process.env.CONVEX_SITE_ORIGIN || process.env.CONVEX_SITE_URL;
     try {
-      const response = await fetch(`${process.env.CONVEX_SITE_URL}/send-auth-email`, {
+      const response = await fetch(`${siteUrl}/send-auth-email`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
@@ -132,6 +134,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           email: args.profile.email,
         });
       }
+
+      // Sync user to Novu as subscriber for notifications
+      await ctx.scheduler.runAfter(0, internal.novu.createOrUpdateSubscriber, {
+        userId,
+        email: args.profile.email,
+        name: args.profile.name ?? existingUser?.name,
+        avatarUrl: args.profile.image ?? existingUser?.image,
+      });
 
       return userId;
     },
