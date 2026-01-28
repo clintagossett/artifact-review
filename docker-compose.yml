@@ -24,7 +24,10 @@ services:
       - CONVEX_SITE_ORIGIN=${CONVEX_SITE_URL:-http://${AGENT_NAME}.convex.site.loc}
       - RUST_LOG=info
       - INSTANCE_NAME=${INSTANCE_NAME:-artifact-review-local}
-      - INSTANCE_SECRET=${INSTANCE_SECRET:-0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b}
+      # NOTE: Do NOT set INSTANCE_SECRET here - let the container generate it on first start
+      # and persist it in the volume. Setting it here would override the volume's value on
+      # every restart, causing admin key mismatches.
+      # If you need to reset, delete the volume: docker volume rm mark_convex_data
       - DO_NOT_REQUIRE_SSL=true
       - DISABLE_BEACON=true
       - MAX_UDF_EXECUTION_SEC=10
