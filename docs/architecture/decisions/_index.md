@@ -24,6 +24,7 @@ Record of significant architectural decisions made for this project.
 | [0016](./0016-agent-api-strategy.md) | Agent API Strategy | Accepted | 2026-01-21 |
 | [0017](./0017-annotation-overlay-rendering.md) | Annotation Overlay Rendering Strategy | Accepted | 2026-01-23 |
 | [0018](./0018-jwt-and-authentication-architecture.md) | JWT and Authentication Architecture | Accepted | 2026-01-27 |
+| [0019](./0019-node-action-storage-fallback.md) | Node Action Storage Access Fallback Pattern | Accepted | 2026-01-28 |
 
 ---
 
