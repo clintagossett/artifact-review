@@ -18,6 +18,8 @@ test.describe('Authentication Flows', () => {
         const user = generateUser();
 
         await page.goto('/register');
+        // Wait for the registration form to be visible (Convex auth check must complete)
+        await page.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
 
         // Fill out the form
         await page.getByLabel('Full name').fill(user.name);
