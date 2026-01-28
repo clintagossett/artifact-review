@@ -208,6 +208,31 @@ npm run dev             # Start Next.js dev server
 npx convex deploy       # Deploy to production
 ```
 
+### Convex Dev Server & Deployment
+
+The Convex dev server MUST be running in the `mark-convex-dev` tmux session. Hot-reload handles all code deployments automatically.
+
+**Before making Convex changes, verify the session exists:**
+```bash
+tmux has-session -t mark-convex-dev 2>/dev/null && echo "Running" || echo "NOT RUNNING - start it!"
+```
+
+**If NOT running, start it immediately:**
+```bash
+./scripts/start-dev-servers.sh  # Creates mark-convex-dev and mark-nextjs sessions
+```
+
+**DO NOT run `npx convex dev --once` as a workaround.** This creates a pattern of working around missing infrastructure instead of fixing it. Always restore the tmux session first.
+
+**View Convex function logs:**
+```bash
+# Best: from the tmux session
+tmux capture-pane -t mark-convex-dev -p | tail -50
+
+# Or from Docker backend logs:
+docker logs mark-backend --tail 100 2>&1 | grep -E "your-search-term"
+```
+
 ## Docker Rules (CRITICAL)
 
 The Convex backend runs in Docker. The Docker volume (`{AGENT_NAME}_convex_data`) contains critical data including JWT signing keys. **Destroying this volume requires complete environment re-setup.**
@@ -264,6 +289,27 @@ tmux kill-session -t mark-convex-dev
 3. Do NOT try to "fix" by removing containers or volumes
 
 **Why this matters:** Deleting the Docker volume destroys JWT signing keys, Convex data, and requires regenerating admin keys. This is NOT a quick fix - it breaks authentication for all existing sessions.
+
+### Recognizing Infrastructure vs Code Issues
+
+**STOP and escalate if you find yourself:**
+- Running `npx convex dev --once` multiple times
+- Checking Docker networking or DNS resolution
+- Looking at Docker container internal connectivity
+- Investigating why containers can't reach each other
+- Adding extensive debug logging to track down "fetch failed" errors
+- About to run `docker compose`, `docker restart`, or similar commands
+
+**These are infrastructure issues**, not code bugs. The correct action is:
+1. Document what you found in the SESSION-RESUME.md
+2. Ask the user or orchestrator for help
+3. Do NOT attempt to "fix" Docker networking, kill processes, or restart containers
+
+**Signs you're in a debugging spiral:**
+- You've run the same test 3+ times with small changes
+- You're investigating something unrelated to your original task
+- You've added more than 10 lines of debug logging
+- You're googling Docker networking issues
 
 ### Troubleshooting Reference
 

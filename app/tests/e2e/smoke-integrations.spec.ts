@@ -30,6 +30,8 @@ const generateUser = () => {
 async function quickSignup(page: any) {
     const user = generateUser();
     await page.goto('/register');
+    // Wait for the registration form to be visible (Convex auth check must complete)
+    await page.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
     await page.getByLabel('Full name').fill(user.name);
     await page.getByLabel('Email address').fill(user.email);
     await page.getByLabel('Password', { exact: true }).fill(user.password);
@@ -111,6 +113,8 @@ test.describe('Systems Integration Smoke Tests', () => {
             // --- OWNER: Create artifact ---
             const owner = generateUser();
             await page.goto('/register');
+            // Wait for the registration form to be visible (Convex auth check must complete)
+            await page.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
             await page.getByLabel('Full name').fill(owner.name);
             await page.getByLabel('Email address').fill(owner.email);
             await page.getByLabel('Password', { exact: true }).fill(owner.password);
@@ -138,6 +142,8 @@ test.describe('Systems Integration Smoke Tests', () => {
             const reviewer = generateUser();
             const reviewerPage = await context.newPage();
             await reviewerPage.goto('/register');
+            // Wait for the registration form to be visible (Convex auth check must complete)
+            await reviewerPage.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
             await reviewerPage.getByLabel('Full name').fill(reviewer.name);
             await reviewerPage.getByLabel('Email address').fill(reviewer.email);
             await reviewerPage.getByLabel('Password', { exact: true }).fill(reviewer.password);

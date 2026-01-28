@@ -370,11 +370,24 @@ popd > /dev/null
 
 # Set up local Convex functions
 echo "Initializing local Convex functions..."
+
+# Derive the admin key from the container's persisted instance credentials
+# The admin key is COMPUTED from instance_name + instance_secret, not stored directly
+# This ensures we always use the key that matches what the container expects
+echo "  Deriving admin key from container credentials..."
+CONTAINER_NAME="${AGENT_NAME}-backend"
+CONVEX_ADMIN_KEY=$(docker exec "$CONTAINER_NAME" ./generate_admin_key.sh 2>/dev/null | grep -v "^Admin key:" | tail -1)
+
+if [ -z "$CONVEX_ADMIN_KEY" ]; then
+    echo "ERROR: Failed to derive admin key from container. Is $CONTAINER_NAME running?"
+    echo "  Try: docker ps | grep $CONTAINER_NAME"
+    exit 1
+fi
+
+echo "  Admin key derived successfully"
+
 # Initialize local Convex functions (Non-interactive)
 # We use the explicit URL and Admin Key to bypass login/project selection prompts
-CONVEX_ADMIN_KEY="0f04f3f1dbbd5d2c09f04cc7f6152b4f3c95596ec82a54fa8381b95bae19772b"
-# Note: npx convex dev connects to the deployment. We need to point it to the value in CONVEX_SELF_HOSTED_URL.
-# However, for 'dev' specifically, we might need --url explicitly if CONVEX_DEPLOYMENT is unset.
 npx convex dev --once --url "http://${AGENT_NAME}.convex.cloud.loc" --admin-key "$CONVEX_ADMIN_KEY" || { echo "ERROR: Failed to push to local Convex"; exit 1; }
 
 # =============================================================================
@@ -444,8 +457,9 @@ fi
 # -----------------------------------------------------------------------------
 echo ""
 echo "Starting Convex function watcher..."
+# Note: Admin key contains | character, must be quoted to avoid shell interpretation
 start_session "$CONVEX_SESSION" "$APP_DIR" \
-    "npx convex dev --tail-logs always --url http://${AGENT_NAME}.convex.cloud.loc --admin-key $CONVEX_ADMIN_KEY"
+    "npx convex dev --tail-logs always --url http://${AGENT_NAME}.convex.cloud.loc --admin-key '${CONVEX_ADMIN_KEY}'"
 
 # -----------------------------------------------------------------------------
 # Start Next.js Dev Server (tmux)

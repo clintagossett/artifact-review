@@ -3,10 +3,24 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { LoginForm } from "@/components/auth/LoginForm";
 
+// Track auth state for testing
+let mockIsAuthenticated = false;
+
 // Mock the auth actions
 vi.mock("@convex-dev/auth/react", () => ({
   useAuthActions: () => ({
-    signIn: vi.fn().mockResolvedValue(undefined),
+    signIn: vi.fn().mockImplementation(async () => {
+      // Simulate auth state changing after successful login
+      mockIsAuthenticated = true;
+    }),
+  }),
+}));
+
+// Mock convex/react for useConvexAuth
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({
+    isLoading: false,
+    isAuthenticated: mockIsAuthenticated,
   }),
 }));
 
@@ -15,6 +29,7 @@ describe("LoginForm", () => {
 
   beforeEach(() => {
     mockOnSuccess.mockClear();
+    mockIsAuthenticated = false; // Reset auth state before each test
   });
 
   describe("Visual Elements", () => {

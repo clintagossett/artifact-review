@@ -2,110 +2,64 @@
 
 ## Session Date: 2026-01-27
 
-## Context
+## Current Status: BLOCKED on Issue #45
 
-This session continued work on implementing Novu in-app notifications for comments (GitHub issue #43). The session was focused on debugging why E2E tests fail - specifically, user authentication doesn't work after signup.
+Task 43 (Novu notifications) is blocked because E2E tests cannot create artifacts. The ZIP processing in Node actions fails due to a self-hosted Convex infrastructure issue.
 
-## What Was Accomplished
+## Blocking Issue
 
-### 1. Subtasks 01 & 02 - Previously Complete
-- **01-subscriber-sync**: Novu subscriber sync on user signup ✅
-- **02-novu-workflow-setup**: Comment notification workflow with in-app channel ✅
+**GitHub Issue:** https://github.com/clintagossett/artifact-review/issues/45
 
-### 2. Subtask 03 - E2E Tests (BLOCKED)
-Wrote comprehensive E2E test suite but blocked by infrastructure issue:
-- Test file: `03-e2e-notification-tests/tests/e2e/notification.spec.ts`
-- Tests cover: comment notifications, replies, thread participants, self-exclusion, badge counts, mark-as-read
+**Problem:** Node actions (`"use node"` directive) cannot access Convex storage. Both `ctx.storage.getUrl()` + `fetch()` and `ctx.storage.get()` fail with "fetch failed" errors.
 
-### 3. Infrastructure Debugging
-Significant work on orchestrator proxy to support Convex self-hosted:
+**Root Cause:** The Node executor subprocess in self-hosted Convex Docker has different networking than V8 isolates. Storage access requires HTTP calls that fail from inside the Node executor.
 
-**Orchestrator changes (uncommitted in agentic-dev):**
-- `orchestrator/proxy.js` - Added CORS handling, WebSocket/HTTP port routing
-- `orchestrator/config.json` - Fixed port mapping (apiPort: 3220)
+## What Was Accomplished This Session
 
-**Key fixes made:**
-- CORS preflight handling for Convex-specific headers
-- Separate routing for WebSocket (sync) vs HTTP (actions)
-- Error handling for WebSocket sockets vs HTTP responses
+### 1. Auth Issues Fixed
+- The auth state propagation issue from previous sessions was resolved
+- Admin key derivation fixed in `start-dev-servers.sh`
 
-## The Blocking Issue
+### 2. Storage Access Fix Attempted
+- Changed `zipProcessor.ts` from `getUrl()` + `fetch()` to `storage.get()` directly
+- This also failed - `storage.get()` uses HTTP internally in Node actions
 
-**Problem:** `useConvexAuth()` returns `isAuthenticated: false` even when valid JWT tokens exist in localStorage after signup.
+### 3. Research Completed
+- Identified this as a known issue with self-hosted Convex Node actions
+- Found related GitHub issues (#177, #179) in convex-backend repo
+- Documented potential solutions in issue #45
 
-**What we know:**
-1. Signup succeeds on backend (Convex logs confirm)
-2. JWT stored correctly: `__convexAuthJWT_httpapimarkloc`
-3. JWT is valid (correct issuer, audience, expiration)
-4. Auth state goes `isLoading: true` → `isLoading: false` but `isAuthenticated` stays `false`
-5. Issue persists even after page reload
+## Subtask Status
 
-**Hypothesis:** The `@convex-dev/auth` library's `readStateFromStorage()` function isn't reading the token, or token verification is failing silently.
+| Subtask | Status |
+|---------|--------|
+| 01-subscriber-sync | ✅ Complete |
+| 02-novu-workflow-setup | ✅ Complete |
+| 03-e2e-notification-tests | ⛔ Blocked (Issue #45) |
+| 04-email-digest-integration | ⏳ Not started |
 
-## Files Modified This Session
+## Files Modified
 
-### In artifact-review (committed):
-- `app/src/components/ConvexClientProvider.tsx` - Added debug instrumentation (AuthDebugger component, verbose mode)
-- Various task documentation files
-- RESUME.md in 03-e2e-notification-tests/
+- `app/convex/zipProcessor.ts` - Changed to use `ctx.storage.get()` (still fails)
+- `app/convex/zipUpload.ts` - Added structured logging
+- `app/convex/lib/logger.ts` - Already existed, used for debugging
 
-### In agentic-dev (NOT committed):
-- `orchestrator/proxy.js` - CORS and routing fixes
-- `orchestrator/config.json` - Port fix
+## Next Steps
 
-## Commit Made
+1. **Resolve Issue #45** - Fix Node action storage access in self-hosted setup
+2. **Resume E2E tests** - Once artifacts can be created, run notification tests
+3. **Complete subtask 03** - Validate in-app notifications work
+4. **Implement subtask 04** - Email digest integration
 
-```
-b47a4be wip: Novu notification system - blocked on auth state propagation
-Branch: mark/dev-work
-Repo: artifact-review
-```
-
-## Next Steps for Continuing Agent
-
-1. **Debug auth token reading** - Add console.log inside `@convex-dev/auth` node_modules to trace `readStateFromStorage()`
-
-2. **Check `client.address`** - Verify it matches the localStorage key suffix
-
-3. **Test without proxy** - Rebuild app with `NEXT_PUBLIC_CONVEX_URL=http://localhost:3220` to bypass proxy entirely
-
-4. **Consider alternative** - May need to skip E2E auth tests and test notifications manually, or mock the auth layer
-
-5. **Commit orchestrator changes** - The proxy fixes in agentic-dev should be committed separately
-
-## Key Files to Read
-
-| File | Purpose |
-|------|---------|
-| `03-e2e-notification-tests/RESUME.md` | Detailed debug findings |
-| `app/src/components/ConvexClientProvider.tsx` | Current debug instrumentation |
-| `app/node_modules/@convex-dev/auth/dist/react/client.js` | Auth provider implementation |
-| `orchestrator/proxy.js` | Proxy with CORS fixes |
-
-## Commands to Resume Testing
+## Commands to Resume
 
 ```bash
-# Run auth debug test
-cd /home/clint-gossett/Documents/agentic-dev/agents/mark/artifact-review/tasks/00043-novu-comment-notifications/03-e2e-notification-tests/tests/e2e
-npx playwright test notification.spec.ts --project=chromium -g "Auth Debug"
+# Verify infrastructure is running
+tmux has-session -t mark-convex-dev && echo "OK" || ./scripts/start-dev-servers.sh
 
-# Watch Convex logs
-tail -f /home/clint-gossett/Documents/agentic-dev/agents/mark/artifact-review/app/logs/convex.log
+# Run the blocked test (will fail until #45 is fixed)
+cd app && npx playwright test tests/e2e/artifact-workflow.spec.ts --project=chromium -g "upload"
 
-# Check proxy logs
-tail -f /home/clint-gossett/Documents/agentic-dev/orchestrator/proxy.log
+# Check Convex logs
+tmux capture-pane -t mark-convex-dev -p -S -50 | tail -30
 ```
-
-## Environment Notes
-
-- App: `http://mark.loc` → localhost:3010
-- API: `http://api.mark.loc` → localhost:3220 (Convex admin port)
-- Convex: Self-hosted Docker container
-- Orchestrator proxy running on port 80
-
-## Cleanup Needed
-
-The `ConvexClientProvider.tsx` has debug code that should be removed before merging:
-- `AuthDebugger` component
-- Verbose mode setting
-- Console.log statements

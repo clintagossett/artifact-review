@@ -15,6 +15,8 @@ export const NotificationCenter = ({ subscriberId }: { subscriberId: string }) =
         <NovuProvider
             subscriberId={subscriberId}
             applicationIdentifier={process.env.NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER || ""}
+            backendUrl={process.env.NEXT_PUBLIC_NOVU_API_URL}
+            socketUrl={process.env.NEXT_PUBLIC_NOVU_SOCKET_URL || process.env.NEXT_PUBLIC_NOVU_API_URL}
         >
             <PopoverNotificationCenter
                 colorScheme={theme === "dark" ? "dark" : "light"}

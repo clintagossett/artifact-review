@@ -1,19 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { UnauthenticatedBanner } from "@/components/artifact/UnauthenticatedBanner";
 
+// Mock next/navigation
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: vi.fn(),
+  }),
+}));
+
 describe("UnauthenticatedBanner", () => {
-  const originalLocation = window.location;
-
   beforeEach(() => {
-    // Mock window.location
-    delete (window as any).location;
-    window.location = { href: "" } as any;
-  });
-
-  afterEach(() => {
-    window.location = originalLocation;
+    vi.clearAllMocks();
   });
 
   it("should render lock icon", () => {
@@ -23,10 +24,10 @@ describe("UnauthenticatedBanner", () => {
     expect(icon).toBeInTheDocument();
   });
 
-  it("should render sign in message", () => {
+  it("should render Private Artifact heading", () => {
     render(<UnauthenticatedBanner shareToken="abc123" />);
 
-    expect(screen.getByText("Sign in to view and comment")).toBeInTheDocument();
+    expect(screen.getByText("Private Artifact")).toBeInTheDocument();
   });
 
   it("should render description", () => {
@@ -41,14 +42,30 @@ describe("UnauthenticatedBanner", () => {
     expect(screen.getByRole("button", { name: /sign in to review/i })).toBeInTheDocument();
   });
 
-  it("should redirect to login with returnTo when clicked", async () => {
+  it("should render Create Free Account button", () => {
+    render(<UnauthenticatedBanner shareToken="abc123" />);
+
+    expect(screen.getByRole("button", { name: /create free account/i })).toBeInTheDocument();
+  });
+
+  it("should redirect to login with returnTo when Sign In clicked", async () => {
     const user = userEvent.setup();
     render(<UnauthenticatedBanner shareToken="abc123" />);
 
     const button = screen.getByRole("button", { name: /sign in to review/i });
     await user.click(button);
 
-    expect(window.location.href).toBe("/login?returnTo=%2Fa%2Fabc123");
+    expect(mockPush).toHaveBeenCalledWith("/login?returnTo=%2Fa%2Fabc123");
+  });
+
+  it("should redirect to register with returnTo when Create Account clicked", async () => {
+    const user = userEvent.setup();
+    render(<UnauthenticatedBanner shareToken="abc123" />);
+
+    const button = screen.getByRole("button", { name: /create free account/i });
+    await user.click(button);
+
+    expect(mockPush).toHaveBeenCalledWith("/register?returnTo=%2Fa%2Fabc123");
   });
 
   it("should encode shareToken in returnTo URL", async () => {
@@ -59,15 +76,16 @@ describe("UnauthenticatedBanner", () => {
     await user.click(button);
 
     // Check that the URL is properly encoded
-    expect(window.location.href).toContain("returnTo=");
-    expect(decodeURIComponent(window.location.href)).toContain("/a/token-with-special?chars");
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining("returnTo="));
+    const callArg = mockPush.mock.calls[0][0];
+    expect(decodeURIComponent(callArg)).toContain("/a/token-with-special?chars");
   });
 
-  it("should have blue background styling", () => {
+  it("should have gradient header styling", () => {
     const { container } = render(<UnauthenticatedBanner shareToken="abc123" />);
 
-    const banner = container.firstChild;
-    expect(banner).toHaveClass("bg-blue-50");
-    expect(banner).toHaveClass("border-blue-200");
+    // Check for the gradient header
+    const gradientDiv = container.querySelector('.bg-gradient-to-r');
+    expect(gradientDiv).toBeInTheDocument();
   });
 });
