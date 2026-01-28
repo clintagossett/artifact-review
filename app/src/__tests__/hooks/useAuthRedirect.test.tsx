@@ -25,16 +25,18 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
+  useConvexAuth: vi.fn(),
 }));
 
 // Import mocked modules for type safety
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 
 describe("useAuthRedirect", () => {
   const mockReplace = vi.fn();
   const mockUseQuery = useQuery as ReturnType<typeof vi.fn>;
   const mockUseRouter = useRouter as ReturnType<typeof vi.fn>;
+  const mockUseConvexAuth = useConvexAuth as ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -43,10 +45,20 @@ describe("useAuthRedirect", () => {
       replace: mockReplace,
       refresh: vi.fn(),
     });
+    // Default mock for useConvexAuth - tests will override as needed
+    mockUseConvexAuth.mockReturnValue({
+      isLoading: false,
+      isAuthenticated: false,
+    });
   });
 
   describe("Auth State Detection", () => {
     it("should return isLoading=true when currentUser is undefined", () => {
+      // When auth is still loading
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: true,
+        isAuthenticated: false,
+      });
       mockUseQuery.mockReturnValue(undefined);
 
       const { result } = renderHook(() =>
@@ -60,6 +72,10 @@ describe("useAuthRedirect", () => {
 
     it("should return isAuthenticated=true when currentUser exists", () => {
       const mockUser = { _id: "user123", email: "test@example.com" };
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+      });
       mockUseQuery.mockReturnValue(mockUser);
 
       const { result } = renderHook(() =>
@@ -72,6 +88,10 @@ describe("useAuthRedirect", () => {
     });
 
     it("should return isAuthenticated=false when currentUser is null", () => {
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: false,
+      });
       mockUseQuery.mockReturnValue(null);
 
       const { result } = renderHook(() =>
@@ -87,6 +107,10 @@ describe("useAuthRedirect", () => {
   describe("Redirect Behavior - Authenticated", () => {
     it("should redirect authenticated user to configured path", async () => {
       const mockUser = { _id: "user123", email: "test@example.com" };
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+      });
       mockUseQuery.mockReturnValue(mockUser);
 
       renderHook(() => useAuthRedirect({ ifAuthenticated: "/dashboard" }));
@@ -98,6 +122,10 @@ describe("useAuthRedirect", () => {
 
     it("should not redirect authenticated user if no ifAuthenticated path", () => {
       const mockUser = { _id: "user123", email: "test@example.com" };
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+      });
       mockUseQuery.mockReturnValue(mockUser);
 
       renderHook(() => useAuthRedirect({ ifUnauthenticated: "/" }));
@@ -106,6 +134,10 @@ describe("useAuthRedirect", () => {
     });
 
     it("should not redirect while auth is loading", () => {
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: true,
+        isAuthenticated: false,
+      });
       mockUseQuery.mockReturnValue(undefined);
 
       renderHook(() => useAuthRedirect({ ifAuthenticated: "/dashboard" }));
@@ -116,6 +148,10 @@ describe("useAuthRedirect", () => {
 
   describe("Redirect Behavior - Unauthenticated", () => {
     it("should redirect unauthenticated user to configured path", async () => {
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: false,
+      });
       mockUseQuery.mockReturnValue(null);
 
       renderHook(() => useAuthRedirect({ ifUnauthenticated: "/" }));
@@ -126,6 +162,10 @@ describe("useAuthRedirect", () => {
     });
 
     it("should not redirect unauthenticated user if no ifUnauthenticated path", () => {
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: false,
+      });
       mockUseQuery.mockReturnValue(null);
 
       renderHook(() => useAuthRedirect({ ifAuthenticated: "/dashboard" }));
@@ -137,6 +177,10 @@ describe("useAuthRedirect", () => {
   describe("Edge Cases", () => {
     it("should handle empty config object", () => {
       const mockUser = { _id: "user123", email: "test@example.com" };
+      mockUseConvexAuth.mockReturnValue({
+        isLoading: false,
+        isAuthenticated: true,
+      });
       mockUseQuery.mockReturnValue(mockUser);
 
       const { result } = renderHook(() => useAuthRedirect({}));
