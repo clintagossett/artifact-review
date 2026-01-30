@@ -12,34 +12,19 @@ Intercepts HTTPS calls to `api.resend.com` from the Convex backend and routes th
 ## Files
 
 - `proxy.js` - Node.js HTTPS server that translates requests
-- `Dockerfile` - Container build with mkcert certs
-- `certs/` - TLS certificates:
-  - `api.resend.com.pem` - Server certificate (mkcert-generated)
-  - `api.resend.com-key.pem` - Server private key
-  - `rootCA.pem` - mkcert root CA
-  - `ca-certificates-with-mkcert.crt` - Combined CA bundle (generated)
+- `Dockerfile` - Container build (certs mounted at runtime)
 
-## Setup (if certs need regeneration)
+## TLS Certificates
 
-The certs are pre-generated using mkcert. If you need to regenerate:
+Certificates are stored in the **orchestrator repo** and mounted into the container:
+- `api.resend.com.pem` - Server certificate (mkcert-generated)
+- `api.resend.com-key.pem` - Server private key
+- `rootCA.pem` - mkcert root CA
+- `ca-certificates-with-mkcert.crt` - Combined CA bundle (generated at startup)
 
-```bash
-# Install mkcert
-curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
-chmod +x mkcert-v*-linux-amd64
-mv mkcert-v*-linux-amd64 ~/.local/bin/mkcert
+Location: Configured via `MKCERT_CERTS_PATH` in `.env.docker.local` (default: `../artifact-review-orchestrator/certs/`)
 
-# Generate new cert
-cd docker/resend-proxy/certs
-~/.local/bin/mkcert api.resend.com
-
-# Regenerate combined CA bundle
-docker exec james-backend cat /etc/ssl/certs/ca-certificates.crt > system-ca.crt
-cat system-ca.crt rootCA.pem > ca-certificates-with-mkcert.crt
-
-# Restart containers
-docker compose --env-file .env.docker.local up -d backend resend-proxy
-```
+See [docs/setup/mkcert-setup.md](../../docs/setup/mkcert-setup.md) for full certificate documentation.
 
 ## Endpoints
 

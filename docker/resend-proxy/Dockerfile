@@ -2,12 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Create certs directory
+# Create certs directory (certs mounted as volume at runtime)
 RUN mkdir -p /certs
-
-# Copy mkcert-generated certs (locally trusted)
-COPY certs/api.resend.com.pem /certs/cert.pem
-COPY certs/api.resend.com-key.pem /certs/key.pem
 
 # Copy proxy script
 COPY proxy.js .

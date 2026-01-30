@@ -366,7 +366,8 @@ COMPOSE_FILES="-f docker-compose.yml"
 pushd "$PROJECT_ROOT" > /dev/null
 
 # Generate mkcert CA bundle for resend-proxy TLS trust if needed
-CERTS_DIR="$PROJECT_ROOT/docker/resend-proxy/certs"
+# MKCERT_CERTS_PATH can be set in .env.docker.local (default: orchestrator repo)
+CERTS_DIR="${MKCERT_CERTS_PATH:-$PROJECT_ROOT/../artifact-review-orchestrator/certs}"
 CA_BUNDLE="$CERTS_DIR/ca-certificates-with-mkcert.crt"
 if [ ! -f "$CA_BUNDLE" ] && [ -f "$CERTS_DIR/rootCA.pem" ]; then
     echo "  Generating CA bundle for resend-proxy TLS trust..."
