@@ -213,8 +213,10 @@ These are set in **Vercel** (or `.env.local` for local dev).
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
 | `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts`, `convex/novu.ts` |
-| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL. For local dev with shared orchestrator: `http://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
+| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `http://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
+| `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `http://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
+| `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Configuration**. Novu WebSocket URL (browser-side). For local dev: `http://ws.novu.loc`. Required for self-hosted Novu real-time notifications. | `src/components/NotificationCenter.tsx` |
 
 ### Local Development Mode (Shared Orchestrator)
 The agentic-dev infrastructure runs a **shared Novu instance** managed by the orchestrator:

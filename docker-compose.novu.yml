@@ -78,11 +78,14 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - JWT_SECRET=your-secret-key-change-me
+    ports:
+      - "${NOVU_WS_PORT:-3003}:3002"
     depends_on:
       - mongodb
       - redis
     networks:
       - novu-network
+      - default
 
 volumes:
   novu_mongodb_data:

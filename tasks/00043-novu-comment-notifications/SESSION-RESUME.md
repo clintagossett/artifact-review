@@ -2,64 +2,100 @@
 
 ## Session Date: 2026-01-27
 
-## Current Status: BLOCKED on Issue #45
+## Current Status: IN PROGRESS (75% Complete)
 
-Task 43 (Novu notifications) is blocked because E2E tests cannot create artifacts. The ZIP processing in Node actions fails due to a self-hosted Convex infrastructure issue.
-
-## Blocking Issue
-
-**GitHub Issue:** https://github.com/clintagossett/artifact-review/issues/45
-
-**Problem:** Node actions (`"use node"` directive) cannot access Convex storage. Both `ctx.storage.getUrl()` + `fetch()` and `ctx.storage.get()` fail with "fetch failed" errors.
-
-**Root Cause:** The Node executor subprocess in self-hosted Convex Docker has different networking than V8 isolates. Storage access requires HTTP calls that fail from inside the Node executor.
-
-## What Was Accomplished This Session
-
-### 1. Auth Issues Fixed
-- The auth state propagation issue from previous sessions was resolved
-- Admin key derivation fixed in `start-dev-servers.sh`
-
-### 2. Storage Access Fix Attempted
-- Changed `zipProcessor.ts` from `getUrl()` + `fetch()` to `storage.get()` directly
-- This also failed - `storage.get()` uses HTTP internally in Node actions
-
-### 3. Research Completed
-- Identified this as a known issue with self-hosted Convex Node actions
-- Found related GitHub issues (#177, #179) in convex-backend repo
-- Documented potential solutions in issue #45
+Issue #45 (Node action storage access) has been resolved. The Novu notification infrastructure is now working. E2E tests progress through 7/8 steps - only the text selection/comment creation step needs fixing.
 
 ## Subtask Status
 
-| Subtask | Status |
-|---------|--------|
-| 01-subscriber-sync | ✅ Complete |
-| 02-novu-workflow-setup | ✅ Complete |
-| 03-e2e-notification-tests | ⛔ Blocked (Issue #45) |
-| 04-email-digest-integration | ⏳ Not started |
+| Subtask | Status | Notes |
+|---------|--------|-------|
+| 01-subscriber-sync | ✅ Complete | Novu subscriber sync working |
+| 02-novu-workflow-setup | ✅ Complete | Workflow registered |
+| 03-e2e-notification-tests | 🔄 In Progress | Infrastructure complete, test needs polish |
+| 04-email-digest-integration | ⏳ Not Started | |
 
-## Files Modified
+## What Was Fixed This Session
 
-- `app/convex/zipProcessor.ts` - Changed to use `ctx.storage.get()` (still fails)
-- `app/convex/zipUpload.ts` - Added structured logging
-- `app/convex/lib/logger.ts` - Already existed, used for debugging
+### 1. Issue #45 Resolved (Externally)
+- ZIP upload and processing now work
+- Artifacts can be created via E2E tests
 
-## Next Steps
+### 2. Novu Browser-Side Configuration
+The Novu client in the browser was connecting to Novu Cloud instead of the local instance.
 
-1. **Resolve Issue #45** - Fix Node action storage access in self-hosted setup
-2. **Resume E2E tests** - Once artifacts can be created, run notification tests
-3. **Complete subtask 03** - Validate in-app notifications work
-4. **Implement subtask 04** - Email digest integration
+**Fixes Applied:**
+- Added `NEXT_PUBLIC_NOVU_API_URL=http://api.novu.loc` to `.env.local`
+- Added `NEXT_PUBLIC_NOVU_SOCKET_URL=http://ws.novu.loc` to `.env.local`
+- Updated `NotificationCenter.tsx` with `backendUrl` and `socketUrl` props
+
+### 3. Novu WebSocket Routing
+The Novu WebSocket service wasn't accessible from outside Docker.
+
+**Fixes Applied:**
+- Exposed port 3003 for `novu-ws` in `/home/clint-gossett/Documents/agentic-dev/services/novu/docker-compose.yml`
+- Added `wsPort: 3003` to orchestrator `config.json`
+- Added `ws` to production prefixes in orchestrator `proxy.js`
+- Route `ws.novu.loc` now routes to Novu WebSocket service
+
+### 4. Documentation Updates
+- Updated `.env.local.example` with new Novu env vars
+- Updated `docs/ENVIRONMENT_VARIABLES.md` with new Novu env vars
+
+### 5. E2E Test Fixes
+- Updated `inviteReviewer` to navigate directly to settings page
+- Fixed settings tab selector to use button role with regex for emoji tabs
+
+## E2E Test Progress
+
+The notification test (`1.1: Reviewer comments on artifact`) now progresses through:
+
+1. ✅ Owner signs up
+2. ✅ Owner uploads artifact (ZIP processing works!)
+3. ✅ Owner invites reviewer via settings page
+4. ✅ Owner navigates back to artifact
+5. ✅ Owner has no initial notifications
+6. ✅ Reviewer signs up
+7. ✅ Reviewer reaches artifact
+8. ❌ Reviewer adding comment (text selection not triggering annotation flow)
+
+## Remaining Work
+
+1. **Fix `selectTextAndComment` helper** - The test's text selection in the iframe isn't triggering the annotation draft flow
+2. **Complete notification verification** - Once commenting works, verify owner receives notification
+3. **Run full notification test suite**
+4. **Move to subtask 04** - Email digest integration
+
+## Working Infrastructure
+
+- `http://mark.loc` - Next.js app ✅
+- `http://mark.convex.cloud.loc` - Convex WebSocket/sync ✅
+- `http://mark.convex.site.loc` - Convex HTTP actions ✅
+- `http://api.novu.loc` - Novu API ✅
+- `http://ws.novu.loc` - Novu WebSocket ✅
+- ZIP upload and processing ✅
+- Novu subscriber sync ✅
+- Artifact invite flow ✅
 
 ## Commands to Resume
 
 ```bash
-# Verify infrastructure is running
-tmux has-session -t mark-convex-dev && echo "OK" || ./scripts/start-dev-servers.sh
+# Start dev servers
+cd /home/clint-gossett/Documents/agentic-dev/agents/mark/artifact-review
+./scripts/start-dev-servers.sh
 
-# Run the blocked test (will fail until #45 is fixed)
-cd app && npx playwright test tests/e2e/artifact-workflow.spec.ts --project=chromium -g "upload"
+# Run the notification E2E test
+cd tasks/00043-novu-comment-notifications/03-e2e-notification-tests/tests/e2e
+npx playwright test notification.spec.ts --project=chromium -g "1.1: Reviewer comments" --headed
 
-# Check Convex logs
-tmux capture-pane -t mark-convex-dev -p -S -50 | tail -30
+# Check Novu setup
+./scripts/setup-novu-org.sh --check
 ```
+
+## Key Files
+
+- Test spec: `tasks/00043-novu-comment-notifications/03-e2e-notification-tests/tests/e2e/notification.spec.ts`
+- NotificationCenter: `app/src/components/NotificationCenter.tsx`
+- Annotation components: `app/src/components/annotations/`
+- Selection layer: `app/src/lib/annotation/react/useSelectionLayer.ts`
+- Novu shared services: `/home/clint-gossett/Documents/agentic-dev/services/novu/docker-compose.yml`

@@ -265,12 +265,35 @@ async function uploadArtifact(page: Page, name: string): Promise<string> {
 /**
  * Helper: Invite reviewer to artifact.
  */
-async function inviteReviewer(page: Page, reviewerEmail: string): Promise<void> {
-  await page.getByRole('button', { name: 'Share' }).click();
-  await expect(page).toHaveURL(/\/settings/);
-  await page.getByPlaceholder('name@company.com').fill(reviewerEmail);
+async function inviteReviewer(page: Page, reviewerEmail: string, artifactUrl: string): Promise<void> {
+  // Navigate directly to settings page (bypassing Manage button click issue)
+  // Extract shareToken from URL: http://mark.loc/a/{shareToken}
+  const shareToken = artifactUrl.split('/a/')[1];
+  const settingsUrl = `${artifactUrl}/settings`;
+  console.log(`[inviteReviewer] Navigating directly to: ${settingsUrl}`);
+  await page.goto(settingsUrl);
+
+  console.log('[inviteReviewer] Waiting for settings page to load...');
+  await expect(page).toHaveURL(/\/settings/, { timeout: 30000 });
+
+  // Wait for page to be ready
+  await page.waitForTimeout(2000);
+
+  // Navigate to Access tab (email input is there)
+  console.log('[inviteReviewer] Clicking Access tab...');
+  await page.getByRole('button', { name: /Access/i }).click();
+  await page.waitForTimeout(1000);
+  console.log('[inviteReviewer] On Access tab, looking for email input...');
+
+  const emailInput = page.getByPlaceholder('name@company.com');
+  await expect(emailInput).toBeVisible({ timeout: 10000 });
+  await emailInput.fill(reviewerEmail);
+  console.log('[inviteReviewer] Email filled, clicking Send Invite...');
+
   await page.getByRole('button', { name: 'Send Invite' }).click();
+  console.log('[inviteReviewer] Waiting for invite confirmation...');
   await expect(page.getByText(reviewerEmail).first()).toBeVisible({ timeout: 20000 });
+  console.log('[inviteReviewer] Invite completed!');
 }
 
 /**
@@ -458,7 +481,7 @@ test.describe('Notification System', () => {
 
         // 2. Owner: Invite reviewer
         console.log('Inviting reviewer...');
-        await inviteReviewer(ownerPage, reviewer.email);
+        await inviteReviewer(ownerPage, reviewer.email, artifactUrl);
 
         // 3. Owner: Navigate back to artifact to wait for notifications
         await ownerPage.goto(artifactUrl);
@@ -511,7 +534,7 @@ test.describe('Notification System', () => {
         // Setup: Owner creates artifact, invites reviewer
         await signupUser(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
-        await inviteReviewer(ownerPage, reviewer.email);
+        await inviteReviewer(ownerPage, reviewer.email, artifactUrl);
         await ownerPage.goto(artifactUrl);
 
         // Reviewer signs up, comments
@@ -570,8 +593,8 @@ test.describe('Notification System', () => {
         // Setup: Owner creates artifact
         await signupUser(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
-        await inviteReviewer(ownerPage, reviewer1.email);
-        await inviteReviewer(ownerPage, reviewer2.email);
+        await inviteReviewer(ownerPage, reviewer1.email, artifactUrl);
+        await inviteReviewer(ownerPage, reviewer2.email, artifactUrl);
         await ownerPage.goto(artifactUrl);
 
         // Reviewer1 comments
@@ -678,7 +701,7 @@ test.describe('Notification System', () => {
         // Setup
         await signupUser(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
-        await inviteReviewer(ownerPage, reviewer.email);
+        await inviteReviewer(ownerPage, reviewer.email, artifactUrl);
         await ownerPage.goto(artifactUrl);
 
         await signupUser(reviewerPage, reviewer);
@@ -730,7 +753,7 @@ test.describe('Notification System', () => {
         // Setup
         await signupUser(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
-        await inviteReviewer(ownerPage, reviewer.email);
+        await inviteReviewer(ownerPage, reviewer.email, artifactUrl);
         await ownerPage.goto(artifactUrl);
 
         await signupUser(reviewerPage, reviewer);

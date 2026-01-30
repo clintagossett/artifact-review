@@ -1,200 +1,184 @@
 ---
-title: Node Action Storage Access in Self-Hosted Convex
+title: Node Action Port 80 Proxy for Self-Hosted Convex
 status: Accepted
 date: 2026-01-28
-updated: 2026-01-30
 deciders: Clint Gossett
+supersedes: (original HTTP fallback approach)
 ---
 
-# 19. Node Action Storage Access in Self-Hosted Convex
+# 19. Node Action Port 80 Proxy for Self-Hosted Convex
 
 ## Context
 
-In self-hosted Convex environments, Node actions (`"use node"` directive) cannot access storage via the standard `ctx.storage.get()` or `ctx.storage.store()` APIs. Both calls fail with `ECONNREFUSED 127.0.0.1:80` because the internal storage mechanism tries to connect to port 80, which has nothing listening inside the Docker container.
+In self-hosted Convex environments, Node actions (`"use node"` directive) fail with `ECONNREFUSED 127.0.0.1:80` errors. Investigation revealed this affects **ALL** internal Convex operations in Node actions:
 
-This issue does NOT affect:
-- V8 runtime actions (use syscalls, not HTTP)
-- Convex Cloud (proper internal networking)
-- Regular `fetch()` calls from Node actions (work fine)
+| Operation | Status in Node Action |
+|-----------|----------------------|
+| `ctx.storage.get()` | ❌ Fails |
+| `ctx.storage.store()` | ❌ Fails |
+| `ctx.storage.delete()` | ❌ Fails |
+| `ctx.runMutation()` | ❌ Fails |
+| `ctx.runAction()` | ❌ Fails |
+| `ctx.runQuery()` | ❌ Fails |
+| Regular `fetch()` calls | ✅ Works |
 
-## Preferred Solution: Port 80 Proxy (Updated 2026-01-30)
+### Root Cause
 
-The cleanest fix is a socat proxy that listens on port 80 inside the backend container's network namespace and forwards to port 3210 (admin API). No config file needed.
+The Convex Node executor internally routes all context operations through HTTP to `127.0.0.1:80`. However, the Convex backend Docker container only listens on:
+- Port 3210 (Admin/Sync API)
+- Port 3211 (HTTP Actions)
 
-### docker-compose.yml Addition
-
-```yaml
-# Port 80 proxy: Node actions try to reach storage via 127.0.0.1:80
-# This forwards port 80 -> 3210 inside the backend's network namespace
-port80-proxy:
-  container_name: ${AGENT_NAME}-port80-proxy
-  image: alpine/socat:latest
-  network_mode: "service:backend"
-  command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
-  depends_on:
-    backend:
-      condition: service_healthy
-  restart: unless-stopped
-```
-
-With this proxy, both `ctx.storage.get()` and `ctx.storage.store()` work directly in Node actions without any fallback code.
-
----
-
-## Legacy Fallback Pattern (Deprecated)
-
-The HTTP fallback pattern below is still in the codebase for `storage.get()` reads but is **no longer needed** when the sidecar proxy is running. It may be removed in a future cleanup.
+Nothing listens on port 80, causing `ECONNREFUSED`.
 
 ### Discovery Process
 
-Initial hypothesis blamed the orchestrator proxy and DNS routing. Diagnostic testing proved this wrong:
+Initial hypothesis blamed orchestrator proxy and DNS routing. Testing proved this wrong:
 
 | Test | Result |
 |------|--------|
 | Node → `localhost:3211` | ✅ Works |
 | Node → `127.0.0.1:3211` | ✅ Works |
 | Node → `mark.convex.site.loc` | ✅ Works |
-| Node → `ctx.storage.get()` | ❌ `ECONNREFUSED 127.0.0.1:80` |
+| Node → `ctx.storage.get()` | ❌ Fails |
+| Node → `ctx.runMutation()` | ❌ Fails |
 
-The actual issue is that `storage.get()` in Node actions uses an internal HTTP mechanism that resolves to `127.0.0.1:80`, ignoring the configured `CONVEX_SITE_ORIGIN`.
+Regular networking works; only internal Convex operations fail.
 
 ## Decision
 
-Implement a **try-direct-then-fallback** pattern for storage access in Node actions:
-
-1. **Try direct access first** (`ctx.storage.get()`) - works in Convex Cloud
-2. **Catch ECONNREFUSED** - indicates self-hosted environment
-3. **Fall back to HTTP endpoint** - V8 HTTP action that uses syscall for storage
+Add a **socat proxy sidecar container** that shares the network namespace with the Convex backend and proxies port 80 → 3210.
 
 ### Implementation
 
-**1. HTTP Endpoint (V8 runtime) - `convex/http.ts`:**
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    # ... existing config ...
 
-```typescript
-http.route({
-  path: "/internal/storage-blob",
-  method: "GET",
-  handler: httpAction(async (ctx, request) => {
-    const storageId = new URL(request.url).searchParams.get("storageId");
-    const blob = await ctx.storage.get(storageId as Id<"_storage">);
-    if (!blob) return new Response("Not found", { status: 404 });
-    return new Response(blob);
-  }),
-});
+  port80-proxy:
+    container_name: ${AGENT_NAME}-port80-proxy
+    image: alpine/socat:latest
+    network_mode: "service:backend"
+    command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 ```
 
-**2. Helper Function (Node runtime):**
+### How It Works
 
-```typescript
-async function getStorageBlob(
-  ctx: ActionCtx,
-  storageId: Id<"_storage">
-): Promise<{ buffer: ArrayBuffer; method: "direct" | "http-fallback" }> {
-  // Try direct storage.get() first (works in Convex Cloud)
-  try {
-    const blob = await ctx.storage.get(storageId);
-    if (blob) {
-      log.info(LOG_TOPICS.Artifact, "Storage access: direct", { storageId });
-      return { buffer: await blob.arrayBuffer(), method: "direct" };
-    }
-  } catch (e: any) {
-    const isConnectionRefused =
-      e.cause?.message?.includes("ECONNREFUSED") ||
-      e.message?.includes("fetch failed");
-
-    if (isConnectionRefused) {
-      // Self-hosted: use HTTP workaround
-      log.info(LOG_TOPICS.Artifact, "Storage access: http-fallback", { storageId });
-      const response = await fetch(
-        `http://localhost:3211/internal/storage-blob?storageId=${storageId}`
-      );
-      if (response.ok) {
-        return { buffer: await response.arrayBuffer(), method: "http-fallback" };
-      }
-    }
-    throw e;
-  }
-  throw new Error("Storage blob not found");
-}
+```
+┌─────────────────────────────────────────────────────────────┐
+│              Docker Network Namespace (shared)               │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Node Executor                                               │
+│       │                                                      │
+│       │  ctx.storage.get() / ctx.runMutation() / etc.       │
+│       ▼                                                      │
+│  127.0.0.1:80  ───►  socat  ───►  127.0.0.1:3210            │
+│                      proxy         (Convex backend)          │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Monitoring
-
-Log messages indicate which path is used:
-
-| Log Message | Environment | Performance |
-|-------------|-------------|-------------|
-| `Storage access: direct` | Convex Cloud | Optimal |
-| `Storage access: http-fallback` | Self-hosted | +~20ms per blob |
-| `Storage access: direct-failed` | Either | Investigate |
-
-**When deploying to production**, watch for `Storage access: direct` logs to confirm the optimal path is working.
+The `network_mode: "service:backend"` directive makes the socat container share the same network namespace as the backend. When socat listens on port 80, it's on the same `127.0.0.1` that the Node executor tries to reach.
 
 ## Consequences
 
 ### Positive
 
-- **Zero overhead in production**: Direct path used when available
-- **Self-hosted works**: Automatic fallback for local development
-- **Observable**: Logs clearly indicate which path is used
-- **Reusable**: Pattern can be applied to other Node actions needing storage
+- **Fixes everything**: All `ctx.*` operations work in Node actions
+- **Zero code changes**: No application code modifications needed
+- **Simple**: Single infrastructure change
+- **Lightweight**: alpine/socat image is ~8MB
+- **Transparent**: Application code uses standard Convex APIs
 
 ### Negative
 
-- **Complexity**: Two code paths to maintain
-- **Self-hosted overhead**: ~20ms latency per blob via HTTP fallback
-- **Endpoint exposure**: `/internal/storage-blob` must be protected if auth is needed
+- **Extra container**: One more container to manage
+- **Self-hosted only**: Convex Cloud doesn't need this
+- **Port 80 assumption**: If Convex changes the internal port, fix breaks
 
-### Risks
+### Neutral
 
-- If Convex Cloud behavior changes to also fail, we'd silently fall back to HTTP
-- The `/internal/storage-blob` endpoint has no auth (assumes internal-only access)
+- **No performance impact**: Direct internal routing, no HTTP overhead
 
 ## Alternatives Considered
 
-### 1. Pass Data via Base64 Arguments
-Fetch blob in V8 action, base64 encode, pass to Node action.
-**Rejected**: 5MiB argument limit too restrictive for ZIP files.
+### 1. HTTP Fallback Endpoints (Originally Implemented, Then Rejected)
+
+Create HTTP endpoints in V8 runtime to proxy storage operations:
+
+```typescript
+// Rejected approach
+async function getStorageBlob(ctx, storageId) {
+  try {
+    return await ctx.storage.get(storageId);  // Try direct
+  } catch (e) {
+    // Fall back to HTTP endpoint
+    return await fetch(`http://localhost:3211/internal/storage-blob?storageId=${storageId}`);
+  }
+}
+```
+
+**Rejected because:**
+- Only addressed `storage.get()`, not other operations
+- `ctx.runMutation()` also fails with same error - can't proxy mutations via HTTP
+- Required code changes in every Node action
+- Two code paths to maintain
+- HTTP overhead in self-hosted environment
 
 ### 2. Move to V8 Runtime
+
 Remove `"use node"` directive entirely.
-**Rejected**: JSZip and other libraries may require Node-specific APIs.
 
-### 3. Change CONVEX_SITE_ORIGIN to localhost
-Set origin to `http://localhost:3211`.
-**Rejected**: Breaks browser access which needs `.loc` domains.
+**Rejected**: Some libraries (JSZip) require Node-specific APIs.
 
-### 4. Use External Storage (R2/S3)
-Configure S3-compatible storage accessible from anywhere.
-**Rejected**: Adds infrastructure complexity for a self-hosted-only issue.
+### 3. Configure Convex Backend to Listen on Port 80
 
-### 5. HTTP-Only (No Direct Attempt)
-Always use HTTP endpoint, skip direct attempt.
-**Rejected**: Adds unnecessary latency in production.
+Modify backend config or Dockerfile.
 
-## Affected Code
+**Rejected**: Would require custom Convex backend image, harder to maintain.
+
+### 4. Use iptables Port Forwarding
+
+Add iptables rules inside the container.
+
+**Rejected**: Container doesn't have iptables installed, would require custom image.
+
+## Verification
+
+```bash
+# Check port 80 is listening
+docker exec mark-backend cat /proc/net/tcp | grep ":0050"
+
+# Test proxy works
+docker exec mark-backend curl -s http://127.0.0.1:80/version
+
+# Check logs show direct access
+tmux capture-pane -t mark-convex-dev -p | grep "Storage access: direct"
+```
+
+## Affected Infrastructure
 
 | File | Change |
 |------|--------|
-| `convex/http.ts` | Added `/internal/storage-blob` endpoint |
-| `convex/zipProcessor.ts` | Uses `getStorageBlob()` helper |
-| `convex/debugNetworking.ts` | Diagnostic tests (can be removed) |
+| `docker-compose.yml` | Added `port80-proxy` service |
 
-## When to Apply This Pattern
+**No application code changes.**
 
-**Prefer the sidecar proxy solution** - it fixes both reads and writes with zero code changes.
+## When This Applies
 
-The legacy HTTP fallback pattern is only needed if:
-- You cannot modify docker-compose.yml
-- You need a code-only solution
-
-**Do NOT use the fallback pattern for:**
-- V8 runtime actions (storage works directly via syscalls)
-- Mutations/queries (different storage access mechanism)
-- New code (use sidecar proxy instead)
+| Environment | Proxy Needed? |
+|-------------|---------------|
+| Convex Cloud | No |
+| Self-hosted Docker | Yes |
+| Self-hosted Kubernetes | Yes (add as sidecar) |
 
 ## Related
 
 - Task: `tasks/00045-node-action-storage-fix/`
-- GitHub Issue: https://github.com/clintagossett/artifact-review/issues/45
 - Convex Issue: https://github.com/get-convex/convex-backend/issues/179
