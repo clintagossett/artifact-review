@@ -5,7 +5,7 @@ This guide covers setting up and testing Novu notifications for comment notifica
 ## Overview
 
 The notification system uses:
-- **Shared Novu Instance** - Self-hosted notification orchestration (http://novu.loc)
+- **Shared Novu Instance** - Self-hosted notification orchestration (https://novu.loc)
 - **Novu Bridge** - Next.js API route for workflow discovery/execution
 - **Novu Notification Center** - React component for in-app notifications
 
@@ -30,12 +30,12 @@ Add these to `.env.local`:
 
 ```bash
 # Novu API endpoint (shared local instance)
-NOVU_API_URL=http://api.novu.loc
+NOVU_API_URL=https://api.novu.loc
 
-# Novu Secret Key (get from http://novu.loc → Settings → API Keys)
+# Novu Secret Key (get from https://novu.loc → Settings → API Keys)
 NOVU_SECRET_KEY=your-secret-key
 
-# Novu Application ID (get from http://novu.loc → Settings → API Keys)
+# Novu Application ID (get from https://novu.loc → Settings → API Keys)
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=your-app-id
 ```
 
@@ -81,7 +81,7 @@ Standard credentials (use these exact values):
 | Organization | `mark-artifact-review` |
 
 1. Ensure orchestrator is running: `cd /home/clint-gossett/Documents/agentic-dev/orchestrator && ./start.sh`
-2. Go to http://novu.loc
+2. Go to https://novu.loc
 3. Click **Sign Up** with the standard credentials above
 4. Create organization `mark-artifact-review` when prompted
 5. Go to **Settings → API Keys**
@@ -100,7 +100,7 @@ cd app
 
 Example:
 ```bash
-NOVU_API_URL=http://api.novu.loc
+NOVU_API_URL=https://api.novu.loc
 NOVU_SECRET_KEY=abc123...
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=def456...
 ```
@@ -115,8 +115,8 @@ NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=def456...
 
 After starting dev servers, Novu needs to discover your workflow:
 
-1. Go to http://novu.loc → **Integrations** → **Local Studio** (or "Bridge Sync")
-2. Enter your local bridge URL: `http://api.mark.loc/api/novu`
+1. Go to https://novu.loc → **Integrations** → **Local Studio** (or "Bridge Sync")
+2. Enter your local bridge URL: `https://api.mark.loc/api/novu`
 3. Click **Sync**
 
 The workflow should now appear in your Novu dashboard under **Workflows**.

@@ -25,8 +25,8 @@ Issue #45 (Node action storage access) has been resolved. The Novu notification 
 The Novu client in the browser was connecting to Novu Cloud instead of the local instance.
 
 **Fixes Applied:**
-- Added `NEXT_PUBLIC_NOVU_API_URL=http://api.novu.loc` to `.env.local`
-- Added `NEXT_PUBLIC_NOVU_SOCKET_URL=http://ws.novu.loc` to `.env.local`
+- Added `NEXT_PUBLIC_NOVU_API_URL=https://api.novu.loc` to `.env.local`
+- Added `NEXT_PUBLIC_NOVU_SOCKET_URL=wss://ws.novu.loc` to `.env.local`
 - Updated `NotificationCenter.tsx` with `backendUrl` and `socketUrl` props
 
 ### 3. Novu WebSocket Routing
@@ -68,11 +68,11 @@ The notification test (`1.1: Reviewer comments on artifact`) now progresses thro
 
 ## Working Infrastructure
 
-- `http://mark.loc` - Next.js app ✅
-- `http://mark.convex.cloud.loc` - Convex WebSocket/sync ✅
-- `http://mark.convex.site.loc` - Convex HTTP actions ✅
-- `http://api.novu.loc` - Novu API ✅
-- `http://ws.novu.loc` - Novu WebSocket ✅
+- `https://mark.loc` - Next.js app ✅
+- `https://mark.convex.cloud.loc` - Convex WebSocket/sync ✅
+- `https://mark.convex.site.loc` - Convex HTTP actions ✅
+- `https://api.novu.loc` - Novu API ✅
+- `wss://ws.novu.loc` - Novu WebSocket ✅
 - ZIP upload and processing ✅
 - Novu subscriber sync ✅
 - Artifact invite flow ✅

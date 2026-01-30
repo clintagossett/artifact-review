@@ -267,7 +267,7 @@ async function uploadArtifact(page: Page, name: string): Promise<string> {
  */
 async function inviteReviewer(page: Page, reviewerEmail: string, artifactUrl: string): Promise<void> {
   // Navigate directly to settings page (bypassing Manage button click issue)
-  // Extract shareToken from URL: http://mark.loc/a/{shareToken}
+  // Extract shareToken from URL: https://mark.loc/a/{shareToken}
   const shareToken = artifactUrl.split('/a/')[1];
   const settingsUrl = `${artifactUrl}/settings`;
   console.log(`[inviteReviewer] Navigating directly to: ${settingsUrl}`);

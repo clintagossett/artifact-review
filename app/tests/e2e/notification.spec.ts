@@ -81,7 +81,7 @@ async function loginUser(page: any, email: string) {
   if (!magicLink) throw new Error('Failed to extract magic link');
 
   // Transform magic link to use test baseURL if it points to a different domain
-  // e.g., http://mark.loc/dashboard?code=xxx -> http://localhost:3010/dashboard?code=xxx
+  // e.g., https://mark.loc/dashboard?code=xxx -> http://localhost:3010/dashboard?code=xxx
   const baseURL = process.env.SITE_URL || 'http://localhost:3010';
   const url = new URL(magicLink);
   const transformedUrl = `${baseURL}${url.pathname}${url.search}`;
@@ -92,6 +92,8 @@ async function loginUser(page: any, email: string) {
 
 /**
  * Helper: Upload artifact and return URL
+ * Uses Markdown files because the annotation system only works with Markdown content
+ * (HTML in iframes doesn't support the selection/annotation overlay)
  */
 async function uploadArtifact(page: any, name: string): Promise<string> {
   // Collect console errors
@@ -108,11 +110,12 @@ async function uploadArtifact(page: any, name: string): Promise<string> {
   // Wait for the modal to appear
   await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 5000 });
 
-  const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
-  await page.setInputFiles('input[type="file"]', zipPath);
+  // Use Markdown file - annotation system only works with Markdown, not HTML in iframes
+  const mdPath = path.resolve(process.cwd(), '../samples/01-valid/markdown/product-spec/v1.md');
+  await page.setInputFiles('input[type="file"]', mdPath);
 
   // Wait for file to be processed (shows in the upload area)
-  await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('v1.md')).toBeVisible({ timeout: 10000 });
 
   await page.getByLabel('Artifact Name').fill(name);
 
@@ -139,66 +142,53 @@ async function uploadArtifact(page: any, name: string): Promise<string> {
 }
 
 /**
- * Helper: Invite reviewer to artifact
+ * Helper: Invite reviewer to artifact via ShareModal
  */
 async function inviteReviewer(page: any, reviewerEmail: string) {
+  // Click Share to open modal
   await page.getByRole('button', { name: 'Share' }).click();
-  await expect(page).toHaveURL(/\/settings/);
-  await page.getByPlaceholder('name@company.com').fill(reviewerEmail);
-  await page.getByRole('button', { name: 'Send Invite' }).click();
+
+  // Wait for ShareModal to be visible (dialog with heading)
+  await expect(page.getByRole('dialog').getByText('Share Artifact for Review')).toBeVisible({ timeout: 10000 });
+
+  // Fill email and invite
+  await page.getByPlaceholder('Enter email address').fill(reviewerEmail);
+  await page.getByRole('button', { name: 'Invite' }).click();
+
+  // Wait for invite to complete - email should appear in reviewers list
   await expect(page.getByText(reviewerEmail).first()).toBeVisible({ timeout: 20000 });
 }
 
 /**
- * Helper: Select text in the artifact iframe and create annotation
+ * Helper: Select text in the artifact viewer and create annotation
+ * NOTE: This only works with Markdown artifacts (rendered directly in DOM).
+ * HTML artifacts render in iframes and don't support annotation yet.
  */
 async function selectTextAndComment(page: any, commentText: string) {
-  // Wait for the artifact content to load
-  const iframe = page.frameLocator('iframe').first();
+  // Wait for markdown content to render (look for prose class which wraps markdown)
+  await page.waitForSelector('.prose', { timeout: 15000 });
 
-  // Find some text to select - typically body or main content
-  const textContent = iframe.locator('body');
-  await textContent.waitFor({ timeout: 15000 });
+  // Find a heading element to select text from (h1, h2, etc. have predictable text)
+  const heading = page.locator('.prose h1, .prose h2').first();
+  await expect(heading).toBeVisible({ timeout: 5000 });
 
-  // Execute script to select text and trigger the annotation flow
-  // We'll use JavaScript to select text range
-  await page.evaluate(() => {
-    // Get the iframe
-    const iframeEl = document.querySelector('iframe');
-    if (!iframeEl || !iframeEl.contentDocument) return;
+  // Use Playwright's triple-click to select the entire heading text
+  // This simulates real user behavior and triggers proper mouseup events
+  console.log('Triple-clicking to select heading text...');
+  await heading.click({ clickCount: 3 });
 
-    const doc = iframeEl.contentDocument;
-    const body = doc.body;
+  // Wait for the selection menu to appear (shows after text selection)
+  // The menu has "Comment" and "Cross out" buttons
+  console.log('Waiting for selection menu...');
 
-    // Find first text node
-    const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT);
-    let textNode = walker.nextNode();
+  // Click the "Comment" button in the selection menu
+  // The SelectionMenu uses title attribute, look for the comment button
+  const commentButton = page.locator('button[title="Comment"]');
+  await expect(commentButton).toBeVisible({ timeout: 5000 });
+  await commentButton.click();
 
-    while (textNode && (!textNode.textContent || textNode.textContent.trim().length < 10)) {
-      textNode = walker.nextNode();
-    }
-
-    if (textNode) {
-      const range = doc.createRange();
-      range.setStart(textNode, 0);
-      range.setEnd(textNode, Math.min(20, textNode.textContent?.length || 0));
-
-      const selection = iframeEl.contentWindow?.getSelection();
-      if (selection) {
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-
-      // Dispatch mouseup to trigger selection handler
-      const event = new MouseEvent('mouseup', { bubbles: true });
-      body.dispatchEvent(event);
-    }
-  });
-
-  // Wait for annotation sidebar to open
-  await page.waitForTimeout(1000);
-
-  // Type comment in the annotation input
+  // Wait for annotation sidebar draft input to appear
+  console.log('Waiting for annotation input...');
   const commentInput = page.getByTestId('annotation-comment-input');
   await expect(commentInput).toBeVisible({ timeout: 10000 });
   await commentInput.fill(commentText);
@@ -207,7 +197,7 @@ async function selectTextAndComment(page: any, commentText: string) {
   const submitButton = page.getByTestId('annotation-submit-button');
   await submitButton.click();
 
-  // Wait for submission to complete
+  // Wait for submission to complete (input should disappear)
   await expect(commentInput).not.toBeVisible({ timeout: 10000 });
 }
 
@@ -345,7 +335,7 @@ test.describe('Notification System', () => {
         await expect(ownerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
 
         // Wait for comment to appear
-        await page.waitForTimeout(2000);
+        await ownerPage.waitForTimeout(2000);
 
         console.log('Owner replying to comment...');
         await replyToFirstAnnotation(ownerPage, 'Reply from owner.');

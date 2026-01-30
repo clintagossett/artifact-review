@@ -8,11 +8,11 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../../app/.env.local') }
 /**
  * Get base URL from environment with fallback chain:
  * 1. TEST_BASE_URL - explicit test override
- * 2. http://mark.loc - Use orchestrator proxy for proper Convex connectivity
+ * 2. https://mark.loc - Use orchestrator proxy for proper Convex connectivity
  *
  * Note: Uses mark.loc through the orchestrator proxy.
  */
-const baseURL = process.env.TEST_BASE_URL || 'http://mark.loc';
+const baseURL = process.env.TEST_BASE_URL || 'https://mark.loc';
 
 /**
  * Playwright configuration for notification E2E tests

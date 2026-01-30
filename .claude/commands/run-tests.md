@@ -29,8 +29,8 @@ All commands run from `app/` directory.
 ### Smoke Tests
 
 ```bash
-curl -s --max-time 10 http://${AGENT_NAME}.loc | grep -q "html" && echo "App: OK"
-curl -s --max-time 10 http://${AGENT_NAME}.convex.cloud.loc && echo "Convex: OK"
+curl -s --max-time 10 https://${AGENT_NAME}.loc | grep -q "html" && echo "App: OK"
+curl -s --max-time 10 https://${AGENT_NAME}.convex.cloud.loc && echo "Convex: OK"
 ```
 
 ## Output

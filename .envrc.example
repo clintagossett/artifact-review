@@ -31,6 +31,14 @@ source_up
 # export VERCEL_TOKEN=...
 
 # -----------------------------------------------------------------------------
+# TLS Certificates (mkcert)
+# -----------------------------------------------------------------------------
+# Required for Playwright tests to trust local mkcert CA certificates.
+# Without this, HTTPS requests to *.loc domains will fail.
+# Find your path with: mkcert -CAROOT
+export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
+
+# -----------------------------------------------------------------------------
 # Notes
 # -----------------------------------------------------------------------------
 #

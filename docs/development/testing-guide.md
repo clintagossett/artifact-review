@@ -350,6 +350,48 @@ test("user can only see their artifacts", async () => {
 
 ## E2E Testing with Playwright
 
+### HTTPS and TLS Certificates
+
+Local development uses HTTPS with mkcert certificates. Playwright tests must trust the mkcert CA to make HTTPS requests to `*.loc` domains.
+
+**Required Setup:**
+
+1. Find your mkcert CA root path:
+   ```bash
+   mkcert -CAROOT
+   # Example: /home/username/.local/share/mkcert
+   ```
+
+2. Set `NODE_EXTRA_CA_CERTS` in your environment. You have several options:
+
+   **Option A: Add to `.env.nextjs.local`** (recommended for this project)
+   ```bash
+   # In app/.env.nextjs.local
+   NODE_EXTRA_CA_CERTS=/home/YOUR_USERNAME/.local/share/mkcert/rootCA.pem
+   ```
+
+   **Option B: Add to shell profile** (applies globally)
+   ```bash
+   # In ~/.bashrc or ~/.zshrc
+   export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
+   ```
+
+   **Option C: Set inline when running tests**
+   ```bash
+   NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem npx playwright test
+   ```
+
+**Why this is needed:**
+
+- The orchestrator proxy serves HTTPS using mkcert certificates
+- Node.js (and by extension Playwright) does not trust mkcert's CA by default
+- Without `NODE_EXTRA_CA_CERTS`, HTTPS requests fail with certificate errors like:
+  - `UNABLE_TO_VERIFY_LEAF_SIGNATURE`
+  - `CERT_HAS_EXPIRED`
+  - `self signed certificate in certificate chain`
+
+**Note:** The `playwright.config.ts` uses `ignoreHTTPSErrors: true` which helps for some scenarios, but `NODE_EXTRA_CA_CERTS` is still needed for full certificate chain validation in Node.js HTTP requests (like API calls in tests).
+
 ### Task-Level E2E Setup
 
 **IMPORTANT:** E2E tests live in task folders during development, not in `app/tests/`.

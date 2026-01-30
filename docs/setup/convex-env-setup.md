@@ -15,7 +15,7 @@ cp .env.convex.local.example .env.convex.local
 
 ```bash
 # Required variables:
-SITE_URL=http://mark.loc  # or your local domain
+SITE_URL=https://mark.loc  # or your local domain
 INTERNAL_API_KEY=your-secret-key
 RESEND_API_KEY=re_your_key
 EMAIL_FROM_AUTH=Artifact Review <auth@yourdomain.com>

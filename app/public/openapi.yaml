@@ -12,7 +12,7 @@ info:
 servers:
   - url: https://api.artifact.review
     description: Production Server
-  - url: http://api.ar.local.com
+  - url: https://api.ar.local.com
     description: Local Development Server
 
 paths:

@@ -29,8 +29,8 @@ tmux new-session -d -s mark-nextjs -c app "npm run dev -- -p 3010"
 
 **Verify:** These should match:
 ```bash
-curl -s http://mark.convex.site.loc/.well-known/jwks.json | grep -o '"n":"[^"]*' | cut -c7-50
-curl -s http://mark.loc/.well-known/jwks.json | grep -o '"n":"[^"]*' | cut -c7-50
+curl -s https://mark.convex.site.loc/.well-known/jwks.json | grep -o '"n":"[^"]*' | cut -c7-50
+curl -s https://mark.loc/.well-known/jwks.json | grep -o '"n":"[^"]*' | cut -c7-50
 ```
 
 ---
@@ -68,7 +68,7 @@ docker exec mark-backend ./generate_admin_key.sh
 
 **Check:**
 ```bash
-docker exec mark-backend curl -s http://api.novu.loc/v1/subscribers
+docker exec mark-backend curl -s https://api.novu.loc/v1/subscribers
 npx convex env list | grep NOVU
 ```
 
@@ -80,7 +80,7 @@ extra_hosts:
 
 And Convex has the env vars:
 ```bash
-npx convex env set NOVU_API_URL http://api.novu.loc
+npx convex env set NOVU_API_URL https://api.novu.loc
 npx convex env set NOVU_SECRET_KEY <key>
 ```
 
@@ -101,7 +101,7 @@ npx convex env set NOVU_SECRET_KEY <new-key>
 **Fix:** Use public URL in config:
 ```bash
 # .env.local
-CONVEX_SELF_HOSTED_URL=http://mark.convex.cloud.loc
+CONVEX_SELF_HOSTED_URL=https://mark.convex.cloud.loc
 ```
 
 ---

@@ -20,13 +20,13 @@ sudo npm run proxy
 *Note: Sudo is required to bind to Port 80.*
 
 ### URLs
-- **Web App**: http://ar.loc (Proxies to localhost:3000)
-- **API**: http://api.ar.loc (Proxies to localhost:3211)
+- **Web App**: https://ar.loc (Proxies to localhost:3000)
+- **API**: https://api.ar.loc (Proxies to localhost:3211)
 
 ### Agent API
 The Agent API Specification is available at:
-- **Discovery**: http://ar.loc/openapi.yaml (Public instructions)
-- **Full Spec**: http://api.ar.loc/api/v1/openapi.yaml (Protected, requires `X-API-Key`)
+- **Discovery**: https://ar.loc/openapi.yaml (Public instructions)
+- **Full Spec**: https://api.ar.loc/api/v1/openapi.yaml (Protected, requires `X-API-Key`)
 
 ## Multi-Agent / Parallel Development
 
@@ -37,12 +37,12 @@ We use a **Port Offset** strategy. You choose a `Base Port` (e.g., 3010), and al
 
 | Service | Calculation | Example (`--port 3010`) | Domain |
 | :--- | :--- | :--- | :--- |
-| **Next.js App** | `Base` | **3010** | `http://mark.loc` |
-| **Convex API** | `Base + 211` | **3221** | `http://api.mark.loc` |
-| **Convex Dash** | `Base + 3791` | 6801 | `http://convex.mark.loc` |
-| **Novu Studio** | `Base + 1022` | 4032 | `http://novu.mark.loc` |
-| **Novu Console** | `Base + 1200` | 4210 | `http://novu-console.mark.loc` |
-| **Mailpit** | `Base + 5025` | 8035 | `http://mailpit.mark.loc` |
+| **Next.js App** | `Base` | **3010** | `https://mark.loc` |
+| **Convex API** | `Base + 211` | **3221** | `https://api.mark.loc` |
+| **Convex Dash** | `Base + 3791` | 6801 | `https://convex.mark.loc` |
+| **Novu Studio** | `Base + 1022` | 4032 | `https://novu.mark.loc` |
+| **Novu Console** | `Base + 1200` | 4210 | `https://novu-console.mark.loc` |
+| **Mailpit** | `Base + 5025` | 8035 | `https://mailpit.mark.loc` |
 
 ### 2. Setup New Agent
 1. **Register**: (Updates DNS & Proxy Config)
@@ -69,8 +69,8 @@ sudo setcap 'cap_net_bind_service=+ep' $(which node)
 ```
 
 ### 4. URLs
-- **Mark's App**: `http://mark.loc`
-- **Mark's API**: `http://api.mark.loc`
+- **Mark's App**: `https://mark.loc`
+- **Mark's API**: `https://api.mark.loc`
 - **Tools**: `mailpit.mark.loc`, `novu.mark.loc`, `convex.mark.loc`
 
 ### 5. Convex & Local Docker

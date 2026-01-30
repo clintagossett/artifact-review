@@ -37,7 +37,7 @@ elif [ -f "$LEGACY_AGENT_CONFIG" ]; then
 fi
 
 # Configuration
-NOVU_API_URL="${NOVU_API_URL:-http://api.novu.loc}"
+NOVU_API_URL="${NOVU_API_URL:-https://api.novu.loc}"
 AGENT_NAME="${AGENT_NAME:-mark}"
 PROJECT_NAME="artifact-review"
 
@@ -219,7 +219,7 @@ get_api_keys() {
     echo "  NOVU_SECRET_KEY=$SECRET_KEY"
     echo "  NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=$APP_IDENTIFIER"
     echo ""
-    echo "Login credentials (for web UI at http://novu.loc):"
+    echo "Login credentials (for web UI at https://novu.loc):"
     echo "  Email:    $EMAIL"
     echo "  Password: $PASSWORD"
     echo ""

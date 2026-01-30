@@ -149,7 +149,7 @@ verify_orchestrator() {
     log_step "Step 2: Verify Orchestrator"
 
     # Check if orchestrator proxy is running
-    if curl -s -o /dev/null -w "%{http_code}" http://novu.loc/ 2>/dev/null | grep -q "200\|302"; then
+    if curl -s -o /dev/null -w "%{http_code}" https://novu.loc/ 2>/dev/null | grep -q "200\|302"; then
         log_success "Orchestrator proxy running"
     else
         log_warn "Orchestrator not responding"
@@ -163,7 +163,7 @@ verify_orchestrator() {
             # Wait for it to be ready
             sleep 3
 
-            if curl -s -o /dev/null http://novu.loc/ 2>/dev/null; then
+            if curl -s -o /dev/null https://novu.loc/ 2>/dev/null; then
                 log_success "Orchestrator started"
             else
                 log_error "Failed to start orchestrator"
@@ -177,7 +177,7 @@ verify_orchestrator() {
     fi
 
     # Check Novu is accessible
-    if curl -s -o /dev/null -w "%{http_code}" http://api.novu.loc/v1/health 2>/dev/null | grep -q "200"; then
+    if curl -s -o /dev/null -w "%{http_code}" https://api.novu.loc/v1/health 2>/dev/null | grep -q "200"; then
         log_success "Novu API healthy"
     else
         log_warn "Novu API not responding (may need a moment to start)"
@@ -206,10 +206,10 @@ install_dependencies() {
 }
 
 # =============================================================================
-# STEP 4: Setup Convex (Docker + Admin Key)
+# STEP 4: Start Convex Container
 # =============================================================================
-setup_convex() {
-    log_step "Step 4: Setup Convex"
+start_convex_container() {
+    log_step "Step 4: Start Convex Container"
 
     source "$PROJECT_ROOT/.env.docker.local"
 
@@ -243,16 +243,6 @@ setup_convex() {
         fi
     fi
 
-    # Run setup-convex-env.sh to get admin key and configure
-    log_info "Configuring Convex environment..."
-    cd "$PROJECT_ROOT"
-
-    if [ -x "./scripts/setup-convex-env.sh" ]; then
-        ./scripts/setup-convex-env.sh
-        log_success "Convex environment configured"
-    else
-        log_warn "setup-convex-env.sh not found or not executable"
-    fi
 }
 
 # =============================================================================
@@ -275,7 +265,26 @@ setup_novu() {
 }
 
 # =============================================================================
-# STEP 6: Final Status
+# STEP 6: Configure Convex Environment
+# =============================================================================
+configure_convex_env() {
+    log_step "Step 6: Configure Convex Environment"
+
+    # Run setup-convex-env.sh to get admin key and configure
+    # This runs AFTER Novu setup so NOVU_* vars are available
+    log_info "Configuring Convex environment (including Novu keys)..."
+    cd "$PROJECT_ROOT"
+
+    if [ -x "./scripts/setup-convex-env.sh" ]; then
+        ./scripts/setup-convex-env.sh
+        log_success "Convex environment configured"
+    else
+        log_warn "setup-convex-env.sh not found or not executable"
+    fi
+}
+
+# =============================================================================
+# STEP 7: Final Status
 # =============================================================================
 show_status() {
     log_step "Setup Complete"
@@ -286,14 +295,14 @@ show_status() {
     echo "Agent: $AGENT_NAME"
     echo ""
     echo "URLs:"
-    echo "  App:      http://${AGENT_NAME}.loc"
-    echo "  Convex:   http://${AGENT_NAME}.convex.cloud.loc"
-    echo "  Mailpit:  http://${AGENT_NAME}.mailpit.loc"
-    echo "  Novu:     http://novu.loc"
+    echo "  App:      https://${AGENT_NAME}.loc"
+    echo "  Convex:   https://${AGENT_NAME}.convex.cloud.loc"
+    echo "  Mailpit:  https://${AGENT_NAME}.mailpit.loc"
+    echo "  Novu:     https://novu.loc"
     echo ""
     echo "Next steps:"
     echo "  1. Start dev servers:  ./scripts/start-dev-servers.sh"
-    echo "  2. View app:           http://${AGENT_NAME}.loc"
+    echo "  2. View app:           https://${AGENT_NAME}.loc"
     echo ""
     echo "Tmux sessions (after starting):"
     echo "  tmux attach -t ${AGENT_NAME}-nextjs"
@@ -320,7 +329,7 @@ check_status() {
     [ -f "$APP_DIR/.env.convex.local" ] && log_success "app/.env.convex.local exists" || log_warn "app/.env.convex.local missing"
 
     # Check orchestrator
-    if curl -s -o /dev/null http://novu.loc/ 2>/dev/null; then
+    if curl -s -o /dev/null https://novu.loc/ 2>/dev/null; then
         log_success "Orchestrator running"
     else
         log_warn "Orchestrator not running"
@@ -365,8 +374,9 @@ main() {
             setup_env_files
             verify_orchestrator
             install_dependencies
-            setup_convex
+            start_convex_container
             setup_novu
+            configure_convex_env
             show_status
             ;;
     esac

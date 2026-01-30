@@ -65,24 +65,24 @@ test.describe('Collaboration & Access Control', () => {
         artifactUrl = creatorPage.url();
         console.log(`Artifact created at: ${artifactUrl}`);
 
-        // 2. Journey 004: Sharing & Invites
+        // 2. Journey 004: Sharing & Invites via ShareModal
         console.log('Inviting reviewer...');
         await creatorPage.getByRole('button', { name: 'Share' }).click();
 
-        // The app currently navigates to a settings page instead of a modal
-        await expect(creatorPage).toHaveURL(/\/settings/);
-        await expect(creatorPage.getByText('People with Access')).toBeVisible();
+        // Wait for ShareModal to be visible
+        await expect(creatorPage.getByRole('dialog').getByText('Share Artifact for Review')).toBeVisible({ timeout: 10000 });
 
-        await creatorPage.getByPlaceholder('name@company.com').fill(reviewer.email);
-        await creatorPage.getByRole('button', { name: 'Send Invite' }).click();
+        await creatorPage.getByPlaceholder('Enter email address').fill(reviewer.email);
+        await creatorPage.getByRole('button', { name: 'Invite' }).click();
 
-        // Journey 004.01: Reviewer Lifecycle (Verify "Invited" status)
-        console.log('Waiting for reviewer email to appear in access list...');
-        // Wait for the specific reviewer email to appear in the list
+        // Journey 004.01: Reviewer Lifecycle (Verify invite was sent)
+        console.log('Waiting for reviewer email to appear in reviewers list...');
+        // Wait for the specific reviewer email to appear in the reviewers section
         await expect(creatorPage.getByText(reviewer.email).first()).toBeVisible({ timeout: 20000 });
         console.log('Reviewer found in access list.');
 
-        await expect(creatorPage.getByText('Invited', { exact: true }).first()).toBeVisible();
+        // Close modal to continue
+        await creatorPage.getByRole('button', { name: 'Close' }).first().click();
 
         // 3. Journey 003.01: Invitee Onboarding & Deep Linking
         console.log('Reviewer accessing artifact while unauthenticated...');

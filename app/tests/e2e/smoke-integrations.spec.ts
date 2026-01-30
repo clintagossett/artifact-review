@@ -99,7 +99,7 @@ test.describe('Systems Integration Smoke Tests', () => {
                     console.warn('NOVU_SECRET_KEY not set, skipping API validation');
                     return [];
                 }
-                const baseUrl = process.env.NOVU_API_URL || 'http://api.novu.loc'; // Shared Novu API
+                const baseUrl = process.env.NOVU_API_URL || 'https://api.novu.loc'; // Shared Novu API
                 try {
                     const response = await fetch(`${baseUrl}/v1/notifications?subscriberId=${subscriberId}&limit=10`, {
                         headers: { 'Authorization': `ApiKey ${apiKey}` },

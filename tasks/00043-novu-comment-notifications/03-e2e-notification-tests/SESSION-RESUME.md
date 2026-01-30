@@ -10,8 +10,8 @@ The core Novu notification infrastructure is now working. The E2E test progresse
 The Novu client in the browser was connecting to Novu Cloud instead of the local instance.
 
 **Fixes:**
-- Added `NEXT_PUBLIC_NOVU_API_URL=http://api.novu.loc` to `.env.local`
-- Added `NEXT_PUBLIC_NOVU_SOCKET_URL=http://ws.novu.loc` to `.env.local`
+- Added `NEXT_PUBLIC_NOVU_API_URL=https://api.novu.loc` to `.env.local`
+- Added `NEXT_PUBLIC_NOVU_SOCKET_URL=wss://ws.novu.loc` to `.env.local`
 - Updated `NotificationCenter.tsx` with `backendUrl` and `socketUrl` props
 
 ### 2. Novu WebSocket Routing
@@ -57,11 +57,11 @@ The `selectTextAndComment` helper in the test is not properly triggering the ann
 
 ## What Works Now
 
-- `http://mark.loc` - Next.js app ✅
-- `http://mark.convex.cloud.loc` - Convex WebSocket/sync ✅
-- `http://mark.convex.site.loc` - Convex HTTP actions ✅
-- `http://api.novu.loc` - Novu API ✅
-- `http://ws.novu.loc` - Novu WebSocket ✅
+- `https://mark.loc` - Next.js app ✅
+- `https://mark.convex.cloud.loc` - Convex WebSocket/sync ✅
+- `https://mark.convex.site.loc` - Convex HTTP actions ✅
+- `https://api.novu.loc` - Novu API ✅
+- `wss://ws.novu.loc` - Novu WebSocket ✅
 - ZIP upload and processing ✅
 - Novu subscriber sync ✅
 - Artifact invite flow ✅

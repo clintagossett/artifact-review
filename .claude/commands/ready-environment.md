@@ -43,8 +43,8 @@ tmux has-session -t ${AGENT_NAME}-convex-dev 2>/dev/null || ./scripts/start-dev-
 ### 5. Verify Connectivity (Smoke Tests)
 
 ```bash
-curl -s --max-time 10 http://${AGENT_NAME}.loc | head -1
-curl -s --max-time 10 http://${AGENT_NAME}.convex.cloud.loc | head -1
+curl -s --max-time 10 https://${AGENT_NAME}.loc | head -1
+curl -s --max-time 10 https://${AGENT_NAME}.convex.cloud.loc | head -1
 ```
 
 ### 6. Report Status

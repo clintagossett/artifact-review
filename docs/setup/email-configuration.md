@@ -21,7 +21,7 @@ In local dev, emails bypass Resend entirely and go directly to **Mailpit**.
 1. User triggers email (e.g., magic link request)
 2. Convex detects self-hosted environment (`CONVEX_SELF_HOSTED_URL` is set)
 3. Email sent via HTTP POST to `http://mailpit:8025/api/v1/send`
-4. Mailpit catches the email (viewable at `http://{AGENT_NAME}.mailpit.loc`)
+4. Mailpit catches the email (viewable at `https://{AGENT_NAME}.mailpit.loc`)
 
 **Code:** See `app/convex/lib/email.ts` lines 18-56
 
@@ -109,11 +109,11 @@ Two different keys serve different purposes:
 ./scripts/start-dev-servers.sh
 
 # 2. Trigger a magic link
-# Visit: http://{AGENT_NAME}.loc
+# Visit: https://{AGENT_NAME}.loc
 # Click "Sign in with Email"
 
 # 3. View email in Mailpit
-# Visit: http://{AGENT_NAME}.mailpit.loc
+# Visit: https://{AGENT_NAME}.mailpit.loc
 ```
 
 ### Hosted

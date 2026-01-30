@@ -24,6 +24,7 @@ import { ShareModal } from "./ShareModal";
 import { PresenceAvatars } from "./PresenceAvatars";
 import { usePresence } from "@/hooks/usePresence";
 import { Id } from "@/convex/_generated/dataModel";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface ArtifactHeaderProps {
   artifact: {
@@ -110,7 +111,7 @@ export function ArtifactHeader({
   const currentVersion = versions.find((v) => v.number === version.number);
 
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="border-b border-gray-200 bg-white relative z-50">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Left side: Back, Title, Version, Status, Presence */}
         <div className="flex items-center gap-4">
@@ -210,8 +211,15 @@ export function ArtifactHeader({
           />
         </div>
 
-        {/* Right side: Share and Manage buttons */}
+        {/* Right side: Notifications, Share and Manage buttons */}
         <div className="flex items-center gap-2">
+          {/* Notifications */}
+          {currentUser?._id && (
+            <div className="mr-1">
+              <NotificationCenter subscriberId={currentUser._id} />
+            </div>
+          )}
+
           <Button
             variant="outline"
             size="sm"

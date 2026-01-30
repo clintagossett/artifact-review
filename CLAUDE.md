@@ -306,11 +306,24 @@ Always use this script to start dev servers. It:
 
 **When to use `--restart`:**
 - Server crashed or is unresponsive
-- Environment variables changed (`.env.local`)
+- Environment variables changed (`.env.docker.local`, `app/.env.*.local`)
 - Dependencies changed (`package.json`)
-- Config files changed (`convex.json`, `next.config.js`)
+- Config files changed (`docker-compose.yml`, `convex.json`, `next.config.js`)
 
 **Note:** For normal code changes, restart is NOT needed - both Convex and Next.js have hot reloading.
+
+### Post-Change Actions (MANDATORY)
+
+**After modifying infrastructure files, you MUST restart before continuing work.**
+
+| File Changed | Required Action |
+|--------------|-----------------|
+| `docker-compose.yml` | `./scripts/start-dev-servers.sh --restart` |
+| `.env.docker.local` | `./scripts/start-dev-servers.sh --restart` |
+| `package.json` | `cd app && npm install && cd .. && ./scripts/start-dev-servers.sh --restart` |
+| `app/.env.*.local` | `./scripts/start-dev-servers.sh --restart` |
+
+**Do NOT continue implementing until the restart completes.** Changes to these files are not hot-reloaded - containers must be recreated to pick up the new configuration.
 
 **Manual commands (from app/ directory) - use only if script fails:**
 ```bash

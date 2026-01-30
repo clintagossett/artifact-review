@@ -52,7 +52,7 @@ This is a reference template for the `SESSION-RESUME.md` file that lives at the 
 | Docker (agent-backend) | Running/Stopped |
 | Orchestrator proxy | Running/Stopped |
 | Dev servers (tmux) | Running/Stopped |
-| http://agent.loc | Accessible/Down |
+| https://agent.loc | Accessible/Down |
 
 ---
 

@@ -14,13 +14,13 @@ The E2E tests for Novu notifications are blocked because user authentication fai
 **The Issue:** `useConvexAuth()` returns `isAuthenticated: false` even when valid JWT tokens exist in localStorage.
 
 **Key Observations:**
-- localStorage key: `__convexAuthJWT_httpapimarkloc` (matches expected format)
+- localStorage key: `__convexAuthJWT_httpsapimarkloc` (matches expected format)
 - JWT payload is valid:
   ```json
   {
     "sub": "user_id|session_id",
     "iat": 1769485870,
-    "iss": "http://api.mark.loc",
+    "iss": "https://api.mark.loc",
     "aud": "convex",
     "exp": 1769489470
   }
@@ -40,8 +40,8 @@ The E2E tests for Novu notifications are blocked because user authentication fai
 ## Technical Details
 
 ### Environment
-- App URL: `http://mark.loc` (proxied to localhost:3010)
-- API URL: `http://api.mark.loc` (proxied to localhost:3220)
+- App URL: `https://mark.loc` (proxied to localhost:3010)
+- API URL: `https://api.mark.loc` (proxied to localhost:3220)
 - Convex: Self-hosted Docker container
 - Package versions:
   - `@convex-dev/auth`: ^0.0.90
@@ -58,7 +58,7 @@ The E2E tests for Novu notifications are blocked because user authentication fai
 
 ## Next Steps to Try
 
-1. **Check `client.address` value** - Verify it matches `http://api.mark.loc`
+1. **Check `client.address` value** - Verify it matches `https://api.mark.loc`
 2. **Add logging inside @convex-dev/auth** - Patch the node_modules to add console.logs in `readStateFromStorage`
 3. **Test with localhost directly** - Rebuild app with `NEXT_PUBLIC_CONVEX_URL=http://localhost:3220` to bypass proxy
 4. **Check for async issues** - The `storageGet` might be returning a Promise that's not being awaited correctly

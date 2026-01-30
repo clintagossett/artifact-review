@@ -11,7 +11,7 @@ const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.
 /**
  * Mailpit API URL from environment.
  * Set MAILPIT_API_URL in .env.local for local development:
- *   - DNS routing: http://{agent}.mailpit.loc/api/v1
+ *   - DNS routing: https://{agent}.mailpit.loc/api/v1
  *   - Direct port: http://localhost:8025/api/v1
  * Leave unset for hosted environments (uses Resend API instead).
  */

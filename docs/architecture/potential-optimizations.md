@@ -39,9 +39,9 @@ Single shared Novu instance for all agents:
 │   └── proxy-config.json         # Port mappings
 └── agents/
     ├── default/
-    │   └── .env.local            # NOVU_API_URL=http://api.novu.loc
+    │   └── .env.local            # NOVU_API_URL=https://api.novu.loc
     └── mark/
-        └── .env.local            # NOVU_API_URL=http://api.novu.loc
+        └── .env.local            # NOVU_API_URL=https://api.novu.loc
 ```
 
 **Benefits:**
@@ -52,7 +52,7 @@ Single shared Novu instance for all agents:
 5. **DNS indirection** - Port changes don't affect agent configuration
 
 **Key Design Decision:**
-Agents use `http://api.novu.loc` instead of `http://localhost:3002`. This provides:
+Agents use `https://api.novu.loc` instead of `http://localhost:3002`. This provides:
 - Port independence (infrastructure changes isolated)
 - Environment portability (same config across dev/staging/prod)
 - Easy service switching (shared ↔ per-agent via proxy config only)

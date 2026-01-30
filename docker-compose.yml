@@ -17,6 +17,7 @@ services:
       # AGENT_NAME is set by start-dev-servers.sh (required)
       - "api.${AGENT_NAME:?AGENT_NAME is required}.loc:host-gateway"
       - "${AGENT_NAME}.loc:host-gateway"
+      - "${AGENT_NAME}.convex.cloud.loc:host-gateway"
       - "${AGENT_NAME}.convex.site.loc:host-gateway"
       - "api.novu.loc:host-gateway"
       # Route Resend API to local proxy for email interception (static IP on resend network)
@@ -26,8 +27,8 @@ services:
       # Use external URLs so browser can reach storage/API endpoints
       # CONVEX_CLOUD_ORIGIN: Used for API + storage upload URLs (must be browser-accessible)
       # CONVEX_SITE_ORIGIN: Used for HTTP actions (must be browser-accessible)
-      - CONVEX_CLOUD_ORIGIN=${CONVEX_URL:-http://${AGENT_NAME}.convex.cloud.loc}
-      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_URL:-http://${AGENT_NAME}.convex.site.loc}
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_URL:-https://${AGENT_NAME}.convex.cloud.loc}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_URL:-https://${AGENT_NAME}.convex.site.loc}
       - RUST_LOG=info
       - INSTANCE_NAME=${INSTANCE_NAME:-artifact-review-local}
       # NOTE: Do NOT set INSTANCE_SECRET here - let the container generate it on first start
@@ -37,9 +38,11 @@ services:
       - DO_NOT_REQUIRE_SSL=true
       - DISABLE_BEACON=true
       - MAX_UDF_EXECUTION_SEC=10
-      # Trust mkcert CA for resend-proxy (see docs/setup/mkcert-setup.md)
+      # Trust mkcert CA for HTTPS to local services (see docs/setup/mkcert-setup.md)
       # SSL_CERT_FILE tells Rust's native-tls/openssl to use our custom CA bundle
       - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates-with-mkcert.crt
+      # NODE_EXTRA_CA_CERTS tells Node.js (Convex actions) to trust mkcert CA
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates-with-mkcert.crt
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:3210/version" ]
       interval: 5s

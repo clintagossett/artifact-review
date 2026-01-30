@@ -218,16 +218,17 @@ cd "$APP_DIR"
 if [ -f .env.local ]; then
     # Construct the URLs
     # Server-side: direct localhost connection for CLI tools
-    ADMIN_URL="http://${AGENT_NAME}.convex.cloud.loc"
+    ADMIN_URL="https://${AGENT_NAME}.convex.cloud.loc"
     # Browser-side: DNS names for proxy routing (works with orchestrator)
+    # Uses HTTPS since orchestrator proxy terminates TLS on port 443
     # Falls back to localhost if not using DNS routing
     if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
         # Convex cloud (WebSocket/sync) - mirrors *.convex.cloud
-        CONVEX_CLOUD_URL="http://$AGENT_NAME.convex.cloud.loc"
+        CONVEX_CLOUD_URL="https://$AGENT_NAME.convex.cloud.loc"
         # Convex site (HTTP/storage) - mirrors *.convex.site
-        CONVEX_SITE_URL="http://$AGENT_NAME.convex.site.loc"
+        CONVEX_SITE_URL="https://$AGENT_NAME.convex.site.loc"
     else
-        CONVEX_CLOUD_URL="http://${AGENT_NAME}.convex.cloud.loc"
+        CONVEX_CLOUD_URL="https://${AGENT_NAME}.convex.cloud.loc"
         CONVEX_SITE_URL="http://127.0.0.1:$CONVEX_HTTP_PORT"
     fi
 
@@ -258,19 +259,35 @@ if [ -f .env.local ]; then
     fi
 else
     # Create if missing - use DNS names for browser if agent name is set
-    echo "CONVEX_SELF_HOSTED_URL=http://${AGENT_NAME}.convex.cloud.loc" > .env.local
+    # Browser URLs use HTTPS since orchestrator proxy terminates TLS
+    echo "CONVEX_SELF_HOSTED_URL=https://${AGENT_NAME}.convex.cloud.loc" > .env.local
     if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
-        echo "NEXT_PUBLIC_CONVEX_URL=http://$AGENT_NAME.convex.cloud.loc" >> .env.local
-        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://$AGENT_NAME.convex.site.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_URL=https://$AGENT_NAME.convex.cloud.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_HTTP_URL=https://$AGENT_NAME.convex.site.loc" >> .env.local
     else
-        echo "NEXT_PUBLIC_CONVEX_URL=http://${AGENT_NAME}.convex.cloud.loc" >> .env.local
+        echo "NEXT_PUBLIC_CONVEX_URL=https://${AGENT_NAME}.convex.cloud.loc" >> .env.local
         echo "NEXT_PUBLIC_CONVEX_HTTP_URL=http://127.0.0.1:$CONVEX_HTTP_PORT" >> .env.local
     fi
 fi
 
+# Add Novu vars for notification support (from .env.nextjs.local)
+if [ -f .env.nextjs.local ]; then
+    echo "" >> .env.local
+    echo "# Novu Notifications (auto-added from .env.nextjs.local)" >> .env.local
+    grep -E '^(NOVU_|NEXT_PUBLIC_NOVU_)' .env.nextjs.local >> .env.local 2>/dev/null || true
+fi
+
 # EXPORT the URL to ensure npx convex dev picks it up
-export CONVEX_SELF_HOSTED_URL="http://${AGENT_NAME}.convex.cloud.loc"
+export CONVEX_SELF_HOSTED_URL="https://${AGENT_NAME}.convex.cloud.loc"
 unset CONVEX_DEPLOYMENT
+
+# Set NODE_EXTRA_CA_CERTS for mkcert TLS trust (required for npx convex dev with HTTPS)
+if [ -z "$NODE_EXTRA_CA_CERTS" ]; then
+    MKCERT_CA="$(mkcert -CAROOT 2>/dev/null)/rootCA.pem"
+    if [ -f "$MKCERT_CA" ]; then
+        export NODE_EXTRA_CA_CERTS="$MKCERT_CA"
+    fi
+fi
 
 
 # Create logs directory
@@ -344,8 +361,8 @@ fi
 echo "Checking for shared Novu..."
 if docker ps --filter "name=novu-api" --format '{{.Names}}' 2>/dev/null | grep -q "^novu-api$"; then
     echo "  ✅ Shared Novu available"
-    echo "     Web: http://novu.loc (or http://localhost:4200)"
-    echo "     API: http://api.novu.loc (or http://localhost:3002)"
+    echo "     Web: https://novu.loc (or http://localhost:4200)"
+    echo "     API: https://api.novu.loc (or http://localhost:3002)"
 else
     echo "  ⚠️  Shared Novu not running"
     echo "     Start orchestrator: cd $ORCHESTRATOR_DIR/orchestrator && ./start.sh"
@@ -414,7 +431,7 @@ echo "  Admin key derived successfully"
 
 # Initialize local Convex functions (Non-interactive)
 # We use the explicit URL and Admin Key to bypass login/project selection prompts
-npx convex dev --once --url "http://${AGENT_NAME}.convex.cloud.loc" --admin-key "$CONVEX_ADMIN_KEY" || { echo "ERROR: Failed to push to local Convex"; exit 1; }
+npx convex dev --once --url "https://${AGENT_NAME}.convex.cloud.loc" --admin-key "$CONVEX_ADMIN_KEY" || { echo "ERROR: Failed to push to local Convex"; exit 1; }
 
 # =============================================================================
 # TMUX SESSION MANAGEMENT
@@ -484,8 +501,9 @@ fi
 echo ""
 echo "Starting Convex function watcher..."
 # Note: Admin key contains | character, must be quoted to avoid shell interpretation
+# NODE_EXTRA_CA_CERTS must be passed explicitly for mkcert TLS trust
 start_session "$CONVEX_SESSION" "$APP_DIR" \
-    "npx convex dev --tail-logs always --url http://${AGENT_NAME}.convex.cloud.loc --admin-key '${CONVEX_ADMIN_KEY}'"
+    "NODE_EXTRA_CA_CERTS='${NODE_EXTRA_CA_CERTS}' npx convex dev --tail-logs always --url https://${AGENT_NAME}.convex.cloud.loc --admin-key '${CONVEX_ADMIN_KEY}'"
 
 # -----------------------------------------------------------------------------
 # Start Next.js Dev Server (tmux)
@@ -506,7 +524,7 @@ echo "Starting Stripe CLI tunnel..."
 
 # Get the Convex site URL for webhook forwarding
 if [ -n "$AGENT_NAME" ] && [ "$AGENT_NAME" != "default" ]; then
-    WEBHOOK_URL="http://$AGENT_NAME.convex.site.loc/stripe/webhook"
+    WEBHOOK_URL="https://$AGENT_NAME.convex.site.loc/stripe/webhook"
 else
     WEBHOOK_URL="http://127.0.0.1:$CONVEX_HTTP_PORT/stripe/webhook"
 fi
@@ -528,10 +546,10 @@ session_exists "$CONVEX_SESSION" && echo "  ✅ $CONVEX_SESSION" || echo "  ❌ 
 session_exists "$STRIPE_SESSION" && echo "  ✅ $STRIPE_SESSION" || echo "  ❌ $STRIPE_SESSION"
 echo ""
 echo "URLs:"
-echo "  App:          http://$AGENT_NAME.loc"
-echo "  Convex Sync:  http://$AGENT_NAME.convex.cloud.loc"
-echo "  Convex HTTP:  http://$AGENT_NAME.convex.site.loc"
-echo "  Mailpit:      http://$AGENT_NAME.mailpit.loc"
+echo "  App:          https://$AGENT_NAME.loc"
+echo "  Convex Sync:  https://$AGENT_NAME.convex.cloud.loc"
+echo "  Convex HTTP:  https://$AGENT_NAME.convex.site.loc"
+echo "  Mailpit:      https://$AGENT_NAME.mailpit.loc"
 echo ""
 echo "Commands:"
 echo "  View logs:    tmux capture-pane -t $NEXTJS_SESSION -p -S -50"

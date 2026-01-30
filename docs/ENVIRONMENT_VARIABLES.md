@@ -34,8 +34,8 @@ CONVEX_HTTP_PORT=3231
 APP_PORT=3020
 
 # Derived URLs (based on AGENT_NAME)
-SITE_URL=http://james.loc
-CONVEX_URL=http://james.convex.cloud.loc
+SITE_URL=https://james.loc
+CONVEX_URL=https://james.convex.cloud.loc
 ```
 
 **Used by:**
@@ -68,12 +68,12 @@ VERCEL_TOKEN=...
 ```bash
 # Convex connection
 CONVEX_SELF_HOSTED_URL=http://127.0.0.1:3230
-NEXT_PUBLIC_CONVEX_URL=http://james.convex.cloud.loc
-NEXT_PUBLIC_CONVEX_HTTP_URL=http://james.convex.site.loc
+NEXT_PUBLIC_CONVEX_URL=https://james.convex.cloud.loc
+NEXT_PUBLIC_CONVEX_HTTP_URL=https://james.convex.site.loc
 
 # Test utilities (Resend/Mailpit)
 RESEND_FULL_ACCESS_API_KEY=re_dummy_key_for_localhost
-MAILPIT_API_URL=http://james.mailpit.loc/api/v1
+MAILPIT_API_URL=https://james.mailpit.loc/api/v1
 
 # Novu notifications
 NOVU_SECRET_KEY=...
@@ -92,7 +92,7 @@ NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=...
 
 ```bash
 # Authentication & URLs
-SITE_URL=http://james.loc
+SITE_URL=https://james.loc
 INTERNAL_API_KEY=...
 
 # Email (local dev uses Mailpit, not Resend)
@@ -101,7 +101,7 @@ EMAIL_FROM_AUTH="Auth <auth@test.com>"
 
 # Novu
 NOVU_SECRET_KEY=...
-NOVU_API_URL=http://api.novu.loc
+NOVU_API_URL=https://api.novu.loc
 
 # ⚠️ JWT keys are NOT stored here - see JWT Key Management section
 ```
@@ -118,9 +118,9 @@ NOVU_API_URL=http://api.novu.loc
 
 ```bash
 # Used by npx convex dev to find the deployment
-CONVEX_SELF_HOSTED_URL=http://james.convex.cloud.loc
-NEXT_PUBLIC_CONVEX_URL=http://james.convex.cloud.loc
-NEXT_PUBLIC_CONVEX_HTTP_URL=http://james.convex.site.loc
+CONVEX_SELF_HOSTED_URL=https://james.convex.cloud.loc
+NEXT_PUBLIC_CONVEX_URL=https://james.convex.cloud.loc
+NEXT_PUBLIC_CONVEX_HTTP_URL=https://james.convex.site.loc
 ```
 
 **Used by:** `npx convex dev`, `npx convex env` commands
@@ -212,22 +212,22 @@ These are set in **Vercel** (or `.env.local` for local dev).
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
 | `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts`, `convex/novu.ts` |
-| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `http://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
+| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `https://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
-| `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `http://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
-| `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Configuration**. Novu WebSocket URL (browser-side). For local dev: `http://ws.novu.loc`. Required for self-hosted Novu real-time notifications. | `src/components/NotificationCenter.tsx` |
+| `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `https://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
+| `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Configuration**. Novu WebSocket URL (browser-side). For local dev: `wss://ws.novu.loc`. Required for self-hosted Novu real-time notifications. | `src/components/NotificationCenter.tsx` |
 
 ### Local Development Mode (Shared Orchestrator)
 The agentic-dev infrastructure runs a **shared Novu instance** managed by the orchestrator:
 
 | Service | URL |
 |---------|-----|
-| Novu Dashboard | `http://novu.loc` |
-| Novu API | `http://api.novu.loc` |
+| Novu Dashboard | `https://novu.loc` |
+| Novu API | `https://api.novu.loc` |
 
 To use the shared instance:
 1. Start the orchestrator: `cd /path/to/agentic-dev/orchestrator && ./start.sh`
-2. Set in `.env.local`: `NOVU_API_URL=http://api.novu.loc`
+2. Set in `.env.local`: `NOVU_API_URL=https://api.novu.loc`
 3. Start your dev servers: `./scripts/start-dev-servers.sh`
 
 **Note:** The shared Novu is DNS-routed via dnsmasq. No per-agent Novu containers needed.
@@ -235,7 +235,7 @@ To use the shared instance:
 ### 📬 Mailpit (Local Email Testing)
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
-| `MAILPIT_API_URL` | **Configuration**. Mailpit API endpoint for local email testing. Set for local dev only (e.g., `http://{agent}.mailpit.loc/api/v1`). Leave unset for hosted environments. | `tests/utils/resend.ts` |
+| `MAILPIT_API_URL` | **Configuration**. Mailpit API endpoint for local email testing. Set for local dev only (e.g., `https://{agent}.mailpit.loc/api/v1`). Leave unset for hosted environments. | `tests/utils/resend.ts` |
 | `NOVU_DIGEST_INTERVAL` | **Configuration**. Digest window in minutes (Default: `10`). Set to `0` or `1` for E2E tests. | `src/app/api/novu/workflows/comment-workflow.ts` |
 
 ### ℹ️ Optional
@@ -258,7 +258,7 @@ NEXT_PUBLIC_CONVEX_URL=https://...
 NEXT_PUBLIC_CONVEX_HTTP_URL=https://...
 
 # Local email testing
-MAILPIT_API_URL=http://{agent}.mailpit.loc/api/v1
+MAILPIT_API_URL=https://{agent}.mailpit.loc/api/v1
 RESEND_FULL_ACCESS_API_KEY=re_dummy_key_for_localhost  # Not used locally (Mailpit handles emails)
 ```
 
@@ -278,11 +278,11 @@ EMAIL_FROM_NOTIFICATIONS="Notify <notify@test.com>"
 
 # Novu config
 NOVU_SECRET_KEY=...
-NOVU_API_URL=http://api.novu.loc
+NOVU_API_URL=https://api.novu.loc
 
 # URLs
-SITE_URL=http://{agent}.loc
-CONVEX_SELF_HOSTED_URL=http://{agent}.convex.cloud.loc
+SITE_URL=https://{agent}.loc
+CONVEX_SELF_HOSTED_URL=https://{agent}.convex.cloud.loc
 ```
 
 **Sync to Convex:** After editing `.env.convex.local`, run:

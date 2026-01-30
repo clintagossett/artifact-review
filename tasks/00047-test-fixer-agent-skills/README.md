@@ -62,9 +62,9 @@ Every development session must pass through two sequential gates before work beg
 │  │   ├── Orchestrator proxy                                 │
 │  │   └── Dev servers (tmux sessions)                        │
 │  ├── Verify connectivity                                    │
-│  │   ├── curl http://james.loc                              │
-│  │   ├── curl http://api.james.loc                          │
-│  │   └── curl http://james.convex.cloud.loc                 │
+│  │   ├── curl https://james.loc                             │
+│  │   ├── curl https://api.james.loc                         │
+│  │   └── curl https://james.convex.cloud.loc                │
 │  └── Run smoke tests (proves systems work together)         │
 │                                                             │
 │  Output: PASS (environment ready) or FAIL (fix issues)      │

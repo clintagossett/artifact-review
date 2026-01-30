@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
  */
 export async function GET() {
   const convexSiteUrl =
-    process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "http://mark.convex.site.loc";
+    process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "https://mark.convex.site.loc";
 
   try {
     const response = await fetch(

@@ -32,8 +32,8 @@ docker ps --filter "name=$AGENT_NAME" --format "{{.Names}}: {{.Status}}" | grep 
 pgrep -f "node.*proxy.js" > /dev/null && echo "Proxy: Running"
 
 # Key endpoints
-curl -s -o /dev/null -w "%{http_code}" http://${AGENT_NAME}.loc
-curl -s -o /dev/null -w "%{http_code}" http://${AGENT_NAME}.convex.cloud.loc
+curl -s -o /dev/null -w "%{http_code}" https://${AGENT_NAME}.loc
+curl -s -o /dev/null -w "%{http_code}" https://${AGENT_NAME}.convex.cloud.loc
 ```
 
 ### Step 2: Branch State

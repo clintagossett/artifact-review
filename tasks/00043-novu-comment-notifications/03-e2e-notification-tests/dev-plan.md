@@ -198,7 +198,7 @@ waitForNotificationCountAtLeast(page, minCount, timeout)
 ## Infrastructure Blocker Details
 
 **Issue**: Orchestrator proxy not running prevents WebSocket connections
-**Error**: `WebSocket connection to 'ws://api.mark.loc/api/1.31.2/sync' failed`
+**Error**: `WebSocket connection to 'wss://api.mark.loc/api/1.31.2/sync' failed`
 **Fix Required**: Start orchestrator proxy with `sudo node proxy.js` from orchestrator directory
 **Impact**: All E2E tests requiring authentication are blocked
 

@@ -98,9 +98,9 @@ const escapedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "");
 const storageKey = (key) => `${key}_${escapedNamespace}`;
 
 // Example:
-// URL: http://mark.convex.cloud.loc
-// Normalized: httpmarkconvexcloudloc
-// Storage key: __convexAuthJWT_httpmarkconvexcloudloc
+// URL: https://mark.convex.cloud.loc
+// Normalized: httpsmarkconvexcloudloc
+// Storage key: __convexAuthJWT_httpsmarkconvexcloudloc
 ```
 
 **Why This Matters:**
@@ -123,13 +123,13 @@ Day 2: Port changes to 3221
 Using DNS names abstracts infrastructure from identity:
 
 ```
-Day 1: NEXT_PUBLIC_CONVEX_URL=http://mark.convex.cloud.loc
-       Key: __convexAuthJWT_httpmarkconvexcloudloc
+Day 1: NEXT_PUBLIC_CONVEX_URL=https://mark.convex.cloud.loc
+       Key: __convexAuthJWT_httpsmarkconvexcloudloc
        JWT stored ✓
 
 Day 2: Backend port changes (proxy config update)
-       URL unchanged: http://mark.convex.cloud.loc
-       Key unchanged: __convexAuthJWT_httpmarkconvexcloudloc
+       URL unchanged: https://mark.convex.cloud.loc
+       Key unchanged: __convexAuthJWT_httpsmarkconvexcloudloc
        JWT FOUND ✓ → User stays logged in
 ```
 
@@ -248,7 +248,7 @@ For notification service communication:
 ```bash
 # .env.local
 NOVU_SECRET_KEY=cde2a75cf7803a368888ada30265cd34
-NOVU_API_URL=http://api.novu.loc
+NOVU_API_URL=https://api.novu.loc
 ```
 
 **Usage:**
