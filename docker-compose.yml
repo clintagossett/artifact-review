@@ -66,6 +66,23 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Port 80 proxy for Node executor compatibility
+  # The Convex Node executor's internal implementation tries to connect to 127.0.0.1:80
+  # but the backend only listens on 3210/3211. This sidecar proxies 80 → 3210.
+  # NOTE: Uses internal container port (always 3210), not the mapped host port.
+  # See: tasks/00045-node-action-storage-fix/README.md
+  port80-proxy:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-port80-proxy
+    image: alpine/socat:latest
+    network_mode: "service:backend"
+    # Proxy port 80 to the backend's internal admin port (3210)
+    # The backend always listens on 3210 internally, regardless of CONVEX_ADMIN_PORT mapping
+    command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   dashboard:
     container_name: ${AGENT_NAME:?AGENT_NAME is required}-dashboard
     image: ghcr.io/get-convex/convex-dashboard:latest
