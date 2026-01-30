@@ -66,27 +66,7 @@ In hosted environments, emails are sent through **Resend**.
 - `RESEND_API_KEY` - API key for sending emails (set via `npx convex env set`)
 - `RESEND_FULL_ACCESS_API_KEY` - Full access key for test utilities to retrieve sent emails
 
-**Optional:**
-- `RESEND_TEST_MODE` - Resend's test mode (NOT related to Mailpit)
-  - `true`: Emails go to Resend but aren't actually sent (Resend test mode)
-  - `false`: Emails are delivered normally
-  - Default: `true` (see `convex/lib/email.ts` line 6)
-
 ## Common Confusion
-
-### "What's the difference between RESEND_TEST_MODE and Mailpit?"
-
-**RESEND_TEST_MODE:**
-- Resend API feature
-- Emails sent to Resend but not delivered
-- Used in hosted environments for testing
-- NOT related to Mailpit
-
-**Mailpit:**
-- Local SMTP server for catching emails
-- Used ONLY in local dev (self-hosted Convex)
-- Emails never touch Resend
-- Viewable at `http://{AGENT_NAME}.mailpit.loc`
 
 ### "Why do the .example files have dummy Resend keys?"
 
@@ -119,7 +99,6 @@ Two different keys serve different purposes:
 |----------|------|---------|-----------|--------|
 | `RESEND_API_KEY` | `.env.convex.local` | Convex backend (sending) | ❌ Not needed | ✅ Required |
 | `RESEND_FULL_ACCESS_API_KEY` | `.env.nextjs.local` | Test utilities (retrieval) | ❌ Not needed | ✅ Required |
-| `RESEND_TEST_MODE` | `.env.convex.local` | Resend component | ❌ Ignored | ⚙️ Optional |
 | `MAILPIT_API_URL` | `.env.nextjs.local` | Test utilities (retrieval) | ✅ Required | ❌ Not used |
 
 ## Testing Email Flow
@@ -143,10 +122,7 @@ Two different keys serve different purposes:
 cd app
 npx convex env set RESEND_API_KEY re_your_actual_key
 
-# 2. Optionally enable real sending
-npx convex env set RESEND_TEST_MODE false
-
-# 3. Trigger email and check Resend dashboard
+# 2. Trigger email and check Resend dashboard
 ```
 
 ## Troubleshooting

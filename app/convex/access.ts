@@ -947,15 +947,11 @@ export const sendEmailInternal = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Skip or redirect if testing
+    // Skip if explicitly disabled
     if (process.env.SKIP_EMAILS === "true") {
       console.log("Skipping email send (SKIP_EMAILS=true)");
       return null;
     }
-
-    // In test mode (or when explicitly requested), divert to safe address
-    // This allows testing the full flow including Resend API call
-    const isTestMode = process.env.RESEND_TEST_MODE === "true";
 
     // Get access record
     const access = await ctx.runQuery(internal.access.getAccessById, {

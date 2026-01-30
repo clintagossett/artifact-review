@@ -11,7 +11,9 @@ import { ActionCtx } from "../_generated/server";
  * One code path for all environments.
  */
 export const resend = new Resend(components.resend, {
-    testMode: process.env.RESEND_TEST_MODE !== "false",
+    // Local dev: resend-proxy routes to Mailpit
+    // Production: real Resend API
+    testMode: false,
 });
 
 export async function sendEmail(

@@ -187,7 +187,6 @@ These variables must be set in the **Convex Dashboard** under **Project Settings
 | Variable Name | Description | Default | Used In Files |
 | :--- | :--- | :--- | :--- |
 | `SKIP_EMAILS` | Set to `"true"` to suppress all email sending. Useful for seed scripts or local dev. | `false` | `convex/access.ts` |
-| `RESEND_TEST_MODE` | Set to `"false"` to send *real* emails. Defaults to `"true"` (safe mode). | `true` | `convex/lib/resend.ts` |
 | `LOG_LEVEL` | Logging verbosity: `debug`, `info`, `warn`, `error`. | `debug` | `convex/lib/logger.ts` |
 
 ### 🔒 System Variables (Managed by Convex)

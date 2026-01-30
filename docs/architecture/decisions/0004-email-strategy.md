@@ -6,7 +6,7 @@
 
 ## TL;DR
 
-Use Resend for all transactional email via `@convex-dev/resend` component. Use component `testMode` for safe development awareness. No inbound email for MVP.
+Use Resend for all email (auth, invites, notifications) via `@convex-dev/resend` component. Local dev uses resend-proxy to route emails to Mailpit. No inbound email for MVP.
 
 ## Quick Reference
 
@@ -83,8 +83,8 @@ When running locally via Docker Compose, all emails are routed to Mailpit. This 
 
 | Environment | Infrastructure | Email Strategy | Primary Purpose |
 |-------------|----------------|----------------|-----------------|
-| **Local Dev** | Docker Compose (Self-hosted Convex + Mailpit) | **Capture**: Bypasses Resend; routed to Mailpit. | Fast, isolated, offline-capable feature development. |
-| **Hosted Dev** | Convex Cloud (Dev Project) + Resend | **Log/Deliver**: Uses Resend (Test Mode OR Live). | Shared preview, integration testing, team collaboration. |
+| **Local Dev** | Docker Compose (Self-hosted Convex + resend-proxy + Mailpit) | **Capture**: resend-proxy intercepts api.resend.com and routes to Mailpit. | Fast, isolated, offline-capable feature development. |
+| **Hosted Dev** | Convex Cloud (Dev Project) + Resend | **Live**: Real delivery via Resend API. | Shared preview, integration testing, team collaboration. |
 | **Staging** | Convex Cloud (Staging Project) + Resend | **Live**: Real delivery to verified domains. | Final QA and stakeholder sign-off. |
 | **Production** | Convex Cloud (Prod Project) + Resend | **Live**: Real delivery to all users. | Live application traffic. |
 
@@ -93,30 +93,14 @@ When running locally via Docker Compose, all emails are routed to Mailpit. This 
 #### Local Dev ("The Sandboxed Machine")
 - **Backend**: Self-hosted Convex running in Docker.
 - **Data**: Local SQLite database; isolated per developer.
-- **Email**: Mailpit captures all traffic. No external API keys or secrets required for core auth.
+- **Email**: resend-proxy intercepts api.resend.com traffic and routes to Mailpit. One code path for all environments.
 - **Dashboard**: Accessed via `localhost:6791`.
 
 #### Hosted Dev ("The Collective Sandbox")
 - **Backend**: Standard Convex Cloud deployment.
 - **Data**: Shared development database in the cloud.
-- **Email**: Routes through Resend. Usually uses `RESEND_TEST_MODE=true` to log emails in the cloud dashboard without sending, but can be toggled to `false` for end-to-end delivery testing.
+- **Email**: Routes through Resend API for real delivery.
 - **Dashboard**: Accessed via the Convex web dashboard.
-
-### Resend Configuration
-
-```bash
-# Local
-npx convex env set RESEND_TEST_MODE=true --project dev
-
-# Hosted Dev
-npx convex env set RESEND_TEST_MODE=false --project dev
-
-# Staging
-npx convex env set RESEND_TEST_MODE=false --project staging
-
-# Production
-npx convex env set RESEND_TEST_MODE=false --project prod
-```
 
 ### Domain Setup
 
@@ -159,7 +143,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 - ✅ **Official Convex integration** - Magic links work out of the box
 - ✅ **Generous free tier** - 3K emails covers MVP + early growth
-- ✅ **Simple local testing** - Resend Test Mode logs everything in the dashboard
+- ✅ **Simple local testing** - resend-proxy routes to Mailpit automatically
 - ✅ **Modern API** - Clean SDK, good TypeScript support
 - ✅ **Reasonable scaling** - $20/mo for 50K is cost-effective
 

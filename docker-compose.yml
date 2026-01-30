@@ -20,7 +20,8 @@ services:
       - "${AGENT_NAME}.convex.site.loc:host-gateway"
       - "api.novu.loc:host-gateway"
       # Route Resend API to local proxy for email interception (static IP on resend network)
-      - "api.resend.com:172.28.0.10"
+      # RESEND_PROXY_IP configured in .env.docker.local (agent-specific to avoid subnet conflicts)
+      - "api.resend.com:${RESEND_PROXY_IP:-172.28.0.10}"
     environment:
       # Use external URLs so browser can reach storage/API endpoints
       # CONVEX_CLOUD_ORIGIN: Used for API + storage upload URLs (must be browser-accessible)
@@ -48,23 +49,6 @@ services:
     networks:
       - default
       - resend
-
-  # Port 80 proxy for Node executor compatibility
-  # The Convex Node executor's internal implementation tries to connect to 127.0.0.1:80
-  # but the backend only listens on 3210/3211. This sidecar proxies 80 → 3210.
-  # NOTE: Uses internal container port (always 3210), not the mapped host port.
-  # See: tasks/00045-node-action-storage-fix/README.md
-  port80-proxy:
-    container_name: ${AGENT_NAME:?AGENT_NAME is required}-port80-proxy
-    image: alpine/socat:latest
-    network_mode: "service:backend"
-    # Proxy port 80 to the backend's internal admin port (3210)
-    # The backend always listens on 3210 internally, regardless of CONVEX_ADMIN_PORT mapping
-    command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
 
   # Port 80 proxy for Node executor compatibility
   # The Convex Node executor's internal implementation tries to connect to 127.0.0.1:80
@@ -111,7 +95,7 @@ services:
 
   # Resend API proxy: Intercepts calls to api.resend.com and routes to Mailpit
   # This allows @convex-dev/resend to work unchanged in local dev
-  # Backend resolves api.resend.com → 172.28.0.10 (this container) via extra_hosts
+  # Backend resolves api.resend.com → RESEND_PROXY_IP (this container) via extra_hosts
   resend-proxy:
     container_name: ${AGENT_NAME:?AGENT_NAME is required}-resend-proxy
     build:
@@ -127,7 +111,7 @@ services:
       - MAILPIT_PORT=8025
     networks:
       resend:
-        ipv4_address: 172.28.0.10
+        ipv4_address: ${RESEND_PROXY_IP:-172.28.0.10}
     depends_on:
       - mailpit
     restart: unless-stopped
@@ -137,7 +121,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: ${RESEND_NETWORK_SUBNET:-172.28.0.0/16}
 
 volumes:
   convex_data:
