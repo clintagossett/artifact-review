@@ -1,122 +1,79 @@
 # Session Resume
 
-**Last Updated:** 2026-01-30 02:15
+**Last Updated:** 2026-01-30 03:25
 **Branch:** james/dev-work
 **Agent:** james
 
-## Status: IN PROGRESS
-
----
-
-## Just Completed
-
-### Port 80 Proxy Fix for Node Action Storage (Commits 6d335d1, 400c4b3)
-
-**Issue:** `ctx.storage.store()` and `ctx.storage.get()` failed with `ECONNREFUSED 127.0.0.1:80` in Node actions.
-
-**Root Cause:** Convex Node actions internally connect to port 80 for storage operations, but nothing listens there in self-hosted Docker.
-
-**Solution:** Added socat proxy to docker-compose.yml:
-```yaml
-port80-proxy:
-  image: alpine/socat:latest
-  network_mode: "service:backend"
-  command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
-```
-
-**Cleanup:** Removed all HTTP fallback workarounds (-466 lines):
-- Deleted `app/convex/debugNetworking.ts`
-- Removed `/internal/storage-blob`, `/debug/*` endpoints from http.ts
-- Removed `getStorageBlob()` helper from zipProcessor.ts
-- Now uses direct `ctx.storage.get()` / `ctx.storage.store()`
-
-**Files changed:**
-- `docker-compose.yml` - Added port80-proxy service
-- `app/convex/http.ts` - Removed debug/internal endpoints
-- `app/convex/zipProcessor.ts` - Simplified to direct storage access
-- `docs/architecture/decisions/0019-node-action-storage-fallback.md` - Updated with socat fix
+## Status: READY TO COMMIT
 
 ---
 
 ## Current Work
 
-### Task #43 - Novu Comment Notifications
-**Status:** E2E tests failing (NOT storage related)
+### Resend-to-Mailpit Proxy (Task #43 Prerequisite)
+**Status:** COMPLETE - Email infrastructure verified working
 
-**Context:**
-- Storage blocker RESOLVED (port80-proxy fix)
-- Subtasks 01-02 complete
-- E2E tests run but all 6 fail with timeouts
-- Failures are in comment/notification flow, NOT storage
+**Goal:** One code path for email - app always uses @convex-dev/resend, infrastructure routes to Mailpit in local dev.
 
-**Test output shows:**
-- Artifact pages load correctly (storage working)
-- Timeouts waiting for notifications/comments
-- Likely Novu integration or E2E timing issues
+**What was implemented:**
 
-**Next:**
-1. Debug why comments aren't appearing
-2. Check Novu workflow triggers
-3. May need `/analyze-failures` and `/e2e-fixes`
+1. **resend-proxy Docker container** (`docker/resend-proxy/`)
+   - Node.js HTTPS server with mkcert-trusted cert
+   - Listens on port 443, accepts Resend API format
+   - Translates to Mailpit format, forwards to mailpit:8025
+   - Files: `proxy.js`, `Dockerfile`, `certs/`
 
----
+2. **mkcert TLS solution:**
+   - Generated locally-trusted cert for `api.resend.com`
+   - Created combined CA bundle (system CAs + mkcert CA)
+   - Backend trusts via `SSL_CERT_FILE` env var
+   - No self-signed cert warnings in Convex isolate
 
-### Task #47 - Agent & Skills Workflow System
-**Status:** Complete
+3. **docker-compose.yml changes:**
+   - Added `resend-proxy` service with static IP (172.28.0.10)
+   - Added `resend` network (172.28.0.0/16)
+   - Backend gets `extra_hosts: api.resend.com:172.28.0.10`
+   - Backend mounts combined CA bundle
+   - Backend uses `SSL_CERT_FILE=/etc/ssl/certs/ca-certificates-with-mkcert.crt`
 
----
+4. **start-dev-servers.sh fix:**
+   - Added `--env-file .env.docker.local` to docker compose commands
+   - Fixes port mapping issues when restarting containers
 
-## Environment State
+5. **lib/email.ts simplified:**
+   - Now always uses `@convex-dev/resend` component
+   - Infrastructure handles routing to Mailpit in local dev
 
-| Component | Status |
-|-----------|--------|
-| Docker (james-backend) | Running (healthy) |
-| Docker (james-port80-proxy) | Running (socat) |
-| Docker (james-dashboard) | Running |
-| Docker (james-mailpit) | Running |
-| Orchestrator proxy | Running |
-| james-convex-dev tmux | Running |
-| james-nextjs tmux | Running |
-| http://james.loc | Accessible |
-| ctx.storage.store() | Working directly |
-
----
-
-## Recent Commits
-
-```
-400c4b3 fix: remove storage fallback workarounds, use port80-proxy instead
-6d335d1 fix: add port80-proxy for Node action storage in self-hosted Convex
-```
+**Verification completed:**
+- Backend fetch: `Fetch to origin: https://api.resend.com, success: true`
+- Proxy logs: `POST /emails/batch` and `Email sent via Mailpit`
+- Mailpit: Emails arriving correctly
+- E2E test: Login flow works (email delivery verified)
 
 ---
 
-## Key Files
+## Key Files Changed This Session
 
-| File | Purpose |
-|------|---------|
-| `docker-compose.yml` | port80-proxy service definition |
-| `docs/architecture/decisions/0019-node-action-storage-fallback.md` | Documents the fix |
-| `app/tests/e2e/notification.spec.ts` | Notification E2E tests (failing) |
-
----
-
-## Session History
-
-### 2026-01-30 (james) - Port 80 Proxy Fix
-- Fixed Node action storage with socat port80-proxy
-- Cleaned up all HTTP fallback workarounds (-466 lines)
-- Storage now works directly without workarounds
-
-### 2026-01-29 (james) - Skills & Session Workflow
-- Built session startup flow
-- Created 5 skills, 1 agent, 2 docs
-- Established SESSION-RESUME.md standard
-
-### 2026-01-28 (mark) - Test Suite Analysis
-- 980 unit tests passing
-- Identified E2E timing issues
+| File | Change |
+|------|--------|
+| `docker/resend-proxy/proxy.js` | NEW - Resend→Mailpit translator |
+| `docker/resend-proxy/Dockerfile` | NEW - Uses mkcert certs |
+| `docker/resend-proxy/certs/` | NEW - mkcert-generated certs + CA bundle |
+| `docker-compose.yml` | Added resend-proxy, resend network, mkcert CA mount |
+| `app/convex/lib/email.ts` | Simplified to one code path |
+| `scripts/start-dev-servers.sh` | Fixed --env-file for docker compose |
 
 ---
 
-**Next agent:** Task #43 E2E tests are failing on comment/notification flow (not storage). Debug why comments aren't working.
+## Git Status
+
+Uncommitted changes ready for commit:
+- `docker/resend-proxy/*` (new)
+- `docker-compose.yml` (modified)
+- `app/convex/lib/email.ts` (modified)
+- `scripts/start-dev-servers.sh` (modified)
+- `SESSION-RESUME.md` (modified)
+
+---
+
+**Next:** Commit the resend-proxy implementation, then investigate E2E Share button test failure (UI issue, not email).

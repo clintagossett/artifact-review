@@ -9,6 +9,8 @@ services:
       - "${CONVEX_HTTP_PORT:-3211}:3211"
     volumes:
       - convex_data:/convex/data
+      # Mount combined CA bundle (system CAs + mkcert CA) for resend-proxy trust
+      - ./docker/resend-proxy/certs/ca-certificates-with-mkcert.crt:/etc/ssl/certs/ca-certificates-with-mkcert.crt:ro
     extra_hosts:
       # Allow container to reach host machine for auth provider discovery and Novu
       # AGENT_NAME is set by start-dev-servers.sh (required)
@@ -16,6 +18,8 @@ services:
       - "${AGENT_NAME}.loc:host-gateway"
       - "${AGENT_NAME}.convex.site.loc:host-gateway"
       - "api.novu.loc:host-gateway"
+      # Route Resend API to local proxy for email interception (static IP on resend network)
+      - "api.resend.com:172.28.0.10"
     environment:
       # Use external URLs so browser can reach storage/API endpoints
       # CONVEX_CLOUD_ORIGIN: Used for API + storage upload URLs (must be browser-accessible)
@@ -31,12 +35,18 @@ services:
       - DO_NOT_REQUIRE_SSL=true
       - DISABLE_BEACON=true
       - MAX_UDF_EXECUTION_SEC=10
+      # Trust mkcert CA for resend-proxy (see docker/resend-proxy/certs/)
+      # SSL_CERT_FILE tells Rust's native-tls/openssl to use our custom CA bundle
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates-with-mkcert.crt
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:3210/version" ]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - default
+      - resend
 
   # Port 80 proxy for Node executor compatibility
   # The Convex Node executor's internal implementation tries to connect to 127.0.0.1:80
@@ -77,6 +87,34 @@ services:
       default:
         aliases:
           - mailpit  # Allow backend to reach via 'mailpit' hostname
+      resend:
+        aliases:
+          - mailpit
+
+  # Resend API proxy: Intercepts calls to api.resend.com and routes to Mailpit
+  # This allows @convex-dev/resend to work unchanged in local dev
+  # Backend resolves api.resend.com → 172.28.0.10 (this container) via extra_hosts
+  resend-proxy:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-resend-proxy
+    build:
+      context: ./docker/resend-proxy
+      dockerfile: Dockerfile
+    environment:
+      - MAILPIT_HOST=mailpit
+      - MAILPIT_PORT=8025
+    networks:
+      resend:
+        ipv4_address: 172.28.0.10
+    depends_on:
+      - mailpit
+    restart: unless-stopped
+
+networks:
+  resend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
 
 volumes:
   convex_data:

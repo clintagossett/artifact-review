@@ -365,9 +365,28 @@ COMPOSE_FILES="-f docker-compose.yml"
 
 pushd "$PROJECT_ROOT" > /dev/null
 
-if ! docker compose $COMPOSE_FILES ps | grep -q "Up"; then
+# Generate mkcert CA bundle for resend-proxy TLS trust if needed
+CERTS_DIR="$PROJECT_ROOT/docker/resend-proxy/certs"
+CA_BUNDLE="$CERTS_DIR/ca-certificates-with-mkcert.crt"
+if [ ! -f "$CA_BUNDLE" ] && [ -f "$CERTS_DIR/rootCA.pem" ]; then
+    echo "  Generating CA bundle for resend-proxy TLS trust..."
+    # Need to get system CAs from a running backend container or from host
+    if docker ps --filter "name=${AGENT_NAME}-backend" --format "{{.Names}}" | grep -q "${AGENT_NAME}-backend"; then
+        docker exec "${AGENT_NAME}-backend" cat /etc/ssl/certs/ca-certificates.crt > "$CERTS_DIR/system-ca.crt" 2>/dev/null
+    elif [ -f /etc/ssl/certs/ca-certificates.crt ]; then
+        cp /etc/ssl/certs/ca-certificates.crt "$CERTS_DIR/system-ca.crt"
+    fi
+    if [ -f "$CERTS_DIR/system-ca.crt" ]; then
+        cat "$CERTS_DIR/system-ca.crt" "$CERTS_DIR/rootCA.pem" > "$CA_BUNDLE"
+        echo "  CA bundle generated successfully"
+    else
+        echo "  WARNING: Could not generate CA bundle - resend-proxy TLS may fail"
+    fi
+fi
+
+if ! docker compose --env-file "$PROJECT_ROOT/.env.docker.local" $COMPOSE_FILES ps | grep -q "Up"; then
     echo "  [START] Starting Docker services..."
-    docker compose $COMPOSE_FILES up -d
+    docker compose --env-file "$PROJECT_ROOT/.env.docker.local" $COMPOSE_FILES up -d
 else
     echo "  [SKIP] Docker services already running"
 fi
