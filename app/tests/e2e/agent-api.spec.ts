@@ -89,7 +89,8 @@ test.describe('Agent API Integration', () => {
 
     test('Full CRUD Lifecycle via API', async ({ request }) => {
         const headers = { 'X-API-Key': apiKey };
-        const baseUrl = 'http://api.ar.local.com';
+        // Use environment's Convex HTTP URL for the Agent API
+        const baseUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || 'http://james.convex.site.loc';
 
         console.log(`Using API Base URL: ${baseUrl}`);
 
