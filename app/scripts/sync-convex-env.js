@@ -6,6 +6,9 @@
  * Reads environment variables from .env.convex.local and syncs them
  * to the Convex backend using `npx convex env set`.
  *
+ * IMPORTANT: JWT keys (JWT_PRIVATE_KEY, JWKS) should NOT be in .env.convex.local
+ * They are set separately via ./scripts/setup-convex-env.sh
+ *
  * Usage:
  *   node scripts/sync-convex-env.js
  *   npm run sync-convex-env
@@ -73,6 +76,25 @@ function main() {
   if (keys.length === 0) {
     console.log('⚠️  No environment variables found in .env.convex.local');
     process.exit(0);
+  }
+
+  // Safety check: warn if JWT keys are in the file (they shouldn't be)
+  const jwtKeys = keys.filter(k => k === 'JWT_PRIVATE_KEY' || k === 'JWKS');
+  if (jwtKeys.length > 0) {
+    console.error('⚠️  WARNING: Found JWT keys in .env.convex.local:');
+    jwtKeys.forEach(k => console.error(`    - ${k}`));
+    console.error('');
+    console.error('JWT keys should NOT be in .env.convex.local!');
+    console.error('They are managed separately via ./scripts/setup-convex-env.sh');
+    console.error('');
+    console.error('This sync will OVERWRITE existing JWT keys in Convex.');
+    console.error('This will invalidate all user sessions!');
+    console.error('');
+    console.error('To fix:');
+    console.error('  1. Remove JWT_PRIVATE_KEY and JWKS from .env.convex.local');
+    console.error('  2. Run this script again');
+    console.error('');
+    process.exit(1);
   }
 
   console.log(`Found ${keys.length} variable(s) to sync:\n`);

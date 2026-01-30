@@ -33,7 +33,9 @@ playwright-report/
 __pycache__/
 *.pyc
 
+# Environment files (secrets)
 .env.local
-.env.convex.local
+.env.*.local
+!.env.*.local.example
 docs-artifact.zip
 /convex/

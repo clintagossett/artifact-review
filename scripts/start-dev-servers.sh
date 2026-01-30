@@ -2,7 +2,7 @@
 # Dev server startup with port checking and graceful handling
 # Run from project root: ./scripts/start-dev-servers.sh
 #
-# Configuration is read from ../.env.agent.local (agent directory)
+# Configuration is read from .env.docker.local (project root)
 # Command-line args override config file values.
 #
 # Usage:
@@ -10,7 +10,7 @@
 #   ./scripts/start-dev-servers.sh --restart|--force  # Kill existing and restart fresh
 #
 # Features:
-# - Reads port configuration from .env.agent.local
+# - Reads port configuration from .env.docker.local
 # - Checks if ports are already in use before starting
 # - Skips starting a server if it's already running (unless --restart/--force)
 # - Only kills processes it started on Ctrl+C
@@ -22,19 +22,25 @@ set +e
 # Get script directory and project root early (needed for config loading)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-AGENT_DIR="$(dirname "$PROJECT_ROOT")"
-AGENT_CONFIG="$AGENT_DIR/.env.agent.local"
 
-# Load agent configuration from .env.agent.local
+# Agent config - check new location first, then legacy
+AGENT_CONFIG="$PROJECT_ROOT/.env.docker.local"
+LEGACY_AGENT_CONFIG="$(dirname "$PROJECT_ROOT")/.env.agent.local"
+
+# Load agent configuration
 if [ -f "$AGENT_CONFIG" ]; then
     echo "Loading agent config from $AGENT_CONFIG"
-    # Source the config file to get variables
     set -a  # Export all variables
     source "$AGENT_CONFIG"
     set +a
+elif [ -f "$LEGACY_AGENT_CONFIG" ]; then
+    echo "Loading agent config from $LEGACY_AGENT_CONFIG (legacy location)"
+    set -a
+    source "$LEGACY_AGENT_CONFIG"
+    set +a
 else
-    echo "WARNING: No .env.agent.local found at $AGENT_CONFIG"
-    echo "Using defaults. Create .env.agent.local with AGENT_NAME and BASE_PORT."
+    echo "WARNING: No .env.docker.local found at $AGENT_CONFIG"
+    echo "Using defaults. Create .env.docker.local with AGENT_NAME and BASE_PORT."
     echo ""
 fi
 

@@ -30,10 +30,15 @@ export async function sendEmail(
             fromAddress = match[2].trim();
         }
 
-        // Local: Send to Mailpit via API
-        // In the docker network, mailpit is reachable at http://mailpit:8025
+        // Local: Send to Mailpit via orchestrator DNS routing (port 80)
+        // MAILPIT_URL must be set in Convex env for self-hosted (e.g., http://james.mailpit.loc)
+        const mailpitUrl = process.env.MAILPIT_URL;
+        if (!mailpitUrl) {
+            console.error("MAILPIT_URL not set - cannot send email in self-hosted mode");
+            return;
+        }
         try {
-            const response = await fetch("http://mailpit:8025/api/v1/send", {
+            const response = await fetch(`${mailpitUrl}/api/v1/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

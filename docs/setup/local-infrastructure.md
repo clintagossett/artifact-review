@@ -121,6 +121,87 @@ MAILPIT_API_URL=http://mark.mailpit.loc/api/v1
 
 See [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md) for the full list.
 
+## Orchestrator Port Routing (Important!)
+
+**All services route through the orchestrator proxy on port 80.** Never specify ports in `.loc` URLs.
+
+### The Pattern
+
+```
+{agent}.{service}.loc → orchestrator (port 80) → correct backend port
+```
+
+| URL (correct) | Proxy Routes To |
+|---------------|-----------------|
+| `james.loc` | `localhost:3010` (Next.js) |
+| `james.convex.cloud.loc` | `localhost:3220` (Convex WS) |
+| `james.mailpit.loc` | `localhost:8025` (Mailpit) |
+
+### Common Mistake: Specifying Ports
+
+```typescript
+// WRONG - bypasses proxy, breaks multi-agent
+fetch("http://james.mailpit.loc:8025/api/v1/send")
+
+// CORRECT - uses proxy routing
+fetch("http://james.mailpit.loc/api/v1/send")
+```
+
+### Why This Matters
+
+1. **Multi-agent support** - Port mappings differ per agent (james uses 8025, mark uses 8035)
+2. **Single source of truth** - Proxy config defines all port mappings
+3. **Consistency** - Same pattern everywhere, no port hunting
+
+### Key Rules
+
+1. Never specify ports in `.loc` URLs - the proxy handles port mapping
+2. All `.loc` requests go through port 80 (default HTTP)
+3. The orchestrator `config.json` defines the port mappings
+4. If you need to debug, check the Port Reference section below
+
+## Infrastructure vs Application Config
+
+Infrastructure identity (AGENT_NAME, ports) stays in Docker/shell env:
+
+| Location | Purpose | Examples |
+|----------|---------|----------|
+| `.env.docker.local` | Agent identity | `AGENT_NAME=james` |
+| Docker Compose | Port mappings | `CONVEX_ADMIN_PORT=3210` |
+| Shell environment | Infrastructure scripts | Port assignments |
+
+Application config (URLs) goes in app env vars:
+
+| Location | Purpose | Examples |
+|----------|---------|----------|
+| `.env.nextjs.local` | Frontend URLs | `MAILPIT_API_URL` |
+| Convex env | Backend URLs | `SITE_URL`, `MAILPIT_URL`, `CONVEX_SITE_ORIGIN` |
+
+### Never Put in Convex Env
+
+- **AGENT_NAME** - Infrastructure identity, meaningless in production
+- **Hardcoded localhost URLs** - Won't work in production
+- **Port numbers** - Infrastructure detail, not application config
+
+### Do Put in Convex Env
+
+- **Full URLs** that work in that environment (e.g., `http://james.loc`)
+- **API keys** and secrets
+- **Feature flags**
+
+### Why This Matters
+
+Code that uses `process.env.AGENT_NAME` to construct URLs will break in production because AGENT_NAME doesn't exist there. Instead, use explicit URL env vars that are set appropriately for each environment:
+
+```typescript
+// WRONG - uses infrastructure identity
+const url = `http://${process.env.AGENT_NAME}.mailpit.loc`;
+
+// CORRECT - uses explicit URL config
+const url = process.env.MAILPIT_URL;
+if (!url) throw new Error("MAILPIT_URL not set");
+```
+
 ## Starting the Infrastructure
 
 Before running artifact-review locally:

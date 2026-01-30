@@ -21,25 +21,41 @@
 
 set -e
 
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+APP_DIR="$PROJECT_ROOT/app"
+
+# Load agent config (prefer new location)
+AGENT_CONFIG="$PROJECT_ROOT/.env.docker.local"
+LEGACY_AGENT_CONFIG="$(dirname "$PROJECT_ROOT")/.env.agent.local"
+
+if [ -f "$AGENT_CONFIG" ]; then
+    source "$AGENT_CONFIG"
+elif [ -f "$LEGACY_AGENT_CONFIG" ]; then
+    source "$LEGACY_AGENT_CONFIG"
+fi
+
 # Configuration
 NOVU_API_URL="${NOVU_API_URL:-http://api.novu.loc}"
-AGENT_NAME="mark"
+AGENT_NAME="${AGENT_NAME:-mark}"
 PROJECT_NAME="artifact-review"
 
 EMAIL="admin@${AGENT_NAME}.loc"
 PASSWORD="Password123\$"
 ORG_NAME="${AGENT_NAME}-${PROJECT_NAME}"
 
+# Env file to update (prefer new location)
+ENV_FILE="$APP_DIR/.env.nextjs.local"
+if [ ! -f "$ENV_FILE" ]; then
+    ENV_FILE="$APP_DIR/.env.local"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
-
-# Script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-APP_DIR="$(dirname "$SCRIPT_DIR")/app"
-ENV_FILE="$APP_DIR/.env.local"
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }

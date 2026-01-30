@@ -7,6 +7,7 @@ Documentation for setting up accounts, environments, and access for the Artifact
 | Document | Description |
 |----------|-------------|
 | [local-infrastructure.md](./local-infrastructure.md) | **Start here for local dev** - DNS routing, Convex endpoints, CORS handling |
+| [email-configuration.md](./email-configuration.md) | **Email setup** - Resend vs Mailpit, test modes, environment differences |
 | [troubleshooting.md](./troubleshooting.md) | **When things break** - Auth issues, JWKS caching, Convex/Docker problems |
 | [account-checklist.md](./account-checklist.md) | Complete account setup and configuration guide |
 

@@ -1,20 +1,49 @@
 ---
-title: Node Action Storage Access Fallback Pattern
+title: Node Action Storage Access in Self-Hosted Convex
 status: Accepted
 date: 2026-01-28
+updated: 2026-01-30
 deciders: Clint Gossett
 ---
 
-# 19. Node Action Storage Access Fallback Pattern
+# 19. Node Action Storage Access in Self-Hosted Convex
 
 ## Context
 
-In self-hosted Convex environments, Node actions (`"use node"` directive) cannot access storage via the standard `ctx.storage.get()` API. The call fails with `ECONNREFUSED 127.0.0.1:80` because the internal storage access mechanism tries to connect to port 80, which has nothing listening inside the Docker container.
+In self-hosted Convex environments, Node actions (`"use node"` directive) cannot access storage via the standard `ctx.storage.get()` or `ctx.storage.store()` APIs. Both calls fail with `ECONNREFUSED 127.0.0.1:80` because the internal storage mechanism tries to connect to port 80, which has nothing listening inside the Docker container.
 
 This issue does NOT affect:
 - V8 runtime actions (use syscalls, not HTTP)
 - Convex Cloud (proper internal networking)
 - Regular `fetch()` calls from Node actions (work fine)
+
+## Preferred Solution: Port 80 Proxy (Updated 2026-01-30)
+
+The cleanest fix is a socat proxy that listens on port 80 inside the backend container's network namespace and forwards to port 3210 (admin API). No config file needed.
+
+### docker-compose.yml Addition
+
+```yaml
+# Port 80 proxy: Node actions try to reach storage via 127.0.0.1:80
+# This forwards port 80 -> 3210 inside the backend's network namespace
+port80-proxy:
+  container_name: ${AGENT_NAME}-port80-proxy
+  image: alpine/socat:latest
+  network_mode: "service:backend"
+  command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
+  depends_on:
+    backend:
+      condition: service_healthy
+  restart: unless-stopped
+```
+
+With this proxy, both `ctx.storage.get()` and `ctx.storage.store()` work directly in Node actions without any fallback code.
+
+---
+
+## Legacy Fallback Pattern (Deprecated)
+
+The HTTP fallback pattern below is still in the codebase for `storage.get()` reads but is **no longer needed** when the sidecar proxy is running. It may be removed in a future cleanup.
 
 ### Discovery Process
 
@@ -153,15 +182,16 @@ Always use HTTP endpoint, skip direct attempt.
 
 ## When to Apply This Pattern
 
-Use this pattern when:
-- Writing a Node action (`"use node"`)
-- That needs to read from Convex storage
-- And must work in both self-hosted and Convex Cloud
+**Prefer the sidecar proxy solution** - it fixes both reads and writes with zero code changes.
 
-**Do NOT use this pattern for:**
-- V8 runtime actions (storage.get() works directly)
-- Mutations/queries (use different storage access)
-- Writing to storage (`ctx.storage.store()` works in Node actions)
+The legacy HTTP fallback pattern is only needed if:
+- You cannot modify docker-compose.yml
+- You need a code-only solution
+
+**Do NOT use the fallback pattern for:**
+- V8 runtime actions (storage works directly via syscalls)
+- Mutations/queries (different storage access mechanism)
+- New code (use sidecar proxy instead)
 
 ## Related
 

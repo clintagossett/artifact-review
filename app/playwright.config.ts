@@ -2,8 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables from .env.local
+// Load environment variables from both .env.local and .env.nextjs.local
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '.env.nextjs.local') });
 
 /**
  * Get base URL from environment with fallback chain:

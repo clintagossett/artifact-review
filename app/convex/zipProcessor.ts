@@ -1,6 +1,6 @@
 "use node";
 
-import { internalAction, ActionCtx } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
 import JSZip from "jszip";
 import { internal } from "./_generated/api";
@@ -11,87 +11,8 @@ import {
   isForbiddenExtension,
 } from "./lib/fileTypes";
 import { createLogger, LOG_TOPICS } from "./lib/logger";
-import { Id } from "./_generated/dataModel";
 
 const log = createLogger("zipProcessor.processZipFile");
-
-/**
- * Get a blob from storage with automatic fallback for self-hosted environments.
- *
- * WHY THIS EXISTS (Issue #45):
- * - In Convex Cloud: storage.get() works directly via internal APIs
- * - In self-hosted: storage.get() in Node actions fails with ECONNREFUSED 127.0.0.1:80
- *   because the internal HTTP mechanism tries to connect to port 80 which isn't listening
- *
- * This function tries the direct path first (zero overhead in production),
- * then falls back to the HTTP workaround for self-hosted environments.
- *
- * LOGS TO WATCH FOR:
- * - "Storage access: direct" = Production path, optimal performance
- * - "Storage access: http-fallback" = Self-hosted workaround in use
- * - "Storage access: direct-failed" = Unexpected error, not ECONNREFUSED
- *
- * See: tasks/00045-node-action-storage-fix/README.md
- */
-async function getStorageBlob(
-  ctx: ActionCtx,
-  storageId: Id<"_storage">
-): Promise<{ buffer: ArrayBuffer; method: "direct" | "http-fallback" }> {
-  // Try direct storage.get() first (works in Convex Cloud)
-  try {
-    const blob = await ctx.storage.get(storageId);
-    if (blob) {
-      log.info(LOG_TOPICS.Artifact, "Storage access: direct", {
-        storageId,
-        size: blob.size,
-        note: "Production path - optimal performance",
-      });
-      return { buffer: await blob.arrayBuffer(), method: "direct" };
-    }
-  } catch (e: any) {
-    const isConnectionRefused =
-      e.cause?.message?.includes("ECONNREFUSED") ||
-      e.message?.includes("fetch failed");
-
-    if (isConnectionRefused) {
-      // Self-hosted: storage.get() fails, use HTTP workaround
-      log.info(LOG_TOPICS.Artifact, "Storage access: http-fallback", {
-        storageId,
-        reason: "ECONNREFUSED on direct access (expected in self-hosted)",
-        note: "Using localhost:3211 HTTP workaround",
-      });
-
-      const response = await fetch(
-        `http://localhost:3211/internal/storage-blob?storageId=${storageId}`
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Storage blob not found");
-        }
-        throw new Error(`HTTP fallback failed: ${response.status} ${response.statusText}`);
-      }
-
-      const buffer = await response.arrayBuffer();
-      log.debug(LOG_TOPICS.Artifact, "HTTP fallback successful", {
-        storageId,
-        size: buffer.byteLength,
-      });
-      return { buffer, method: "http-fallback" };
-    }
-
-    // Unexpected error - log and rethrow
-    log.error(LOG_TOPICS.Artifact, "Storage access: direct-failed", {
-      storageId,
-      error: e.message,
-      cause: e.cause?.message,
-      note: "Unexpected error - not ECONNREFUSED",
-    });
-    throw e;
-  }
-
-  throw new Error("Storage blob not found");
-}
 
 /**
  * Process a ZIP file: validate, extract files, detect entry point, and store in database
@@ -110,13 +31,13 @@ export const processZipFile = internalAction({
     });
 
     try {
-      // Get ZIP file from storage (with automatic fallback for self-hosted)
-      // See: tasks/00045-node-action-storage-fix/README.md
+      // Get ZIP file from storage
       log.debug(LOG_TOPICS.Artifact, "Fetching ZIP file from storage");
-      const { buffer: zipBuffer, method } = await getStorageBlob(ctx, args.storageId);
+      const blob = await ctx.storage.get(args.storageId);
+      if (!blob) throw new Error("ZIP not found");
+      const zipBuffer = await blob.arrayBuffer();
       log.debug(LOG_TOPICS.Artifact, "ZIP buffer loaded", {
         byteLength: zipBuffer.byteLength,
-        storageMethod: method,
       });
 
       const zip = new JSZip();

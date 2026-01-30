@@ -1,6 +1,11 @@
 
 import { Resend } from 'resend';
 
+/**
+ * Resend client for email retrieval in tests.
+ * - Local dev: Uses dummy key from .env (emails fetched from Mailpit instead)
+ * - Hosted: Uses real Resend API key for email verification
+ */
 const resend = new Resend(process.env.RESEND_FULL_ACCESS_API_KEY || process.env.RESEND_API_KEY);
 
 /**

@@ -31,8 +31,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 APP_DIR="$PROJECT_ROOT/app"
-AGENT_DIR="$(dirname "$PROJECT_ROOT")"
-AGENT_CONFIG="$AGENT_DIR/.env.agent.local"
+
+# Agent config - check new location first, then legacy
+AGENT_CONFIG="$PROJECT_ROOT/.env.docker.local"
+LEGACY_AGENT_CONFIG="$(dirname "$PROJECT_ROOT")/.env.agent.local"
 
 # Colors for output
 RED='\033[0;31m'
@@ -40,9 +42,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Load agent config
+# Load agent config (prefer new location)
 if [ -f "$AGENT_CONFIG" ]; then
     source "$AGENT_CONFIG"
+elif [ -f "$LEGACY_AGENT_CONFIG" ]; then
+    source "$LEGACY_AGENT_CONFIG"
 fi
 AGENT_NAME="${AGENT_NAME:-mark}"
 
@@ -198,57 +202,86 @@ set_convex_env() {
 
     cd "$APP_DIR"
 
+    # Determine which env file to use for convex CLI
+    local env_file="$APP_DIR/.env.nextjs.local"
+    if [ ! -f "$env_file" ]; then
+        env_file="$APP_DIR/.env.local"
+    fi
+
+    # Use -- to prevent values starting with dashes (like PEM keys) from being parsed as options
+
     # JWT keys
     echo "  Setting JWT_PRIVATE_KEY..."
-    npx convex env set JWT_PRIVATE_KEY "$JWT_PRIVATE_KEY" 2>/dev/null
+    npx convex env set --env-file "$env_file" -- JWT_PRIVATE_KEY "$JWT_PRIVATE_KEY"
 
     echo "  Setting JWKS..."
-    npx convex env set JWKS "$JWKS" 2>/dev/null
+    npx convex env set --env-file "$env_file" -- JWKS "$JWKS"
 
     # URLs (using DNS names from orchestrator)
     echo "  Setting SITE_URL..."
-    npx convex env set SITE_URL "http://${AGENT_NAME}.loc" 2>/dev/null
+    npx convex env set --env-file "$env_file" -- SITE_URL "http://${AGENT_NAME}.loc"
 
     echo "  Setting CONVEX_SELF_HOSTED_URL..."
-    npx convex env set CONVEX_SELF_HOSTED_URL "http://${AGENT_NAME}.convex.cloud.loc" 2>/dev/null
+    npx convex env set --env-file "$env_file" -- CONVEX_SELF_HOSTED_URL "http://${AGENT_NAME}.convex.cloud.loc"
 
     # Internal API key for auth callbacks
     if [ -z "$INTERNAL_API_KEY" ]; then
         INTERNAL_API_KEY=$(openssl rand -hex 32)
     fi
     echo "  Setting INTERNAL_API_KEY..."
-    npx convex env set INTERNAL_API_KEY "$INTERNAL_API_KEY" 2>/dev/null
+    npx convex env set --env-file "$env_file" -- INTERNAL_API_KEY "$INTERNAL_API_KEY"
 
     echo -e "${GREEN}Convex environment configured${NC}"
 }
 
-# Update local .env.local with admin key
+# Update local env file with admin key and connection info
 update_env_local() {
-    local env_file="$APP_DIR/.env.local"
+    # Prefer new location, fallback to legacy
+    local env_file="$APP_DIR/.env.nextjs.local"
+    if [ ! -f "$env_file" ]; then
+        env_file="$APP_DIR/.env.local"
+    fi
 
     echo ""
     echo "Updating $env_file..."
 
     if [ ! -f "$env_file" ]; then
-        echo -e "${YELLOW}Creating new .env.local${NC}"
+        echo -e "${YELLOW}Creating new env file${NC}"
         touch "$env_file"
     fi
 
-    # Update or add CONVEX_ADMIN_KEY
-    if grep -q "^CONVEX_ADMIN_KEY=" "$env_file" 2>/dev/null; then
-        sed -i "s|^CONVEX_ADMIN_KEY=.*|CONVEX_ADMIN_KEY=$ADMIN_KEY|" "$env_file"
-    else
-        echo "CONVEX_ADMIN_KEY=$ADMIN_KEY" >> "$env_file"
-    fi
+    # Helper function to update or add a variable
+    # Uses grep/awk to avoid sed delimiter issues with special characters
+    update_var() {
+        local var_name="$1"
+        local var_value="$2"
+        local temp_file=$(mktemp)
 
-    # Update or add INTERNAL_API_KEY
-    if grep -q "^INTERNAL_API_KEY=" "$env_file" 2>/dev/null; then
-        sed -i "s|^INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$INTERNAL_API_KEY|" "$env_file"
-    else
-        echo "INTERNAL_API_KEY=$INTERNAL_API_KEY" >> "$env_file"
-    fi
+        if grep -q "^${var_name}=" "$env_file" 2>/dev/null; then
+            # Variable exists - replace line
+            awk -v name="$var_name" -v value="$var_value" '
+                $0 ~ "^"name"=" { print name"="value; next }
+                { print }
+            ' "$env_file" > "$temp_file" && mv "$temp_file" "$env_file"
+        elif grep -q "^# ${var_name}=" "$env_file" 2>/dev/null; then
+            # Commented variable exists - uncomment and set
+            awk -v name="$var_name" -v value="$var_value" '
+                $0 ~ "^# "name"=" { print name"="value; next }
+                { print }
+            ' "$env_file" > "$temp_file" && mv "$temp_file" "$env_file"
+        else
+            # Variable doesn't exist - append
+            echo "${var_name}=${var_value}" >> "$env_file"
+        fi
+        rm -f "$temp_file" 2>/dev/null
+    }
 
-    echo -e "${GREEN}.env.local updated${NC}"
+    # Update connection info
+    update_var "CONVEX_SELF_HOSTED_URL" "http://127.0.0.1:${CONVEX_ADMIN_PORT:-3220}"
+    update_var "CONVEX_SELF_HOSTED_ADMIN_KEY" "$ADMIN_KEY"
+    update_var "INTERNAL_API_KEY" "$INTERNAL_API_KEY"
+
+    echo -e "${GREEN}$env_file updated${NC}"
 }
 
 # Main
@@ -272,8 +305,8 @@ main() {
             container=$(check_container)
             generate_jwt_keys
             get_admin_key "$container"
+            update_env_local  # Update env file BEFORE set_convex_env so admin key is available
             set_convex_env
-            update_env_local
 
             echo ""
             echo -e "${GREEN}JWT keys regenerated. All users must re-authenticate.${NC}"
@@ -304,8 +337,8 @@ main() {
                 container=$(check_container)
                 generate_jwt_keys
                 get_admin_key "$container"
+                update_env_local  # Update env file BEFORE set_convex_env so admin key is available
                 set_convex_env
-                update_env_local
 
                 echo ""
                 echo -e "${GREEN}Setup complete!${NC}"

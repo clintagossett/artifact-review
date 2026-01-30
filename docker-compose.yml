@@ -38,6 +38,18 @@ services:
       retries: 5
       start_period: 10s
 
+  # Port 80 proxy: Node actions try to reach storage via 127.0.0.1:80
+  # This forwards port 80 -> 3210 inside the backend's network namespace
+  port80-proxy:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-port80-proxy
+    image: alpine/socat:latest
+    network_mode: "service:backend"
+    command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   dashboard:
     container_name: ${AGENT_NAME:?AGENT_NAME is required}-dashboard
     image: ghcr.io/get-convex/convex-dashboard:latest
@@ -56,6 +68,10 @@ services:
       - "${MAILPIT_WEB_PORT:-8025}:8025" # Web UI
       - "${MAILPIT_SMTP_PORT:-1025}:1025" # SMTP server
     restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - mailpit  # Allow backend to reach via 'mailpit' hostname
 
 volumes:
   convex_data:

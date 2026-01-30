@@ -9,6 +9,8 @@ Operational instructions for AI-assisted development. These guides distill testi
 | [workflow.md](./workflow.md) | TDD workflow, task structure, dev cycle |
 | [testing-guide.md](./testing-guide.md) | How to write and organize tests |
 | [TESTING-QUICK-START.md](./TESTING-QUICK-START.md) | **Quick setup for task-level E2E tests** |
+| [test-failure-analysis.md](./test-failure-analysis.md) | Categorize test failures by root cause |
+| [e2e-timing-patterns.md](./e2e-timing-patterns.md) | Fix patterns for E2E timing issues |
 | [logging-guide.md](./logging-guide.md) | How to use structured logging |
 | [routing-patterns.md](./routing-patterns.md) | Next.js routing, pages vs components, SEO, auth redirects |
 | [novu-setup.md](./novu-setup.md) | Novu notifications setup and testing |

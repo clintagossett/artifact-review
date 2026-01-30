@@ -10,11 +10,80 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 See `PRODUCT-DISCOVERY.md` for full product research and strategy.
 
+## Session Startup (Do This First)
+
+**At the start of every session, spawn the `session-startup` agent as a background task.**
+
+This preserves your main context for development work while verifying the environment.
+
+```
+Spawn session-startup agent in background to verify environment and load context
+```
+
+The agent will:
+1. Verify Docker, orchestrator, and endpoints are running
+2. Check branch state (new dev vs WIP)
+3. Load SESSION-RESUME.md context
+4. Return a concise summary
+
+**Wait for the summary before starting work.** If environment fails, fix issues before proceeding.
+
+If resuming work, also check `SESSION-RESUME.md` for detailed task context.
+
 ## Environment
 
 Uses direnv for environment management (`.envrc` with `source_up` to inherit from parent directory).
 
-### First-Time Environment Setup
+### Environment Files
+
+This project uses a structured env file system. All `.local` files are gitignored.
+
+| File | Purpose | Contains Secrets? |
+|------|---------|-------------------|
+| `.env.docker.local` | Agent identity, ports, domains | No |
+| `.env.dev.local` | Dev tooling API keys (Vercel, GitHub, etc.) | Yes |
+| `app/.env.nextjs.local` | Next.js runtime config | Yes |
+| `app/.env.convex.local` | Convex backend secrets | Yes |
+
+**First-time setup:** Copy each `*.example` file to `*.local` and fill in values.
+
+```bash
+cp .env.docker.local.example .env.docker.local
+cp .env.dev.local.example .env.dev.local
+cp app/.env.nextjs.local.example app/.env.nextjs.local
+cp app/.env.convex.local.example app/.env.convex.local
+```
+
+**Important:** Set your `AGENT_NAME` in `.env.docker.local` first - other configs reference it.
+
+**About JWT Keys:**
+- JWT keys (JWT_PRIVATE_KEY, JWKS) are **NOT** stored in `.env.convex.local`
+- They are set directly in Convex via `./scripts/setup-convex-env.sh`
+- This prevents accidental overwrites when syncing other environment variables
+- See `docs/setup/email-configuration.md` for full environment variable details
+
+### First-Time Agent Setup (Recommended)
+
+Run the initialization script which handles dependencies and order of operations:
+
+```bash
+./scripts/agent-init.sh
+```
+
+This script:
+1. Verifies prerequisites (Node, Docker, tmux)
+2. Copies example env files with your AGENT_NAME
+3. Verifies orchestrator is running
+4. Installs npm dependencies
+5. Starts and configures Convex (Docker + admin key)
+6. Creates Novu organization and retrieves API keys
+
+**Check current status:**
+```bash
+./scripts/agent-init.sh --check
+```
+
+### Manual Environment Setup (Alternative)
 
 Before developing, ensure these shared services are configured.
 
@@ -28,11 +97,17 @@ Before developing, ensure these shared services are configured.
 The orchestrator proxy provides DNS-based routing for all local services. **Required for local development.**
 
 ```bash
-cd /home/clint-gossett/Documents/agentic-dev/orchestrator
+cd ../artifact-review-orchestrator
 ./start.sh
 ```
 
-See also: [Infrastructure ADRs](/home/clint-gossett/Documents/agentic-dev/docs/adr/) for architecture decisions.
+The orchestrator lives alongside this project in the `artifact-review-dev/` workspace:
+```
+artifact-review-dev/
+  ├── artifact-review-orchestrator/   ← Shared infrastructure
+  ├── artifact-review/                ← Main repo (main branch)
+  └── artifact-review-{agent}/        ← Your worktree
+```
 
 #### 2. Configure Novu (Notifications)
 
@@ -46,9 +121,9 @@ See also: [Infrastructure ADRs](/home/clint-gossett/Documents/agentic-dev/docs/a
 
 This script will:
 - Check if Novu is available (fails gracefully if not)
-- Create user `admin@mark.loc` with password `Password123$`
-- Create organization `mark-artifact-review`
-- Retrieve API keys and update `app/.env.local` automatically
+- Create user `admin@{AGENT_NAME}.loc` with password `Password123$`
+- Create organization `{AGENT_NAME}-artifact-review`
+- Retrieve API keys and update `app/.env.nextjs.local` automatically
 
 **To check if already configured:**
 
@@ -56,13 +131,49 @@ This script will:
 ./scripts/setup-novu-org.sh --check
 ```
 
-See: `/home/clint-gossett/Documents/agentic-dev/docs/guides/shared-novu.md` for manual setup details.
+See: `../artifact-review-orchestrator/docs/shared-novu.md` for manual setup details.
 
 #### 3. Start Dev Servers
 
 ```bash
 ./scripts/start-dev-servers.sh
 ```
+
+### Session Startup Protocol (MANDATORY)
+
+**At the start of every development session**, run the two-step startup flow using background agents to keep context clean.
+
+**Step 1: Verify Environment** (`/ready-environment`)
+
+Spawn a background agent to:
+- Start stopped Docker containers (don't recreate - use `docker start`)
+- Verify orchestrator proxy is running
+- Verify dev servers are running (tmux sessions)
+- Run smoke tests (connectivity to `${AGENT_NAME}.loc`, `${AGENT_NAME}.convex.cloud.loc`)
+
+**Step 2: Check Branch State** (`/check-branch-state`)
+
+After environment passes:
+- **If NEW dev** (clean branch): Run full test suite to validate baseline. All must pass before starting work.
+- **If WIP** (commits ahead of main): Load `SESSION-RESUME.md` context, report status, ready to continue.
+
+**Available Skills:**
+| Skill | Purpose |
+|-------|---------|
+| `/ready-environment` | Infrastructure verification + smoke tests |
+| `/check-branch-state` | Branch state detection + baseline validation |
+| `/run-tests` | Execute test suites (unit, e2e, smoke) |
+| `/analyze-failures` | Categorize test failures by root cause |
+| `/e2e-fixes` | E2E timing fix patterns |
+
+**Why background agents:** Infrastructure verification fills context with logs and diagnostics. Running it in background keeps main context clean for actual development work.
+
+**SESSION-RESUME.md:** Always check for and read `SESSION-RESUME.md` at project root - it contains the state of work from the previous session. See `SESSION-RESUME-EXAMPLE.md` for the template format.
+
+**Before ending a session:** Always update `SESSION-RESUME.md` with current state before the user restarts you or ends the session. This ensures the next agent can resume seamlessly. Update it when:
+- User says "wrap up", "end session", or "restart"
+- You've completed significant work
+- You're about to lose context
 
 ### Creating a New Task (MANDATORY SEQUENCE)
 
@@ -210,27 +321,31 @@ npx convex deploy       # Deploy to production
 
 ### Convex Dev Server & Deployment
 
-The Convex dev server MUST be running in the `mark-convex-dev` tmux session. Hot-reload handles all code deployments automatically.
+The Convex dev server MUST be running in the `{AGENT_NAME}-convex-dev` tmux session. Hot-reload handles all code deployments automatically.
+
+**Your agent name is defined in `.env.docker.local` as `AGENT_NAME`.**
 
 **Before making Convex changes, verify the session exists:**
 ```bash
-tmux has-session -t mark-convex-dev 2>/dev/null && echo "Running" || echo "NOT RUNNING - start it!"
+source .env.docker.local
+tmux has-session -t ${AGENT_NAME}-convex-dev 2>/dev/null && echo "Running" || echo "NOT RUNNING - start it!"
 ```
 
 **If NOT running, start it immediately:**
 ```bash
-./scripts/start-dev-servers.sh  # Creates mark-convex-dev and mark-nextjs sessions
+./scripts/start-dev-servers.sh  # Creates {AGENT_NAME}-convex-dev and {AGENT_NAME}-nextjs sessions
 ```
 
 **DO NOT run `npx convex dev --once` as a workaround.** This creates a pattern of working around missing infrastructure instead of fixing it. Always restore the tmux session first.
 
 **View Convex function logs:**
 ```bash
+source .env.docker.local
 # Best: from the tmux session
-tmux capture-pane -t mark-convex-dev -p | tail -50
+tmux capture-pane -t ${AGENT_NAME}-convex-dev -p | tail -50
 
 # Or from Docker backend logs:
-docker logs mark-backend --tail 100 2>&1 | grep -E "your-search-term"
+docker logs ${AGENT_NAME}-backend --tail 100 2>&1 | grep -E "your-search-term"
 ```
 
 ## Docker Rules (CRITICAL)
@@ -278,8 +393,9 @@ The `start-dev-servers.sh` script sets required variables (`AGENT_NAME`, `COMPOS
 
 **Auth not working after container restart:**
 ```bash
+source .env.docker.local
 ./scripts/setup-convex-env.sh
-tmux kill-session -t mark-convex-dev
+tmux kill-session -t ${AGENT_NAME}-convex-dev
 ./scripts/start-dev-servers.sh
 ```
 
