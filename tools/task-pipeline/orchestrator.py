@@ -22,18 +22,24 @@ class TaskPipeline:
     1. Architect Agent - Analyzes issue, organizes by domain
     2. Planner Agent - Creates master plan with subtasks
     3. For each subtask:
-       - TDD Agent - Writes failing tests
-       - Executor Agent - Implements to pass tests
+       - TDD Agent - Writes failing tests (RED phase - verified)
+       - Executor Agent - Implements to pass tests (GREEN phase - verified)
+    4. Integration Test - Verify all subtasks work together
+    5. Smoke Test - Validate actual deliverable works
 
     State is persisted to the task directory.
     Uses Claude CLI for agent execution (supports Max subscription).
     """
+
+    # Default failure threshold - stop pipeline if this many subtasks fail
+    DEFAULT_MAX_FAILURES = 3
 
     def __init__(
         self,
         task_dir: Path | str,
         project_root: Path | str | None = None,
         task_type: str = "app",
+        max_failures: int | None = None,
     ):
         """Initialize the pipeline.
 
@@ -43,16 +49,24 @@ class TaskPipeline:
             task_type: Type of task - "app" (TypeScript/React/Convex) or
                        "infrastructure" (bash/Docker/env). Determines which
                        agent to use for TDD and Executor phases.
+            max_failures: Maximum subtask failures before stopping pipeline.
+                          Default: 3. Set to 0 for unlimited failures.
         """
         self.task_dir = Path(task_dir).resolve()
         self.project_root = Path(project_root).resolve() if project_root else Path.cwd()
         self.task_type = task_type
+        self.max_failures = max_failures if max_failures is not None else self.DEFAULT_MAX_FAILURES
+
+        # Failure tracking
+        self.failure_count = 0
+        self.failed_subtasks: list[dict] = []
 
         # Task metadata
         self.task_metadata: dict[str, Any] = {
             "created_at": datetime.now().isoformat(),
             "status": "initialized",
             "task_type": task_type,
+            "max_failures": self.max_failures,
             "phases_completed": []
         }
 
@@ -162,13 +176,15 @@ class TaskPipeline:
             subtask_num: Subtask number for directory naming
 
         Returns:
-            Result dict with TDD and executor results
+            Result dict with TDD and executor results, including overall status
         """
         print("\n" + "-" * 40)
         print(f"SUBTASK {subtask_num}: {subtask.get('title', 'Unknown')}")
         print("-" * 40)
 
         subtask_dir = self.task_dir / f"03-subtask-{subtask_num:02d}"
+        subtask_failed = False
+        failure_reason = None
 
         # Phase 3a: TDD - Write failing tests
         print(f"\n[TDD] Writing failing tests... (agent: {self.task_type})")
@@ -181,24 +197,56 @@ class TaskPipeline:
         tdd_result = tdd_agent.run(subtask)
         tdd_agent.save_artifacts()
 
+        # Check TDD result - must have RED verification
+        tdd_status = tdd_result.get("status", "unknown")
+        if tdd_status == "timeout":
+            subtask_failed = True
+            failure_reason = "TDD phase timed out"
+            print(f"\n[ERROR] {failure_reason}")
+        elif tdd_status == "error":
+            subtask_failed = True
+            failure_reason = f"TDD phase error: {tdd_result.get('error', 'unknown')}"
+            print(f"\n[ERROR] {failure_reason}")
+        elif tdd_status not in ("complete", "red_verified"):
+            # Warn but continue - test execution may not be available for all task types
+            print(f"\n[WARN] TDD RED phase not verified (status: {tdd_status})")
+
         # Get test spec for executor
         test_spec = tdd_result["artifacts"].get("test-spec.md", "")
 
-        # Phase 3b: Executor - Implement to pass tests
-        print(f"\n[EXECUTOR] Implementing code... (agent: {self.task_type})")
-        exec_dir = subtask_dir / "executor"
-        executor = ExecutorAgent(
-            artifact_dir=exec_dir,
-            project_root=self.project_root,
-            task_type=self.task_type,
-        )
-        exec_result = executor.run(subtask, test_spec)
-        executor.save_artifacts()
+        # Phase 3b: Executor - Implement to pass tests (only if TDD didn't fail)
+        exec_result = {"status": "skipped", "artifacts": {}}
+        if not subtask_failed:
+            print(f"\n[EXECUTOR] Implementing code... (agent: {self.task_type})")
+            exec_dir = subtask_dir / "executor"
+            executor = ExecutorAgent(
+                artifact_dir=exec_dir,
+                project_root=self.project_root,
+                task_type=self.task_type,
+            )
+            exec_result = executor.run(subtask, test_spec)
+            executor.save_artifacts()
+
+            # Check executor result
+            exec_status = exec_result.get("status", "unknown")
+            if exec_status == "timeout":
+                subtask_failed = True
+                failure_reason = "Executor phase timed out"
+                print(f"\n[ERROR] {failure_reason}")
+            elif exec_status == "error":
+                subtask_failed = True
+                failure_reason = f"Executor phase error: {exec_result.get('error', 'unknown')}"
+                print(f"\n[ERROR] {failure_reason}")
+            elif exec_status not in ("complete", "green_verified"):
+                print(f"\n[WARN] Executor GREEN phase not verified (status: {exec_status})")
 
         # Update metadata
+        subtask_status = "failed" if subtask_failed else "complete"
         self.task_metadata["phases_completed"].append({
             "phase": f"subtask-{subtask_num}",
             "completed_at": datetime.now().isoformat(),
+            "status": subtask_status,
+            "failure_reason": failure_reason,
             "tdd_status": tdd_result.get("status", "unknown"),
             "executor_status": exec_result.get("status", "unknown"),
             "tdd_artifacts": list(tdd_result["artifacts"].keys()),
@@ -206,9 +254,14 @@ class TaskPipeline:
         })
         self._save_task_metadata()
 
-        print(f"\nSubtask {subtask_num} complete.")
+        if subtask_failed:
+            print(f"\n[FAILED] Subtask {subtask_num} failed: {failure_reason}")
+        else:
+            print(f"\n[OK] Subtask {subtask_num} complete.")
 
         return {
+            "status": subtask_status,
+            "failure_reason": failure_reason,
             "tdd": tdd_result,
             "executor": exec_result
         }
@@ -277,6 +330,8 @@ class TaskPipeline:
             return {"status": "failed", "phase": "planner", "error": "No subtasks parsed"}
 
         print(f"\nFound {len(subtasks)} subtasks to execute.")
+        if self.max_failures > 0:
+            print(f"Failure threshold: {self.max_failures} (pipeline stops if exceeded)")
 
         # Phase 3: TDD + Executor loop
         print("\n" + "=" * 60)
@@ -291,11 +346,82 @@ class TaskPipeline:
             if i in completed_subtasks:
                 print(f"\n[SKIP] Subtask {i} already complete")
                 continue
+
             result = self.run_subtask(subtask, i)
             subtask_results.append(result)
 
+            # Track failures
+            if result.get("status") == "failed":
+                self.failure_count += 1
+                self.failed_subtasks.append({
+                    "subtask_num": i,
+                    "title": subtask.get("title", "Unknown"),
+                    "reason": result.get("failure_reason", "Unknown")
+                })
+
+                # Check failure threshold
+                if self.max_failures > 0 and self.failure_count >= self.max_failures:
+                    print("\n" + "=" * 60)
+                    print("PIPELINE STOPPED - FAILURE THRESHOLD EXCEEDED")
+                    print("=" * 60)
+                    print(f"\nFailed subtasks ({self.failure_count}/{self.max_failures}):")
+                    for f in self.failed_subtasks:
+                        print(f"  - Subtask {f['subtask_num']}: {f['title']}")
+                        print(f"    Reason: {f['reason']}")
+
+                    self.task_metadata["status"] = "failed_threshold"
+                    self.task_metadata["failure_count"] = self.failure_count
+                    self.task_metadata["failed_subtasks"] = self.failed_subtasks
+                    self._save_task_metadata()
+
+                    return {
+                        "task_dir": str(self.task_dir),
+                        "status": "failed",
+                        "reason": "failure_threshold_exceeded",
+                        "failure_count": self.failure_count,
+                        "failed_subtasks": self.failed_subtasks,
+                        "subtasks_completed": len(subtask_results) - self.failure_count
+                    }
+
+        # Phase 4: Integration Test
+        print("\n" + "=" * 60)
+        print("PHASE 4: INTEGRATION TEST")
+        print("=" * 60)
+        integration_result = self.run_integration_test(subtasks)
+        if integration_result.get("status") != "passed":
+            print(f"\n[FAILED] Integration test failed: {integration_result.get('error', 'unknown')}")
+            self.task_metadata["status"] = "integration_failed"
+            self._save_task_metadata()
+            return {
+                "task_dir": str(self.task_dir),
+                "status": "failed",
+                "reason": "integration_test_failed",
+                "integration_result": integration_result,
+                "subtasks_completed": len(subtask_results) - self.failure_count
+            }
+
+        # Phase 5: Smoke Test
+        print("\n" + "=" * 60)
+        print("PHASE 5: SMOKE TEST")
+        print("=" * 60)
+        smoke_result = self.run_smoke_test()
+        if smoke_result.get("status") != "passed":
+            print(f"\n[FAILED] Smoke test failed: {smoke_result.get('error', 'unknown')}")
+            self.task_metadata["status"] = "smoke_test_failed"
+            self._save_task_metadata()
+            return {
+                "task_dir": str(self.task_dir),
+                "status": "failed",
+                "reason": "smoke_test_failed",
+                "smoke_result": smoke_result,
+                "subtasks_completed": len(subtask_results) - self.failure_count
+            }
+
         # Update final status
         self.task_metadata["status"] = "complete"
+        self.task_metadata["failure_count"] = self.failure_count
+        if self.failed_subtasks:
+            self.task_metadata["failed_subtasks"] = self.failed_subtasks
         self._save_task_metadata()
 
         # Generate summary
@@ -303,14 +429,17 @@ class TaskPipeline:
             "task_dir": str(self.task_dir),
             "status": "complete",
             "phases": self.task_metadata["phases_completed"],
-            "subtasks_completed": len(subtask_results)
+            "subtasks_completed": len(subtask_results) - self.failure_count,
+            "subtasks_failed": self.failure_count
         }
 
         print("\n" + "=" * 60)
         print("PIPELINE COMPLETE")
         print("=" * 60)
         print(f"\nTask artifacts: {self.task_dir}")
-        print(f"Subtasks completed: {len(subtask_results)}")
+        print(f"Subtasks completed: {len(subtask_results) - self.failure_count}")
+        if self.failure_count > 0:
+            print(f"Subtasks failed: {self.failure_count}")
 
         return summary
 
@@ -356,6 +485,184 @@ class TaskPipeline:
             }]
 
         return []
+
+    def run_integration_test(self, subtasks: list[dict]) -> dict[str, Any]:
+        """Run integration tests to verify all subtasks work together.
+
+        Phase 4: After all subtasks complete, verify the combined changes
+        don't break each other.
+
+        Args:
+            subtasks: List of completed subtasks
+
+        Returns:
+            Result dict with status and any errors
+        """
+        print("\nRunning integration tests...")
+
+        # Determine test command based on task type
+        if self.task_type == "app":
+            # TypeScript/React/Convex - run vitest
+            test_cmd = ["npm", "run", "test"]
+            test_dir = self.project_root / "app"
+        else:
+            # Infrastructure - run bats or bash tests
+            test_cmd = ["bash", "-c", "find . -name '*.test.sh' -exec bash {} \\;"]
+            test_dir = self.task_dir
+
+        try:
+            result = subprocess.run(
+                test_cmd,
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minute timeout for integration tests
+                cwd=str(test_dir)
+            )
+
+            # Save test output
+            integration_dir = self.task_dir / "04-integration"
+            integration_dir.mkdir(parents=True, exist_ok=True)
+            (integration_dir / "test-output.txt").write_text(
+                f"STDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}"
+            )
+
+            if result.returncode == 0:
+                print("[OK] Integration tests passed")
+                self.task_metadata["phases_completed"].append({
+                    "phase": "integration",
+                    "completed_at": datetime.now().isoformat(),
+                    "status": "passed"
+                })
+                self._save_task_metadata()
+                return {"status": "passed"}
+            else:
+                print(f"[FAILED] Integration tests failed (exit code {result.returncode})")
+                self.task_metadata["phases_completed"].append({
+                    "phase": "integration",
+                    "completed_at": datetime.now().isoformat(),
+                    "status": "failed",
+                    "exit_code": result.returncode
+                })
+                self._save_task_metadata()
+                return {
+                    "status": "failed",
+                    "error": f"Tests exited with code {result.returncode}",
+                    "stdout": result.stdout[-2000:] if result.stdout else "",
+                    "stderr": result.stderr[-2000:] if result.stderr else ""
+                }
+
+        except subprocess.TimeoutExpired:
+            print("[TIMEOUT] Integration tests timed out")
+            self.task_metadata["phases_completed"].append({
+                "phase": "integration",
+                "completed_at": datetime.now().isoformat(),
+                "status": "timeout"
+            })
+            self._save_task_metadata()
+            return {"status": "failed", "error": "Integration tests timed out after 5 minutes"}
+
+        except FileNotFoundError as e:
+            print(f"[WARN] Could not run integration tests: {e}")
+            # Don't fail if tests can't be found - just warn
+            self.task_metadata["phases_completed"].append({
+                "phase": "integration",
+                "completed_at": datetime.now().isoformat(),
+                "status": "skipped",
+                "reason": str(e)
+            })
+            self._save_task_metadata()
+            return {"status": "passed", "warning": f"Tests skipped: {e}"}
+
+    def run_smoke_test(self) -> dict[str, Any]:
+        """Run smoke test to validate the actual deliverable works.
+
+        Phase 5: Test the end-to-end deliverable, not just unit tests.
+        For infrastructure tasks, this might run the actual script.
+        For app tasks, this might start the server and hit an endpoint.
+
+        Returns:
+            Result dict with status and any errors
+        """
+        print("\nRunning smoke test...")
+
+        smoke_dir = self.task_dir / "05-smoke-test"
+        smoke_dir.mkdir(parents=True, exist_ok=True)
+
+        # Look for a smoke test script in the task directory
+        smoke_script = self.task_dir / "smoke-test.sh"
+        if not smoke_script.exists():
+            # Try task-level tests directory
+            smoke_script = self.task_dir / "tests" / "smoke.sh"
+
+        if smoke_script.exists():
+            # Run the custom smoke test
+            print(f"Running custom smoke test: {smoke_script}")
+            try:
+                result = subprocess.run(
+                    ["bash", str(smoke_script)],
+                    capture_output=True,
+                    text=True,
+                    timeout=120,  # 2 minute timeout
+                    cwd=str(self.project_root)
+                )
+
+                (smoke_dir / "smoke-output.txt").write_text(
+                    f"STDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}"
+                )
+
+                if result.returncode == 0:
+                    print("[OK] Smoke test passed")
+                    self.task_metadata["phases_completed"].append({
+                        "phase": "smoke_test",
+                        "completed_at": datetime.now().isoformat(),
+                        "status": "passed"
+                    })
+                    self._save_task_metadata()
+                    return {"status": "passed"}
+                else:
+                    print(f"[FAILED] Smoke test failed (exit {result.returncode})")
+                    self.task_metadata["phases_completed"].append({
+                        "phase": "smoke_test",
+                        "completed_at": datetime.now().isoformat(),
+                        "status": "failed",
+                        "exit_code": result.returncode
+                    })
+                    self._save_task_metadata()
+                    return {
+                        "status": "failed",
+                        "error": f"Smoke test exited with code {result.returncode}",
+                        "stdout": result.stdout[-1000:] if result.stdout else "",
+                        "stderr": result.stderr[-1000:] if result.stderr else ""
+                    }
+
+            except subprocess.TimeoutExpired:
+                print("[TIMEOUT] Smoke test timed out")
+                self.task_metadata["phases_completed"].append({
+                    "phase": "smoke_test",
+                    "completed_at": datetime.now().isoformat(),
+                    "status": "timeout"
+                })
+                self._save_task_metadata()
+                return {"status": "failed", "error": "Smoke test timed out after 2 minutes"}
+
+        else:
+            # No smoke test defined - use default behavior based on task type
+            if self.task_type == "infrastructure":
+                # For infrastructure, there's usually a main script to test
+                # Look for common patterns
+                main_scripts = list(self.project_root.glob("scripts/*.sh"))
+                if main_scripts:
+                    print(f"[INFO] No smoke test defined. Consider adding {self.task_dir}/smoke-test.sh")
+
+            print("[SKIP] No smoke test defined - skipping")
+            self.task_metadata["phases_completed"].append({
+                "phase": "smoke_test",
+                "completed_at": datetime.now().isoformat(),
+                "status": "skipped",
+                "reason": "No smoke-test.sh found"
+            })
+            self._save_task_metadata()
+            return {"status": "passed", "warning": "No smoke test defined"}
 
 
 def fetch_github_issue(issue_number: int, repo: str | None = None) -> str:

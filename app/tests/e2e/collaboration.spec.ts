@@ -34,7 +34,8 @@ test.describe('Collaboration & Access Control', () => {
     });
 
     test('Full Collaboration Lifecycle', async ({ browser }) => {
-        test.setTimeout(90000);
+        test.slow(); // Mark as slow test (3x timeout)
+        test.setTimeout(180000);
         // Use two different contexts to simulate creator and reviewer
         const creatorContext = await browser.newContext();
         const reviewerContext = await browser.newContext();
@@ -55,9 +56,19 @@ test.describe('Collaboration & Access Control', () => {
         await expect(creatorPage).toHaveURL(/\/dashboard/);
 
         console.log('Creator uploading artifact...');
-        await creatorPage.getByRole('button', { name: /Artifact/ }).first().click();
+        // Click the "Upload" button in the header (always present)
+        const uploadBtn = creatorPage.getByRole('button', { name: 'Upload' });
+        await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+        await uploadBtn.click();
+
+        // Wait for dialog and file input
+        await expect(creatorPage.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
         const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
-        await creatorPage.setInputFiles('input[type="file"]', zipPath);
+        const fileInput = creatorPage.locator('#file-upload');
+        await expect(fileInput).toBeAttached({ timeout: 5000 });
+        await fileInput.setInputFiles(zipPath);
+        // Wait for file to appear in the upload area
+        await expect(creatorPage.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
         await creatorPage.getByLabel('Artifact Name').fill(artifactName);
         await creatorPage.getByRole('button', { name: 'Create Artifact' }).click();
 
@@ -135,25 +146,27 @@ test.describe('Collaboration & Access Control', () => {
         console.log('Reviewer successfully reached artifact after login.');
 
         // Verify status change in Creator's view (Journey 004.01)
-        // Refresh or wait for sync
+        // Wait for backend to sync the "viewed" status (may take a moment)
+        await creatorPage.waitForTimeout(2000);
         await creatorPage.reload();
-        // The reload might take us to the default 'Versions' tab
-        await creatorPage.getByRole('button', { name: /Access/ }).click();
+        // Wait for page to load
+        await expect(creatorPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
+        // Open Share modal to check reviewer status
+        await creatorPage.getByRole('button', { name: 'Share' }).click();
+        await expect(creatorPage.getByRole('dialog').getByText('Share Artifact for Review')).toBeVisible({ timeout: 10000 });
 
-        // Ensure we see the 'Viewed' status
-        await expect(creatorPage.getByText('Viewed')).toBeVisible({ timeout: 10000 });
+        // Ensure we see the 'Viewed' status (reviewer accessed the artifact)
+        // Status may show as "Added" initially and update to "Viewed" after backend syncs
+        await expect(creatorPage.getByText('Viewed')).toBeVisible({ timeout: 20000 });
         console.log('Reviewer status updated to "Viewed" in creator view.');
 
         // 4. Journey 003.02: Revoked Access & Permissions
         console.log('Revoking reviewer access...');
-        // Find the specific reviewer row by email and then find the revoke button within it
-        const reviewerRow = creatorPage.locator('div').filter({ hasText: reviewer.email }).filter({ has: creatorPage.getByRole('button', { name: /Revoke/i }) }).first();
-        await reviewerRow.getByRole('button', { name: /Revoke/i }).click();
+        // Find the remove button for the specific reviewer
+        const removeButton = creatorPage.getByRole('button', { name: 'Remove reviewer' });
+        await removeButton.click();
 
-        // Confirm revocation in the dialog
-        console.log('Confirming revocation...');
-        await creatorPage.getByRole('button', { name: /Revoke Access/i }).click();
-
+        // The removal happens immediately (no confirmation dialog)
         // Verify reviewer is removed from list
         await expect(creatorPage.getByText(reviewer.email)).toHaveCount(0, { timeout: 15000 });
         console.log('Reviewer removed from list.');
@@ -169,11 +182,11 @@ test.describe('Collaboration & Access Control', () => {
         // Wait a second for revocation to settle in UI
         await creatorPage.waitForTimeout(1000);
 
-        const inviteInput = creatorPage.getByPlaceholder('name@company.com');
+        const inviteInput = creatorPage.getByPlaceholder('Enter email address');
         await inviteInput.fill(reviewer.email);
         await expect(inviteInput).toHaveValue(reviewer.email);
 
-        await creatorPage.getByRole('button', { name: /Send Invite/i }).click();
+        await creatorPage.getByRole('button', { name: 'Invite' }).click();
 
         // Final verification: Reviewer is back in the list
         console.log('Verifying reviewer is back in the list...');

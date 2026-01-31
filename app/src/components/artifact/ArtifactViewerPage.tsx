@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
 import { ShareModal } from "./ShareModal";
+import { useViewTracker } from "@/hooks/useViewTracker";
 import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +65,15 @@ export function ArtifactViewerPage({
 
   // Determine which version to show based on whether versionNumber was provided
   const targetVersion = versionNumber ? specificVersion : latestVersion;
+
+  // Track views - must be called before any conditional returns (hooks rules)
+  // Only tracks when user has permission and data is loaded
+  const hasPermissionEarly = userPermission === "owner" || userPermission === "can-comment";
+  useViewTracker(
+    artifact?._id ?? ("skip" as any), // Safe to pass invalid ID when skipped via isLoaded
+    targetVersion?._id ?? ("skip" as any),
+    Boolean(artifact && targetVersion && isAuthReady && hasPermissionEarly)
+  );
 
 
 
