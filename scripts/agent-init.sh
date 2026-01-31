@@ -282,7 +282,8 @@ setup_env_files() {
     fi
 
     if [ ! -f ".env.convex.local" ] && [ -f ".env.convex.local.example" ]; then
-        cp .env.convex.local.example .env.convex.local
+        # Substitute AGENT_NAME in the example (replaces james.loc placeholder)
+        sed "s/james\.loc/${AGENT_NAME}.loc/g" .env.convex.local.example > .env.convex.local
         log_success "Created app/.env.convex.local (will be populated by setup scripts)"
     elif [ -f ".env.convex.local" ]; then
         log_success "app/.env.convex.local exists"
