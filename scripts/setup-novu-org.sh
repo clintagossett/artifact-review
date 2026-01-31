@@ -70,7 +70,7 @@ check_novu_available() {
 
     while [ $attempt -le $max_attempts ]; do
         # Try to reach the API (404 is fine, means API is up)
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$NOVU_API_URL/v1/organizations" 2>/dev/null || echo "000")
+        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" "$NOVU_API_URL/v1/organizations" 2>/dev/null || echo "000")
 
         if [ "$HTTP_CODE" = "401" ] || [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "200" ]; then
             log_info "Novu API is available (HTTP $HTTP_CODE)"
@@ -99,7 +99,7 @@ check_novu_available() {
 try_login() {
     log_info "Checking if user already exists..."
 
-    LOGIN_RESPONSE=$(curl -s "$NOVU_API_URL/v1/auth/login" -X POST \
+    LOGIN_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/auth/login" -X POST \
         -H "Content-Type: application/json" \
         -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" 2>/dev/null)
 
@@ -117,7 +117,7 @@ try_login() {
 register_user() {
     log_info "Registering new user: $EMAIL"
 
-    REGISTER_RESPONSE=$(curl -s "$NOVU_API_URL/v1/auth/register" -X POST \
+    REGISTER_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/auth/register" -X POST \
         -H "Content-Type: application/json" \
         -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"firstName\":\"${AGENT_NAME^}\",\"lastName\":\"Admin\"}" 2>/dev/null)
 
@@ -137,7 +137,7 @@ register_user() {
 check_org_exists() {
     log_info "Checking if organization '$ORG_NAME' exists..."
 
-    ORGS_RESPONSE=$(curl -s "$NOVU_API_URL/v1/organizations" \
+    ORGS_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/organizations" \
         -H "Authorization: Bearer $TOKEN" 2>/dev/null)
 
     ORG_ID=$(echo "$ORGS_RESPONSE" | jq -r ".data[] | select(.name == \"$ORG_NAME\") | ._id // empty" 2>/dev/null)
@@ -154,7 +154,7 @@ check_org_exists() {
 create_org() {
     log_info "Creating organization: $ORG_NAME"
 
-    ORG_RESPONSE=$(curl -s "$NOVU_API_URL/v1/organizations" -X POST \
+    ORG_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/organizations" -X POST \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $TOKEN" \
         -d "{\"name\":\"$ORG_NAME\"}" 2>/dev/null)
@@ -176,7 +176,7 @@ get_api_keys() {
     log_info "Fetching API keys..."
 
     # Need to re-login to get token with org context
-    LOGIN_RESPONSE=$(curl -s "$NOVU_API_URL/v1/auth/login" -X POST \
+    LOGIN_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/auth/login" -X POST \
         -H "Content-Type: application/json" \
         -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" 2>/dev/null)
 
@@ -188,7 +188,7 @@ get_api_keys() {
     fi
 
     # Get environments (Development environment for local dev)
-    ENVS_RESPONSE=$(curl -s "$NOVU_API_URL/v1/environments" \
+    ENVS_RESPONSE=$(curl -sk "$NOVU_API_URL/v1/environments" \
         -H "Authorization: Bearer $TOKEN" 2>/dev/null)
 
     # Get Development environment

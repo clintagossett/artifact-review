@@ -5,8 +5,8 @@ services:
     stop_grace_period: 10s
     stop_signal: SIGINT
     ports:
-      - "${CONVEX_ADMIN_PORT:-3210}:3210"
-      - "${CONVEX_HTTP_PORT:-3211}:3211"
+      - "${CONVEX_ADMIN_PORT:?CONVEX_ADMIN_PORT not set - run agent-init.sh}:3210"
+      - "${CONVEX_HTTP_PORT:?CONVEX_HTTP_PORT not set - run agent-init.sh}:3211"
     volumes:
       - convex_data:/convex/data
       # Mount combined CA bundle (system CAs + mkcert CA) for resend-proxy trust
@@ -74,9 +74,9 @@ services:
     container_name: ${AGENT_NAME:?AGENT_NAME is required}-dashboard
     image: ghcr.io/get-convex/convex-dashboard:latest
     ports:
-      - "${CONVEX_DASHBOARD_PORT:-6791}:6791"
+      - "${CONVEX_DASHBOARD_PORT:?CONVEX_DASHBOARD_PORT not set - run agent-init.sh}:6791"
     environment:
-      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:${CONVEX_ADMIN_PORT:-3210}
+      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:${CONVEX_ADMIN_PORT:?CONVEX_ADMIN_PORT not set}
     depends_on:
       backend:
         condition: service_healthy
@@ -85,8 +85,8 @@ services:
     container_name: ${AGENT_NAME:?AGENT_NAME is required}-mailpit
     image: axllent/mailpit
     ports:
-      - "${MAILPIT_WEB_PORT:-8025}:8025" # Web UI
-      - "${MAILPIT_SMTP_PORT:-1025}:1025" # SMTP server
+      - "${MAILPIT_WEB_PORT:?MAILPIT_WEB_PORT not set - run agent-init.sh}:8025" # Web UI
+      - "${MAILPIT_SMTP_PORT:?MAILPIT_SMTP_PORT not set - run agent-init.sh}:1025" # SMTP server
     restart: unless-stopped
     networks:
       default:
