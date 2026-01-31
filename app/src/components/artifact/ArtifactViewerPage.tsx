@@ -10,6 +10,7 @@ import { useViewTracker } from "@/hooks/useViewTracker";
 import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useVersionStatus } from "@/hooks/useVersionStatus";
 
 interface ArtifactViewerPageProps {
   shareToken: string;
@@ -75,7 +76,10 @@ export function ArtifactViewerPage({
     Boolean(artifact && targetVersion && isAuthReady && hasPermissionEarly)
   );
 
-
+  // Task 00049: Get version status for status tracking
+  const { status: versionStatus } = useVersionStatus(
+    targetVersion?._id ?? null
+  );
 
   // Handle loading states
   if (isAuthLoading || artifact === undefined || versions === undefined || targetVersion === undefined || userPermission === undefined) {
@@ -169,6 +173,7 @@ export function ArtifactViewerPage({
         onVersionChange={handleVersionChange}
         currentUser={currentUser}
         userPermission={userPermission}
+        versionStatus={versionStatus}
       />
 
       <ShareModal

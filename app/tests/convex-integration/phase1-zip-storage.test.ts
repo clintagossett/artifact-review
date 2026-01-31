@@ -436,10 +436,12 @@ describe("ZIP Processing Error Handling", () => {
       error: "ZIP contains forbidden file type: .exe",
     });
 
-    // Verify version was soft-deleted
+    // Verify version has error status (Task 00049 - keep errors visible)
     const version = await t.run(async (ctx) => ctx.db.get(versionId));
-    expect(version?.isDeleted).toBe(true);
-    expect(version?.deletedAt).toBeDefined();
+    expect(version?.status).toBe("error");
+    expect(version?.errorMessage).toBeDefined();
+    expect(version?.isDeleted).toBe(false); // Not soft-deleted anymore
+    expect(version?.deletedAt).toBeUndefined(); // No deletedAt when not deleted
   });
 });
 
@@ -656,9 +658,11 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       error: `ZIP contains too many files. Maximum: ${MAX_ZIP_FILE_COUNT}, found: ${tooManyFiles}`,
     });
 
-    // Verify version was soft-deleted
+    // Verify version has error status (Task 00049 - keep errors visible)
     const version = await t.run(async (ctx) => ctx.db.get(versionId));
-    expect(version?.isDeleted).toBe(true);
+    expect(version?.status).toBe("error");
+    expect(version?.errorMessage).toBeDefined();
+    expect(version?.isDeleted).toBe(false); // Not soft-deleted anymore
   });
 
   test("should reject ZIP with oversized individual files", async () => {
@@ -683,9 +687,11 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       error: `File too large: huge-image.jpg (${(oversizedBytes / 1024 / 1024).toFixed(2)}MB). Maximum: 5MB per file.`,
     });
 
-    // Verify version was soft-deleted
+    // Verify version has error status (Task 00049 - keep errors visible)
     const version = await t.run(async (ctx) => ctx.db.get(versionId));
-    expect(version?.isDeleted).toBe(true);
+    expect(version?.status).toBe("error");
+    expect(version?.errorMessage).toBeDefined();
+    expect(version?.isDeleted).toBe(false); // Not soft-deleted anymore
   });
 
   test("should detect entry point correctly", async () => {

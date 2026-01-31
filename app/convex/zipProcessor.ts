@@ -17,20 +17,46 @@ const log = createLogger("zipProcessor.processZipFile");
 /**
  * Process a ZIP file: validate, extract files, detect entry point, and store in database
  * Task 00019 - Phase 1: Added validation for file count, size, and forbidden types
+ *
+ * @param _testDelayMs - Optional delay in ms before completing (for visual/async testing)
  */
 export const processZipFile = internalAction({
   args: {
     versionId: v.id("artifactVersions"),
     storageId: v.id("_storage"),
+    _testDelayMs: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     log.debug(LOG_TOPICS.Artifact, "Starting ZIP processing", {
       versionId: args.versionId,
       storageId: args.storageId,
+      _testDelayMs: args._testDelayMs,
     });
 
     try {
+      // Optional delay for visual/async testing - stay in "uploading" state
+      if (args._testDelayMs && args._testDelayMs > 0) {
+        log.debug(LOG_TOPICS.Artifact, "Applying test delay in uploading state", {
+          delayMs: args._testDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, args._testDelayMs));
+      }
+
+      // Set status to "processing"
+      await ctx.runMutation(internal.zipProcessorMutations.updateVersionStatus, {
+        versionId: args.versionId,
+        status: "processing",
+      });
+
+      // Optional delay for visual/async testing - stay in "processing" state
+      if (args._testDelayMs && args._testDelayMs > 0) {
+        log.debug(LOG_TOPICS.Artifact, "Applying test delay in processing state", {
+          delayMs: args._testDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, args._testDelayMs));
+      }
+
       // Get ZIP file from storage
       log.debug(LOG_TOPICS.Artifact, "Fetching ZIP file from storage");
       const blob = await ctx.storage.get(args.storageId);
@@ -239,8 +265,8 @@ export const processZipFile = internalAction({
         error: error instanceof Error ? error.message : "Unknown error",
       });
 
-      // Re-throw to propagate error to caller
-      throw error;
+      // Don't re-throw - error is already logged and status is set to "error"
+      // Re-throwing causes UnhandledPromiseRejection in the Convex isolate
     }
 
     return null;

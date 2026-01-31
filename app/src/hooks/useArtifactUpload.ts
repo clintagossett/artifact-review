@@ -10,6 +10,8 @@ export interface CreateArtifactData {
   name: string;
   description?: string;
   entryPoint?: string; // For ZIP files
+  /** Callback when version is created (before processing starts) - use to start status subscription early */
+  onVersionCreated?: (versionId: Id<"artifactVersions">, shareToken: string) => void;
 }
 
 export interface UploadResult {
@@ -64,7 +66,7 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
 
   const uploadFile = useCallback(
     async (data: CreateArtifactData): Promise<UploadResult> => {
-      const { file, name, description, entryPoint } = data;
+      const { file, name, description, entryPoint, onVersionCreated } = data;
 
       setIsUploading(true);
       setError(null);
@@ -120,6 +122,12 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
               entryPoint,
             });
 
+          // Notify caller immediately so they can start status subscription
+          // This allows observing uploading → processing → ready transitions
+          if (onVersionCreated) {
+            onVersionCreated(versionId, shareToken);
+          }
+
           setUploadProgress(40);
 
           // Step 2: Upload file to storage URL
@@ -137,7 +145,13 @@ export function useArtifactUpload(): UseArtifactUploadReturn {
           setUploadProgress(70);
 
           // Step 3: Trigger ZIP processing
-          await triggerZipProcessing({ versionId, storageId });
+          // Pass test delay if set (for visual/async testing)
+          const testDelayMs = parseInt(process.env.NEXT_PUBLIC_TEST_ASYNC_DELAY_MS || "0", 10);
+          await triggerZipProcessing({
+            versionId,
+            storageId,
+            _testDelayMs: testDelayMs > 0 ? testDelayMs : undefined,
+          });
 
           setUploadProgress(100);
           setIsUploading(false);

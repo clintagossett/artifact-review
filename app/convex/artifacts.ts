@@ -158,6 +158,7 @@ export const createInternal = internalMutation({
       fileType: args.fileType,
       entryPoint: args.path,
       size: args.size,
+      status: "ready", // Task 00049 - Synchronous uploads are immediately ready
       isDeleted: false,
       createdAt: now,
       agentId: args.agentId,
@@ -1305,6 +1306,43 @@ export const getDetailsForSettings = query({
       creatorEmail,
       versionCount,
       totalFileSize,
+    };
+  },
+});
+
+/**
+ * Get version status for real-time subscription
+ * Task 00049 - Subtask 02: Frontend Status Tracking
+ *
+ * Used by frontend to poll/subscribe to version processing status.
+ * Treats undefined status as "ready" for backward compatibility.
+ */
+export const getVersionStatus = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+  },
+  returns: v.union(
+    v.object({
+      status: v.union(
+        v.literal("uploading"),
+        v.literal("processing"),
+        v.literal("ready"),
+        v.literal("error")
+      ),
+      errorMessage: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const version = await ctx.db.get(args.versionId);
+    if (!version) return null;
+
+    // Treat undefined status as "ready" for backward compatibility
+    const status = version.status ?? "ready";
+
+    return {
+      status: status as "uploading" | "processing" | "ready" | "error",
+      errorMessage: version.errorMessage,
     };
   },
 });

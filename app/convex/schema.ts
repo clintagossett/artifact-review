@@ -367,6 +367,30 @@ const schema = defineSchema({
     size: v.number(),
 
     /**
+     * Processing status for async operations.
+     * - "uploading": Version created, waiting for file upload
+     * - "processing": ZIP file being extracted
+     * - "ready": Processing complete, version is viewable
+     * - "error": Processing failed, see errorMessage
+     *
+     * Optional for backward compatibility - undefined treated as "ready".
+     * Task 00049 - Artifact Version Status
+     */
+    status: v.optional(v.union(
+      v.literal("uploading"),
+      v.literal("processing"),
+      v.literal("ready"),
+      v.literal("error")
+    )),
+
+    /**
+     * Error details when status === "error".
+     * Contains human-readable error message for display.
+     * Task 00049 - Artifact Version Status
+     */
+    errorMessage: v.optional(v.string()),
+
+    /**
      * Soft deletion flag.
      * @see ADR 0011 - Soft Delete Strategy
      */

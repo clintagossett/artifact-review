@@ -1,0 +1,569 @@
+
+> app@0.1.0 test:e2e
+> NODE_PATH=./node_modules NODE_EXTRA_CA_CERTS=${NODE_EXTRA_CA_CERTS:-$(mkcert -CAROOT 2>/dev/null)/rootCA.pem} playwright test
+
+[dotenv@17.2.3] injecting env (8) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (8) from .env.nextjs.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+Running 15 tests using 12 workers
+
+[1A[2K[1/15] [chromium] › tests/e2e/artifact-workflow.spec.ts:140:10 › End-to-End Artifact Workflow › Add comment via text selection in artifact
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[1A[2K[2/15] [chromium] › tests/e2e/smoke-integrations.spec.ts:48:13 › Systems Integration Smoke Tests › Novu - Notifications › NotificationCenter renders and is interactive
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[1A[2K[3/15] [chromium] › tests/e2e/notification.spec.ts:482:9 › Notification System › Test 5: Notification Count Accumulates › 5.1: Multiple comments -> Badge shows correct count
+[1A[2K[4/15] [chromium] › tests/e2e/notification.spec.ts:227:9 › Notification System › Test 1: New Comment Notifies Artifact Owner › 1.1: Reviewer comments on artifact -> Owner sees notification badge
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[1A[2K[5/15] [chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[1A[2K[6/15] [chromium] › tests/e2e/auth.spec.ts:41:9 › Authentication Flows › Login/Signup with Magic Link
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: ⚙️  enable debug logging with { debug: true }
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ⚙️  enable debug logging with { debug: true }
+
+[1A[2K[7/15] [chromium] › tests/e2e/collaboration.spec.ts:36:9 › Collaboration & Access Control › Full Collaboration Lifecycle
+[1A[2K[8/15] [chromium] › tests/e2e/auth.spec.ts:17:9 › Authentication Flows › Signup with Password
+[1A[2K[9/15] [chromium] › tests/e2e/notification.spec.ts:296:9 › Notification System › Test 2: Reply Notifies Comment Author › 2.1: Owner replies to comment -> Reviewer sees notification badge
+[1A[2K[10/15] [chromium] › tests/e2e/notification.spec.ts:356:9 › Notification System › Test 3: Thread Participants Get Notified › 3.1: Third user replies -> Both owner and original commenter notified
+[1A[2K[11/15] [chromium] › tests/e2e/notification.spec.ts:545:9 › Notification System › Test 6: Mark as Read Clears Badge › 6.1: Owner opens notification center -> Badge clears
+[1A[2K[12/15] [chromium] › tests/e2e/notification.spec.ts:442:9 › Notification System › Test 4: Self-Comment Does NOT Trigger Notification › 4.1: Owner comments on own artifact -> No notification
+[1A[2K[13/15] [chromium] › tests/e2e/agent-api.spec.ts:90:9 › Agent API Integration › Full CRUD Lifecycle via API
+[1A[2K[chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+Starting magic link login...
+
+[1A[2K[chromium] › tests/e2e/notification.spec.ts:227:9 › Notification System › Test 1: New Comment Notifies Artifact Owner › 1.1: Reviewer comments on artifact -> Owner sees notification badge
+Owner logging in...
+
+[1A[2K[chromium] › tests/e2e/collaboration.spec.ts:36:9 › Collaboration & Access Control › Full Collaboration Lifecycle
+Creator logging in...
+
+[1A[2K[chromium] › tests/e2e/agent-api.spec.ts:90:9 › Agent API Integration › Full CRUD Lifecycle via API
+Logging in...
+
+[1A[2K[chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+Switching to Magic Link tab...
+
+[1A[2KFilling email...
+
+[1A[2KEmail sent to test.user+1769880769641-736123@tolauante.resend.app, polling Mailpit...
+
+[1A[2K[chromium] › tests/e2e/auth.spec.ts:41:9 › Authentication Flows › Login/Signup with Magic Link
+Polling for email to test.user+1769880769680-255184@tolauante.resend.app...
+
+[1A[2K[chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+Magic link found, proceeding to login.
+
+[1A[2K[chromium] › tests/e2e/auth.spec.ts:41:9 › Authentication Flows › Login/Signup with Magic Link
+Email received, extracting link...
+
+[1A[2KFound magic link: https://mark.loc/dashboard?code=lL2MBwLO1c5cgWcACszwkaWiluBcwdFf
+
+[1A[2K[chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+Successfully logged into dashboard.
+
+[1A[2KOpening upload dialog...
+
+[1A[2K[chromium] › tests/e2e/collaboration.spec.ts:36:9 › Collaboration & Access Control › Full Collaboration Lifecycle
+Creator uploading artifact...
+
+[1A[2K[chromium] › tests/e2e/notification.spec.ts:227:9 › Notification System › Test 1: New Comment Notifies Artifact Owner › 1.1: Reviewer comments on artifact -> Owner sees notification badge
+Owner uploading artifact...
+
+[1A[2K[chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer
+Uploading ZIP from: /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip
+
+[1A[2K[chromium] › tests/e2e/agent-api.spec.ts:90:9 › Agent API Integration › Full CRUD Lifecycle via API
+Creating artifact...
+
+[1A[2K[chromium] › tests/e2e/notification.spec.ts:545:9 › Notification System › Test 6: Mark as Read Clears Badge › 6.1: Owner opens notification center -> Badge clears
+Clicking Create Artifact button...
+
+[1A[2K  1) [chromium] › tests/e2e/auth.spec.ts:17:9 › Authentication Flows › Signup with Password ────────
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/\/dashboard/[39m
+    Received string:  [31m"https://mark.loc/register"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 5000ms[22m
+    [2m    9 × unexpected value "https://mark.loc/register"[22m
+
+
+      33 |         // Verify redirection to dashboard or success state
+      34 |         // Ideally we check for a dashboard element
+    > 35 |         await expect(page).toHaveURL(/\/dashboard/);
+         |                            ^
+      36 |
+      37 |         // Optional: Check if user name is displayed
+      38 |         // await expect(page.getByText(user.name)).toBeVisible(); 
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/auth.spec.ts:35:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/auth-Authentication-Flows-Signup-with-Password-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/auth-Authentication-Flows-Signup-with-Password-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/auth-Authentication-Flows-Signup-with-Password-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/auth-Authentication-Flows-Signup-with-Password-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/auth-Authentication-Flows-Signup-with-Password-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[chromium] › tests/e2e/smoke-integrations.spec.ts:48:13 › Systems Integration Smoke Tests › Novu - Notifications › NotificationCenter renders and is interactive
+✓ Novu: NotificationCenter operational
+
+[1A[2K[14/15] [chromium] › tests/e2e/smoke-integrations.spec.ts:91:13 › Systems Integration Smoke Tests › Novu - Notification Delivery (API Validation) › Comment triggers notification (validated via Novu API)
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.local -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+[1A[2K[dotenv@17.2.3] injecting env (0) from .env.nextjs.local -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[1A[2K[15/15] [chromium] › tests/e2e/smoke-integrations.spec.ts:69:13 › Systems Integration Smoke Tests › Resend/Mailpit - Email › Magic link email is delivered (via Mailpit in local)
+[1A[2K[chromium] › tests/e2e/smoke-integrations.spec.ts:69:13 › Systems Integration Smoke Tests › Resend/Mailpit - Email › Magic link email is delivered (via Mailpit in local)
+✓ Resend: Magic link email triggered
+
+[1A[2K[chromium] › tests/e2e/smoke-integrations.spec.ts:91:13 › Systems Integration Smoke Tests › Novu - Notification Delivery (API Validation) › Comment triggers notification (validated via Novu API)
+✓ Owner signed up
+
+[1A[2K✓ Artifact created: https://mark.loc/a/1TN0f_mq
+
+[1A[2K  2) [chromium] › tests/e2e/notification.spec.ts:296:9 › Notification System › Test 2: Reply Notifies Comment Author › 2.1: Owner replies to comment -> Reviewer sees notification badge 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('v1.md')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('v1.md')[22m
+
+
+      116 |
+      117 |   // Wait for file to be processed (shows in the upload area)
+    > 118 |   await expect(page.getByText('v1.md')).toBeVisible({ timeout: 10000 });
+          |                                         ^
+      119 |
+      120 |   await page.getByLabel('Artifact Name').fill(name);
+      121 |
+        at uploadArtifact (/home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:118:41)
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:312:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--0b7d0-wer-sees-notification-badge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--0b7d0-wer-sees-notification-badge-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--0b7d0-wer-sees-notification-badge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--0b7d0-wer-sees-notification-badge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  3) [chromium] › tests/e2e/notification.spec.ts:442:9 › Notification System › Test 4: Self-Comment Does NOT Trigger Notification › 4.1: Owner comments on own artifact -> No notification 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('v1.md')
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('v1.md')[22m
+
+
+      116 |
+      117 |   // Wait for file to be processed (shows in the upload area)
+    > 118 |   await expect(page.getByText('v1.md')).toBeVisible({ timeout: 10000 });
+          |                                         ^
+      119 |
+      120 |   await page.getByLabel('Artifact Name').fill(name);
+      121 |
+        at uploadArtifact (/home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:118:41)
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:454:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--b50ee--artifact---No-notification-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--b50ee--artifact---No-notification-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--b50ee--artifact---No-notification-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  4) [chromium] › tests/e2e/agent-api.spec.ts:90:9 › Agent API Integration › Full CRUD Lifecycle via API 
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveURL[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/\/a\//[39m
+    Received string:  [31m"https://mark.loc/dashboard"[39m
+    Timeout: 30000ms
+
+    Call log:
+    [2m  - Expect "toHaveURL" with timeout 30000ms[22m
+    [2m    34 × unexpected value "https://mark.loc/dashboard"[22m
+
+
+      60 |         await page.getByRole('button', { name: 'Create Artifact' }).click();
+      61 |
+    > 62 |         await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
+         |                            ^
+      63 |         artifactUrl = page.url();
+      64 |         const urlParts = artifactUrl.split('/');
+      65 |         shareToken = urlParts[urlParts.length - 1]; // /a/:token
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/agent-api.spec.ts:62:28
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/agent-api-Agent-API-Integration-Full-CRUD-Lifecycle-via-API-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/agent-api-Agent-API-Integration-Full-CRUD-Lifecycle-via-API-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/agent-api-Agent-API-Integration-Full-CRUD-Lifecycle-via-API-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/agent-api-Agent-API-Integration-Full-CRUD-Lifecycle-via-API-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  5) [chromium] › tests/e2e/smoke-integrations.spec.ts:91:13 › Systems Integration Smoke Tests › Novu - Notification Delivery (API Validation) › Comment triggers notification (validated via Novu API) 
+
+    TimeoutError: page.waitForSelector: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('label:has-text("Full name")') to be visible[22m
+
+
+      144 |             await reviewerPage.goto('/register');
+      145 |             // Wait for the registration form to be visible (Convex auth check must complete)
+    > 146 |             await reviewerPage.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
+          |                                ^
+      147 |             await reviewerPage.getByLabel('Full name').fill(reviewer.name);
+      148 |             await reviewerPage.getByLabel('Email address').fill(reviewer.email);
+      149 |             await reviewerPage.getByLabel('Password', { exact: true }).fill(reviewer.password);
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/smoke-integrations.spec.ts:146:32
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/video-1.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #4: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/error-context.md
+
+    attachment #6: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/smoke-integrations-Systems-1ebd0-ion-validated-via-Novu-API--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  6) [chromium] › tests/e2e/notification.spec.ts:545:9 › Notification System › Test 6: Mark as Read Clears Badge › 6.1: Owner opens notification center -> Badge clears 
+
+    TimeoutError: page.waitForURL: Timeout 60000ms exceeded.
+    =========================== logs ===========================
+    waiting for navigation until "load"
+    ============================================================
+
+      137 |
+      138 |   // Wait for navigation to artifact page
+    > 139 |   await page.waitForURL(/\/a\//, { timeout: 60000 });
+          |              ^
+      140 |
+      141 |   return page.url();
+      142 | }
+        at uploadArtifact (/home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:139:14)
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:561:29
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--c59e5-ation-center---Badge-clears-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--c59e5-ation-center---Badge-clears-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--c59e5-ation-center---Badge-clears-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--c59e5-ation-center---Badge-clears-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  7) [chromium] › tests/e2e/collaboration.spec.ts:36:9 › Collaboration & Access Control › Full Collaboration Lifecycle 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: locator.fill: Test ended.
+    Call log:
+    [2m  - waiting for getByLabel('Artifact Name')[22m
+    [2m    - locator resolved to <input id="artifact-name" value="Mixed Media Sample" placeholder="e.g., June Earnings by Region" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"/>[22m
+    [2m    - fill("E2E Collaboration 1769880769479")[22m
+    [2m  - attempting fill action[22m
+    [2m    - waiting for element to be visible, enabled and editable[22m
+    [2m  - element was detached from the DOM, retrying[22m
+
+
+      59 |         const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
+      60 |         await creatorPage.setInputFiles('input[type="file"]', zipPath);
+    > 61 |         await creatorPage.getByLabel('Artifact Name').fill(artifactName);
+         |                                                       ^
+      62 |         await creatorPage.getByRole('button', { name: 'Create Artifact' }).click();
+      63 |
+      64 |         await expect(creatorPage).toHaveURL(/\/a\//, { timeout: 30000 });
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/collaboration.spec.ts:61:55
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/collaboration-Collaboratio-d4601-ull-Collaboration-Lifecycle-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/collaboration-Collaboratio-d4601-ull-Collaboration-Lifecycle-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/collaboration-Collaboratio-d4601-ull-Collaboration-Lifecycle-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/collaboration-Collaboratio-d4601-ull-Collaboration-Lifecycle-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/collaboration-Collaboratio-d4601-ull-Collaboration-Lifecycle-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  8) [chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer 
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 90000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel('Artifact Name')[22m
+
+
+      87 |
+      88 |         const artifactName = `E2E Mixed Media ${Date.now()}`;
+    > 89 |         await page.getByLabel('Artifact Name').fill(artifactName);
+         |                                                ^
+      90 |
+      91 |         // Wait for button to be enabled (file upload processing)
+      92 |         const createButton = page.getByRole('button', { name: 'Create Artifact' });
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/artifact-workflow.spec.ts:89:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/artifact-workflow-End-to-E-05c52-Login---ZIP-Upload---Viewer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/artifact-workflow-End-to-E-05c52-Login---ZIP-Upload---Viewer-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/artifact-workflow-End-to-E-05c52-Login---ZIP-Upload---Viewer-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/artifact-workflow-End-to-E-05c52-Login---ZIP-Upload---Viewer-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/artifact-workflow-End-to-E-05c52-Login---ZIP-Upload---Viewer-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  9) [chromium] › tests/e2e/notification.spec.ts:227:9 › Notification System › Test 1: New Comment Notifies Artifact Owner › 1.1: Reviewer comments on artifact -> Owner sees notification badge 
+
+    [31mTest timeout of 120000ms exceeded.[39m
+
+    Error: browserContext.close: Target page, context or browser has been closed
+
+      287 |
+      288 |       } finally {
+    > 289 |         await ownerContext.close();
+          |         ^
+      290 |         await reviewerContext.close();
+      291 |       }
+      292 |     });
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:289:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--bf7d6-ner-sees-notification-badge-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--bf7d6-ner-sees-notification-badge-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/notification-Notification--bf7d6-ner-sees-notification-badge-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--bf7d6-ner-sees-notification-badge-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--bf7d6-ner-sees-notification-badge-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  10) [chromium] › tests/e2e/notification.spec.ts:482:9 › Notification System › Test 5: Notification Count Accumulates › 5.1: Multiple comments -> Badge shows correct count 
+
+    [31mTest timeout of 120000ms exceeded.[39m
+
+    Error: browserContext.close: Target page, context or browser has been closed
+
+      536 |
+      537 |       } finally {
+    > 538 |         await ownerContext.close();
+          |         ^
+      539 |         await reviewerContext.close();
+      540 |       }
+      541 |     });
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:538:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--e1376---Badge-shows-correct-count-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--e1376---Badge-shows-correct-count-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/notification-Notification--e1376---Badge-shows-correct-count-chromium/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--e1376---Badge-shows-correct-count-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--e1376---Badge-shows-correct-count-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  11) [chromium] › tests/e2e/notification.spec.ts:356:9 › Notification System › Test 3: Thread Participants Get Notified › 3.1: Third user replies -> Both owner and original commenter notified 
+
+    [31mTest timeout of 150000ms exceeded.[39m
+
+    Error: browserContext.close: Target page, context or browser has been closed
+
+      432 |
+      433 |       } finally {
+    > 434 |         await ownerContext.close();
+          |         ^
+      435 |         await reviewer1Context.close();
+      436 |         await reviewer2Context.close();
+      437 |       }
+        at /home/clint-gossett/Documents/artifact-review-dev/artifact-review-mark/app/tests/e2e/notification.spec.ts:434:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--1809c-original-commenter-notified-chromium/test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--1809c-original-commenter-notified-chromium/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/notification-Notification--1809c-original-commenter-notified-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/notification-Notification--1809c-original-commenter-notified-chromium/error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/notification-Notification--1809c-original-commenter-notified-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/notification-Notification--1809c-original-commenter-notified-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  11 failed
+    [chromium] › tests/e2e/agent-api.spec.ts:90:9 › Agent API Integration › Full CRUD Lifecycle via API 
+    [chromium] › tests/e2e/artifact-workflow.spec.ts:28:9 › End-to-End Artifact Workflow › Complete artifact lifecycle: Login -> ZIP Upload -> Viewer 
+    [chromium] › tests/e2e/auth.spec.ts:17:9 › Authentication Flows › Signup with Password ─────────
+    [chromium] › tests/e2e/collaboration.spec.ts:36:9 › Collaboration & Access Control › Full Collaboration Lifecycle 
+    [chromium] › tests/e2e/notification.spec.ts:227:9 › Notification System › Test 1: New Comment Notifies Artifact Owner › 1.1: Reviewer comments on artifact -> Owner sees notification badge 
+    [chromium] › tests/e2e/notification.spec.ts:296:9 › Notification System › Test 2: Reply Notifies Comment Author › 2.1: Owner replies to comment -> Reviewer sees notification badge 
+    [chromium] › tests/e2e/notification.spec.ts:356:9 › Notification System › Test 3: Thread Participants Get Notified › 3.1: Third user replies -> Both owner and original commenter notified 
+    [chromium] › tests/e2e/notification.spec.ts:442:9 › Notification System › Test 4: Self-Comment Does NOT Trigger Notification › 4.1: Owner comments on own artifact -> No notification 
+    [chromium] › tests/e2e/notification.spec.ts:482:9 › Notification System › Test 5: Notification Count Accumulates › 5.1: Multiple comments -> Badge shows correct count 
+    [chromium] › tests/e2e/notification.spec.ts:545:9 › Notification System › Test 6: Mark as Read Clears Badge › 6.1: Owner opens notification center -> Badge clears 
+    [chromium] › tests/e2e/smoke-integrations.spec.ts:91:13 › Systems Integration Smoke Tests › Novu - Notification Delivery (API Validation) › Comment triggers notification (validated via Novu API) 
+  1 skipped
+  3 passed (2.5m)

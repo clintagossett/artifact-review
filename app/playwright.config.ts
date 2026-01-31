@@ -58,8 +58,16 @@ export default defineConfig({
   workers: process.env.CI ? 1 : 2, // Limit parallel workers to reduce resource contention
   reporter: 'html',
 
+  // Keep all test artifacts (videos, traces, screenshots) even on success
+  // Humans can review these to see what was built/tested
+  outputDir: './test-results',
+  preserveOutput: 'always',
+
   use: {
     baseURL,
+    // Always record - not just on failure
+    // Videos: ./test-results/{test-name}/video.webm
+    // Traces: ./test-results/{test-name}/trace.zip (open with `npx playwright show-trace`)
     trace: 'on',
     screenshot: 'on',
     video: 'on',
