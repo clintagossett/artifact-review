@@ -66,15 +66,43 @@ Based on this architectural analysis, create a master implementation plan.
 Break down the work into numbered subtasks that can be executed sequentially.
 Each subtask should be small enough for one TDD cycle (test + implement).
 
+## IMPORTANT: Capture Reference Files
+
+As you explore the codebase, record specific file paths that will help downstream agents.
+This prevents each agent from re-exploring the codebase (massive token waste).
+
+For each subtask, include `reference_files` - existing files that demonstrate:
+- Similar patterns to follow
+- Code to modify
+- Test examples to emulate
+- Configuration formats
+
+Example:
+```json
+{{
+  "reference_files": [
+    {{"path": "scripts/existing-script.sh", "reason": "Follow error handling pattern"}},
+    {{"path": "tests/example.test.sh:15-40", "reason": "Test structure to emulate"}}
+  ]
+}}
+```
+
+## Output Format
+
 Output your plan using <artifact name="plan.md"> tags.
+Keep plan.md BRIEF - just subtask summaries, not full documentation.
+
 Also output <artifact name="subtasks.json"> with a JSON array of subtasks.
 
-Each subtask in the JSON should have:
+Each subtask in the JSON MUST have:
 - "number": sequential number (1, 2, 3...)
-- "title": short descriptive title
-- "description": what needs to be done
-- "files": list of files likely to be modified
-- "depends_on": list of subtask numbers this depends on (empty for first subtask)
+- "title": short descriptive title (max 10 words)
+- "description": what needs to be done (max 200 words - be concise!)
+- "files": list of files to be created or modified
+- "depends_on": list of subtask numbers this depends on
+- "reference_files": list of existing files to reference (with reason)
+
+DO NOT write exhaustive documentation. Point to existing code instead.
 """
 
         result = super().run(input_context)

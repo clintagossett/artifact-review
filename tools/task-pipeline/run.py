@@ -121,25 +121,74 @@ def main():
         help="Enable verbose output"
     )
 
+    parser.add_argument(
+        "--max-failures",
+        type=int,
+        default=3,
+        help="Maximum subtask failures before stopping pipeline (0=unlimited, default: 3)"
+    )
+
     args = parser.parse_args()
 
     project_root = Path(args.project_root).resolve()
 
     # Determine task directory and issue content
     if args.issue:
-        # Fetch from GitHub
-        print(f"Fetching GitHub issue #{args.issue}...")
-        issue_content = fetch_github_issue(args.issue, args.repo)
+        # Check for existing task directory with this issue number
+        tasks_base = project_root / args.tasks_dir
+        issue_prefix = f"{args.issue:05d}-"
+        existing_dirs = list(tasks_base.glob(f"{issue_prefix}*"))
 
-        # Create task directory
-        title = extract_title_from_issue(issue_content)
-        title_slug = slugify(title)
-        task_dir = create_task_dir(
-            args.issue,
-            title_slug,
-            project_root / args.tasks_dir
-        )
-        print(f"Created task directory: {task_dir}")
+        if existing_dirs:
+            # Found existing directory - offer to resume
+            existing = existing_dirs[0]
+            print(f"\nFound existing task directory: {existing}")
+            print("Options:")
+            print("  1. Resume existing task (default)")
+            print("  2. Create new directory (will have different slug)")
+            print("  3. Abort")
+
+            choice = input("\nChoice [1]: ").strip() or "1"
+
+            if choice == "1":
+                task_dir = existing
+                issue_path = task_dir / "issue.md"
+                if issue_path.exists():
+                    issue_content = issue_path.read_text()
+                else:
+                    print(f"Fetching GitHub issue #{args.issue}...")
+                    issue_content = fetch_github_issue(args.issue, args.repo)
+                print(f"Resuming task: {task_dir}")
+            elif choice == "2":
+                print(f"Fetching GitHub issue #{args.issue}...")
+                issue_content = fetch_github_issue(args.issue, args.repo)
+                title = extract_title_from_issue(issue_content)
+                title_slug = slugify(title)
+                # Add suffix to avoid collision
+                import time
+                suffix = int(time.time()) % 1000
+                task_dir = create_task_dir(
+                    args.issue,
+                    f"{title_slug}-{suffix}",
+                    tasks_base
+                )
+                print(f"Created new task directory: {task_dir}")
+            else:
+                print("Aborted.")
+                sys.exit(0)
+        else:
+            # No existing directory - create new one
+            print(f"Fetching GitHub issue #{args.issue}...")
+            issue_content = fetch_github_issue(args.issue, args.repo)
+
+            title = extract_title_from_issue(issue_content)
+            title_slug = slugify(title)
+            task_dir = create_task_dir(
+                args.issue,
+                title_slug,
+                tasks_base
+            )
+            print(f"Created task directory: {task_dir}")
 
     elif args.task:
         # Use existing task directory
@@ -181,6 +230,7 @@ def main():
         task_dir=task_dir,
         project_root=project_root,
         task_type=args.task_type,
+        max_failures=args.max_failures,
     )
 
     if args.phase == "architect":
