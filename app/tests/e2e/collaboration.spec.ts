@@ -146,25 +146,27 @@ test.describe('Collaboration & Access Control', () => {
         console.log('Reviewer successfully reached artifact after login.');
 
         // Verify status change in Creator's view (Journey 004.01)
-        // Refresh or wait for sync
+        // Wait for backend to sync the "viewed" status (may take a moment)
+        await creatorPage.waitForTimeout(2000);
         await creatorPage.reload();
-        // The reload might take us to the default 'Versions' tab
-        await creatorPage.getByRole('button', { name: /Access/ }).click();
+        // Wait for page to load
+        await expect(creatorPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
+        // Open Share modal to check reviewer status
+        await creatorPage.getByRole('button', { name: 'Share' }).click();
+        await expect(creatorPage.getByRole('dialog').getByText('Share Artifact for Review')).toBeVisible({ timeout: 10000 });
 
-        // Ensure we see the 'Viewed' status
-        await expect(creatorPage.getByText('Viewed')).toBeVisible({ timeout: 10000 });
+        // Ensure we see the 'Viewed' status (reviewer accessed the artifact)
+        // Status may show as "Added" initially and update to "Viewed" after backend syncs
+        await expect(creatorPage.getByText('Viewed')).toBeVisible({ timeout: 20000 });
         console.log('Reviewer status updated to "Viewed" in creator view.');
 
         // 4. Journey 003.02: Revoked Access & Permissions
         console.log('Revoking reviewer access...');
-        // Find the specific reviewer row by email and then find the revoke button within it
-        const reviewerRow = creatorPage.locator('div').filter({ hasText: reviewer.email }).filter({ has: creatorPage.getByRole('button', { name: /Revoke/i }) }).first();
-        await reviewerRow.getByRole('button', { name: /Revoke/i }).click();
+        // Find the remove button for the specific reviewer
+        const removeButton = creatorPage.getByRole('button', { name: 'Remove reviewer' });
+        await removeButton.click();
 
-        // Confirm revocation in the dialog
-        console.log('Confirming revocation...');
-        await creatorPage.getByRole('button', { name: /Revoke Access/i }).click();
-
+        // The removal happens immediately (no confirmation dialog)
         // Verify reviewer is removed from list
         await expect(creatorPage.getByText(reviewer.email)).toHaveCount(0, { timeout: 15000 });
         console.log('Reviewer removed from list.');

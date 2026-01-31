@@ -89,7 +89,7 @@ test.describe('Systems Integration Smoke Tests', () => {
     test.describe('Novu - Notification Delivery (API Validation)', () => {
 
         // This test is marked slow due to multi-user flow complexity
-        test('Comment triggers notification (validated via Novu API)', async ({ page, context }) => {
+        test('Comment triggers notification (validated via Novu API)', async ({ browser }) => {
             test.slow(); // Mark as slow test (3x timeout)
             test.setTimeout(180000);
 
@@ -111,89 +111,116 @@ test.describe('Systems Integration Smoke Tests', () => {
                 } catch { return []; }
             }
 
-            // --- OWNER: Create artifact ---
-            const owner = generateUser();
-            await page.goto('/register');
-            // Wait for the registration form to be visible (Convex auth check must complete)
-            await page.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
-            await page.getByLabel('Full name').fill(owner.name);
-            await page.getByLabel('Email address').fill(owner.email);
-            await page.getByLabel('Password', { exact: true }).fill(owner.password);
-            await page.getByLabel('Confirm password').fill(owner.password);
-            await page.getByRole('button', { name: 'Create Account' }).click();
-            await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
-            console.log('✓ Owner signed up');
+            // Create separate browser contexts for owner and reviewer (isolated auth)
+            const ownerContext = await browser.newContext();
+            const reviewerContext = await browser.newContext();
+            const ownerPage = await ownerContext.newPage();
+            const reviewerPage = await reviewerContext.newPage();
 
-            // Get owner's user ID for later API check (we'll use email as subscriberId)
-            const ownerSubscriberId = owner.email;
+            try {
+                // --- OWNER: Create artifact ---
+                const owner = generateUser();
+                await ownerPage.goto('/register');
+                // Wait for the registration form to be visible (Convex auth check must complete)
+                await ownerPage.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
+                await ownerPage.getByLabel('Full name').fill(owner.name);
+                await ownerPage.getByLabel('Email address').fill(owner.email);
+                await ownerPage.getByLabel('Password', { exact: true }).fill(owner.password);
+                await ownerPage.getByLabel('Confirm password').fill(owner.password);
+                await ownerPage.getByRole('button', { name: 'Create Account' }).click();
+                await expect(ownerPage).toHaveURL(/\/dashboard/, { timeout: 15000 });
+                console.log('✓ Owner signed up');
 
-            // Upload artifact - click the "Upload" button in the header (always present)
-            const uploadBtn = page.getByRole('button', { name: 'Upload' });
-            await expect(uploadBtn).toBeVisible({ timeout: 15000 });
-            await uploadBtn.click();
+                // Get owner's user ID for later API check (we'll use email as subscriberId)
+                const ownerSubscriberId = owner.email;
 
-            await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
-            const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
-            const fileInput = page.locator('#file-upload');
-            await expect(fileInput).toBeAttached({ timeout: 5000 });
-            await fileInput.setInputFiles(zipPath);
-            // Wait for file to appear in the upload area
-            await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
-            await page.getByLabel('Artifact Name').fill(`API Test ${Date.now()}`);
-            await page.getByRole('button', { name: 'Create Artifact' }).click();
-            await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
-            const artifactUrl = page.url();
-            console.log(`✓ Artifact created: ${artifactUrl}`);
+                // Upload artifact - click the "Upload" button in the header (always present)
+                const uploadBtn = ownerPage.getByRole('button', { name: 'Upload' });
+                await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+                await uploadBtn.click();
 
-            // --- REVIEWER: Comment on artifact ---
-            const reviewer = generateUser();
-            const reviewerPage = await context.newPage();
-            await reviewerPage.goto('/register');
-            // Wait for the registration form to be visible (Convex auth check must complete)
-            await reviewerPage.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
-            await reviewerPage.getByLabel('Full name').fill(reviewer.name);
-            await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-            await reviewerPage.getByLabel('Password', { exact: true }).fill(reviewer.password);
-            await reviewerPage.getByLabel('Confirm password').fill(reviewer.password);
-            await reviewerPage.getByRole('button', { name: 'Create Account' }).click();
-            await expect(reviewerPage).toHaveURL(/\/dashboard/, { timeout: 15000 });
-            console.log('✓ Reviewer signed up');
+                await expect(ownerPage.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
+                // Use Markdown file - annotation system only works with Markdown, not HTML in iframes
+                const mdPath = path.resolve(process.cwd(), '../samples/01-valid/markdown/product-spec/v1.md');
+                const fileInput = ownerPage.locator('#file-upload');
+                await expect(fileInput).toBeAttached({ timeout: 5000 });
+                await fileInput.setInputFiles(mdPath);
+                // Wait for file to appear in the upload area
+                await expect(ownerPage.getByText('v1.md')).toBeVisible({ timeout: 10000 });
+                await ownerPage.getByLabel('Artifact Name').fill(`API Test ${Date.now()}`);
+                await ownerPage.getByRole('button', { name: 'Create Artifact' }).click();
+                await expect(ownerPage).toHaveURL(/\/a\//, { timeout: 30000 });
+                const artifactUrl = ownerPage.url();
+                console.log(`✓ Artifact created: ${artifactUrl}`);
 
-            // Navigate to artifact and comment
-            await reviewerPage.goto(artifactUrl);
-            await expect(reviewerPage.getByText(/Comments \(/)).toBeVisible({ timeout: 10000 });
-            await reviewerPage.getByRole('button', { name: 'Comment', exact: true }).first().click();
+                // --- OWNER: Invite reviewer ---
+                const reviewer = generateUser();
+                await ownerPage.getByRole('button', { name: 'Share' }).click();
+                await expect(ownerPage.getByRole('dialog').getByText('Share Artifact for Review')).toBeVisible({ timeout: 10000 });
+                await ownerPage.getByPlaceholder('Enter email address').fill(reviewer.email);
+                await ownerPage.getByRole('button', { name: 'Invite' }).click();
+                await expect(ownerPage.getByText(reviewer.email).first()).toBeVisible({ timeout: 20000 });
+                // Close modal
+                await ownerPage.getByRole('button', { name: 'Close' }).first().click();
+                console.log(`✓ Reviewer invited: ${reviewer.email}`);
 
-            // Text selection to trigger comment
-            const frame = reviewerPage.frameLocator('iframe');
-            await frame.locator('h1, p, div').first().evaluate((el) => {
-                const range = document.createRange();
-                range.selectNodeContents(el);
-                window.getSelection()?.removeAllRanges();
-                window.getSelection()?.addRange(range);
-                el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-            });
+                // --- REVIEWER: Register and access artifact ---
+                await reviewerPage.goto('/register');
+                // Wait for the registration form to be visible (Convex auth check must complete)
+                await reviewerPage.waitForSelector('label:has-text("Full name")', { timeout: 30000 });
+                await reviewerPage.getByLabel('Full name').fill(reviewer.name);
+                await reviewerPage.getByLabel('Email address').fill(reviewer.email);
+                await reviewerPage.getByLabel('Password', { exact: true }).fill(reviewer.password);
+                await reviewerPage.getByLabel('Confirm password').fill(reviewer.password);
+                await reviewerPage.getByRole('button', { name: 'Create Account' }).click();
+                await expect(reviewerPage).toHaveURL(/\/dashboard/, { timeout: 15000 });
+                console.log('✓ Reviewer signed up');
 
-            const textarea = reviewerPage.locator('textarea[placeholder="Add a comment..."]');
-            await expect(textarea).toBeVisible({ timeout: 5000 });
-            await textarea.fill(`Test comment ${Date.now()}`);
-            await reviewerPage.getByRole('button', { name: 'Comment' }).last().click();
-            console.log('✓ Comment submitted');
+                // Navigate to artifact and add comment
+                await reviewerPage.goto(artifactUrl);
+                // Wait for markdown content to render
+                await reviewerPage.waitForSelector('.prose', { timeout: 15000 });
+                console.log('✓ Reviewer reached artifact');
 
-            // Wait for Novu to process
-            await reviewerPage.waitForTimeout(3000);
+                // Select text in the markdown content using triple-click
+                const heading = reviewerPage.locator('.prose h1, .prose h2').first();
+                await expect(heading).toBeVisible({ timeout: 5000 });
+                await heading.click({ clickCount: 3 });
 
-            // --- VALIDATE: Check Novu API for notification ---
-            const notifications = await getNovuNotifications(ownerSubscriberId);
-            console.log(`Novu API: Found ${notifications.length} notifications for owner`);
+                // Click the "Comment" button in the selection menu
+                const commentButton = reviewerPage.locator('button[title="Comment"]');
+                await expect(commentButton).toBeVisible({ timeout: 5000 });
+                await commentButton.click();
 
-            if (notifications.length > 0) {
-                console.log('✓ Novu API: Notification sent to owner');
-            } else {
-                console.log('⚠ Novu API: No notifications found (may need subscriber sync)');
+                // Fill in the comment
+                const commentInput = reviewerPage.getByTestId('annotation-comment-input');
+                await expect(commentInput).toBeVisible({ timeout: 10000 });
+                await commentInput.fill(`Test comment ${Date.now()}`);
+
+                // Submit the comment
+                const submitButton = reviewerPage.getByTestId('annotation-submit-button');
+                await submitButton.click();
+
+                // Wait for submission to complete
+                await expect(commentInput).not.toBeVisible({ timeout: 10000 });
+                console.log('✓ Comment submitted');
+
+                // Wait for Novu to process
+                await reviewerPage.waitForTimeout(3000);
+
+                // --- VALIDATE: Check Novu API for notification ---
+                const notifications = await getNovuNotifications(ownerSubscriberId);
+                console.log(`Novu API: Found ${notifications.length} notifications for owner`);
+
+                if (notifications.length > 0) {
+                    console.log('✓ Novu API: Notification sent to owner');
+                } else {
+                    console.log('⚠ Novu API: No notifications found (may need subscriber sync)');
+                }
+            } finally {
+                await ownerContext.close();
+                await reviewerContext.close();
             }
-
-            await reviewerPage.close();
         });
 
     });
