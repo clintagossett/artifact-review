@@ -402,9 +402,31 @@ if [ ! -f "$CA_BUNDLE" ] && [ -f "$CERTS_DIR/rootCA.pem" ]; then
     fi
 fi
 
-if ! docker compose --env-file "$PROJECT_ROOT/.env.docker.local" $COMPOSE_FILES ps | grep -q "Up"; then
+# Check if containers are running
+CONTAINER_NAME="${AGENT_NAME}-backend"
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
     echo "  [START] Starting Docker services..."
     docker compose --env-file "$PROJECT_ROOT/.env.docker.local" $COMPOSE_FILES up -d
+
+    # Wait for backend container to be healthy
+    echo "  [WAIT] Waiting for $CONTAINER_NAME to be ready..."
+    MAX_RETRIES=30
+    COUNT=0
+    while ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; do
+        if [ $COUNT -ge $MAX_RETRIES ]; then
+            echo "  [ERROR] $CONTAINER_NAME failed to start after ${MAX_RETRIES} attempts"
+            echo "  Check logs: docker logs $CONTAINER_NAME"
+            exit 1
+        fi
+        echo "  [WAIT] Attempt $((COUNT+1))/$MAX_RETRIES..."
+        sleep 2
+        COUNT=$((COUNT+1))
+    done
+
+    # Additional wait for container to be fully initialized
+    echo "  [WAIT] Container started, waiting for initialization..."
+    sleep 5
+    echo "  [OK] Docker services ready"
 else
     echo "  [SKIP] Docker services already running"
 fi
