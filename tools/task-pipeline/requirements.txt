@@ -1,0 +1,7 @@
+# Task Pipeline Dependencies
+# Note: Uses Claude CLI (claude --print) instead of Anthropic SDK
+# Claude CLI must be installed: npm install -g @anthropic-ai/claude-code
+
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pyyaml>=6.0.0
