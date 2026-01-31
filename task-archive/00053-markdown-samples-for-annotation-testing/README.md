@@ -1,6 +1,6 @@
 # Task 00053: Markdown Samples for Annotation Testing
 
-**Status:** Pending
+**Status:** Complete
 **Created:** 2026-01-31
 **GitHub Issue:** #52 (folder numbered 00053 due to existing 00052)
 
@@ -90,20 +90,38 @@ Single file with all markdown features for comprehensive annotation testing.
 ### 3. Update E2E Tests
 
 Switch annotation-related tests from HTML/ZIP to Markdown:
-- `smoke-integrations.spec.ts` - Already uses markdown (done in previous session)
-- `artifact-workflow.spec.ts` - Check and update if needed
-- Any other tests using HTML for annotation flows
+- `smoke-integrations.spec.ts` - Already uses markdown ✓
+- `notification.spec.ts` - Already uses markdown ✓
+- `artifact-workflow.spec.ts` - Analyzed, no changes needed (see below)
+- `agent-api.spec.ts` - Analyzed, no changes needed (API-only test)
+- `collaboration.spec.ts` - Analyzed, no changes needed (access control only)
+
+#### E2E Test Analysis (Completed 2026-01-31)
+
+**Tests using markdown (annotation tests) - Correct:**
+- `notification.spec.ts` → `samples/01-valid/markdown/product-spec/v1.md`
+- `smoke-integrations.spec.ts` → `samples/01-valid/markdown/product-spec/v1.md`
+
+**Tests using mixed-media-sample.zip - No changes needed:**
+| Test | Purpose | Why Keep Mixed-Media |
+|------|---------|---------------------|
+| artifact-workflow (test 1) | Viewer/upload workflow | Tests HTML iframe rendering path |
+| artifact-workflow (test 2) | Text selection annotation | Already `test.fixme()` - wait for iframe injection |
+| agent-api | Backend API CRUD | No UI annotation - tests API endpoints only |
+| collaboration | Sharing/access control | No annotation testing |
+
+**Conclusion:** Annotation-related tests already use markdown. Other tests intentionally use mixed-media to test HTML/iframe and API functionality.
 
 ## Acceptance Criteria
 
-- [ ] Multi-file markdown ZIP with 2 versions created
-- [ ] v2 has structural changes (moved/split files) vs v1
-- [ ] Each version has working TOC with anchor links
-- [ ] Cross-file navigation works in viewer
-- [ ] Feature-rich single markdown file created
-- [ ] samples/README.md updated with new samples
-- [ ] E2E tests use markdown samples for annotation flows
-- [ ] All annotation e2e tests pass
+- [x] Multi-file markdown ZIP with 2 versions created
+- [x] v2 has structural changes (moved/split files) vs v1
+- [x] Each version has working TOC with anchor links
+- [x] Cross-file navigation works in viewer
+- [x] Feature-rich single markdown file created
+- [x] samples/README.md updated with new samples
+- [x] E2E tests use markdown samples for annotation flows (verified - already correct)
+- [x] All annotation e2e tests pass (7 passed, 1 skipped - the skipped test is `test.fixme()` for iframe injection)
 
 ## Related
 
