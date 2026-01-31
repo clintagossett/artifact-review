@@ -153,6 +153,38 @@ Your `.env.local` files should use DNS names, not ports. **These files are GENER
 
 **Do not manually edit these files.** Re-run `./scripts/agent-init.sh` if configuration needs to change.
 
+### direnv and Parent .envrc
+
+The development environment uses [direnv](https://direnv.net) for automatic environment variable loading. A **parent `.envrc`** in the `artifact-review-dev/` directory provides shared settings for all agent worktrees.
+
+**Directory structure:**
+```
+artifact-review-dev/
+├── .envrc                      # Parent: sets NODE_EXTRA_CA_CERTS
+├── artifact-review-james/      # No .envrc needed - inherits from parent
+├── artifact-review-mark/       # No .envrc needed - inherits from parent
+└── ...
+```
+
+**What the parent provides:**
+```bash
+# Required for Node.js/Playwright to trust mkcert certificates
+export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
+```
+
+Direnv automatically walks **up** the directory tree. From `artifact-review-james/app/`, it finds and loads `artifact-review-dev/.envrc`. No per-agent `.envrc` needed unless you want agent-specific variables.
+
+**If direnv isn't loading:**
+```bash
+# Allow the parent .envrc (one-time)
+cd ~/Documents/artifact-review-dev && direnv allow
+
+# Reload in current shell
+direnv reload
+```
+
+This setup ensures all agents automatically get the mkcert CA trust without duplicating configuration.
+
 ```bash
 # Convex URLs (use DNS, not localhost:port)
 NEXT_PUBLIC_CONVEX_URL=https://mark.convex.cloud.loc
