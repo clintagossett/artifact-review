@@ -45,9 +45,15 @@ This project uses a structured env file system. All `.local` files are gitignore
 | `app/.env.nextjs.local` | Next.js runtime config | Yes |
 | `app/.env.convex.local` | Convex backend secrets | Yes |
 
-**First-time setup:** Copy each `*.example` file to `*.local` and fill in values.
+**Configuration Source of Truth:** All port assignments and agent configuration come from `../artifact-review-orchestrator/config.json`. Environment files are **GENERATED** from this config, not manually edited. Never hardcode ports - they are derived from config.json to support multi-agent development.
+
+**First-time setup:** Run the initialization script (recommended) or manually copy example files.
 
 ```bash
+# Recommended: automated setup
+./scripts/agent-init.sh
+
+# Alternative: manual setup (copy and fill in values)
 cp .env.docker.local.example .env.docker.local
 cp .env.dev.local.example .env.dev.local
 cp app/.env.nextjs.local.example app/.env.nextjs.local
@@ -71,17 +77,23 @@ Run the initialization script which handles dependencies and order of operations
 ```
 
 This script:
-1. Verifies prerequisites (Node, Docker, tmux)
-2. Copies example env files with your AGENT_NAME
-3. Verifies orchestrator is running
-4. Installs npm dependencies
-5. Starts and configures Convex (Docker + admin key)
-6. Creates Novu organization and retrieves API keys
+1. Verifies prerequisites (Node, Docker, tmux, jq, mkcert)
+2. Reads configuration from `../artifact-review-orchestrator/config.json` (single source of truth)
+3. Generates environment files with correct ports and auto-detected mkcert CA path
+4. Verifies orchestrator is running
+5. Installs npm dependencies
+6. Starts and configures Convex (Docker + health checks + admin key)
+7. Creates Novu organization and retrieves API keys
+8. Runs smoke tests to verify all endpoints are accessible
 
-**Check current status:**
+The script creates backups before modifying any files and automatically rolls back on Ctrl+C or errors, ensuring failed runs won't corrupt your configuration.
+
+**Check current configuration status:**
 ```bash
 ./scripts/agent-init.sh --check
 ```
+
+This compares configuration across multiple sources (config.json, .env.docker.local, app/.env.nextjs.local) and shows any mismatches.
 
 ### Manual Environment Setup (Alternative)
 
@@ -522,6 +534,26 @@ log.info(Topics.Auth, 'User signed in', { userId });
 **Never create your own test files** - use the central repository to ensure consistency across all tests.
 
 See: `/samples/README.md` and `docs/development/testing-guide.md#sample-test-files`
+
+### E2E Testing Rules
+
+**CRITICAL:** Do NOT edit any files while e2e tests are running.
+
+The Next.js dev server runs in a tmux session (`{agent}-nextjs`) on a specific port that matches the orchestrator proxy routing. Hot reload from file edits during tests causes test failures due to page reloads mid-test.
+
+**Workflow for running e2e tests:**
+1. Make all code changes first
+2. Restart dev servers: `./scripts/start-dev-servers.sh`
+3. Run tests: `cd app && npm run test:e2e`
+4. Wait for complete results (do NOT edit files during this time)
+5. Analyze failures, make fixes
+6. Repeat from step 2
+
+**Why we keep the tmux dev servers running:**
+- The orchestrator proxy routes `{agent}.loc` → agent's assigned port (e.g., 3030)
+- Playwright's `webServer` config uses `reuseExistingServer: true`
+- If the tmux server isn't running, Playwright would start its own on the wrong port
+- This ensures DNS/proxy routing works correctly in multi-agent environments
 
 ### Feature Handoff
 

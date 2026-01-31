@@ -1,8 +1,186 @@
 # Troubleshooting
 
-## Quick Fix: Run the Setup Script
+## Quick Fix: Run the Initialization Script
 
-Most environment issues can be fixed by running:
+Most environment and configuration issues can be fixed by running:
+```bash
+./scripts/agent-init.sh
+```
+
+This script:
+- Verifies prerequisites (node, npm, docker, tmux, jq, mkcert)
+- Generates all environment files from config.json
+- Auto-detects mkcert CA path
+- Sets up Convex with health checks
+- Configures Novu
+- Runs smoke tests
+
+Use `--check` to see current configuration status across all sources.
+
+## Configuration Issues
+
+### Port Mismatch Between config.json and Environment Files
+
+**Symptom:** Unexpected ports in URLs, wrong domains, services not accessible at expected addresses.
+
+**Cause:** Environment files (.env.docker.local, app/.env.nextjs.local) don't match the orchestrator config.json. This happens when:
+- config.json was updated but env files weren't regenerated
+- Manual edits were made to env files
+- Agent was initialized before orchestrator config was set
+
+**Fix:** Regenerate environment files from config.json:
+```bash
+./scripts/agent-init.sh
+```
+
+**Verify configuration is correct:**
+```bash
+./scripts/agent-init.sh --check
+```
+
+This compares config.json, .env.docker.local, and app/.env.nextjs.local and shows any mismatches.
+
+---
+
+## Prerequisite Issues
+
+### Missing Prerequisites (Exit Code 1)
+
+**Symptom:** agent-init.sh exits with code 1 and lists missing tools.
+
+**Required tools:** node, npm, docker, tmux, jq, mkcert
+
+**Fix:** Install missing prerequisites:
+
+```bash
+# Node.js & npm (via nvm recommended)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+nvm install --lts
+
+# Docker (Debian/Ubuntu)
+sudo apt-get update && sudo apt-get install docker.io docker-compose-plugin
+sudo usermod -aG docker $USER  # Log out and back in
+
+# tmux
+sudo apt-get install tmux
+
+# jq
+sudo apt-get install jq
+
+# mkcert (see mkcert section below)
+```
+
+---
+
+### mkcert Not Found
+
+**Symptom:** agent-init.sh reports "mkcert not found" or NODE_EXTRA_CA_CERTS can't be auto-detected.
+
+**Fix:** Install mkcert for your OS:
+
+**macOS:**
+```bash
+brew install mkcert
+mkcert -install
+```
+
+**Debian/Ubuntu:**
+```bash
+sudo apt install libnss3-tools
+wget https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-amd64
+chmod +x mkcert-v1.4.4-linux-amd64
+sudo mv mkcert-v1.4.4-linux-amd64 /usr/local/bin/mkcert
+mkcert -install
+```
+
+**Other Linux:**
+```bash
+# Build from source
+git clone https://github.com/FiloSottile/mkcert && cd mkcert
+go build -ldflags "-X main.Version=$(git describe --tags)"
+sudo mv mkcert /usr/local/bin/
+mkcert -install
+```
+
+After installing, run `./scripts/agent-init.sh` again to auto-detect the CA path.
+
+**Manual fix if auto-detection still fails:**
+```bash
+# Find CA path
+mkcert -CAROOT
+
+# Add to app/.env.nextjs.local
+NODE_EXTRA_CA_CERTS=/path/from/mkcert-CAROOT/rootCA.pem
+```
+
+---
+
+## Backup and Rollback
+
+### Script Rollback Behavior
+
+**agent-init.sh creates backups before modifying files:**
+- `.env.docker.local.backup`
+- `app/.env.nextjs.local.backup`
+- Other modified files get `.backup` suffix
+
+**Automatic rollback on:**
+- Ctrl+C (user cancellation)
+- Script errors (failed health checks, missing orchestrator, etc.)
+
+**Manual restore if needed:**
+```bash
+# Restore from backup
+cp .env.docker.local.backup .env.docker.local
+cp app/.env.nextjs.local.backup app/.env.nextjs.local
+```
+
+**Backup cleanup:**
+Successful runs automatically clean up `.backup` files. If you see `.backup` files, the last run either failed or was cancelled.
+
+---
+
+## Docker Issues
+
+### Health Check Failure (Exit Code 3)
+
+**Symptom:** agent-init.sh exits with code 3: "Docker health check failed after 60s"
+
+**Cause:** Convex backend container isn't reaching healthy status within timeout.
+
+**Debug:**
+```bash
+source .env.docker.local
+
+# Check container status
+docker ps -a --filter name=${AGENT_NAME}-backend
+
+# View container logs
+docker logs ${AGENT_NAME}-backend
+
+# Check health check status
+docker inspect --format='{{.State.Health.Status}}' ${AGENT_NAME}-backend
+```
+
+**Common causes:**
+- Insufficient Docker resources (memory, CPU)
+- Port conflicts preventing container start
+- Corrupted Docker volume
+
+**Fix:**
+```bash
+# Restart Docker
+sudo systemctl restart docker
+
+# Try initialization again
+./scripts/agent-init.sh
+```
+
+---
+
+## Convex Setup Script
+
+Most Convex environment issues can be fixed by running:
 ```bash
 ./scripts/setup-convex-env.sh
 ```
