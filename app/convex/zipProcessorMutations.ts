@@ -10,6 +10,29 @@ import type { Id } from "./_generated/dataModel";
 // storeExtractedFile action removed as it's replaced by direct storage call in zipProcessor.ts
 
 /**
+ * Update version processing status
+ * Task 00049 - Artifact Version Status
+ */
+export const updateVersionStatus = internalMutation({
+  args: {
+    versionId: v.id("artifactVersions"),
+    status: v.union(
+      v.literal("uploading"),
+      v.literal("processing"),
+      v.literal("ready"),
+      v.literal("error")
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.versionId, {
+      status: args.status,
+    });
+    return null;
+  },
+});
+
+/**
  * Create artifactFile record in database (called from storeExtractedFile action)
  */
 export const createArtifactFileRecord = internalMutation({
@@ -37,6 +60,7 @@ export const createArtifactFileRecord = internalMutation({
 
 /**
  * Mark ZIP processing as complete and update entry point
+ * Task 00049 - Set status to "ready"
  */
 export const markProcessingComplete = internalMutation({
   args: {
@@ -47,6 +71,7 @@ export const markProcessingComplete = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.versionId, {
       entryPoint: args.entryPoint,
+      status: "ready", // Task 00049 - Mark as ready
     });
     return null;
   },
@@ -54,7 +79,7 @@ export const markProcessingComplete = internalMutation({
 
 /**
  * Mark ZIP processing as failed with error details
- * Task 00019 - Phase 1: Soft-delete version on processing error
+ * Task 00049 - Set status to "error" and keep version visible
  */
 export const markProcessingError = internalMutation({
   args: {
@@ -65,11 +90,12 @@ export const markProcessingError = internalMutation({
   handler: async (ctx, args) => {
     console.error(`ZIP processing error for version ${args.versionId}:`, args.error);
 
-    // Soft-delete the version on error to prevent partial artifacts
-    // This makes the version invisible to users
+    // Set error status instead of soft-deleting
+    // This allows users to see what failed and potentially retry
+    // Task 00049 - Artifact Version Status
     await ctx.db.patch(args.versionId, {
-      isDeleted: true,
-      deletedAt: Date.now(),
+      status: "error",
+      errorMessage: args.error,
     });
 
     return null;

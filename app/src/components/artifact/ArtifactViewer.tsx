@@ -54,6 +54,8 @@ interface ArtifactViewerProps {
   userPermission?: "owner" | "can-comment" | null;
   /** Initial file path from URL for deep linking */
   filePath?: string;
+  /** Task 00049: Version processing status for E2E testing */
+  versionStatus?: "uploading" | "processing" | "ready" | "error";
 }
 
 export function ArtifactViewer({
@@ -65,6 +67,7 @@ export function ArtifactViewer({
   currentUser,
   userPermission,
   filePath,
+  versionStatus = "ready",
 }: ArtifactViewerProps) {
   const router = useRouter();
 
@@ -442,7 +445,10 @@ export function ArtifactViewer({
 
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div
+      className="flex flex-col h-screen overflow-hidden"
+      data-version-status={versionStatus}
+    >
       <ArtifactHeader
         artifact={{ ...artifact, _id: artifact._id }}
         version={version}

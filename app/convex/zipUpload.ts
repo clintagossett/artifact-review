@@ -68,6 +68,7 @@ export const createArtifactWithZip = mutation({
       fileType: "zip",
       entryPoint: args.entryPoint || "index.html", // Default, updated after ZIP processing
       size: args.size,
+      status: "uploading", // Task 00049 - Set initial status
       isDeleted: false,
       createdAt: now,
     });
@@ -137,6 +138,7 @@ export const addZipVersion = mutation({
       fileType: "zip",
       entryPoint: "index.html", // Updated after extraction
       size: args.size,
+      status: "uploading", // Task 00049 - Set initial status
       isDeleted: false,
       createdAt: now,
     });
@@ -162,17 +164,21 @@ const triggerLog = createLogger("zipUpload.triggerZipProcessing");
 /**
  * Trigger ZIP file processing after upload
  * This is step 2 of the ZIP upload flow (called after client uploads ZIP to storage)
+ *
+ * @param _testDelayMs - Optional delay in ms before completing (for visual/async testing)
  */
 export const triggerZipProcessing = action({
   args: {
     versionId: v.id("artifactVersions"),
     storageId: v.id("_storage"),
+    _testDelayMs: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     triggerLog.debug(LOG_TOPICS.Artifact, "Starting ZIP processing", {
       versionId: args.versionId,
       storageId: args.storageId,
+      _testDelayMs: args._testDelayMs,
     });
 
     try {
@@ -180,6 +186,7 @@ export const triggerZipProcessing = action({
       await ctx.runAction(internal.zipProcessor.processZipFile, {
         versionId: args.versionId,
         storageId: args.storageId,
+        _testDelayMs: args._testDelayMs,
       });
       triggerLog.debug(LOG_TOPICS.Artifact, "ZIP processing completed successfully");
     } catch (error) {

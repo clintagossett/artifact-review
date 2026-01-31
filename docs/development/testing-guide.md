@@ -348,6 +348,68 @@ test("user can only see their artifacts", async () => {
 - Error messages may differ from production
 - Use local backend when production parity matters
 
+## Visual/Async Testing
+
+For testing async UI states that transition too quickly to observe (uploading → processing → ready), use the **async state delay pattern**.
+
+See: [ADR 0020 - Async State Delay Testing Pattern](../architecture/decisions/0021-async-state-delay-testing.md)
+
+### Quick Start
+
+```bash
+# Run visual tests with 10 second delays between states
+npm run test:e2e:visual
+```
+
+### How It Works
+
+1. Set `NEXT_PUBLIC_TEST_ASYNC_DELAY_MS` to delay duration in milliseconds
+2. Backend adds delays at each state transition
+3. Tests can observe and capture each state
+
+```
+With NEXT_PUBLIC_TEST_ASYNC_DELAY_MS=3000:
+
+"uploading" ──(3 seconds)──► "processing" ──(3 seconds)──► "ready"
+```
+
+### When to Use
+
+| Scenario | Use Visual Testing? |
+|----------|-------------------|
+| Verifying async UI renders correctly | Yes |
+| Capturing screenshots for docs | Yes |
+| Debugging state transition issues | Yes |
+| Normal E2E regression tests | No (use regular `test:e2e`) |
+
+### Writing Visual Tests
+
+```typescript
+// Prefix with "visual:" to separate from normal E2E tests
+test('visual: upload processing states', async ({ page }) => {
+  // States will be visible long enough to capture
+  await page.waitForSelector('[data-version-status="uploading"]');
+  await page.screenshot({ path: 'state-uploading.png' });
+
+  await page.waitForSelector('[data-version-status="processing"]');
+  await page.screenshot({ path: 'state-processing.png' });
+
+  await page.waitForSelector('[data-version-status="ready"]');
+  await page.screenshot({ path: 'state-ready.png' });
+});
+```
+
+### Adding Delays to New Features
+
+1. Add `_testDelayMs: v.optional(v.number())` to your action args
+2. Add delay before/after state transitions:
+   ```typescript
+   if (args._testDelayMs && args._testDelayMs > 0) {
+     await new Promise(resolve => setTimeout(resolve, args._testDelayMs));
+   }
+   ```
+3. Thread from frontend via `process.env.NEXT_PUBLIC_TEST_ASYNC_DELAY_MS`
+
 ## E2E Testing with Playwright
 
 ### HTTPS and TLS Certificates
@@ -391,6 +453,46 @@ Local development uses HTTPS with mkcert certificates. Playwright tests must tru
   - `self signed certificate in certificate chain`
 
 **Note:** The `playwright.config.ts` uses `ignoreHTTPSErrors: true` which helps for some scenarios, but `NODE_EXTRA_CA_CERTS` is still needed for full certificate chain validation in Node.js HTTP requests (like API calls in tests).
+
+### Test Artifacts (Videos, Traces, Screenshots)
+
+**All test artifacts are retained on success AND failure.** This allows humans to review what was built/tested.
+
+**Artifact Locations:**
+```
+app/test-results/
+├── test-name-chromium/
+│   ├── video.webm          # Full test recording
+│   ├── trace.zip           # Detailed trace with DOM snapshots
+│   └── test-finished-1.png # Screenshot
+├── another-test-chromium/
+│   ├── video.webm
+│   ├── trace.zip
+│   └── test-finished-1.png
+...
+```
+
+**Viewing Artifacts:**
+```bash
+# View HTML report with embedded videos/screenshots
+cd app && npx playwright show-report
+
+# View trace interactively (timeline, network, DOM snapshots)
+npx playwright show-trace test-results/test-name-chromium/trace.zip
+
+# Play video directly
+xdg-open test-results/test-name-chromium/video.webm  # Linux
+open test-results/test-name-chromium/video.webm      # macOS
+```
+
+**What Each Artifact Shows:**
+| Artifact | Contents | Best For |
+|----------|----------|----------|
+| `video.webm` | Full test recording at 1280x720 | Quick visual review of what happened |
+| `trace.zip` | Timeline, clicks, network, DOM snapshots | Debugging failures, understanding flow |
+| `screenshot.png` | Final state after test | Quick pass/fail visual check |
+
+**Note:** `test-results/` is gitignored. Artifacts are for local review only.
 
 ### Task-Level E2E Setup
 
