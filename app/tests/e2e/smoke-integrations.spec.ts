@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import path from 'path';
 
 /**
  * Systems Integration Smoke Tests
@@ -126,12 +127,18 @@ test.describe('Systems Integration Smoke Tests', () => {
             // Get owner's user ID for later API check (we'll use email as subscriberId)
             const ownerSubscriberId = owner.email;
 
-            // Upload artifact
-            await page.getByRole('button', { name: 'Upload' }).click();
-            await expect(page.getByText('Create New Artifact')).toBeVisible();
-            await page.locator('input[type="file"]').setInputFiles(
-                '/home/clint-gossett/Documents/Personal Projects/artifact-review/samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip'
-            );
+            // Upload artifact - click the "Upload" button in the header (always present)
+            const uploadBtn = page.getByRole('button', { name: 'Upload' });
+            await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+            await uploadBtn.click();
+
+            await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
+            const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
+            const fileInput = page.locator('#file-upload');
+            await expect(fileInput).toBeAttached({ timeout: 5000 });
+            await fileInput.setInputFiles(zipPath);
+            // Wait for file to appear in the upload area
+            await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
             await page.getByLabel('Artifact Name').fill(`API Test ${Date.now()}`);
             await page.getByRole('button', { name: 'Create Artifact' }).click();
             await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });

@@ -104,18 +104,22 @@ async function uploadArtifact(page: any, name: string): Promise<string> {
     }
   });
 
-  // Click the Upload/New Artifact button
-  await page.getByRole('button', { name: /Upload|Artifact/ }).first().click();
+  // Click the "Upload" button in the header (always present)
+  const uploadBtn = page.getByRole('button', { name: 'Upload' });
+  await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+  await uploadBtn.click();
 
   // Wait for the modal to appear
-  await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
 
   // Use Markdown file - annotation system only works with Markdown, not HTML in iframes
   const mdPath = path.resolve(process.cwd(), '../samples/01-valid/markdown/product-spec/v1.md');
-  await page.setInputFiles('input[type="file"]', mdPath);
+  const fileInput = page.locator('#file-upload');
+  await expect(fileInput).toBeAttached({ timeout: 5000 });
+  await fileInput.setInputFiles(mdPath);
 
   // Wait for file to be processed (shows in the upload area)
-  await expect(page.getByText('v1.md')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText('v1.md')).toBeVisible({ timeout: 15000 });
 
   await page.getByLabel('Artifact Name').fill(name);
 
@@ -377,8 +381,8 @@ test.describe('Notification System', () => {
 
         // Go back to settings to invite second reviewer
         await ownerPage.getByRole('button', { name: 'Share' }).click();
-        await ownerPage.getByPlaceholder('name@company.com').fill(reviewer2.email);
-        await ownerPage.getByRole('button', { name: 'Send Invite' }).click();
+        await ownerPage.getByPlaceholder('Enter email address').fill(reviewer2.email);
+        await ownerPage.getByRole('button', { name: 'Invite' }).click();
         await expect(ownerPage.getByText(reviewer2.email).first()).toBeVisible({ timeout: 20000 });
 
         // Reviewer1: Login and add comment

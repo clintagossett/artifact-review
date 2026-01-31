@@ -62,28 +62,29 @@ test.describe('End-to-End Artifact Workflow', () => {
         // 2. Upload Multi-artifact (ZIP)
         console.log('Opening upload dialog...');
 
-        // Check for "New Artifact" button (Header) or "Create Your First Artifact" (Empty State)
-        const headerNewBtn = page.getByRole('button', { name: 'New Artifact' });
-        const emptyStateBtn = page.getByRole('button', { name: 'Create Your First Artifact' });
-
-        if (await headerNewBtn.isVisible()) {
-            await headerNewBtn.click();
-        } else if (await emptyStateBtn.isVisible()) {
-            await emptyStateBtn.click();
-        } else {
-            // Fallback: try to find any button with "Artifact" in it
-            await page.getByRole('button', { name: /Artifact/ }).first().click();
-        }
+        // Wait for dashboard to fully load - look for the header "Upload" button
+        // Both "Upload" (header) and "Create Artifact" (empty state) may be visible
+        // We prefer clicking "Upload" since it's always present in the header
+        const uploadBtn = page.getByRole('button', { name: 'Upload' });
+        await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+        console.log('Clicking header "Upload" button...');
+        await uploadBtn.click();
 
         // Wait for dialog
-        await expect(page.getByText('Create New Artifact')).toBeVisible();
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
 
         // Path to the mixed-media-sample.zip
         // Note: Samples are at the root, Playwright runs from /app/
         const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
         console.log(`Uploading ZIP from: ${zipPath}`);
 
-        await page.setInputFiles('input[type="file"]', zipPath);
+        // Wait for the file input to be present in the DOM (hidden input with id="file-upload")
+        const fileInput = page.locator('#file-upload');
+        await expect(fileInput).toBeAttached({ timeout: 5000 });
+        await fileInput.setInputFiles(zipPath);
+
+        // Wait for file to appear in the upload area
+        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
 
         const artifactName = `E2E Mixed Media ${Date.now()}`;
         await page.getByLabel('Artifact Name').fill(artifactName);
