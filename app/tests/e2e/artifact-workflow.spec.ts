@@ -87,7 +87,11 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         const artifactName = `E2E Mixed Media ${Date.now()}`;
         await page.getByLabel('Artifact Name').fill(artifactName);
-        await page.getByRole('button', { name: 'Create Artifact' }).click();
+
+        // Wait for button to be enabled (file upload processing)
+        const createButton = page.getByRole('button', { name: 'Create Artifact' });
+        await expect(createButton).toBeEnabled({ timeout: 10000 });
+        await createButton.click();
 
         // Redirection to viewer should happen automatically
         console.log('Waiting for artifact creation and viewer redirection...');

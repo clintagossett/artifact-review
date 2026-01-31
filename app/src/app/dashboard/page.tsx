@@ -40,10 +40,18 @@ export default function DashboardPage() {
     name: string;
     description?: string;
   }) => {
-    setIsNavigating(true);
-    const result = await uploadFile(data);
-    // Navigate to the newly created artifact
-    router.push(`/a/${result.shareToken}`);
+    try {
+      setIsNavigating(true);
+      const result = await uploadFile(data);
+      // Navigate to the newly created artifact
+      router.push(`/a/${result.shareToken}`);
+    } catch (error) {
+      // Reset navigating state on error
+      // Error is already logged by the upload hook and dialog
+      setIsNavigating(false);
+      // Re-throw so dialog can handle it
+      throw error;
+    }
   };
 
   const handleArtifactClick = (id: Id<"artifacts">) => {
