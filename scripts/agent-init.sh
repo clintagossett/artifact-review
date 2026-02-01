@@ -289,7 +289,66 @@ setup_env_files() {
         log_success "app/.env.convex.local exists"
     fi
 
+    # Populate Stripe vars from shared parent env file
+    populate_stripe_vars
+
     cd "$PROJECT_ROOT"
+}
+
+# =============================================================================
+# Populate Stripe vars from shared parent .env.dev.local
+# =============================================================================
+populate_stripe_vars() {
+    local convex_env_file="$APP_DIR/.env.convex.local"
+    local shared_env_file="$PROJECT_ROOT/../.env.dev.local"
+
+    if [ ! -f "$shared_env_file" ]; then
+        log_warn "Shared .env.dev.local not found at $shared_env_file"
+        log_info "Stripe vars will need to be added manually"
+        return 0
+    fi
+
+    if [ ! -f "$convex_env_file" ]; then
+        log_warn "app/.env.convex.local not found, skipping Stripe vars"
+        return 0
+    fi
+
+    # Read Stripe vars from shared file
+    local stripe_secret_key=$(grep "^STRIPE_SECRET_KEY=" "$shared_env_file" | cut -d= -f2-)
+    local stripe_webhook_secret=$(grep "^STRIPE_WEBHOOK_SECRET=" "$shared_env_file" | cut -d= -f2-)
+    local stripe_price_pro=$(grep "^STRIPE_PRICE_ID_PRO=" "$shared_env_file" | cut -d= -f2-)
+    local stripe_price_annual=$(grep "^STRIPE_PRICE_ID_PRO_ANNUAL=" "$shared_env_file" | cut -d= -f2-)
+
+    if [ -z "$stripe_secret_key" ]; then
+        log_warn "No STRIPE_SECRET_KEY found in shared env file"
+        return 0
+    fi
+
+    log_info "Populating Stripe vars from shared .env.dev.local..."
+
+    # Remove existing Stripe section (commented or not) and add fresh values
+    # First, remove any existing Stripe lines (both commented and uncommented)
+    local temp_file=$(mktemp)
+    grep -v "^#.*STRIPE_" "$convex_env_file" | grep -v "^STRIPE_" > "$temp_file" || true
+
+    # Remove the "# 💳 Stripe (add when needed)" header line if present
+    grep -v "^# 💳 Stripe" "$temp_file" > "${temp_file}.2" && mv "${temp_file}.2" "$temp_file"
+
+    # Remove any trailing empty lines and add our Stripe section
+    sed -i '/^$/N;/^\n$/d' "$temp_file" 2>/dev/null || sed -i '' '/^$/N;/^\n$/d' "$temp_file"
+
+    # Append Stripe section with real values
+    cat >> "$temp_file" << EOF
+
+# 💳 Stripe (populated from shared ../../.env.dev.local)
+STRIPE_SECRET_KEY=$stripe_secret_key
+STRIPE_WEBHOOK_SECRET=$stripe_webhook_secret
+STRIPE_PRICE_ID_PRO=$stripe_price_pro
+STRIPE_PRICE_ID_PRO_ANNUAL=$stripe_price_annual
+EOF
+
+    mv "$temp_file" "$convex_env_file"
+    log_success "Stripe vars populated in app/.env.convex.local"
 }
 
 # =============================================================================

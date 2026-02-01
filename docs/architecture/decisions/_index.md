@@ -27,6 +27,7 @@ Record of significant architectural decisions made for this project.
 | [0019](./0019-node-action-storage-fallback.md) | Node Action Storage Access Fallback Pattern | Accepted | 2026-01-28 |
 | [0020](./0020-html-artifact-annotation-strategy.md) | HTML Artifact Annotation Strategy | Accepted | 2026-01-31 |
 | [0021](./0021-async-state-delay-testing.md) | Async State Delay Testing Pattern | Accepted | 2026-01-31 |
+| [0022](./0022-stripe-webhook-multi-deployment-filtering.md) | Stripe Webhook Multi-Deployment Filtering | Accepted | 2026-01-31 |
 
 ---
 

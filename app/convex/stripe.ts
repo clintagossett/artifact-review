@@ -120,7 +120,8 @@ export const createCheckoutSession = action({
         console.log("Stripe checkout domain:", domain);
 
         // Create the checkout session using the component helper
-        // This automatically handles 'orgId' metadata if we pass it correctly
+        // siteOrigin is used for multi-deployment webhook filtering
+        // See: docs/architecture/decisions/0022-stripe-webhook-multi-deployment-filtering.md
         const session = await subscriptions.createCheckoutSession(ctx, {
             customerId: org.stripeCustomerId, // Use existing Stripe customer if available
             priceId: args.priceId,
@@ -129,9 +130,11 @@ export const createCheckoutSession = action({
             cancelUrl: `${domain}/settings?canceled=true`,
             metadata: {
                 organizationId: args.organizationId,
+                siteOrigin: domain, // For webhook filtering
             },
             subscriptionMetadata: {
                 organizationId: args.organizationId,
+                siteOrigin: domain, // For webhook filtering on renewals
             },
         });
 

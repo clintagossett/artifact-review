@@ -145,7 +145,65 @@ This script will:
 
 See: `../artifact-review-orchestrator/docs/shared-novu.md` for manual setup details.
 
-#### 3. Start Dev Servers
+#### 3. Configure Stripe (Payments)
+
+Stripe is used for subscription billing. The orchestrator runs a shared Stripe CLI listener that fans out webhooks to all agents.
+
+**Get Stripe API Keys:**
+
+1. Log into [Stripe Dashboard](https://dashboard.stripe.com/) (Test Mode)
+2. Go to **Developers > API keys**
+3. Copy the **Secret key** (`sk_test_...`)
+
+**Set Convex environment variables:**
+
+Add these to `app/.env.convex.local`:
+```bash
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID_PRO=price_...
+STRIPE_PRICE_ID_PRO_ANNUAL=price_...
+```
+
+Then sync to Convex:
+```bash
+./scripts/setup-convex-env.sh --sync
+```
+
+**Get the webhook secret:**
+
+The webhook secret comes from the Stripe CLI when the orchestrator starts it:
+
+```bash
+# Start orchestrator (includes Stripe listener if configured)
+cd ../artifact-review-orchestrator
+export STRIPE_API_KEY="sk_test_..."
+./start.sh
+
+# The listener prints: Ready! Your webhook signing secret is whsec_...
+# Use that value for STRIPE_WEBHOOK_SECRET
+```
+
+**How multi-agent webhooks work:**
+
+- Orchestrator runs single Stripe CLI listener at `https://stripe.loc/webhook`
+- Fan-out broadcasts to all agents' `/stripe/webhook` endpoints
+- Each agent filters events by `siteOrigin` metadata (only processes its own)
+- See: `docs/architecture/decisions/0022-stripe-webhook-multi-deployment-filtering.md`
+
+**Test the integration:**
+
+```bash
+# Trigger a test event
+stripe trigger payment_intent.succeeded
+
+# Check your Convex logs for:
+# [Stripe] Processing payment_intent.succeeded event
+# or
+# [Stripe] Filtering event for https://other-agent.loc (we are https://james.loc)
+```
+
+#### 4. Start Dev Servers
 
 ```bash
 ./scripts/start-dev-servers.sh
@@ -394,11 +452,22 @@ docker compose ...                        # NEVER run docker compose directly!
 ./scripts/start-dev-servers.sh           # Start services (safe, idempotent)
 ./scripts/start-dev-servers.sh --restart # Restart if needed (preserves volumes)
 
-# Fix environment/auth issues:
-./scripts/setup-convex-env.sh            # Refresh admin key, set env vars
+# Manage Convex environment variables:
+./scripts/setup-convex-env.sh            # Full setup (JWT keys, admin key, sync all vars)
+./scripts/setup-convex-env.sh --sync     # Sync vars from .env.convex.local only (non-disruptive)
 ./scripts/setup-convex-env.sh --check    # View current state
 ./scripts/setup-convex-env.sh --regen    # Regenerate JWT keys (invalidates sessions!)
 ```
+
+### When to Use Each setup-convex-env.sh Option
+
+| Scenario | Command |
+|----------|---------|
+| First-time setup | `./scripts/setup-convex-env.sh` |
+| Added/changed env var in `.env.convex.local` | `./scripts/setup-convex-env.sh --sync` |
+| After Docker container restart | `./scripts/setup-convex-env.sh` |
+| Check what's set in Convex | `./scripts/setup-convex-env.sh --check` |
+| JWT keys compromised | `./scripts/setup-convex-env.sh --regen` |
 
 ### Why Never Run Docker Compose Directly
 

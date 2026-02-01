@@ -16,8 +16,7 @@
     "test:e2e:headed": "NODE_PATH=./node_modules NODE_EXTRA_CA_CERTS=${NODE_EXTRA_CA_CERTS:-$(mkcert -CAROOT 2>/dev/null)/rootCA.pem} playwright test --headed",
     "test:e2e:visual": "NEXT_PUBLIC_TEST_ASYNC_DELAY_MS=10000 NODE_PATH=./node_modules NODE_EXTRA_CA_CERTS=${NODE_EXTRA_CA_CERTS:-$(mkcert -CAROOT 2>/dev/null)/rootCA.pem} playwright test --headed --grep 'visual:'",
     "proxy": "node scripts/local-proxy.js",
-    "proxy:80": "sudo PORT=80 node scripts/local-proxy.js",
-    "sync-convex-env": "node scripts/sync-convex-env.js"
+    "proxy:80": "sudo PORT=80 node scripts/local-proxy.js"
   },
   "dependencies": {
     "@apache-annotator/dom": "^0.2.0",

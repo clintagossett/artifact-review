@@ -14,6 +14,7 @@
 # Usage:
 #   ./scripts/setup-convex-env.sh           # Full setup (or refresh admin key if JWT exists)
 #   ./scripts/setup-convex-env.sh --check   # Check current state
+#   ./scripts/setup-convex-env.sh --sync    # Sync vars from .env.convex.local only (non-disruptive)
 #   ./scripts/setup-convex-env.sh --regen   # Regenerate JWT keys (invalidates all sessions!)
 #
 # Documentation:
@@ -264,29 +265,39 @@ set_convex_env() {
     echo "  Setting INTERNAL_API_KEY..."
     npx convex env set --env-file "$env_file" -- INTERNAL_API_KEY "$INTERNAL_API_KEY"
 
-    # Set passthrough vars from .env.convex.local
-    # ALL vars in this file are synced to Convex (dynamic, no hardcoded list)
-    local convex_env_file="$APP_DIR/.env.convex.local"
-    if [ -f "$convex_env_file" ]; then
-        echo "  Syncing vars from .env.convex.local..."
-        while IFS='=' read -r var value; do
-            # Skip comments and empty lines
-            [[ "$var" =~ ^#.*$ || -z "$var" ]] && continue
-            # Skip vars that start with # (commented out)
-            [[ "$var" =~ ^[[:space:]]*# ]] && continue
-            # Trim whitespace
-            var=$(echo "$var" | xargs)
-            value=$(echo "$value" | xargs)
-            # Skip if no value
-            [ -z "$value" ] && continue
-            echo "  Setting ${var}..."
-            npx convex env set --env-file "$env_file" -- "$var" "$value"
-        done < "$convex_env_file"
-    else
-        echo -e "  ${YELLOW}No .env.convex.local found - skipping passthrough vars${NC}"
-    fi
+    sync_passthrough_vars "$env_file"
 
     echo -e "${GREEN}Convex environment configured${NC}"
+}
+
+# Sync only passthrough vars from .env.convex.local (non-disruptive)
+sync_passthrough_vars() {
+    local env_file="$1"
+    local convex_env_file="$APP_DIR/.env.convex.local"
+
+    if [ ! -f "$convex_env_file" ]; then
+        echo -e "${YELLOW}No .env.convex.local found - nothing to sync${NC}"
+        return 1
+    fi
+
+    echo "  Syncing vars from .env.convex.local..."
+    local count=0
+    while IFS='=' read -r var value; do
+        # Skip comments and empty lines
+        [[ "$var" =~ ^#.*$ || -z "$var" ]] && continue
+        # Skip vars that start with # (commented out)
+        [[ "$var" =~ ^[[:space:]]*# ]] && continue
+        # Trim whitespace
+        var=$(echo "$var" | xargs)
+        value=$(echo "$value" | xargs)
+        # Skip if no value
+        [ -z "$value" ] && continue
+        echo "  Setting ${var}..."
+        npx convex env set --env-file "$env_file" -- "$var" "$value"
+        ((count++))
+    done < "$convex_env_file"
+
+    echo -e "${GREEN}Synced $count variable(s)${NC}"
 }
 
 # Update local env file with admin key and connection info
@@ -365,6 +376,27 @@ main() {
     case "$mode" in
         --check)
             check_convex_env
+            ;;
+        --sync)
+            echo "Syncing vars from .env.convex.local (non-disruptive)..."
+            echo ""
+            cd "$APP_DIR"
+
+            # Determine env file for Convex CLI
+            local env_file="$APP_DIR/.env.nextjs.local"
+            if [ ! -f "$env_file" ]; then
+                env_file="$APP_DIR/.env.local"
+            fi
+
+            if [ ! -f "$env_file" ]; then
+                echo -e "${RED}No .env.nextjs.local or .env.local found${NC}"
+                echo "Run full setup first: ./scripts/setup-convex-env.sh"
+                exit 1
+            fi
+
+            sync_passthrough_vars "$env_file"
+            echo ""
+            echo -e "${GREEN}Done! No restart needed - Convex picks up env changes automatically.${NC}"
             ;;
         --regen)
             echo -e "${YELLOW}WARNING: Regenerating JWT keys will invalidate all existing sessions!${NC}"

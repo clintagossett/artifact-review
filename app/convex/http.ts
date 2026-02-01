@@ -3,7 +3,7 @@ import { httpAction } from "./_generated/server";
 import { internal, components } from "./_generated/api";
 import { auth } from "./auth";
 import { sendEmail, resend } from "./lib/email";
-import { registerRoutes } from "@convex-dev/stripe";
+import Stripe from "stripe";
 
 const http = httpRouter();
 
@@ -39,25 +39,122 @@ async function validateApiKey(ctx: any, req: Request) {
   return identity; // { userId, agentId, scopes }
 }
 
-registerRoutes(http, components.stripe, {
-  webhookPath: "/stripe/webhook",
-  events: {
-    "checkout.session.completed": async (ctx, event) => {
-      const session = event.data.object as any;
-      const organizationId = session.metadata?.organizationId;
-      if (organizationId) {
-        await ctx.runMutation(internal.stripe.internalUpdateCustomerId, {
-          organizationId: organizationId as any,
-          customerId: session.customer as string,
-        });
+// ============================================================================
+// STRIPE WEBHOOK - Custom handler with multi-deployment filtering
+// See: docs/architecture/decisions/0022-stripe-webhook-multi-deployment-filtering.md
+// ============================================================================
+
+http.route({
+  path: "/stripe/webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!stripeSecretKey) {
+      console.error("[Stripe] STRIPE_SECRET_KEY not configured");
+      return new Response("Stripe not configured", { status: 500 });
+    }
+
+    if (!webhookSecret) {
+      console.error("[Stripe] STRIPE_WEBHOOK_SECRET not configured");
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    const signature = req.headers.get("stripe-signature");
+    if (!signature) {
+      console.error("[Stripe] No signature in request");
+      return new Response("No signature provided", { status: 400 });
+    }
+
+    const body = await req.text();
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2024-12-18.acacia" as any,
+    });
+
+    // 1. Verify webhook signature
+    let event: Stripe.Event;
+    try {
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    } catch (err) {
+      console.error("[Stripe] Signature verification failed:", err);
+      return new Response("Invalid signature", { status: 400 });
+    }
+
+    // 2. FILTER by siteOrigin - before any processing
+    const data = event.data.object as any;
+    const eventOrigin = data.metadata?.siteOrigin;
+    const ourOrigin = process.env.SITE_URL;
+
+    if (eventOrigin && ourOrigin && eventOrigin !== ourOrigin) {
+      console.log(`[Stripe] Filtering event for ${eventOrigin} (we are ${ourOrigin})`);
+      return new Response(
+        JSON.stringify({ received: true, filtered: true, reason: "siteOrigin mismatch" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[Stripe] Processing ${event.type} event`);
+
+    // 3. Process events
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const organizationId = session.metadata?.organizationId;
+          if (organizationId) {
+            await ctx.runMutation(internal.stripe.internalUpdateCustomerId, {
+              organizationId: organizationId as any,
+              customerId: session.customer as string,
+            });
+          }
+          break;
+        }
+
+        case "customer.subscription.created":
+        case "customer.subscription.updated": {
+          const subscription = event.data.object as Stripe.Subscription;
+          await ctx.runAction(internal.stripe.internalSyncSubscription, {
+            stripeSubscriptionId: subscription.id,
+          });
+          break;
+        }
+
+        case "customer.subscription.deleted": {
+          const subscription = event.data.object as Stripe.Subscription;
+          await ctx.runMutation(internal.stripe.internalDeleteSubscription, {
+            stripeSubscriptionId: subscription.id,
+          });
+          break;
+        }
+
+        case "invoice.paid": {
+          const invoice = event.data.object as Stripe.Invoice;
+          console.log(`[Stripe] Invoice paid: ${invoice.id}`);
+          // Could trigger notifications, update usage, etc.
+          break;
+        }
+
+        case "invoice.payment_failed": {
+          const invoice = event.data.object as Stripe.Invoice;
+          console.log(`[Stripe] Invoice payment failed: ${invoice.id}`);
+          // Could trigger notifications, suspend access, etc.
+          break;
+        }
+
+        default:
+          console.log(`[Stripe] Unhandled event type: ${event.type}`);
       }
-    },
-    "customer.subscription.created": async (ctx, event) => {
-      const subscription = event.data.object as any;
-      await ctx.runAction(internal.stripe.internalSyncSubscription, { stripeSubscriptionId: subscription.id });
-    },
-    // ... other events 
-  },
+    } catch (error) {
+      console.error(`[Stripe] Error processing ${event.type}:`, error);
+      return new Response("Error processing webhook", { status: 500 });
+    }
+
+    return new Response(
+      JSON.stringify({ received: true }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }),
 });
 
 http.route({

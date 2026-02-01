@@ -34,7 +34,7 @@ In local dev, emails bypass Resend entirely and go directly to **Mailpit**.
 **NOT Required:**
 - ❌ `RESEND_API_KEY` - Not used in local dev
 - ❌ `RESEND_FULL_ACCESS_API_KEY` - Not used in local dev
-- ❌ Syncing env vars to Convex with `npm run sync-convex-env`
+- ❌ Syncing env vars to Convex (Mailpit intercepts locally)
 
 **Default values in `.env.*.local.example`:**
 - `RESEND_API_KEY=re_dummy_key_for_localhost` (documentation only)
@@ -82,12 +82,12 @@ Two different keys serve different purposes:
    - Only needed in hosted environments
    - In local dev, tests retrieve from Mailpit instead
 
-### "Do I need to run `npm run sync-convex-env`?"
+### "Do I need to sync env vars to Convex?"
 
-**For local dev:** NO
-- Emails go to Mailpit, not Resend
-- `RESEND_API_KEY` is not used
-- Syncing would overwrite working JWT keys with placeholders
+**For local dev:** Use `./scripts/setup-convex-env.sh`
+- This handles JWT keys, admin key, and syncs vars from `.env.convex.local`
+- Emails go to Mailpit locally, so `RESEND_API_KEY` is not used
+- Run `./scripts/setup-convex-env.sh --sync` to sync new vars non-disruptively
 
 **For hosted environments:** YES
 - Must sync all env vars from `.env.convex.local` to Convex deployment

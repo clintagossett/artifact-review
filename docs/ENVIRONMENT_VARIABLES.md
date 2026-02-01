@@ -15,7 +15,7 @@ This project uses multiple `.env.*.local` files, each serving a specific purpose
 | `.env.docker.local` | Root | Agent identity, ports, domains | Docker Compose, shell scripts |
 | `.env.dev.local` | Root | Dev tooling API keys (Vercel, GitHub) | Developer tools only |
 | `.env.nextjs.local` | `app/` | Next.js runtime config, test utilities | Next.js, Playwright tests |
-| `.env.convex.local` | `app/` | Convex backend secrets (synced to Convex) | `npm run sync-convex-env` |
+| `.env.convex.local` | `app/` | Convex backend secrets (synced to Convex) | `./scripts/setup-convex-env.sh --sync` |
 | `.env.local` | `app/` | Legacy/minimal config for Convex CLI | `npx convex dev` |
 
 ### Detailed Descriptions
@@ -106,9 +106,9 @@ NOVU_API_URL=https://api.novu.loc
 # ⚠️ JWT keys are NOT stored here - see JWT Key Management section
 ```
 
-**Used by:** `npm run sync-convex-env` → pushes to Convex deployment
+**Used by:** `./scripts/setup-convex-env.sh --sync` → pushes to Convex deployment
 
-**Sync:** Run `npm run sync-convex-env` after editing.
+**Sync:** Run `./scripts/setup-convex-env.sh --sync` after editing.
 
 **Safety:** Script blocks if JWT keys are found in file.
 
@@ -150,7 +150,7 @@ cp app/.env.convex.local.example app/.env.convex.local
 | Change my agent name or ports | `.env.docker.local` |
 | Add a Vercel/GitHub token | `.env.dev.local` |
 | Configure Next.js or tests | `app/.env.nextjs.local` |
-| Add a Convex env var | `app/.env.convex.local` then `npm run sync-convex-env` |
+| Add a Convex env var | `app/.env.convex.local` then `./scripts/setup-convex-env.sh --sync` |
 | Set/reset JWT keys | Run `./scripts/setup-convex-env.sh` (NOT a file) |
 
 ---
@@ -287,7 +287,7 @@ CONVEX_SELF_HOSTED_URL=https://{agent}.convex.cloud.loc
 
 **Sync to Convex:** After editing `.env.convex.local`, run:
 ```bash
-npm run sync-convex-env
+./scripts/setup-convex-env.sh --sync
 ```
 
 **Safety:** The sync script will block if it finds JWT keys in the file.
@@ -303,7 +303,7 @@ JWT keys (`JWT_PRIVATE_KEY` and `JWKS`) are **critical authentication secrets** 
 | Concern | Other Env Vars | JWT Keys |
 |---------|----------------|----------|
 | **Storage** | `.env.convex.local` | Convex deployment only |
-| **Sync method** | `npm run sync-convex-env` | `./scripts/setup-convex-env.sh` |
+| **Sync method** | `./scripts/setup-convex-env.sh --sync` | `./scripts/setup-convex-env.sh` |
 | **Can overwrite?** | Yes, safe to update | **NO** - invalidates all sessions |
 | **Backup** | Not needed (can recreate) | Lives in Docker volume |
 
@@ -366,9 +366,9 @@ npx convex env get JWT_PRIVATE_KEY
 ./scripts/setup-convex-env.sh
 ```
 
-**"sync-convex-env blocked by JWT keys":**
+**"Sync blocked by JWT keys":**
 1. Remove `JWT_PRIVATE_KEY` and `JWKS` lines from `.env.convex.local`
-2. Run `npm run sync-convex-env` again
+2. Run `./scripts/setup-convex-env.sh --sync` again
 
 **Sessions invalidated after container restart:**
 - JWT keys should persist in Docker volume
