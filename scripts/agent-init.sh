@@ -10,9 +10,10 @@
 # - No manual configuration required
 #
 # Usage:
-#   ./scripts/agent-init.sh              # Full first-time setup
-#   ./scripts/agent-init.sh --check      # Check current state
+#   ./scripts/agent-init.sh              # Full first-time setup (includes secret sync)
+#   ./scripts/agent-init.sh --check      # Check current state + credential sync status
 #   ./scripts/agent-init.sh --env-only   # Only generate env files (no services)
+#   ./scripts/agent-init.sh --sync-secrets # Sync shared secrets from parent env (non-disruptive)
 
 set -e
 
@@ -289,66 +290,148 @@ setup_env_files() {
         log_success "app/.env.convex.local exists"
     fi
 
-    # Populate Stripe vars from shared parent env file
-    populate_stripe_vars
-
     cd "$PROJECT_ROOT"
+
+    # Sync shared secrets from parent env file (runs regardless of file existence)
+    # This ensures new shared secrets are always propagated
+    sync_shared_secrets
 }
 
 # =============================================================================
-# Populate Stripe vars from shared parent .env.dev.local
+# Sync shared secrets from parent .env.dev.local to agent env files
 # =============================================================================
-populate_stripe_vars() {
-    local convex_env_file="$APP_DIR/.env.convex.local"
+# This is idempotent - safe to run multiple times. It upserts values without
+# destroying custom agent-specific configuration.
+#
+# Shared Parent Var             → Target File                        → Notes
+# ─────────────────────────────────────────────────────────────────────────────
+# STRIPE_SECRET_KEY             → app/.env.convex.local              → Convex backend
+# STRIPE_WEBHOOK_SECRET         → app/.env.convex.local              → Convex backend
+# STRIPE_PRICE_ID_PRO           → app/.env.convex.local              → Convex backend
+# STRIPE_PRICE_ID_PRO_ANNUAL    → app/.env.convex.local              → Convex backend
+# RESEND_API_KEY                → app/.env.convex.local              → Convex backend
+# NOVU_SECRET_KEY               → app/.env.nextjs.local              → Next.js runtime
+# NOVU_APPLICATION_IDENTIFIER   → app/.env.nextjs.local              → As NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER
+# =============================================================================
+sync_shared_secrets() {
     local shared_env_file="$PROJECT_ROOT/../.env.dev.local"
+    local convex_env_file="$APP_DIR/.env.convex.local"
+    local nextjs_env_file="$APP_DIR/.env.nextjs.local"
 
     if [ ! -f "$shared_env_file" ]; then
         log_warn "Shared .env.dev.local not found at $shared_env_file"
-        log_info "Stripe vars will need to be added manually"
+        log_info "Secrets will need to be added manually"
         return 0
     fi
 
-    if [ ! -f "$convex_env_file" ]; then
-        log_warn "app/.env.convex.local not found, skipping Stripe vars"
-        return 0
-    fi
+    log_info "Syncing shared secrets from ../../.env.dev.local..."
 
-    # Read Stripe vars from shared file
+    # Read all shared vars
     local stripe_secret_key=$(grep "^STRIPE_SECRET_KEY=" "$shared_env_file" | cut -d= -f2-)
     local stripe_webhook_secret=$(grep "^STRIPE_WEBHOOK_SECRET=" "$shared_env_file" | cut -d= -f2-)
     local stripe_price_pro=$(grep "^STRIPE_PRICE_ID_PRO=" "$shared_env_file" | cut -d= -f2-)
     local stripe_price_annual=$(grep "^STRIPE_PRICE_ID_PRO_ANNUAL=" "$shared_env_file" | cut -d= -f2-)
+    local resend_api_key=$(grep "^RESEND_API_KEY=" "$shared_env_file" | cut -d= -f2-)
+    local novu_secret_key=$(grep "^NOVU_SECRET_KEY=" "$shared_env_file" | cut -d= -f2-)
+    local novu_app_id=$(grep "^NOVU_APPLICATION_IDENTIFIER=" "$shared_env_file" | cut -d= -f2-)
 
-    if [ -z "$stripe_secret_key" ]; then
-        log_warn "No STRIPE_SECRET_KEY found in shared env file"
-        return 0
+    local synced_count=0
+
+    # --- Sync to app/.env.convex.local ---
+    if [ -f "$convex_env_file" ]; then
+        # Stripe vars
+        if [ -n "$stripe_secret_key" ]; then
+            if upsert_env_var "$convex_env_file" "STRIPE_SECRET_KEY" "$stripe_secret_key"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+        if [ -n "$stripe_webhook_secret" ]; then
+            if upsert_env_var "$convex_env_file" "STRIPE_WEBHOOK_SECRET" "$stripe_webhook_secret"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+        if [ -n "$stripe_price_pro" ]; then
+            if upsert_env_var "$convex_env_file" "STRIPE_PRICE_ID_PRO" "$stripe_price_pro"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+        if [ -n "$stripe_price_annual" ]; then
+            if upsert_env_var "$convex_env_file" "STRIPE_PRICE_ID_PRO_ANNUAL" "$stripe_price_annual"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+
+        # Resend API key
+        if [ -n "$resend_api_key" ]; then
+            if upsert_env_var "$convex_env_file" "RESEND_API_KEY" "$resend_api_key"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+    else
+        log_warn "app/.env.convex.local not found, skipping Convex secrets"
     fi
 
-    log_info "Populating Stripe vars from shared .env.dev.local..."
+    # --- Sync to app/.env.nextjs.local ---
+    if [ -f "$nextjs_env_file" ]; then
+        # Novu vars
+        if [ -n "$novu_secret_key" ]; then
+            if upsert_env_var "$nextjs_env_file" "NOVU_SECRET_KEY" "$novu_secret_key"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+        if [ -n "$novu_app_id" ]; then
+            if upsert_env_var "$nextjs_env_file" "NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER" "$novu_app_id"; then
+                synced_count=$((synced_count + 1))
+            fi
+        fi
+    else
+        log_warn "app/.env.nextjs.local not found, skipping Next.js secrets"
+    fi
 
-    # Remove existing Stripe section (commented or not) and add fresh values
-    # First, remove any existing Stripe lines (both commented and uncommented)
-    local temp_file=$(mktemp)
-    grep -v "^#.*STRIPE_" "$convex_env_file" | grep -v "^STRIPE_" > "$temp_file" || true
+    if [ $synced_count -gt 0 ]; then
+        log_success "Synced $synced_count shared secret(s)"
+    else
+        log_info "No secrets to sync (all up to date or missing in shared file)"
+    fi
+}
 
-    # Remove the "# 💳 Stripe (add when needed)" header line if present
-    grep -v "^# 💳 Stripe" "$temp_file" > "${temp_file}.2" && mv "${temp_file}.2" "$temp_file"
+# =============================================================================
+# Upsert (update or insert) an environment variable in a file
+# =============================================================================
+# Usage: upsert_env_var <file> <key> <value>
+# Returns 0 if changed, 1 if unchanged
+upsert_env_var() {
+    local file="$1"
+    local key="$2"
+    local value="$3"
 
-    # Remove any trailing empty lines and add our Stripe section
-    sed -i '/^$/N;/^\n$/d' "$temp_file" 2>/dev/null || sed -i '' '/^$/N;/^\n$/d' "$temp_file"
+    if [ ! -f "$file" ]; then
+        return 1
+    fi
 
-    # Append Stripe section with real values
-    cat >> "$temp_file" << EOF
-
-# 💳 Stripe (populated from shared ../../.env.dev.local)
-STRIPE_SECRET_KEY=$stripe_secret_key
-STRIPE_WEBHOOK_SECRET=$stripe_webhook_secret
-STRIPE_PRICE_ID_PRO=$stripe_price_pro
-STRIPE_PRICE_ID_PRO_ANNUAL=$stripe_price_annual
-EOF
-
-    mv "$temp_file" "$convex_env_file"
-    log_success "Stripe vars populated in app/.env.convex.local"
+    # Check if key exists (commented or uncommented)
+    if grep -q "^${key}=" "$file"; then
+        # Key exists - check if value is different
+        local current_value=$(grep "^${key}=" "$file" | cut -d= -f2-)
+        if [ "$current_value" = "$value" ]; then
+            return 1  # No change needed
+        fi
+        # Update existing value
+        local temp_file=$(mktemp)
+        sed "s|^${key}=.*|${key}=${value}|" "$file" > "$temp_file"
+        mv "$temp_file" "$file"
+        return 0
+    elif grep -q "^# *${key}=" "$file"; then
+        # Key exists but is commented out - uncomment and update
+        local temp_file=$(mktemp)
+        sed "s|^# *${key}=.*|${key}=${value}|" "$file" > "$temp_file"
+        mv "$temp_file" "$file"
+        return 0
+    else
+        # Key doesn't exist - append it
+        echo "${key}=${value}" >> "$file"
+        return 0
+    fi
 }
 
 # =============================================================================
@@ -558,6 +641,9 @@ check_status() {
     [ -f "$APP_DIR/.env.nextjs.local" ] && log_success "app/.env.nextjs.local exists" || log_warn "app/.env.nextjs.local missing"
     [ -f "$APP_DIR/.env.convex.local" ] && log_success "app/.env.convex.local exists" || log_warn "app/.env.convex.local missing"
 
+    # Check credential sync status
+    check_credential_sync_status
+
     # Check orchestrator
     if curl -sk -o /dev/null https://novu.loc/ 2>/dev/null; then
         log_success "Orchestrator running"
@@ -580,6 +666,104 @@ check_status() {
 }
 
 # =============================================================================
+# Check credential sync status (shared parent → local)
+# =============================================================================
+check_credential_sync_status() {
+    log_step "Credential Sync Status (shared → local)"
+
+    local shared_env_file="$PROJECT_ROOT/../.env.dev.local"
+    local convex_env_file="$APP_DIR/.env.convex.local"
+    local nextjs_env_file="$APP_DIR/.env.nextjs.local"
+
+    if [ ! -f "$shared_env_file" ]; then
+        log_warn "Shared .env.dev.local not found - cannot check sync status"
+        return 0
+    fi
+
+    local needs_sync=false
+
+    # Helper function to check a single var
+    # Usage: check_var_sync "VAR_NAME" "shared_file" "local_file" ["LOCAL_VAR_NAME"]
+    check_var_sync() {
+        local var_name="$1"
+        local shared_file="$2"
+        local local_file="$3"
+        local local_var_name="${4:-$var_name}"
+
+        local shared_val=$(grep "^${var_name}=" "$shared_file" 2>/dev/null | cut -d= -f2-)
+        local local_val=$(grep "^${local_var_name}=" "$local_file" 2>/dev/null | cut -d= -f2-)
+
+        # Truncate for display (show first 12 chars of value)
+        local shared_display="${shared_val:0:12}"
+        local local_display="${local_val:0:12}"
+        [ ${#shared_val} -gt 12 ] && shared_display="${shared_display}..."
+        [ ${#local_val} -gt 12 ] && local_display="${local_display}..."
+
+        if [ -z "$shared_val" ]; then
+            echo -e "  ${var_name}: ${YELLOW}⚠️  Not in shared${NC}"
+        elif [ ! -f "$local_file" ]; then
+            echo -e "  ${var_name}: ${RED}❌ Local file missing${NC}"
+            needs_sync=true
+        elif [ -z "$local_val" ]; then
+            echo -e "  ${var_name}: ${RED}❌ Missing in local${NC}"
+            needs_sync=true
+        elif [ "$shared_val" = "$local_val" ]; then
+            echo -e "  ${var_name}: ${GREEN}✅ In sync${NC}"
+        else
+            echo -e "  ${var_name}: ${RED}❌ Out of sync${NC} (shared: ${shared_display}, local: ${local_display})"
+            needs_sync=true
+        fi
+    }
+
+    echo ""
+    echo "Convex secrets (app/.env.convex.local):"
+    check_var_sync "STRIPE_SECRET_KEY" "$shared_env_file" "$convex_env_file"
+    check_var_sync "STRIPE_WEBHOOK_SECRET" "$shared_env_file" "$convex_env_file"
+    check_var_sync "STRIPE_PRICE_ID_PRO" "$shared_env_file" "$convex_env_file"
+    check_var_sync "STRIPE_PRICE_ID_PRO_ANNUAL" "$shared_env_file" "$convex_env_file"
+    check_var_sync "RESEND_API_KEY" "$shared_env_file" "$convex_env_file"
+
+    echo ""
+    echo "Next.js secrets (app/.env.nextjs.local):"
+    check_var_sync "NOVU_SECRET_KEY" "$shared_env_file" "$nextjs_env_file"
+    check_var_sync "NOVU_APPLICATION_IDENTIFIER" "$shared_env_file" "$nextjs_env_file" "NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER"
+
+    echo ""
+    if [ "$needs_sync" = true ]; then
+        log_warn "Some credentials need syncing"
+        echo ""
+        echo "Run to synchronize:"
+        echo "  ./scripts/agent-init.sh --sync-secrets"
+        echo "  ./scripts/setup-convex-env.sh --sync"
+    else
+        log_success "All credentials in sync"
+    fi
+}
+
+# =============================================================================
+# Sync secrets only (non-disruptive mode)
+# =============================================================================
+sync_secrets_only() {
+    log_step "Syncing Shared Secrets"
+
+    # Detect agent name
+    AGENT_NAME=$(detect_agent_name)
+    if [ -z "$AGENT_NAME" ]; then
+        log_error "Could not detect agent name from directory"
+        exit 1
+    fi
+
+    log_success "Detected agent name: $AGENT_NAME"
+
+    # Run the sync
+    sync_shared_secrets
+
+    echo ""
+    log_info "To push these changes to Convex, run:"
+    echo "  ./scripts/setup-convex-env.sh --sync"
+}
+
+# =============================================================================
 # Main
 # =============================================================================
 main() {
@@ -598,6 +782,9 @@ main() {
         --env-only)
             setup_env_files
             log_success "Environment files ready. Run without --env-only for full setup."
+            ;;
+        --sync-secrets)
+            sync_secrets_only
             ;;
         *)
             check_prerequisites
