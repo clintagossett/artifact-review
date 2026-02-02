@@ -68,6 +68,33 @@ cp app/.env.convex.local.example app/.env.convex.local
 - This prevents accidental overwrites when syncing other environment variables
 - See `docs/setup/email-configuration.md` for full environment variable details
 
+### Upgrading Environment Variables
+
+When shared secrets change in the parent `../.env.dev.local` (Stripe keys, Resend, Novu), sync them to your agent:
+
+```bash
+# Sync from shared parent (non-disruptive, preserves custom config)
+./scripts/agent-init.sh --sync-secrets
+
+# Push changes to Convex backend
+./scripts/setup-convex-env.sh --sync
+
+# Check sync status
+./scripts/agent-init.sh --check
+```
+
+**For complete environment reset** (destroys local data, JWT keys, sessions):
+
+```bash
+./scripts/agent-teardown.sh --yes    # Nuclear option - destroys everything
+./scripts/agent-init.sh              # Fresh setup
+```
+
+**Teardown options:**
+- `--dry-run` - Show what would be deleted without making changes
+- `--yes` - Skip confirmation prompt (for CI/automation)
+- `--keep-deps` - Keep node_modules directory
+
 ### First-Time Agent Setup (Recommended)
 
 Run the initialization script which handles dependencies and order of operations:
