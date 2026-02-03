@@ -171,7 +171,7 @@ export const commentWorkflow = workflow(
         // Step 3: Email Notification (Sent after digest finishes)
         await step.email("email-notification", async () => {
             // "digest.events" contains all the triggers that happened during the wait
-            const events = digest.events.length > 0 ? digest.events : [payload];
+            const events = digest.events.length > 0 ? digest.events.map(e => e.payload as CommentPayload) : [payload];
 
             return {
                 subject: generateEmailSubject(events, payload, isReply),
