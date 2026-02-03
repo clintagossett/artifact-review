@@ -33,6 +33,13 @@ To keep our documentation clear, we distinguish between **Decisions** and **Desi
 
 ## Recent Updates
 
+**February 2, 2026** - Agent DX documentation:
+- Comprehensive agent lifecycle guide (`docs/development/agent-dx-flow.md`)
+- Script responsibilities and environment variable flow
+- Service dependency graph and startup order
+- Common operations (setup, daily startup, reset, secrets sync)
+- Automated Novu workflow sync in `start-dev-servers.sh`
+
 **December 25, 2025** - Setup documentation:
 - Comprehensive account setup checklist
 - Environment configuration guide for all services

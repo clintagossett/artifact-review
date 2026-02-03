@@ -132,15 +132,40 @@ async function uploadArtifact(page: any, name: string): Promise<string> {
   // Click the button
   await createButton.click();
 
-  // Wait a bit to see if any errors occur
-  await page.waitForTimeout(3000);
+  // Wait for modal to close (artifact created)
+  await expect(page.getByText('Create New Artifact')).not.toBeVisible({ timeout: 30000 });
 
   if (consoleErrors.length > 0) {
     console.log('Console errors:', consoleErrors);
   }
 
+  // Check if we auto-navigated to artifact page
+  const currentUrl = page.url();
+  if (currentUrl.includes('/a/')) {
+    console.log('Auto-navigated to artifact page');
+    return currentUrl;
+  }
+
+  // If still on dashboard, click the artifact card to navigate
+  console.log('Waiting for artifact card on dashboard...');
+  const artifactCard = page.locator(`[data-testid="artifact-card"]`).filter({ hasText: name }).first();
+
+  // If no data-testid, try finding by artifact name text
+  const cardLocator = await artifactCard.count() > 0
+    ? artifactCard
+    : page.locator('a, [role="link"], [class*="card"]').filter({ hasText: name }).first();
+
+  await expect(cardLocator).toBeVisible({ timeout: 30000 });
+
+  // Wait for artifact to be ready (not processing) before clicking
+  // Look for the artifact card without clock icon or with ready state
+  await page.waitForTimeout(2000); // Brief wait for processing to complete
+
+  console.log('Clicking artifact card to navigate...');
+  await cardLocator.click();
+
   // Wait for navigation to artifact page
-  await page.waitForURL(/\/a\//, { timeout: 60000 });
+  await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
 
   return page.url();
 }

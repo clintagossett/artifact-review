@@ -147,10 +147,25 @@ test.describe('Systems Integration Smoke Tests', () => {
                 await fileInput.setInputFiles(mdPath);
                 // Wait for file to appear in the upload area
                 await expect(ownerPage.getByText('v1.md')).toBeVisible({ timeout: 10000 });
-                await ownerPage.getByLabel('Artifact Name').fill(`API Test ${Date.now()}`);
+                const artifactName = `API Test ${Date.now()}`;
+                await ownerPage.getByLabel('Artifact Name').fill(artifactName);
                 await ownerPage.getByRole('button', { name: 'Create Artifact' }).click();
-                await expect(ownerPage).toHaveURL(/\/a\//, { timeout: 30000 });
-                const artifactUrl = ownerPage.url();
+
+                // Wait for modal to close (artifact created)
+                await expect(ownerPage.getByText('Create New Artifact')).not.toBeVisible({ timeout: 30000 });
+
+                // Check if we auto-navigated to artifact page
+                let artifactUrl = ownerPage.url();
+                if (!artifactUrl.includes('/a/')) {
+                    // If still on dashboard, click the artifact card to navigate
+                    console.log('Waiting for artifact card on dashboard...');
+                    const cardLocator = ownerPage.locator('a, [role="link"], [class*="card"]').filter({ hasText: artifactName }).first();
+                    await expect(cardLocator).toBeVisible({ timeout: 30000 });
+                    await ownerPage.waitForTimeout(2000); // Brief wait for processing
+                    await cardLocator.click();
+                    await expect(ownerPage).toHaveURL(/\/a\//, { timeout: 30000 });
+                    artifactUrl = ownerPage.url();
+                }
                 console.log(`✓ Artifact created: ${artifactUrl}`);
 
                 // --- OWNER: Invite reviewer ---

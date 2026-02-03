@@ -6,6 +6,7 @@ Operational instructions for AI-assisted development. These guides distill testi
 
 | Guide | Purpose |
 |-------|---------|
+| [agent-dx-flow.md](./agent-dx-flow.md) | **Agent lifecycle, scripts, environment flow** |
 | [workflow.md](./workflow.md) | TDD workflow, task structure, dev cycle |
 | [testing-guide.md](./testing-guide.md) | How to write and organize tests |
 | [TESTING-QUICK-START.md](./TESTING-QUICK-START.md) | **Quick setup for task-level E2E tests** |

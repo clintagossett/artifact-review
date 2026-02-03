@@ -554,6 +554,83 @@ fi
 start_session "$STRIPE_SESSION" "$APP_DIR" \
     "stripe listen --forward-to $WEBHOOK_URL"
 
+# -----------------------------------------------------------------------------
+# Sync Novu Workflows (after Next.js is up)
+# -----------------------------------------------------------------------------
+sync_novu_workflows() {
+    echo ""
+    echo "Syncing Novu workflows..."
+
+    # Get Novu secret key from env file
+    local secret_key=""
+    if [ -f "$APP_DIR/.env.nextjs.local" ]; then
+        secret_key=$(grep "^NOVU_SECRET_KEY=" "$APP_DIR/.env.nextjs.local" 2>/dev/null | cut -d= -f2)
+    fi
+
+    if [ -z "$secret_key" ]; then
+        echo "  ⚠️  NOVU_SECRET_KEY not found, skipping workflow sync"
+        echo "     Run ./scripts/setup-novu-org.sh to configure Novu"
+        return 0
+    fi
+
+    local bridge_url="https://${AGENT_NAME}.loc/api/novu"
+    local novu_api_url="https://api.novu.loc"
+
+    # Wait for Next.js bridge endpoint to be ready
+    echo "  Waiting for bridge endpoint..."
+    local max_attempts=15
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        # Check if bridge endpoint responds (any HTTP response means Next.js is up)
+        if curl -sk --max-time 2 "$bridge_url" >/dev/null 2>&1; then
+            echo "  ✅ Bridge endpoint ready"
+            break
+        fi
+        echo "  [WAIT] Attempt $attempt/$max_attempts..."
+        sleep 2
+        attempt=$((attempt + 1))
+    done
+
+    if [ $attempt -gt $max_attempts ]; then
+        echo "  ⚠️  Bridge endpoint not responding after ${max_attempts} attempts"
+        echo "     Check: tmux attach -t $NEXTJS_SESSION"
+        echo "     Manual sync: npx novu@latest sync --bridge-url $bridge_url --secret-key \$NOVU_SECRET_KEY --api-url $novu_api_url"
+        return 0
+    fi
+
+    # Check if Novu API is available
+    local novu_status
+    novu_status=$(curl -sk --max-time 5 -o /dev/null -w "%{http_code}" "$novu_api_url/v1/health" 2>/dev/null || echo "000")
+    if [ "$novu_status" = "000" ]; then
+        echo "  ⚠️  Novu API not reachable at $novu_api_url"
+        echo "     Ensure orchestrator is running: cd ../artifact-review-orchestrator && ./start.sh"
+        return 0
+    fi
+
+    # Sync workflows via Novu API
+    echo "  Syncing to Novu..."
+    local response
+    response=$(curl -sk --max-time 30 -X POST "${novu_api_url}/v1/bridge/sync" \
+        -H "Authorization: ApiKey ${secret_key}" \
+        -H "Content-Type: application/json" \
+        -d "{\"bridgeUrl\": \"${bridge_url}\"}" 2>&1)
+
+    # Check if sync succeeded
+    if echo "$response" | jq -e '.data' >/dev/null 2>&1; then
+        local workflow_count
+        workflow_count=$(echo "$response" | jq -r '.data.workflows | length' 2>/dev/null || echo "?")
+        echo "  ✅ Novu workflows synced ($workflow_count workflows)"
+    else
+        local error_msg
+        error_msg=$(echo "$response" | jq -r '.message // .error // "Unknown error"' 2>/dev/null || echo "$response")
+        echo "  ⚠️  Novu sync failed: $error_msg"
+        echo "     Manual sync: npx novu@latest sync --bridge-url $bridge_url --secret-key \$NOVU_SECRET_KEY --api-url $novu_api_url"
+    fi
+}
+
+# Run Novu sync (non-blocking, failures are warnings not errors)
+sync_novu_workflows
+
 # =============================================================================
 # SUMMARY
 # =============================================================================
