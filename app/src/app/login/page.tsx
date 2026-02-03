@@ -7,16 +7,30 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { PublicOnlyPage } from "@/components/auth/PublicOnlyPage";
 import { validateReturnTo } from "@/lib/validateReturnTo";
 
-export default function LoginPage() {
+import { useEffect, Suspense } from "react";
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Handle returnTo from query params or localStorage
+  useEffect(() => {
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo) {
+      localStorage.setItem("returnTo", returnTo);
+    }
+  }, [searchParams]);
+
   const handleSuccess = () => {
     // Check for returnTo parameter and validate it
-    const returnTo = searchParams.get("returnTo");
+    const queryReturnTo = searchParams.get("returnTo");
+    const localReturnTo = localStorage.getItem("returnTo");
+    const returnTo = queryReturnTo || localReturnTo;
+
     const validatedReturnTo = validateReturnTo(returnTo);
 
     if (validatedReturnTo) {
+      localStorage.removeItem("returnTo");
       router.push(validatedReturnTo);
     } else {
       router.push("/dashboard");
@@ -38,5 +52,17 @@ export default function LoginPage() {
         <LoginForm onSuccess={handleSuccess} />
       </div>
     </PublicOnlyPage>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 font-medium">Loading...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

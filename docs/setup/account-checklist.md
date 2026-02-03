@@ -14,290 +14,58 @@ This checklist uses a **Just-In-Time (JIT)** approach - you only set up accounts
 
 ## JIT Setup Phases
 
-### Phase 1: Local Development - Email Auth
-
+### Phase 1: Local Development (Docker-based)
 **When:** Starting local development
-
-**What you're building:** Email-based authentication working locally
-
+**What you're building:** Authentication and core features working locally with isolated services
 **Accounts needed:**
-- [ ] Convex account (free tier, no deploy keys yet)
-- [ ] GitHub account (for code hosting)
-
+- [ ] Convex account (for deployment to cloud later)
+- [ ] GitHub account
 **System tools needed:**
-- [ ] Node.js 20+
-- [ ] npm
-- [ ] git
-- [ ] direnv
-
+- [ ] Docker Desktop
 **Setup time:** 15-20 minutes
 
 #### Step-by-Step Setup
-
-**1. GitHub Account**
-
-```bash
-# Verify or create GitHub account
-gh auth login
-
-# Verify access
-gh auth status
-```
-
-**2. Convex Account**
-
-1. Go to [dashboard.convex.dev](https://dashboard.convex.dev)
-2. Sign up with GitHub (recommended)
-3. Don't create projects yet - `npx convex dev` will do this automatically
-
-**3. Local Development Tools**
-
-```bash
-# Install Node.js (macOS)
-brew install node@20
-
-# Install direnv (macOS)
-brew install direnv
-
-# Add to shell (zsh)
-echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-source ~/.zshrc
-
-# Verify
-node --version  # Should show v20+
-direnv --version
-```
-
-**What you DON'T need yet:**
-- Vercel account
-- Resend account
-- OAuth apps
-- Domain registration
-- Mailpit (comes in Phase 2)
+1. **Docker**: Start Docker Desktop and run `docker compose up -d` in the project root. This starts the Convex backend, dashboard, and Mailpit.
+2. **Admin Key**: Generated automatically or run `docker compose exec backend ./generate_admin_key.sh` to get it.
+3. **Environment**: Ensure `.env.local` has `CONVEX_SELF_HOSTED_URL` and `CONVEX_SELF_HOSTED_ADMIN_KEY`.
+4. **Init Functions**: Run `npx convex dev` (to watch) or `npx convex dev --once` (to push once).
 
 **Verification:**
+- Visit Convex Dashboard: http://localhost:6791
+- Visit Mailpit: http://localhost:8025
+- Run App: `npm run dev` and sign in. Emails should appear in Mailpit.
 
-```bash
-# Clone repo
-gh repo clone your-username/artifact-review
-cd artifact-review
-
-# Allow direnv
-direnv allow .
-
-# Initialize Convex (creates dev project + .env.local automatically)
-npx convex dev
-
-# Should succeed and show Convex dev URL
-```
-
-**Move to Phase 2 when:** Email auth works locally with Mailpit
+**Move to Phase 2 when:** You're ready to deploy to the shared hosted environment.
 
 ---
 
-### Phase 2: Local Development - Email Testing with Mailpit
-
-**When:** After basic email auth is working
-
-**What you're building:** Email testing infrastructure (emails captured locally, not delivered)
-
-**NEW accounts needed:**
-- None - just Docker for Mailpit
-
-**NEW system tools needed:**
-- [ ] Docker Desktop
-
-**Setup time:** 10 minutes
+### Phase 2: Hosted Development (Dev Sandbox)
+**When:** After local dev works and you want a shared preview URL
+**What you're building:** App deployed to `*.vercel.app` with Resend Test Mode
+**Accounts needed:**
+- [ ] Vercel account
+- [ ] Resend account (test API key)
+**Setup time:** 20-30 minutes
 
 #### Step-by-Step Setup
+1. **Vercel**: `vercel link` and set `Build Command: npx convex deploy --cmd 'npm run build'`
+2. **Resend**: Create a "Test" API key (starts with `re_test_`)
+3. **Convex Env**: `npx convex env set RESEND_API_KEY="re_test_..." --project dev`
 
-**1. Install Docker**
-
-```bash
-# Install Docker Desktop (macOS)
-brew install --cask docker
-
-# Start Docker Desktop app
-open -a Docker
-
-# Verify
-docker --version
-```
-
-**2. Start Mailpit**
-
-```bash
-# Start Mailpit container
-docker run -d \
-  --name mailpit \
-  -p 1025:1025 \
-  -p 8025:8025 \
-  --restart unless-stopped \
-  axllent/mailpit
-
-# Verify it's running
-docker ps | grep mailpit
-
-# Open web UI
-open http://localhost:8025
-```
-
-**What Mailpit does:**
-- Captures all emails sent to `localhost:1025`
-- Shows them in web UI at `http://localhost:8025`
-- No emails actually delivered (perfect for local testing)
-
-**What you DON'T need yet:**
-- Resend account (real email service)
-- Vercel account
-- OAuth providers
-- Domain
-
-**Verification:**
-
-After implementing email auth:
-
-1. Start app: `npm run dev`
-2. Go to email signup/login flow
-3. Check Mailpit UI: `http://localhost:8025`
-4. Should see authentication email
-5. Click link → should authenticate
-
-**Move to Phase 3 when:** Email authentication works locally and you're ready to deploy
+**Move to Phase 3 when:** Ready for a custom domain and real email delivery.
 
 ---
 
-### Phase 3: Hosted Development
-
-**When:** After local dev works and you want to deploy to Vercel
-
-**What you're building:** Your app deployed and accessible via `*.vercel.app` URL
-
-**NEW accounts needed:**
-- [ ] Vercel account (free tier for now)
-- [ ] Resend account (free tier, test API key only)
-
-**Setup time:** 30-45 minutes
-
-#### Step-by-Step Setup
-
-**1. Vercel Account**
-
-```bash
-# Sign up at vercel.com with GitHub
-open https://vercel.com/signup
-
-# Install CLI
-npm install -g vercel
-
-# Login
-vercel login
-
-# Link project
-cd /path/to/artifact-review
-vercel link
-# Follow prompts to create new project
-```
-
-**2. Resend Account (Test Mode)**
-
-1. Go to [resend.com](https://resend.com)
-2. Sign up with email
-3. Verify email address
-4. Dashboard → API Keys → Create API Key
-   - Name: `artifact-review-test`
-   - Type: **Test** (not production)
-   - Copy key (starts with `re_test_`)
-
-**3. Configure Convex Environment Variables**
-
-```bash
-# Set Resend test key in Convex dev project
-npx convex env set RESEND_API_KEY="re_test_..." --project dev
-npx convex env set RESEND_FROM_EMAIL="auth@yourdomain.com" --project dev
-
-# Verify
-npx convex env ls --project dev
-```
-
-**4. Configure Vercel Environment Variables**
-
-In Vercel Dashboard → Project Settings → Environment Variables:
-
-```
-NEXT_PUBLIC_CONVEX_URL = https://your-dev.convex.cloud
-CONVEX_DEPLOY_KEY = dev:xxxxxxxxxxxxx
-```
-
-Or via CLI:
-
-```bash
-vercel env add NEXT_PUBLIC_CONVEX_URL production
-# Paste: https://your-dev.convex.cloud
-
-vercel env add CONVEX_DEPLOY_KEY production
-# Paste: dev:xxxxxxxxxxxxx (from Convex dashboard)
-```
-
-**5. Override Vercel Build Command**
-
-Vercel Dashboard → Project Settings → General → Build & Development Settings:
-
-```
-Build Command: npx convex deploy --cmd 'npm run build'
-```
-
-This ensures Convex deploys before frontend build.
-
-**What you DON'T need yet:**
-- Custom domain
-- OAuth providers (Google, GitHub)
-- Production Resend keys
-- Staging environment
-
-**Verification:**
-
-```bash
-# Deploy to Vercel
-git push origin main
-
-# Check Vercel dashboard for build logs
-vercel --prod
-
-# Visit deployment
-open https://artifact-review.vercel.app
-
-# Test email auth - should work
-# Test authentication emails - logged in Resend dashboard (test mode, not delivered)
-```
-
-**Move to Phase 4 when:** Ready for staging/production
-
----
-
-### Phase 4: Staging & Production (Future)
-
-**When:** Ready to set up custom domains and real email delivery
-
-**Status:** Do this later - not needed for MVP
-
-**NEW accounts/services needed:**
-- [ ] Domain registrar (Namecheap, $10-20/year)
-- [ ] Convex Professional plan ($25/month for production)
-- [ ] Vercel Pro plan ($20/month for commercial use)
-- [ ] OAuth apps (Google + GitHub)
-- [ ] Production Resend API keys
-
-**Setup time:** 2-3 hours
-
-See [Complete Account Reference](#complete-account-reference) below for full setup instructions.
-
-**When you need this:**
-- Custom domain (app.yourdomain.com)
-- Real email delivery to customers
-- OAuth social login
-- Separate staging environment
-- Production monitoring
+### Phase 3: Staging & Production
+**When:** Finalizing for users or external reviewers
+**What you're building:** Custom domains (`artifactreview-early.xyz`) and live emails
+**Accounts needed:**
+- [ ] Domain registrar
+- [ ] Convex Professional ($25/mo)
+- [ ] Vercel Pro ($20/mo)
+- [ ] Resend Pro ($20/mo)
+- [ ] Resend Production API key
+**Setup time:** 1-2 hours
 
 ---
 
@@ -307,10 +75,10 @@ See [Complete Account Reference](#complete-account-reference) below for full set
 
 | Phase | Accounts | Tools | Time |
 |-------|----------|-------|------|
-| **Phase 1** (Local - Email Auth) | GitHub, Convex | Node, git, direnv | 15-20 min |
-| **Phase 2** (Local - Email Testing) | (same) | Docker + Mailpit | 10 min |
-| **Phase 3** (Hosted Dev) | + Vercel, Resend (test) | (same) | 30-45 min |
-| **Phase 4** (Staging/Prod) | + Domain, OAuth apps | (same) | 2-3 hours |
+| **Phase 1** (Local) | GitHub, Convex | Node, git, direnv | 20 min |
+| **Phase 2** (Hosted Dev) | + Vercel, Resend (Test) | Vercel CLI | 30 min |
+| **Phase 3** (Prod) | + Domain, Vercel/Convex Pro | Registrar | 2 hours |
+
 
 ### Environment Variables Quick Reference
 
@@ -364,35 +132,6 @@ source ~/.zshrc
 ---
 
 ### Phase 2 Issues
-
-**Problem:** Mailpit not receiving emails
-
-**Solutions:**
-```bash
-# Verify Mailpit is running
-docker ps | grep mailpit
-
-# Restart Mailpit
-docker restart mailpit
-
-# Check Mailpit logs
-docker logs mailpit
-
-# Verify Mailpit UI
-open http://localhost:8025
-```
-
-**Problem:** Authentication email not working
-
-**Solutions:**
-- Check Convex logs: `npx convex logs`
-- Verify email sending code uses SMTP (not Resend) for local
-- Check authentication link URL points to `http://localhost:3000`
-- Verify Convex Auth configured correctly
-
----
-
-### Phase 3 Issues
 
 **Problem:** Vercel build failing
 
@@ -618,7 +357,7 @@ npx convex env ls --project prod
 
 **Purpose:** Transactional email (magic links, notifications)
 
-**Plan Required:** Free tier (3,000 emails/month) for MVP
+**Plan Required:** Pro ($20/month) - 50,000 emails/month
 
 #### Phase 3: Test API Key (Hosted Dev)
 
@@ -1039,11 +778,11 @@ Before going to production, verify:
 | Service | Phase 1-2 | Phase 3 | Phase 4 |
 |---------|-----------|---------|---------|
 | **GitHub** | Free | Free | Free |
-| **Convex** | Free | Free | $25/month (prod only) |
-| **Resend** | N/A | Free | Free → $20/month |
+| **Convex** | Free | Free | $25/month |
+| **Resend** | N/A | Free (local dev) | $20/month |
 | **Vercel** | N/A | Free | $20/month |
 | **Domain** | N/A | N/A | $10-20/year |
-| **Total/month** | **$0** | **$0** | **$45-65** |
+| **Total/month** | **$0** | **$0** | **~$65** |
 
 ---
 

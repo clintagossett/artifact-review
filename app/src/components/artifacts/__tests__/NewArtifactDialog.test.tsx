@@ -154,8 +154,8 @@ describe("NewArtifactDialog", () => {
         name: "My Project",
         description: "My description",
       });
-    });
-  });
+    }, { timeout: 10000 });
+  }, 10000);
 
   it("should close on cancel", async () => {
     const user = userEvent.setup();

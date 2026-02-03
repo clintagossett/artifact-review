@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Calendar, User, FileText, HardDrive } from 'lucide-react';
-import { Id } from '../../../convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,7 +69,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
   const metadata = details ? {
     created: formatDate(details.createdAt),
     createdBy: details.creatorEmail || 'Unknown',
-    lastModified: formatDate(details.updatedAt),
+    lastModified: details.updatedAt ? formatDate(details.updatedAt) : "-",
     size: formatFileSize(details.totalFileSize),
     versions: details.versionCount,
   } : null;
@@ -303,7 +303,7 @@ export function ArtifactDetailsTab({ artifactId }: ArtifactDetailsTabProps) {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the artifact
-              <strong> "{name}"</strong> and all its versions, files, and comments.
+              <strong> {`"${name}"`}</strong> and all its versions, files, and comments.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

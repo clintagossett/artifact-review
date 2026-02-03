@@ -15,11 +15,16 @@ These rules are mirrored from `CLAUDE.md` and `docs/architecture/convex-rules.md
 3.  **Convex Security**: 
     *   ALWAYS use validators (`args`, `returns`).
     *   NEVER use `filter` (use `withIndex`).
-    *   Actions cannot access `ctx.db`.
+    *   Action cannot access `ctx.db`.
+4.  **Test Accounts & Emails**: ALL test accounts and emails used in testing (manual or automated) MUST use the domain `@tolauante.resend.app`. 
+    *   **NEVER** use `example.com`, `test.com`, or other placeholder domains. 
+    *   **ALWAYS** use a timestamped prefix (e.g., `test.user.1768226084936@tolauante.resend.app`) to ensure uniqueness and prevent collisions. 
+    *   Do NOT pollute the project with improper or made-up domains.
 
 ## 🛠️ Common Commands
 
 - **Start Dev Servers**: `./scripts/start-dev-servers.sh` (Check if running first!)
+- **Docs Viewer**: `cd docs-viewer && npm run dev` (Runs on http://localhost:5111)
 - **Run Tests**: `npm run test -- tasks/XXXXX/tests/my_test.test.ts`
 - **Deploy**: `npx convex deploy`
 
@@ -27,10 +32,15 @@ These rules are mirrored from `CLAUDE.md` and `docs/architecture/convex-rules.md
 
 - `convex/`: Backend code (follow `convex-rules.md`)
 - `src/`: Frontend code
+- `docs/`: Documentation files (symlinked to `docs-viewer/public/docs`)
+- `docs-viewer/`: Vite site for browsing and collaborating on documentation.
 - `tasks/`: All active work.
     - `tasks/XXXXX/tests/`: TDD tests go here.
     - `tasks/XXXXX/README.md`: Task documentation.
 
 ## 🧠 Memory & Context
-- **Documentation**: Start by reading `docs/_index.md` if you are lost.
+- **Documentation**: 
+    - Start by reading `docs/_index.md` if you are lost.
+    - **Maintain Indexes**: Every directory in `docs/` MUST have an `_index.md`. When adding or moving documents, you MUST update the corresponding `_index.md` to reflect the changes.
+    - Run the **Docs Viewer** (`npm run dev` in `docs-viewer`) to view rendered markdown with diagrams and syntax highlighting at http://localhost:5111.
 - **Samples**: Use `/samples/` for test data. Never create custom test data files if a sample exists.

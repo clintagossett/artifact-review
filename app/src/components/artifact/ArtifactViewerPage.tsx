@@ -1,33 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
-import { api } from "../../../convex/_generated/api";
+import { useState, useEffect } from "react";
+import { useQuery, useConvexAuth } from "convex/react";
+import { useRouter, usePathname } from "next/navigation";
+import { api } from "@/convex/_generated/api";
 import { ArtifactViewer } from "./ArtifactViewer";
-import { DocumentViewer } from "./DocumentViewer";
 import { ShareModal } from "./ShareModal";
+import { useViewTracker } from "@/hooks/useViewTracker";
 import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useVersionStatus } from "@/hooks/useVersionStatus";
 
 interface ArtifactViewerPageProps {
   shareToken: string;
   versionNumber?: number;
+  filePath?: string;
 }
 
 export function ArtifactViewerPage({
   shareToken,
   versionNumber,
+  filePath,
 }: ArtifactViewerPageProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   // Fetch artifact by share token
   const artifact = useQuery(api.artifacts.getByShareToken, { shareToken });
 
   // Check user authentication and permission
-  const currentUser = useQuery(api.users.getCurrentUser);
+  const { isAuthenticated: isAuthReady, isLoading: isAuthLoading } = useConvexAuth();
+  const currentUser = useQuery(api.users.getCurrentUser, !isAuthReady ? "skip" : undefined);
+
+  // Save returnTo path for unauthenticated users
+  useEffect(() => {
+    if (currentUser === null) {
+      localStorage.setItem("returnTo", pathname);
+    }
+  }, [currentUser, pathname]);
   const userPermission = useQuery(
     api.access.getPermission,
     artifact ? { artifactId: artifact._id } : "skip"
@@ -55,8 +67,22 @@ export function ArtifactViewerPage({
   // Determine which version to show based on whether versionNumber was provided
   const targetVersion = versionNumber ? specificVersion : latestVersion;
 
+  // Track views - must be called before any conditional returns (hooks rules)
+  // Only tracks when user has permission and data is loaded
+  const hasPermissionEarly = userPermission === "owner" || userPermission === "can-comment";
+  useViewTracker(
+    artifact?._id ?? ("skip" as any), // Safe to pass invalid ID when skipped via isLoaded
+    targetVersion?._id ?? ("skip" as any),
+    Boolean(artifact && targetVersion && isAuthReady && hasPermissionEarly)
+  );
+
+  // Task 00049: Get version status for status tracking
+  const { status: versionStatus } = useVersionStatus(
+    targetVersion?._id ?? null
+  );
+
   // Handle loading states
-  if (artifact === undefined || versions === undefined || targetVersion === undefined || userPermission === undefined) {
+  if (isAuthLoading || artifact === undefined || versions === undefined || targetVersion === undefined || userPermission === undefined) {
     return (
       <div className="flex flex-col h-screen">
         <div className="border-b border-gray-200 bg-white px-6 py-4">
@@ -96,7 +122,7 @@ export function ArtifactViewerPage({
   }
 
   // Permission checks
-  const isAuthenticated = currentUser !== null && currentUser !== undefined;
+  const isAuthenticated = isAuthReady;
   const hasPermission = userPermission === "owner" || userPermission === "can-comment";
 
   // Show UnauthenticatedBanner for logged-out users
@@ -132,26 +158,22 @@ export function ArtifactViewerPage({
     }
   };
 
-  // Get Convex HTTP URL from environment (for serving artifact files)
-  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || "";
-
   // Show DocumentViewer for users with permission
+  // REFACTOR: Now using the new ArtifactViewer directly instead of DocumentViewer
   return (
     <>
-      <DocumentViewer
-        documentId={artifact._id}
-        onBack={() => router.push("/dashboard")}
-        artifactTitle={artifact.name}
+      <ArtifactViewer
+        artifact={artifact}
+        version={{
+          ...targetVersion,
+          fileType: targetVersion.fileType as "zip" | "html" | "markdown"
+        }}
         versions={versions}
-        onNavigateToShare={() => router.push(`/a/${shareToken}/settings#access-and-activity`)}
-        onNavigateToSettings={() => router.push(`/a/${shareToken}/settings`)}
-        onNavigateToVersions={() => router.push(`/a/${shareToken}/settings#versions`)}
-        shareToken={shareToken}
-        versionNumber={targetVersion.number}
-        versionId={targetVersion._id}
-        artifactOwnerId={artifact.createdBy}
-        convexUrl={convexUrl}
+        isLatestVersion={isLatestVersion}
+        onVersionChange={handleVersionChange}
+        currentUser={currentUser}
         userPermission={userPermission}
+        versionStatus={versionStatus}
       />
 
       <ShareModal

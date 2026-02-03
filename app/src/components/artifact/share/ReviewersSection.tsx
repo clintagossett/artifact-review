@@ -3,7 +3,7 @@ import { ReviewerCard } from "./ReviewerCard";
 interface Reviewer {
   _id: string;
   email: string;
-  status: "pending" | "accepted";
+  status: "pending" | "added" | "viewed";
   invitedAt: number;
   user?: {
     name?: string;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { useMutation, useAction } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useGracePeriod, formatTimeRemaining } from "@/hooks/useGracePeriod";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,16 +16,16 @@ import { useToast } from "@/hooks/use-toast";
  * - Fresh (green): Within 15-minute grace period, shows countdown
  * - Stale (orange): Outside grace period, offers re-authentication
  */
-export function GracePeriodBanner() {
-  const { isWithinGracePeriod, timeRemaining, isLoading } = useGracePeriod();
-  const sendReauthMagicLink = useMutation(api.settings.sendReauthMagicLink);
+export function GracePeriodBanner({ debugOverride }: { debugOverride?: "auto" | "fresh" | "stale" }) {
+  const { isWithinGracePeriod, timeRemaining, isLoading } = useGracePeriod(debugOverride);
+  const sendReauthMagicLink = useAction(api.settings.sendReauthMagicLink);
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
   const handleSendMagicLink = async () => {
     setIsSending(true);
     try {
-      await sendReauthMagicLink();
+      await sendReauthMagicLink({});
       toast({
         title: "Magic link sent",
         description: "Check your email for a link to re-authenticate.",

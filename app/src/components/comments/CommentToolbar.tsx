@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, Filter } from 'lucide-react';
+import { Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -10,16 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ToolMode, ToolBadge } from './types';
+
+export type FilterMode = 'all' | 'unresolved' | 'resolved';
 
 interface CommentToolbarProps {
-  activeToolMode: ToolMode;
-  commentBadge: ToolBadge;
-  onToolChange: (tool: ToolMode) => void;
-  onBadgeClick: () => void;
-  filter: 'all' | 'unresolved' | 'resolved';
-  onFilterChange: (filter: 'all' | 'unresolved' | 'resolved') => void;
-  activeCount: number; // Count of active (unresolved) items
+  filter: FilterMode;
+  onFilterChange: (filter: FilterMode) => void;
+  totalCount: number; // Total count of comments
+  // Sidebar toggle
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
   // Version info for banners
   isViewingOldVersion?: boolean;
   currentVersionNumber?: number;
@@ -28,13 +28,11 @@ interface CommentToolbarProps {
 }
 
 export function CommentToolbar({
-  activeToolMode,
-  commentBadge,
-  onToolChange,
-  onBadgeClick,
   filter,
   onFilterChange,
-  activeCount,
+  totalCount,
+  isSidebarOpen,
+  onToggleSidebar,
   isViewingOldVersion = false,
   currentVersionNumber,
   latestVersionNumber,
@@ -44,34 +42,10 @@ export function CommentToolbar({
     <div className="border-b border-gray-200 bg-white px-6 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Comment Tool */}
-          <div className="relative">
-            <Button
-              variant={activeToolMode === 'comment' ? 'default' : 'outline'}
-              size="sm"
-              onClick={onBadgeClick}
-              className={activeToolMode === 'comment' ? 'bg-purple-600 hover:bg-purple-700' : ''}
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Comment
-            </Button>
-            {/* Badge - only visible when in one-shot or infinite mode */}
-            {commentBadge && (
-              <div
-                className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 text-white rounded-full text-xs font-bold flex items-center justify-center shadow-md pointer-events-none"
-                title={commentBadge === 'one-shot' ? 'One-shot mode' : 'Infinite mode'}
-              >
-                {commentBadge === 'one-shot' ? '①' : '∞'}
-              </div>
-            )}
-          </div>
-
-          <div className="h-6 w-px bg-gray-300 mx-2" />
-
           {/* Filter Dropdown */}
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-600" />
-            <Select value={filter} onValueChange={(value: any) => onFilterChange(value)}>
+            <Select value={filter} onValueChange={(value: FilterMode) => onFilterChange(value)}>
               <SelectTrigger className="h-8 w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -84,10 +58,16 @@ export function CommentToolbar({
           </div>
         </div>
 
-        {/* Active Items Count */}
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">{activeCount}</span> active item{activeCount !== 1 ? 's' : ''}
-        </div>
+        {/* Comments Sidebar Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleSidebar}
+          className="text-gray-600 hover:text-gray-900"
+        >
+          {isSidebarOpen ? <ChevronRight className="w-4 h-4 mr-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
+          Comments ({totalCount})
+        </Button>
       </div>
 
       {/* Version Banners */}

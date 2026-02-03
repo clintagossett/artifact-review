@@ -1,0 +1,18 @@
+{
+  "default": {
+    "appPort": 3000,
+    "apiPort": 3211
+  },
+  "mark": {
+    "appPort": 3010,
+    "apiPort": 3221,
+    "novuPort": 4032,
+    "novuConsolePort": 4210,
+    "mailpitPort": 8035,
+    "convexDashboardPort": 6801
+  },
+  "novu": {
+    "appPort": 4200,
+    "apiPort": 3002
+  }
+}

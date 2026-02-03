@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GradientLogo } from "@/components/shared/GradientLogo";
 import { IconInput } from "@/components/shared/IconInput";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { AuthMethodToggle } from "./AuthMethodToggle";
 import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
-import { UserPlus, Mail, Lock, User, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { UserPlus, Mail, User, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -23,6 +26,10 @@ interface PasswordRequirement {
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+
   const [authMethod, setAuthMethod] = useState<"password" | "magic-link">("password");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,6 +37,17 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [signupComplete, setSignupComplete] = useState(false);
+  const onSuccessRef = useRef(onSuccess);
+  onSuccessRef.current = onSuccess;
+
+  // Wait for auth state to propagate after password signup before redirecting
+  useEffect(() => {
+    if (signupComplete && isAuthenticated) {
+      onSuccessRef.current();
+    }
+  }, [signupComplete, isAuthenticated]);
 
   const passwordRequirements: PasswordRequirement[] = [
     { label: "At least 8 characters", met: password.length >= 8 },
@@ -53,8 +71,9 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
       // Magic link signup flow
       setIsLoading(true);
       try {
-        await signIn("resend", { email });
-        onSuccess();
+        await signIn("resend", { email, redirectTo: returnTo || "/dashboard" });
+        setEmailSent(true);
+        // Don't call onSuccess - user is not authenticated yet
       } catch {
         setError("Failed to send magic link");
       } finally {
@@ -80,16 +99,71 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         await signIn("password", {
           email,
           password,
+          name,
           flow: "signUp",
         });
-        onSuccess();
-      } catch {
+        // Signal that signup is complete - useEffect will redirect once auth state propagates
+        setSignupComplete(true);
+      } catch (err) {
+        console.error("Registration error:", err);
         setError("Registration failed. Email may already be in use.");
-      } finally {
         setIsLoading(false);
       }
+      // Note: Don't setIsLoading(false) on success - keep loading until redirect
     }
   };
+
+  // Show success message after magic link sent
+  if (emailSent) {
+    return (
+      <div className="w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center">
+          <GradientLogo icon={Mail} />
+        </div>
+
+        {/* Success Message */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-gray-900">Check Your Email</h1>
+          <p className="text-gray-600">
+            We sent a sign-up link to <span className="font-medium text-gray-900">{email}</span>
+          </p>
+        </div>
+
+        {/* Info Panel */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-3">
+          <p className="text-sm text-blue-900">
+            Click the link in your email to complete your registration. The link expires in 10 minutes.
+          </p>
+          <p className="text-sm text-blue-800">
+            {"Didn't receive it? Check your spam folder or request a new link."}
+          </p>
+        </div>
+
+        {/* Back to Login Link */}
+        <div className="text-center">
+          <Link
+            href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : "/login"}
+            className="text-sm text-blue-600 hover:text-blue-700 font-semibold transition"
+          >
+            Return to Sign In
+          </Link>
+        </div>
+
+        {/* Terms Footer */}
+        <p className="text-center text-sm text-gray-500">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md space-y-6">
@@ -155,10 +229,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {/* Password Input */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <IconInput
+              <PasswordInput
                 id="password"
-                type="password"
-                icon={Lock}
                 placeholder="Create a strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -210,10 +282,8 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             {/* Confirm Password Input */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm password</Label>
-              <IconInput
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
-                icon={Lock}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -277,7 +347,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
           <p className="text-sm text-gray-600">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : "/login"}
               className="text-blue-600 hover:text-blue-700 font-semibold transition"
             >
               Sign in

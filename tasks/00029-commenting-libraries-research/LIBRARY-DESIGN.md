@@ -108,3 +108,36 @@ Instead of installing `annotator` as a global monolithic plugin, we will:
 1.  Prototype the `TextAdapter` using modern DOM APIs (no jQuery).
 2.  Prototype the `SVGAdapter` using a lightweight React-SVG overlay.
 3.  Wire them up with the `AnnotationManager`.
+
+## Intent-based Decorations
+
+We treat every persistent annotation as a **Comment**, but we attach a specific **Visual Style ("Decoration")** to it based on the user's intent.
+
+### The Mental Model
+
+1.  **The Object**: It is always an **`AnnotationTarget`** (W3C Standard) + **Content** (The user's note).
+2.  **The Decoration (`style`)**:
+    *   **Comment** (`style="comment"`): Renders as a **Highlight**.
+        *   *Intent:* "I want to discuss this text."
+        *   *Visual:* Yellow background fill (`bg-yellow-100`).
+        *   *Icon:* 💬
+    *   **Cross out** (`style="strike"`): Renders as a **Strikethrough**.
+        *   *Intent:* "I think this text should be removed or changed."
+        *   *Visual:* Red line through the center of text (`border-red-500`).
+        *   *Icon:* ❌ (or abc with strikethrough)
+
+### Data Structure Update
+
+The `Comment` object explicitly track this style:
+
+```typescript
+interface Comment {
+    id: string;
+    target: AnnotationTarget;
+    content: string;
+    style: "comment" | "strike"; // Determines the "dressing"
+    createdAt: number;
+}
+```
+
+This decoupling allows us to have a single underlying data model (Annotations) while presenting different distinct tools to the user (Highlighter vs. Editor/Corrector).

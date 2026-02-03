@@ -28,6 +28,30 @@ import fs from "fs/promises";
 import JSZip from "jszip";
 import { getMimeType } from "../../convex/lib/mimeTypes";
 
+// Helper to create user with organization
+async function createTestUser(t: ReturnType<typeof convexTest>) {
+  return await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {
+      createdAt: Date.now(),
+      email: "test@example.com",
+      name: "Test User",
+    });
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
+  });
+}
+
 // Sample ZIP file paths - charting-with-parents variants
 const SAMPLES_DIR = path.join(__dirname, "../../../samples");
 const CHARTING_WITH_PARENTS = {
@@ -168,9 +192,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
   test("should strip 1-level parent directory (project/)", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { artifactId, versionId } = await t
       .withIdentity({ subject: userId })
@@ -234,9 +256,7 @@ describe("Backend Integration: Multi-Level ZIP Root Path Stripping", () => {
   test("should strip 2-level parent directories (project/dist/)", async () => {
     const t = convexTest(schema);
 
-    const userId = await t.run(async (ctx) =>
-      ctx.db.insert("users", { createdAt: Date.now(), email: "test@example.com" })
-    );
+    const userId = await createTestUser(t);
 
     const { versionId } = await t
       .withIdentity({ subject: userId })

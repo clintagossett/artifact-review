@@ -1,6 +1,18 @@
 import { convexAuth, getAuthUserId } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
+import { DataModel } from "./_generated/dataModel";
+
+// Custom Password provider that accepts name field during signup
+const PasswordWithProfile = Password<DataModel>({
+  profile(params) {
+    return {
+      email: params.email as string,
+      name: (params as Record<string, unknown>).name as string | undefined,
+      createdAt: Date.now(),
+    };
+  },
+});
 import { query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
@@ -11,16 +23,20 @@ const MagicLinkEmail = Email({
   // Magic link behavior: only token is needed, no email verification required on callback
   authorize: undefined,
   async sendVerificationRequest({ identifier, url }) {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    // Note: We use the Resend SDK directly here because the Resend component
-    // requires a Convex context (ctx) which is not available in this callback.
-
-    await resend.emails.send({
-      from: process.env.AUTH_EMAIL_FROM || "Artifact Review <hello@artifactreview-early.xyz>",
-      to: identifier,
-      subject: "Sign in to Artifact Review",
-      html: `
+    // Use internal bridge to send via Resend component (preserving context/tracking)
+    // For self-hosted Convex, use CONVEX_SITE_ORIGIN (Docker internal) instead of CONVEX_SITE_URL (host-mapped)
+    const siteUrl = process.env.CONVEX_SITE_ORIGIN || process.env.CONVEX_SITE_URL;
+    try {
+      const response = await fetch(`${siteUrl}/send-auth-email`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.INTERNAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: identifier,
+          subject: "Sign in to Artifact Review",
+          html: `
         <!DOCTYPE html>
         <html>
           <head>
@@ -47,12 +63,21 @@ const MagicLinkEmail = Email({
           </body>
         </html>
       `,
-    });
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send auth email via bridge: ${await response.text()}`);
+      }
+    } catch (error) {
+      console.error("Failed to send auth email:", error);
+      throw error;
+    }
   },
 });
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [Password, MagicLinkEmail],
+  providers: [PasswordWithProfile, MagicLinkEmail],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
       // Check if user already exists (for account linking)
@@ -84,6 +109,22 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           emailVerifiedAt: args.profile.emailVerified ? now : undefined,
           createdAt: now,
         });
+
+        // Task 33: Bootstrap Personal Organization
+        const orgName = args.profile.name ? `${args.profile.name}'s Organization` : "My Organization";
+        const orgId = await ctx.db.insert("organizations", {
+          name: orgName,
+          createdAt: now,
+          createdBy: userId,
+        });
+
+        await ctx.db.insert("members", {
+          userId,
+          organizationId: orgId,
+          roles: ["owner"],
+          createdAt: now,
+          createdBy: userId,
+        });
       }
 
       // Link pending reviewer invitations for new users OR existing users adding email
@@ -93,6 +134,14 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           email: args.profile.email,
         });
       }
+
+      // Sync user to Novu as subscriber for notifications
+      await ctx.scheduler.runAfter(0, internal.novu.createOrUpdateSubscriber, {
+        userId,
+        email: args.profile.email,
+        name: args.profile.name ?? existingUser?.name,
+        avatarUrl: args.profile.image ?? existingUser?.image,
+      });
 
       return userId;
     },

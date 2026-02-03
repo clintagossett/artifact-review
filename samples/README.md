@@ -165,6 +165,95 @@ product-spec/
 
 ---
 
+#### `technical-docs/`
+**Description:** Multi-file markdown documentation project - 2 versions with structural changes
+
+**Purpose:** Tests multi-file markdown artifacts with cross-file navigation and annotation. Files are reorganized between versions to test structural change handling.
+
+**Structure:**
+```
+technical-docs/
+├── v1.zip, v2.zip            # Ready for upload
+├── v1/                        # Version 1 (flat structure)
+│   ├── README.md              # Entry point with TOC
+│   ├── getting-started.md
+│   ├── configuration.md
+│   └── api.md
+└── v2/                        # Version 2 (nested structure)
+    ├── README.md              # Updated TOC
+    ├── getting-started.md
+    ├── guides/
+    │   └── configuration.md   # Moved from root
+    └── api/
+        ├── overview.md        # Split from api.md
+        └── endpoints.md       # Split from api.md
+```
+
+**Features:**
+- Table of Contents with anchor links (h1, h2, h3)
+- Cross-file navigation links
+- Code blocks: JavaScript, TypeScript, Python, SQL, Bash, JSON, YAML
+- GFM tables
+- Mermaid diagrams
+- Nested lists
+
+**Expected Behavior:**
+- ✅ Upload as ZIP, extract to `artifactFiles` table
+- ✅ Auto-detect `README.md` as entry point
+- ✅ File tree navigation works
+- ✅ Cross-file links navigate correctly
+- ✅ Anchor links scroll to sections
+- ✅ Annotations work on all markdown content
+- ✅ Structural changes visible between v1 and v2
+
+**File Size:** ~15KB per version (compressed)
+**Versions:** 2 (v1, v2 with structural changes)
+
+---
+
+#### `feature-rich/`
+**Description:** Single comprehensive markdown file with all markdown features
+
+**Purpose:** Tests annotation system against all markdown element types. Provides thorough coverage for text selection across different content structures.
+
+**Structure:**
+```
+feature-rich/
+├── README.md
+└── v1.md                      # Feature-rich single file
+```
+
+**Features:**
+- Table of Contents with anchor links
+- Headings h1 through h6
+- Code blocks with syntax highlighting:
+  - JavaScript, TypeScript, Python, SQL
+  - Bash, JSON, YAML, Go, Rust
+- Inline code
+- GFM tables (simple and complex)
+- Task lists
+- Blockquotes (simple, nested, with formatting)
+- Mermaid diagrams (flowchart, sequence)
+- Ordered and unordered lists (nested)
+- Bold, italic, strikethrough text
+- External links and anchor links
+- External images (CDN)
+- Horizontal rules
+- Long paragraphs for selection testing
+
+**Expected Behavior:**
+- ✅ Upload directly as markdown file
+- ✅ All syntax highlighting renders correctly
+- ✅ Mermaid diagrams render
+- ✅ TOC anchor links work
+- ✅ All content types support annotation
+- ✅ Long paragraph selection works
+
+**File Size:** ~25KB
+**Versions:** 1
+
+---
+
 ## 02-warnings/ - Valid with Warnings
 
 ### HTML with Dependencies (`02-warnings/html/`)
@@ -453,6 +542,9 @@ When adding new sample files:
 | product-spec v3 | Markdown | 1.9KB | 1MB | ✅ Valid |
 | product-spec v4 | Markdown | 1.9KB | 1MB | ✅ Valid |
 | product-spec v5 | Markdown | 1.9KB | 1MB | ✅ Valid |
+| technical-docs v1.zip | ZIP (MD) | ~15KB | 100MB | ✅ Valid |
+| technical-docs v2.zip | ZIP (MD) | ~15KB | 100MB | ✅ Valid |
+| feature-rich v1.md | Markdown | ~25KB | 1MB | ✅ Valid |
 | landing-with-deps.html | HTML | 2.1KB | 5MB | ⚠️ Warnings |
 | documentation-with-refs.md | Markdown | 1.5KB | 1MB | ⚠️ Warnings |
 | multi-page-site.zip | ZIP | 2.1KB | 100MB | ✅ Edge case |
@@ -465,5 +557,5 @@ When adding new sample files:
 
 ---
 
-**Last Updated:** 2025-12-27
-**Tasks:** #10 (Artifact Upload & Creation), #15 (Fix ZIP Artifact Viewing)
+**Last Updated:** 2026-01-31
+**Tasks:** #10 (Artifact Upload & Creation), #15 (Fix ZIP Artifact Viewing), #52 (Markdown Samples for Annotation Testing)

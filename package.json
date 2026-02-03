@@ -1,5 +1,14 @@
 {
+  "scripts": {
+    "stripe:listen": "stripe listen --forward-to localhost:3211/stripe/webhook",
+    "dev": "npx convex dev"
+  },
   "dependencies": {
-    "@apache-annotator/dom": "^0.2.0"
+    "@apache-annotator/dom": "^0.2.0",
+    "@convex-dev/stripe": "^0.1.2",
+    "convex": "^1.31.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

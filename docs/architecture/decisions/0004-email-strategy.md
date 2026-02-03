@@ -6,16 +6,16 @@
 
 ## TL;DR
 
-Use Resend for all transactional email via `@convex-dev/resend` component. Use component `testMode` for safe development awareness. No inbound email for MVP.
+Use Resend for all email (auth, invites, notifications) via `@convex-dev/resend` component. Local dev uses resend-proxy to route emails to Mailpit. No inbound email for MVP.
 
 ## Quick Reference
 
 | Item | Value |
 |------|-------|
 | **Provider** | Resend |
-| **Free tier** | 3,000 emails/month |
-| **Paid tier** | $20/month for 50K emails |
-| **Local dev** | Resend Component (Test Mode) |
+| **Plan** | Pro ($20/month) |
+| **Capacity** | 50,000 emails/month |
+| **Local dev** | Mailpit (Docker) |
 | **Inbound email** | Not configured (MVP) |
 
 ## Decision Drivers (Priority Order)
@@ -53,8 +53,8 @@ The platform needs email for multiple use cases:
 | Aspect | Details |
 |--------|---------|
 | **Provider** | Resend |
-| **Free tier** | 3,000 emails/month |
-| **Paid tier** | $20/month for 50K emails |
+| **Current Plan** | Pro ($20/month) |
+| **Capacity** | 50,000 emails/month |
 | **Integration** | Official Convex Auth support |
 | **API style** | Modern REST/SDK |
 
@@ -68,47 +68,39 @@ The platform needs email for multiple use cases:
 | AWS SES | Pay-per-use | Manual setup | Poor DX | Too low-level |
 | Mailgun | 5K/month (3 months) | Manual setup | Good | Free tier expires |
 
-### Local Development: Resend Component (Test Mode)
+### Local Development: Mailpit (Docker)
 
-**Use the `@convex-dev/resend` component's built-in test mode.**
+**Use a local Mailpit instance for all local development.**
 
-The component defaults to `testMode: true`, which restricts email delivery to the "delivered@resend.dev" address only. This ensures no emails are sent to real users during development while still verifying the Convex -> Resend integration.
-
-**Configuration:**
-Set `RESEND_TEST_MODE` environment variable to control this behavior.
-
-- `RESEND_TEST_MODE=true` (Default): Safe mode. Emails are accepted but only delivered to test inboxes.
-- `RESEND_TEST_MODE=false`: Live mode. Emails are delivered to actual recipients.
+When running locally via Docker Compose, all emails are routed to Mailpit. This provides an immediate, visual way to verify email content without any external API calls or account requirements.
 
 **Benefits:**
-- **Zero infrastructure**: No need to run local Docker containers (Mailpit).
-- **Production parity**: Local dev uses the exact same code path and component as production.
-- **Verification**: Emails are logged in the Convex dashboard and Resend `emails` table.
+- **Zero external dependencies**: Work offline or without a Resend key.
+- **Visual Verification**: Inspect HTML emails in http://localhost:8025.
+- **Fast Feedback**: Near-instant capture compared to polling external APIs.
 
 ### Environment Configuration
 
-| Environment | Mode | Configuration | Behavior |
-|-------------|------|---------------|----------|
-| **Local** | Test | `RESEND_TEST_MODE=true` | Sent to test inbox only |
-| **Hosted Dev** | Live | `RESEND_TEST_MODE=false` | Real delivery (Verified Domain) |
-| **Staging** | Live | `RESEND_TEST_MODE=false` | Real delivery |
-| **Production** | Live | `RESEND_TEST_MODE=false` | Real delivery |
+| Environment | Infrastructure | Email Strategy | Primary Purpose |
+|-------------|----------------|----------------|-----------------|
+| **Local Dev** | Docker Compose (Self-hosted Convex + resend-proxy + Mailpit) | **Capture**: resend-proxy intercepts api.resend.com and routes to Mailpit. | Fast, isolated, offline-capable feature development. |
+| **Hosted Dev** | Convex Cloud (Dev Project) + Resend | **Live**: Real delivery via Resend API. | Shared preview, integration testing, team collaboration. |
+| **Staging** | Convex Cloud (Staging Project) + Resend | **Live**: Real delivery to verified domains. | Final QA and stakeholder sign-off. |
+| **Production** | Convex Cloud (Prod Project) + Resend | **Live**: Real delivery to all users. | Live application traffic. |
 
-### Resend Configuration
+### Environment Definitions
 
-```bash
-# Local
-npx convex env set RESEND_TEST_MODE=true --project dev
+#### Local Dev ("The Sandboxed Machine")
+- **Backend**: Self-hosted Convex running in Docker.
+- **Data**: Local SQLite database; isolated per developer.
+- **Email**: resend-proxy intercepts api.resend.com traffic and routes to Mailpit. One code path for all environments.
+- **Dashboard**: Accessed via `localhost:6791`.
 
-# Hosted Dev
-npx convex env set RESEND_TEST_MODE=false --project dev
-
-# Staging
-npx convex env set RESEND_TEST_MODE=false --project staging
-
-# Production
-npx convex env set RESEND_TEST_MODE=false --project prod
-```
+#### Hosted Dev ("The Collective Sandbox")
+- **Backend**: Standard Convex Cloud deployment.
+- **Data**: Shared development database in the cloud.
+- **Email**: Routes through Resend API for real delivery.
+- **Dashboard**: Accessed via the Convex web dashboard.
 
 ### Domain Setup
 
@@ -151,7 +143,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 - ✅ **Official Convex integration** - Magic links work out of the box
 - ✅ **Generous free tier** - 3K emails covers MVP + early growth
-- ✅ **Simple local testing** - Mailpit captures everything
+- ✅ **Simple local testing** - resend-proxy routes to Mailpit automatically
 - ✅ **Modern API** - Clean SDK, good TypeScript support
 - ✅ **Reasonable scaling** - $20/mo for 50K is cost-effective
 
@@ -198,7 +190,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 | Stage | Emails/Month | Cost |
 |-------|--------------|------|
-| MVP | ~500 | Free |
+| MVP | ~500 | $20/mo (Pro) |
 | Growth (1K users) | ~5K | $20/mo |
 | Scale (10K users) | ~30K | $20/mo |
 | Scale (50K users) | ~100K | ~$50/mo |
@@ -211,4 +203,3 @@ Resend pricing is predictable and reasonable for transactional email volume.
 - [Resend + Convex Auth Integration](https://labs.convex.dev/auth/config/email)
 - [Resend Pricing](https://resend.com/pricing)
 - [Resend Inbound Email](https://resend.com/docs/dashboard/emails/inbound-emails) (future reference)
-- [Mailpit Documentation](https://mailpit.axllent.org/)

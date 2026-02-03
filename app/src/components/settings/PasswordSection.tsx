@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { useGracePeriod } from "@/hooks/useGracePeriod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/shared/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GracePeriodBanner } from "./GracePeriodBanner";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
-import { Loader2, Lock, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 /**
@@ -22,8 +22,8 @@ import { useToast } from "@/hooks/use-toast";
  *
  * Password validation matches RegisterForm exactly.
  */
-export function PasswordSection() {
-  const { isWithinGracePeriod } = useGracePeriod();
+export function PasswordSection({ debugOverride }: { debugOverride?: "auto" | "fresh" | "stale" }) {
+  const { isWithinGracePeriod } = useGracePeriod(debugOverride);
   const changePassword = useMutation(api.settings.changePassword);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -101,7 +101,7 @@ export function PasswordSection() {
       </CardHeader>
       <CardContent>
         {/* Grace Period Banner */}
-        <GracePeriodBanner />
+        <GracePeriodBanner debugOverride={debugOverride} />
 
         {/* Password Change Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -109,38 +109,30 @@ export function PasswordSection() {
           {!isWithinGracePeriod && (
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Current password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required={!isWithinGracePeriod}
-                  className="pl-10"
-                  placeholder="Enter your current password"
-                  disabled={isSubmitting}
-                />
-              </div>
+              <PasswordInput
+                id="currentPassword"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                required={!isWithinGracePeriod}
+                placeholder="Enter your current password"
+                disabled={isSubmitting}
+              />
             </div>
           )}
 
           {/* New Password */}
           <div className="space-y-2">
             <Label htmlFor="newPassword">New password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                className="pl-10"
-                placeholder="Create a strong password"
-                disabled={isSubmitting}
-              />
-            </div>
+            <PasswordInput
+              id="newPassword"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+              placeholder="Create a strong password"
+              disabled={isSubmitting}
+            />
 
             {/* Password Strength Indicator */}
             {newPassword && (
@@ -187,19 +179,15 @@ export function PasswordSection() {
           {/* Confirm Password */}
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                className="pl-10"
-                placeholder="Re-enter your new password"
-                disabled={isSubmitting}
-              />
-            </div>
+            <PasswordInput
+              id="confirmPassword"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              placeholder="Re-enter your new password"
+              disabled={isSubmitting}
+            />
             {confirmPassword && newPassword !== confirmPassword && (
               <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
                 <AlertCircle className="w-3.5 h-3.5" />

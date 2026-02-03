@@ -1,0 +1,154 @@
+[
+  {
+    "number": 1,
+    "title": "Create config.json parser utility",
+    "description": "Extract port mappings and agent config from orchestrator config.json. Create reusable bash functions for reading FRONTEND_PORT, BACKEND_PORT, AGENT_NAME from ../artifact-review-orchestrator/config.json",
+    "files": [
+      "scripts/lib/parse-config.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/01-parse-config.test.sh"
+    ],
+    "depends_on": []
+  },
+  {
+    "number": 2,
+    "title": "Create .env.docker.local generator",
+    "description": "Generate .env.docker.local from config.json using parser from subtask 1. Replace current inline generation logic with function-based approach.",
+    "files": [
+      "scripts/lib/generate-env-docker.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/02-generate-env-docker.test.sh"
+    ],
+    "depends_on": [1]
+  },
+  {
+    "number": 3,
+    "title": "Create .env.nextjs.local generator",
+    "description": "Generate .env.nextjs.local with NO placeholders (YOUR_USERNAME replaced), correct ports from config.json, and real mkcert certificate path using $(mkcert -CAROOT).",
+    "files": [
+      "scripts/lib/generate-env-nextjs.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/03-generate-env-nextjs.test.sh"
+    ],
+    "depends_on": [1]
+  },
+  {
+    "number": 4,
+    "title": "Create master generate-all-env.sh script",
+    "description": "Orchestrate generation of all 4 env files (.env.docker.local, .env.dev.local, app/.env.nextjs.local, app/.env.convex.local) from config.json. Calls generators from subtasks 2-3.",
+    "files": [
+      "scripts/generate-all-env.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/04-generate-all-env.test.sh"
+    ],
+    "depends_on": [2, 3]
+  },
+  {
+    "number": 5,
+    "title": "Create Docker health check utility",
+    "description": "Wait for Docker containers to report healthy status before proceeding. Includes timeout (default 60s) and retry logic. Uses docker inspect to check health status.",
+    "files": [
+      "scripts/lib/wait-for-healthy.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/05-wait-for-healthy.test.sh"
+    ],
+    "depends_on": []
+  },
+  {
+    "number": 6,
+    "title": "Create dev server health check",
+    "description": "Verify Convex (port 3220) and Next.js (port 3210) are responding on correct endpoints. Retries with exponential backoff, 30s timeout.",
+    "files": [
+      "scripts/lib/check-dev-servers.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/06-check-dev-servers.test.sh"
+    ],
+    "depends_on": [1]
+  },
+  {
+    "number": 7,
+    "title": "Create orchestrator connectivity check",
+    "description": "Verify orchestrator proxy is routing correctly. Checks that *.loc domains resolve and HTTP requests succeed (200 OK or expected redirects).",
+    "files": [
+      "scripts/lib/check-orchestrator.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/07-check-orchestrator.test.sh"
+    ],
+    "depends_on": [1]
+  },
+  {
+    "number": 8,
+    "title": "Add RESEND_API_KEY to setup-convex-env.sh",
+    "description": "Ensure Resend API key is set in Convex environment variables. Read from app/.env.nextjs.local and sync to Convex using npx convex env set.",
+    "files": [
+      "scripts/setup-convex-env.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/08-resend-api-key.test.sh"
+    ],
+    "depends_on": [3]
+  },
+  {
+    "number": 9,
+    "title": "Add Convex restart after env changes",
+    "description": "Kill and restart Convex dev tmux session after environment variable sync. Ensures new env vars are loaded by Convex runtime.",
+    "files": [
+      "scripts/setup-convex-env.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/09-convex-restart.test.sh"
+    ],
+    "depends_on": [8]
+  },
+  {
+    "number": 10,
+    "title": "Add mkcert to prerequisites check",
+    "description": "Verify mkcert is installed and accessible via PATH. Add to prerequisite checks alongside Node, Docker, tmux. Provide helpful error message with installation instructions if missing.",
+    "files": [
+      "scripts/agent-init.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/10-mkcert-prereq.test.sh"
+    ],
+    "depends_on": []
+  },
+  {
+    "number": 11,
+    "title": "Create end-to-end smoke test",
+    "description": "Validate entire setup after agent-init completes. Tests: can hit all endpoints (frontend, Convex, Novu), basic auth flow works, no 500 errors.",
+    "files": [
+      "scripts/lib/smoke-test.sh",
+      "tasks/00048-agent-init-overhaul/tests/e2e/11-smoke-test.test.sh"
+    ],
+    "depends_on": [6, 7]
+  },
+  {
+    "number": 12,
+    "title": "Integrate all utilities into agent-init.sh",
+    "description": "Replace current agent-init.sh logic with new utilities from subtasks 1-11. New flow: prereqs → generate env → start Docker → wait healthy → setup Novu → setup Convex → start dev servers → smoke test → show status.",
+    "files": [
+      "scripts/agent-init.sh",
+      "tasks/00048-agent-init-overhaul/tests/e2e/12-full-agent-init.test.sh"
+    ],
+    "depends_on": [4, 5, 6, 7, 9, 10, 11]
+  },
+  {
+    "number": 13,
+    "title": "Add rollback on failure",
+    "description": "If any step fails, restore previous env files from .backup copies. Create backups before generation, restore on any error, clean up backups on success.",
+    "files": [
+      "scripts/agent-init.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/13-rollback.test.sh"
+    ],
+    "depends_on": [12]
+  },
+  {
+    "number": 14,
+    "title": "Add --check mode improvements",
+    "description": "Enhanced status reporting showing all config sources. Compare ports from config.json vs actual env files, show mismatches, verify all required env vars are set.",
+    "files": [
+      "scripts/agent-init.sh",
+      "tasks/00048-agent-init-overhaul/tests/unit/14-check-mode.test.sh"
+    ],
+    "depends_on": [1, 4, 12]
+  },
+  {
+    "number": 15,
+    "title": "Update documentation",
+    "description": "Document new behavior, troubleshooting, and configuration flow. Update CLAUDE.md to reference agent-init.sh, update local-infrastructure.md to explain config.json as source of truth, update troubleshooting.md with new error scenarios.",
+    "files": [
+      "CLAUDE.md",
+      "docs/setup/local-infrastructure.md",
+      "docs/setup/troubleshooting.md",
+      "tasks/00048-agent-init-overhaul/README.md"
+    ],
+    "depends_on": [12, 13, 14]
+  }
+]

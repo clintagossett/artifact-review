@@ -32,3 +32,14 @@ playwright-report/
 .venv/
 __pycache__/
 *.pyc
+
+# Environment files (secrets)
+.env.local
+.env.*.local
+!.env.*.local.example
+
+# Session resume files (root-level is agent-specific, not shared)
+# Task-level SESSION-RESUME.md files ARE tracked (part of task docs)
+/SESSION-RESUME.md
+docs-artifact.zip
+/convex/

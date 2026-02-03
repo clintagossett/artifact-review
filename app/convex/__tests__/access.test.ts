@@ -16,12 +16,28 @@ async function createTestUser(
   email: string
 ): Promise<Id<"users">> {
   return await t.run(async (ctx) => {
-    return await ctx.db.insert("users", {
+    const userId = await ctx.db.insert("users", {
       email,
       name: email.split("@")[0],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
+
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Test Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+
+    return userId;
   });
 }
 
@@ -34,10 +50,18 @@ async function createTestArtifact(
   name: string
 ): Promise<Id<"artifacts">> {
   return await t.run(async (ctx) => {
+    // Resolve Organization
+    const membership: any = await (ctx.db.query("members") as any)
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId as any))
+      .first();
+
+    if (!membership) throw new Error("Test User missing organization");
+
     const now = Date.now();
     const artifactId = await ctx.db.insert("artifacts", {
       name,
       createdBy: userId,
+      organizationId: membership.organizationId,
       shareToken: "test-token-" + Date.now(),
       isDeleted: false,
       createdAt: now,

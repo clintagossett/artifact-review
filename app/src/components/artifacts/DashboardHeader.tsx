@@ -11,11 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useRouter } from "next/navigation";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export interface DashboardHeaderProps {
   onUploadClick: () => void;
   userEmail?: string;
   userName?: string;
+  userId?: string;
 }
 
 /**
@@ -25,8 +28,10 @@ export function DashboardHeader({
   onUploadClick,
   userEmail,
   userName,
+  userId,
 }: DashboardHeaderProps) {
   const { signOut } = useAuthActions();
+  const router = useRouter();
 
   return (
     <header className="border-b bg-white px-4 py-4">
@@ -41,8 +46,16 @@ export function DashboardHeader({
           </span>
         </div>
 
+
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* Notifications */}
+          {userId && (
+            <div className="mr-1">
+              <NotificationCenter subscriberId={userId} />
+            </div>
+          )}
+
           {/* Upload Button */}
           <Button
             size="sm"
@@ -72,7 +85,9 @@ export function DashboardHeader({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => signOut()}>
                 Sign out
               </DropdownMenuItem>
@@ -80,6 +95,6 @@ export function DashboardHeader({
           </DropdownMenu>
         </div>
       </div>
-    </header>
+    </header >
   );
 }

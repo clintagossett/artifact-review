@@ -2,7 +2,13 @@
 
 ## Current Status
 - **Interactive Prototype:** Functional at `/spike/library-test`.
-- **Features:** Text selection, SVG box selection, Context Menu (Highlight, Strike, Comment), Side Panel.
+- **Features:**
+    - **Robust Text Selection:** Powered by `@apache-annotator` (W3C Standard).
+    - **Intent-Based Decorations:** Distinct visual styles for "Comment" (Highlight) and "Cross Out" (Strikethrough).
+    - **Full CRUD Lifecycle:** Create, Read, Update (Edit content), and Delete annotations.
+    - **Responsive Re-anchoring:** Highlights automatically re-position when the window resizes or zooms.
+    - **Relative Path Support:** Handles deeply nested file paths (e.g. `docs/v2/spec.md`) correctly, displaying basenames in the UI with full paths on hover.
+    - **Polished UX:** Context menu for creation, dedicated sidebar for drafting, and support for empty/quick annotations.
 - **Architecture:** Hybrid approach using `@apache-annotator` for text and custom logic for SVGs.
 
 ## Future Requirements & Considerations
@@ -16,8 +22,8 @@
     - Supporting semantic markers: Arrows, logic flows, grouped elements.
 - **Goal:** Provide a data structure that an Agent can read to understand context without needing Vision/OCR.
 
-### 2. Responsive Reactivity
-> "Annotations need to redraw when a page resizes."
-
-- **Problem:** If the SVG or Text container resizes (responsive layout), absolute coordinates might drift if not anchored to relative semantics or re-calculated.
-- **Requirement:** Implement a resize observer or responsive coordinate system (percentages vs pixels) to ensure highlights stay attached to their targets dynamically.
+### 2. Validated Capabilities (Completed)
+- **Responsive Reactivity:** Implemented `ResizeObserver` / Event Listener logic in `SelectionOverlay`. Annotations now track text reflow perfectly.
+- **Visual Distinction:** Clear separation between "Comment" and "Correction" (Strike) intents.
+- **Artifact-Free Rendering:** Implemented robust `TreeWalker` based rendering to isolate visible text nodes, preventing block-level artifacts in lists and formatted text.
+- **State Management:** Robust handling of "Pending" vs "Draft" selections to prevent UI clutter.

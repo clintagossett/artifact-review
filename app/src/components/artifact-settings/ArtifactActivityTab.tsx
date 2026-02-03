@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +11,7 @@ import {
     Users,
     X,
 } from 'lucide-react';
-import { Id } from '../../../convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 
 interface ArtifactActivityTabProps {
     artifactId: Id<"artifacts">;

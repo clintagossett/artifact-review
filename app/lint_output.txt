@@ -1,0 +1,23 @@
+
+> app@0.1.0 lint
+> next lint
+
+
+./src/components/artifact/AccessDeniedMessage.tsx
+21:20  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+25:18  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+25:34  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/artifact/CommentCard.tsx
+310:42  Error: Parsing error: Expression expected.
+
+./src/components/artifact/DocumentViewer.tsx
+635:6  Warning: React Hook useEffect has missing dependencies: 'currentVersionComments', 'handleElementClick', 'handleGlobalClick', 'handleTextSelection', 'historyIndex', and 'navigationHistory'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+910:6  Warning: React Hook useEffect has a missing dependency: 'comments'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+1328:19  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+1343:21  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+1343:108  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+1348:19  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+1348:90  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

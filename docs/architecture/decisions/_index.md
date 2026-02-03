@@ -20,6 +20,14 @@ Record of significant architectural decisions made for this project.
 | [0012](./0012-naming-conventions.md) | Backend Naming Conventions | Accepted | 2025-12-31 |
 | [0013](./0013-comment-character-limits.md) | Comment Character Limits | Accepted | 2026-01-02 |
 | [0014](./0014-pii-safe-relational-tracking.md) | PII-Safe Relational Tracking | Accepted | 2026-01-04 |
+| [0015](./0015-organization-first-architecture.md) | Organization-First Architecture | Accepted | 2026-01-11 |
+| [0016](./0016-agent-api-strategy.md) | Agent API Strategy | Accepted | 2026-01-21 |
+| [0017](./0017-annotation-overlay-rendering.md) | Annotation Overlay Rendering Strategy | Accepted | 2026-01-23 |
+| [0018](./0018-jwt-and-authentication-architecture.md) | JWT and Authentication Architecture | Accepted | 2026-01-27 |
+| [0019](./0019-node-action-storage-fallback.md) | Node Action Storage Access Fallback Pattern | Accepted | 2026-01-28 |
+| [0020](./0020-html-artifact-annotation-strategy.md) | HTML Artifact Annotation Strategy | Accepted | 2026-01-31 |
+| [0021](./0021-async-state-delay-testing.md) | Async State Delay Testing Pattern | Accepted | 2026-01-31 |
+| [0022](./0022-stripe-webhook-multi-deployment-filtering.md) | Stripe Webhook Multi-Deployment Filtering | Accepted | 2026-01-31 |
 
 ---
 

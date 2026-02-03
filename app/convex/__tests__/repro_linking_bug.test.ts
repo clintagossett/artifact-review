@@ -9,20 +9,29 @@ test("reproduce bug: invited user id not linked after signup", async () => {
 
     // 1. Setup: Create Owner and Invitee (Invitee not signed up yet)
     const ownerId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
             name: "Owner",
             email: "owner@example.com",
             createdAt: Date.now(),
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
     });
 
     const inviteeEmail = `e2e-${Date.now()}@tolauante.resend.app`;
 
     // 2. Create Artifact
     const artifactId = await t.run(async (ctx) => {
+
+        // Since we didn't index by userId alone above (wait, createOrgAndMember creates it), we can look it up.
+        // Actually best to look up by user.
+        const mem = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", ownerId)).first();
+
         return await ctx.db.insert("artifacts", {
             name: "Test Artifact",
             createdBy: ownerId,
+            organizationId: mem!.organizationId,
             shareToken: "abc123xy",
             isDeleted: false,
             createdAt: Date.now(),
@@ -53,11 +62,14 @@ test("reproduce bug: invited user id not linked after signup", async () => {
     // 5. Simulate Invitee Signup
     // This is where "linkInvitesToUserInternal" is called by the auth adapter (or manually in our test)
     const inviteeUserId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
             name: "Invitee",
             email: inviteeEmail,
             createdAt: Date.now(),
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Invitee Org", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
     });
 
     // Call the internal mutation that SHOULD link the records

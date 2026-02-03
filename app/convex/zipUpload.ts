@@ -4,6 +4,7 @@ import { v } from "convex/values";
 import { nanoid } from "nanoid";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { validateZipSize } from "./lib/fileTypes";
+import { createLogger, LOG_TOPICS } from "./lib/logger";
 
 /**
  * Create artifact with ZIP file type and generate upload URL
@@ -16,6 +17,7 @@ export const createArtifactWithZip = mutation({
     description: v.optional(v.string()),
     size: v.number(),
     entryPoint: v.optional(v.string()),
+    organizationId: v.optional(v.id("organizations")),
   },
   returns: v.object({
     uploadUrl: v.string(),
@@ -30,6 +32,15 @@ export const createArtifactWithZip = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Resolve Organization
+    let organizationId = args.organizationId;
+    if (!organizationId) {
+      // Default to user's personal/first org
+      const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", userId)).first();
+      if (!member) throw new Error("User has no organization");
+      organizationId = member.organizationId;
+    }
+
     // Validate ZIP size before creating records
     validateZipSize(args.size);
 
@@ -41,6 +52,7 @@ export const createArtifactWithZip = mutation({
       name: args.name,
       description: args.description,
       createdBy: userId,
+      organizationId,
       shareToken,
       isDeleted: false,
       createdAt: now,
@@ -56,6 +68,7 @@ export const createArtifactWithZip = mutation({
       fileType: "zip",
       entryPoint: args.entryPoint || "index.html", // Default, updated after ZIP processing
       size: args.size,
+      status: "uploading", // Task 00049 - Set initial status
       isDeleted: false,
       createdAt: now,
     });
@@ -125,6 +138,7 @@ export const addZipVersion = mutation({
       fileType: "zip",
       entryPoint: "index.html", // Updated after extraction
       size: args.size,
+      status: "uploading", // Task 00049 - Set initial status
       isDeleted: false,
       createdAt: now,
     });
@@ -145,22 +159,42 @@ export const addZipVersion = mutation({
   },
 });
 
+const triggerLog = createLogger("zipUpload.triggerZipProcessing");
+
 /**
  * Trigger ZIP file processing after upload
  * This is step 2 of the ZIP upload flow (called after client uploads ZIP to storage)
+ *
+ * @param _testDelayMs - Optional delay in ms before completing (for visual/async testing)
  */
 export const triggerZipProcessing = action({
   args: {
     versionId: v.id("artifactVersions"),
     storageId: v.id("_storage"),
+    _testDelayMs: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Trigger the ZIP processor to extract and store files
-    await ctx.runAction(internal.zipProcessor.processZipFile, {
+    triggerLog.debug(LOG_TOPICS.Artifact, "Starting ZIP processing", {
       versionId: args.versionId,
       storageId: args.storageId,
+      _testDelayMs: args._testDelayMs,
     });
+
+    try {
+      // Trigger the ZIP processor to extract and store files
+      await ctx.runAction(internal.zipProcessor.processZipFile, {
+        versionId: args.versionId,
+        storageId: args.storageId,
+        _testDelayMs: args._testDelayMs,
+      });
+      triggerLog.debug(LOG_TOPICS.Artifact, "ZIP processing completed successfully");
+    } catch (error) {
+      triggerLog.error(LOG_TOPICS.Artifact, "ZIP processing failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
 
     return null;
   },

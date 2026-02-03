@@ -1,0 +1,374 @@
+export const OPENAPI_SPEC = `openapi: 3.0.0
+info:
+  title: Artifact Review Agent API
+  description: |
+    API for AI Agents to publish artifacts and receive feedback (comments) from human reviewers.
+    Authentication is via API Key.
+  version: 1.0.0
+servers:
+  - url: https://api.artifact.review
+    description: Production Server
+  - url: http://localhost:3211
+    description: Local Development Server
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  /api/v1/artifacts:
+    post:
+      summary: Publish a new artifact
+      description: Create a new artifact (web page or document) visible to reviewers.
+      operationId: createArtifact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - fileType
+                - content
+              properties:
+                name:
+                  type: string
+                  example: "Landing Page V1"
+                  description: Title of the artifact.
+                description:
+                  type: string
+                  example: "Initial draft of the marketing landing page."
+                fileType:
+                  type: string
+                  enum: [html, markdown]
+                  example: "html"
+                content:
+                  type: string
+                  description: The raw string content of the artifact (HTML or Markdown).
+                  example: "<h1>Hello World</h1>"
+                organizationId:
+                  type: string
+                  description: Optional ID of the organization to attribute this artifact to.
+      responses:
+        '201':
+          description: Artifact created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Internal ID of the artifact.
+                  shareToken:
+                    type: string
+                    description: The public token used in the share URL.
+                  latestVersionId:
+                    type: string
+                    description: ID of the created version.
+                  shareUrl:
+                    type: string
+                    description: Full URL to view the artifact.
+        '401':
+          description: Unauthorized (Invalid or missing API Key)
+        '400':
+          description: Invalid Request (Missing fields or bad JSON)
+
+  /api/v1/artifacts/{shareToken}/comments:
+    get:
+      summary: Get comments for an artifact
+      description: Retrieve all feedback comments posted by users on the latest version of the specified artifact.
+      operationId: getArtifactComments
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+          description: The share token of the artifact.
+        - in: query
+          name: version
+          schema:
+            type: string
+            example: "v1"
+          required: false
+          description: Optional version number (e.g. v1, v2). Defaults to latest.
+      responses:
+        '200':
+          description: List of comments with rich annotation data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    description: The version of the artifact these comments belong to (e.g. "v1").
+                  comments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Unique ID of the comment.
+                        content:
+                          type: string
+                        author:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            avatar:
+                              type: string
+                        resolved:
+                          type: boolean
+                        createdAt:
+                          type: number
+                        target:
+                          type: object
+                          description: W3C Annotation Target
+                          properties:
+                            source:
+                              type: string
+                            selector:
+                              type: object
+                              properties:
+                                type: 
+                                  type: string
+                                  enum: [TextQuoteSelector, SVGSelector]
+                                exact:
+                                  type: string
+                                prefix:
+                                  type: string
+                                suffix:
+                                  type: string
+                        replies:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              content:
+                                type: string
+                              author:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                              createdAt:
+                                type: number
+        '401':
+          description: Unauthorized
+        '404':
+          description: Artifact not found
+
+    post:
+      summary: Create a new annotation comment
+      description: Post a comment on the artifact, optionally targeting specific text.
+      operationId: createArtifactComment
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: version
+          schema:
+            type: string
+            example: "v1"
+          required: false
+          description: Optional version number (e.g. v1, v2). Defaults to latest.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+                - target
+              properties:
+                content:
+                  type: string
+                target:
+                  type: object
+                  description: W3C Annotation Target
+                  required:
+                    - source
+                    - selector
+                  properties:
+                    source:
+                      type: string
+                      example: "index.html"
+                    selector:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [TextQuoteSelector]
+                        exact:
+                          type: string
+                        prefix:
+                          type: string
+                        suffix:
+                          type: string
+      responses:
+        '201':
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+
+  /api/v1/comments/{commentId}/replies:
+    post:
+      summary: Reply to a comment
+      description: Add a reply to an existing comment thread.
+      operationId: createCommentReply
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Reply created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        '404':
+          description: Parent comment not found
+
+  /api/v1/comments/{commentId}:
+    patch:
+      summary: Update comment
+      description: Update comment content or status (resolved/unresolved).
+      operationId: updateComment
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  description: New text content for the comment.
+                resolved:
+                  type: boolean
+                  description: Set to true to resolve, false to unresolve.
+      responses:
+        '200':
+          description: Updated successfully
+        '403':
+          description: Unauthorized (Not your comment)
+        '404':
+          description: Comment not found
+
+    delete:
+      summary: Delete comment
+      description: Soft delete a comment and its replies.
+      operationId: deleteComment
+      parameters:
+        - in: path
+          name: commentId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Deleted successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Comment not found
+
+  /api/v1/replies/{replyId}:
+    patch:
+      summary: Update reply
+      description: Update reply content.
+      operationId: updateReply
+      parameters:
+        - in: path
+          name: replyId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Updated successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Reply not found
+
+    delete:
+      summary: Delete reply
+      description: Soft delete a reply.
+      operationId: deleteReply
+      parameters:
+        - in: path
+          name: replyId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Deleted successfully
+        '403':
+          description: Unauthorized
+        '404':
+          description: Reply not found
+`;

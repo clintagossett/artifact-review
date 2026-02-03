@@ -3,10 +3,24 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
+// Track auth state for testing
+let mockIsAuthenticated = false;
+
 // Mock the auth actions
 vi.mock("@convex-dev/auth/react", () => ({
   useAuthActions: () => ({
-    signIn: vi.fn().mockResolvedValue(undefined),
+    signIn: vi.fn().mockImplementation(async () => {
+      // Simulate auth state changing after successful signup
+      mockIsAuthenticated = true;
+    }),
+  }),
+}));
+
+// Mock convex/react for useConvexAuth
+vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({
+    isLoading: false,
+    isAuthenticated: mockIsAuthenticated,
   }),
 }));
 
@@ -15,6 +29,7 @@ describe("RegisterForm", () => {
 
   beforeEach(() => {
     mockOnSuccess.mockClear();
+    mockIsAuthenticated = false; // Reset auth state before each test
   });
 
   describe("Visual Elements", () => {
@@ -41,7 +56,7 @@ describe("RegisterForm", () => {
     it("should display AuthMethodToggle", () => {
       render(<RegisterForm onSuccess={mockOnSuccess} />);
 
-      expect(screen.getByRole("button", { name: /password/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^password$/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /magic link/i })).toBeInTheDocument();
     });
 
@@ -282,10 +297,12 @@ describe("RegisterForm", () => {
       await user.type(screen.getByLabelText(/email/i), "test@example.com");
       await user.click(screen.getByRole("button", { name: /send magic link/i }));
 
-      // Verify form submitted successfully
+      // Should show success message instead of calling onSuccess
+      // (user is not authenticated yet - they need to click email link)
       await waitFor(() => {
-        expect(mockOnSuccess).toHaveBeenCalled();
+        expect(screen.getByText(/check your email/i)).toBeInTheDocument();
       });
+      expect(mockOnSuccess).not.toHaveBeenCalled();
     });
 
     it("should show loading state while submitting", async () => {
@@ -321,7 +338,7 @@ describe("RegisterForm", () => {
 
       // Tab through form elements
       await user.tab();
-      expect(screen.getByRole("button", { name: /password/i })).toHaveFocus();
+      expect(screen.getByRole("button", { name: /^password$/i })).toHaveFocus();
 
       await user.tab();
       expect(screen.getByRole("button", { name: /magic link/i })).toHaveFocus();

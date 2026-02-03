@@ -53,7 +53,7 @@ export default function TestHtmlPage() {
     return (
         <InteractiveArtifactViewer
             title="Complex HTML Test"
-            fileName="spec-draft-v2.html"
+            fileName="docs/specs/v2/spec-draft-v2.html"
             textContent={<div dangerouslySetInnerHTML={{ __html: TEST_HTML }} />}
         />
     );

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArtifactCard } from "./ArtifactCard";
 import { Plus } from "lucide-react";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export interface ArtifactListProps {
   title?: string;
@@ -12,7 +12,7 @@ export interface ArtifactListProps {
     description?: string;
     shareToken: string;
     createdAt: number;
-    updatedAt: number;
+    updatedAt?: number;
   }>;
   versionsMap: Record<
     string,
@@ -23,6 +23,7 @@ export interface ArtifactListProps {
   >;
   onArtifactClick: (id: Id<"artifacts">) => void;
   onNewArtifact?: () => void;
+  isLoading?: boolean;
 }
 
 /**
@@ -35,14 +36,15 @@ export function ArtifactList({
   versionsMap,
   onArtifactClick,
   onNewArtifact,
+  isLoading = false,
 }: ArtifactListProps) {
   // Sort by updatedAt, newest first
   const sortedArtifacts = [...artifacts].sort(
-    (a, b) => b.updatedAt - a.updatedAt
+    (a, b) => (b.updatedAt ?? b.createdAt) - (a.updatedAt ?? a.createdAt)
   );
 
   return (
-    <div>
+    <div className={isLoading ? "opacity-60 pointer-events-none" : ""}>
       {/* Section Header */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">{title}</h2>

@@ -8,18 +8,52 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 ---
 
-## Table of Contents
+## Phased Rollout Strategy
 
-1. [Pricing Philosophy](#pricing-philosophy)
-2. [Competitive Pricing Analysis](#competitive-pricing-analysis)
-3. [Recommended Pricing Tiers](#recommended-pricing-tiers)
-4. [Feature Packaging](#feature-packaging)
-5. [Team & Enterprise Guidance](#team--enterprise-guidance)
-6. [Pricing Psychology & Positioning](#pricing-psychology--positioning)
-7. [Revenue Projections](#revenue-projections)
-8. [Open Questions & Next Steps](#open-questions--next-steps)
+We will deliver value in 4 distinct phases to minimize "wasteful" engineering on complex gates (like time-based expiry) and focus on the core value loop first.
+
+### Phase 1: MVP Launch (Lean Free & Pro)
+**Goal:** Prove the core loop (Upload → Review -> Comment) for individual users.
+**Why:** Avoid building complex "limit enforcement" (time-based expiry, read-only states) that offers zero user value.
+- **Scope:** Single User + Shareable Links + **Agent API**.
+- **Controls:** Simple "3 Document Limit". Login required to comment (No anonymous).
+- **Monetization:** Pro Plan ($12/mo) for unlimited docs + Agent API access.
+
+### Phase 2: Teams Introduction
+**Goal:** Enable organizations to collaborate.
+**Why:** Team management, billing seats, and shared workspaces are high-effort engineering tasks.
+- **Scope:** Shared Workspaces, Team Billing, "My Team" view, **GitHub Integration** (Sync on Commit).
+
+### Phase 3: Expanded Functionality
+**Goal:** Deepen the moat with integrations and "Pro" power features.
+- **Scope:** Slack/Linear integrations, **Desktop Agent Integrations** (Claude Desktop via MCP, ChatGPT Desktop), Advanced Analytics.
+
+### Phase 4: Enterprise
+**Goal:** Unlock high-ACV deals with security and control.
+- **Scope:** SSO, SOC 2, Audit Logs, Data Residency.
 
 ---
+
+### MVP Feature Matrix: Above vs. Below the Line
+
+| Feature | Phase 1 (MVP) | Status |
+| :--- | :--- | :--- |
+| **HTML Upload & Render** | ✅ **Above the Line** | Core Value |
+| **Shareable Public Links** | ✅ **Above the Line** | Core Value (View Only) |
+| **Agent API (Read/Write)** | ✅ **Above the Line** | **Critical Differentiator** |
+| **3 Document Limit (Free)** | ✅ **Above the Line** | Simple Gate |
+| **Unlimited Docs (Pro)** | ✅ **Above the Line** | Simple Gate |
+| **Auth-Only Commenting** | ✅ **Above the Line** | Simpler Trust Model |
+| **Stripe Checkout (Self-Serve)** | ✅ **Above the Line** | Revenue |
+| **Anonymous Commenting** | 🔻 **Below the Line** | Defer (Spam risk) |
+| **7-Day Review Limit** | 🔻 **Below the Line** | **Waste** (Complex to build) |
+| **Read-Only Mode** | 🔻 **Below the Line** | **Waste** (Complex state) |
+| **Team Workspaces** | 🔻 **Below the Line** | Phase 2 |
+| **Slack Integration** | 🔻 **Below the Line** | Phase 3 |
+| **SAML / SSO** | 🔻 **Below the Line** | Phase 4 |
+
+---
+
 
 ## Pricing Philosophy
 
@@ -28,18 +62,25 @@ This document memorializes pricing and packaging decisions for the Collaborative
 1. **Creators Pay, Reviewers Don't**
    - Only document creators (uploaders) need paid plans
    - Reviewers can comment for free (unlimited)
-   - Removes friction for stakeholder collaboration
+3. **AI-Agent Collaboration Loop (Premium Feature)**
+   - **Critical Problem:** Business users can't "pull from Git" to see what an Agent built.
+   - **Solution:** Agents use our API to upload/version artifacts directly.
+   - **Value:** "review-ready" URLs instantly, without touching a repo.
+   - Our DOM extraction technology is unique (vs pixels/screenshots) for Agents reading feedback.
+   - Justifies the $12 price point for developers using AI tools.
 
-2. **Value-Based Pricing**
-   - Price anchored to time saved vs. manual conversion
-   - Positioned as productivity tool, not commodity
-   - Comparable to other PM/collaboration tools in stack
+4. **Strategic Pivot: Ad-Hoc over Git-Sync**
+   - **Target Audience:** Business users & Agents (not just Developers).
+   - **Core Loop:** Agent Generates -> Agent Uploads (via API) -> Human Reviews -> Agent Reads Feedback.
+   - We consciously avoid competing with Netlify/Vercel on "Git Hosting".
+   - We focus on "Drag & Drop" and "API Upload" (Task #34).
+   - We win on simplicity for non-repo artifacts.
 
-3. **Usage-Based Limits (Free Tier)**
-   - Document count limits (not storage)
-   - Version limits per document
-   - Time-based review periods
-   - Designed to encourage upgrade after proving value
+4. **Simple Limits First (MVP)**
+   - **Document count limits only** (Hard cap: 3 docs).
+   - **No time-based expiry** (Avoids building complex background jobs/cron).
+   - **No "Read-Only" states** (Avoids complex UI states).
+   - Focus on "Upload -> Hit Limit -> Upgrade".
 
 4. **Freemium → Individual → Team**
    - Free tier for trial and light users
@@ -58,10 +99,16 @@ This document memorializes pricing and packaging decisions for the Collaborative
 | **Figma** | Yes (3 files/team) | $12/editor/mo | $45/editor/mo | Custom |
 | **Linear** | No | $8/user/mo | - | Custom |
 | **Slack** | Yes (90 days history) | $7.25/user/mo | $15/user/mo | Custom |
+| **Markup.io** | ❌ (Free removed) | $79/mo | Custom | Major opportunity for us at $12. |
+| **Netlify Review** | Unlimited (Drawer) | Free with seat | $19/user/mo | Benchmark for "Free Reviewer" model. |
+| **Pastel** | 3 days (Free) | $24/mo | $83/mo | Benchmark for "No Login" friction. |
 | **Adobe Acrobat Teams** | Reader only | $15-20/user/mo | $24/user/mo | Custom |
 | **Filestage** | Yes | $6/user/mo | $17.50/user/mo | Custom |
 | **Dropbox Paper** | Yes | - | $12.50/user/mo | - |
 | **Google Workspace** | Personal only | - | $12/user/mo | $18+/user/mo |
+
+> [!NOTE]
+> For a detailed 2026 pricing benchmark analysis, including the Markup.io shift and Git-Sync competitors, see [Pricing Landscape Analysis](../market-intelligence/pricing-landscape.md).
 
 ### Pricing Insights
 
@@ -85,31 +132,10 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 ## Recommended Pricing Tiers
 
-### Tier 1: Free (Individual Use)
-
-**Price:** $0
-
-**Target User:** Individual PMs trying the platform, light users, reviewers
-
-**Limits:**
-- **3 documents** total (active)
-- **3 versions** per document
-- **7-day review period** per document (then read-only)
-- **5 reviewers** per document
-- Basic commenting (no advanced features)
-
-**Included Features:**
-- HTML upload and rendering
-- Shareable links (public or private)
-- Inline commenting (basic)
-- Email notifications
-- Mobile-responsive viewing
-
 **Upgrade Triggers:**
+**Upgrade Triggers (MVP):**
 - 4th document upload → Blocked, upgrade modal
-- 4th version upload → Blocked, upgrade modal
-- Day 6 of review period → Warning banner
-- Day 7 of review period → Document becomes read-only
+- *Removed for MVP: Time-based review periods (Wasteful engineering)*
 
 **Revenue Impact:** None (acquisition funnel)
 
@@ -124,8 +150,9 @@ This document memorializes pricing and packaging decisions for the Collaborative
 **Limits Removed:**
 - **Unlimited documents**
 - **Unlimited versions** per document
-- **Unlimited review period** (docs never expire)
+- **Unlimited review period** (Intrinsic to Pro, but also Free in MVP)
 - **Unlimited reviewers** per document
+- **AI-Agent Exports:** Download comments as JSON with DOM Selectors (Human-to-Agent Translation).
 
 **Additional Features:**
 - **Version history** with diff view
@@ -137,6 +164,7 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 **Value Proposition:**
 - "Save 2+ hours per week vs. manual Google Docs conversion" ($10/mo = $2.50/hr saved)
+- "Enable your AI Agents to get human feedback without you playing 'Git Middleman'."
 - "Professional sharing for stakeholders—no watermarks, no limits"
 
 **Upgrade from Free:** Self-service checkout, instant activation
@@ -145,7 +173,7 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 ---
 
-### Tier 3: Team (Collaborative Workflow)
+### Tier 3: Team (Collaborative Workflow) - **[PHASE 2]**
 
 **Price:** **$18/user/month** (billed monthly) or **$15/user/month** (billed annually - save $36/user/year)
 
@@ -188,7 +216,7 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 ---
 
-### Tier 4: Enterprise (Custom)
+### Tier 4: Enterprise (Custom) - **[PHASE 4]**
 
 **Price:** Custom (starts ~$25-30/user/month, volume discounts)
 
@@ -239,31 +267,14 @@ This document memorializes pricing and packaging decisions for the Collaborative
 
 ### Feature Comparison Matrix
 
-| Feature | Free | Pro | Team | Enterprise |
-|---------|------|-----|------|------------|
-| **Documents** | 3 | Unlimited | Unlimited | Unlimited |
-| **Versions per doc** | 3 | Unlimited | Unlimited | Unlimited |
-| **Review period** | 7 days | Unlimited | Unlimited | Unlimited |
-| **Reviewers per doc** | 5 | Unlimited | Unlimited | Unlimited |
-| **HTML upload & render** | ✓ | ✓ | ✓ | ✓ |
-| **Shareable links** | ✓ | ✓ | ✓ | ✓ |
-| **Inline commenting** | Basic | Advanced | Advanced | Advanced |
-| **Version history** | ✗ | ✓ | ✓ | ✓ |
-| **Custom branding** | ✗ | ✓ | ✓ | ✓ |
-| **Export with comments** | ✗ | ✓ | ✓ | ✓ |
-| **Analytics** | ✗ | Basic | Advanced | Custom |
-| **Team workspace** | ✗ | ✗ | ✓ | ✓ |
-| **Team folders** | ✗ | ✗ | ✓ | ✓ |
-| **Approval workflow** | ✗ | ✗ | ✓ | ✓ |
-| **Due dates & reminders** | ✗ | ✗ | ✓ | ✓ |
-| **SSO** | ✗ | ✗ | Google/MS | SAML/Custom |
-| **Audit logs** | ✗ | ✗ | 30 days | Unlimited |
-| **Slack integration** | ✗ | ✗ | ✓ | ✓ |
-| **MCP integration** | ✗ | Early access | Priority | Custom |
-| **API access** | ✗ | ✗ | ✗ | ✓ |
-| **Support** | Community | Email (24h) | Email+Chat (12h) | 24/7 (4h) |
-| **SOC 2 compliance** | ✗ | ✗ | ✗ | ✓ |
-| **Custom contracts** | ✗ | ✗ | ✗ | ✓ |
+| Feature | Free | Pro ($12) | Team ($18/user) | Enterprise |
+|---------|------|-----------|-----------------|------------|
+| **Core Limits** | 3 Docs, Unlimited Versions | Unlimited | Unlimited | Unlimited |
+| **Reviewers** | Unlimited | Unlimited | Unlimited | Unlimited |
+| **Agent API** | Read-Only | **Read + Write** | Read + Write | Custom Limits |
+| **Access Control** | Public Links | Public Links | **Team Workspace** | **SSO / SAML** |
+| **Integrations** | None | MCP / Desktop | Slack / Linear / **GitHub** | Custom / API |
+| **Support** | Community | Email (24h) | Priority (12h) | Dedicated (4h) |
 
 ---
 
@@ -517,7 +528,7 @@ Trigger 3: Sales cycle signals:
 |----------|------|--------|-------|
 | Pro plan: $12/mo (monthly), $10/mo (annual) | 2024-12-24 | **Proposed** | Aligns with Figma ($12), between Notion ($8) and Adobe ($15-20) |
 | Team plan: $18/mo (monthly), $15/mo (annual) | 2024-12-24 | **Proposed** | Matches Slack Business+ ($15), Notion Business ($15) |
-| Free tier: 3 docs, 3 versions, 7-day review | 2024-12-24 | **Proposed** | Generous enough to prove value, restrictive enough to drive upgrades |
+| Free tier: 3 docs, unlimited versions, 7-day review | 2024-12-24 | **Proposed** | Generous enough to prove value, restrictive enough to drive upgrades |
 | Reviewers always free | 2024-12-24 | **Accepted** | Critical for viral growth and stakeholder access |
 | Team minimum: 3 seats | 2024-12-24 | **Proposed** | Industry standard, encourages team adoption |
 | MCP integration: Pro+ feature | 2024-12-24 | **Proposed** | Drives Pro conversions, differentiates from Free |

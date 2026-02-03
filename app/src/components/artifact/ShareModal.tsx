@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -21,7 +21,7 @@ import { PermissionsInfoBox } from "./share/PermissionsInfoBox";
 interface Reviewer {
   _id: string;
   email: string;
-  status: "pending" | "accepted";
+  status: "pending" | "added" | "viewed";
   invitedAt: number;
   user?: {
     name?: string;
@@ -54,12 +54,12 @@ export function ShareModal({ isOpen, onClose, artifact, initialReviewers }: Shar
   // Map access.listReviewers response to expected Reviewer shape
   const reviewers = backendReviewers
     ? backendReviewers.map((access) => ({
-        _id: access.accessId,
-        email: access.email,
-        status: access.status,
-        invitedAt: access.lastSentAt, // Use lastSentAt as closest to invitedAt
-        user: { name: access.displayName !== access.email ? access.displayName : undefined },
-      }))
+      _id: access.accessId,
+      email: access.email,
+      status: access.status,
+      invitedAt: access.lastSentAt, // Use lastSentAt as closest to invitedAt
+      user: { name: access.displayName !== access.email ? access.displayName : undefined },
+    }))
     : initialReviewers ?? [];
 
   // Mutations

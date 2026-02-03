@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
+import { api } from '@/convex/_generated/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -300,6 +300,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
                         size="sm"
                         onClick={() => openRevokeDialog(reviewer.accessId)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        aria-label="Revoke access"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -316,7 +317,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
           <>
             <div className="px-6 pt-6 pb-3 border-t border-gray-200">
               <h4 className="font-medium text-gray-900">Pending Invitations ({pendingInvitations.length})</h4>
-              <p className="text-sm text-gray-600 mt-1">These people haven't accepted their invitation yet</p>
+              <p className="text-sm text-gray-600 mt-1">{"These people haven't accepted their invitation yet"}</p>
             </div>
             <div className="divide-y divide-gray-200">
               {pendingInvitations.map((reviewer) => {
@@ -368,6 +369,7 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
                         size="sm"
                         onClick={() => openRevokeDialog(reviewer.accessId)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        aria-label="Revoke access"
                       >
                         Revoke
                       </Button>

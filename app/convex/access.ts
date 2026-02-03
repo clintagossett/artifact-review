@@ -9,7 +9,7 @@ import {
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
-import { resend as resendClient } from "./lib/resend";
+import { sendEmail } from "./lib/email";
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -535,11 +535,14 @@ export const listShared = query({
       .collect();
 
     // Enrich with artifact data
-    const shared = await Promise.all(
+    const sharedWithNulls = await Promise.all(
       accessRecords.map(async (access) => {
         const artifact = await ctx.db.get(access.artifactId);
         if (!artifact) {
-          throw new Error("Artifact not found for access record");
+          // Artifact might have been deleted but access record remains
+          // In a real app we might want to clean this up, but for query safety
+          // we just skip it
+          return null;
         }
 
         return {
@@ -559,6 +562,8 @@ export const listShared = query({
         };
       })
     );
+
+    const shared = sharedWithNulls.filter((item) => item !== null);
 
     return shared;
   },
@@ -866,7 +871,7 @@ function renderInvitationEmail(params: {
   recipientEmail: string;
 }): string {
   const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://app.artifactreview-early.xyz";
+    process.env.SITE_URL || "https://app.artifactreview-early.xyz";
   const artifactUrl = `${appUrl}/a/${params.shareToken}`;
 
   return `
@@ -942,15 +947,11 @@ export const sendEmailInternal = internalAction({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Skip or redirect if testing
+    // Skip if explicitly disabled
     if (process.env.SKIP_EMAILS === "true") {
       console.log("Skipping email send (SKIP_EMAILS=true)");
       return null;
     }
-
-    // In test mode (or when explicitly requested), divert to safe address
-    // This allows testing the full flow including Resend API call
-    const isTestMode = process.env.RESEND_TEST_MODE === "true";
 
     // Get access record
     const access = await ctx.runQuery(internal.access.getAccessById, {
@@ -1007,10 +1008,10 @@ export const sendEmailInternal = internalAction({
     // Send email
     try {
       const fromEmail =
-        process.env.NOTIFICATION_FROM_EMAIL ||
+        process.env.EMAIL_FROM_NOTIFICATIONS ||
         "notifications@artifactreview-early.xyz";
 
-      await resendClient.sendEmail(ctx, {
+      await sendEmail(ctx, {
         from: fromEmail,
         to: recipientEmail,
         subject: `You've been invited to review "${artifact.name}"`,

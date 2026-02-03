@@ -12,6 +12,22 @@ import { api, internal } from "../_generated/api";
 import schema from "../schema";
 import { Id } from "../_generated/dataModel";
 
+async function createOrgAndMember(ctx: any, userId: Id<"users">) {
+  const orgId = await ctx.db.insert("organizations", {
+    name: "Test Org",
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  await ctx.db.insert("members", {
+    userId,
+    organizationId: orgId,
+    roles: ["owner"],
+    createdAt: Date.now(),
+    createdBy: userId,
+  });
+  return orgId;
+}
+
 describe("Read Permission Helpers", () => {
   describe("getArtifactPermission", () => {
     it("should return 'owner' for artifact creator", async () => {
@@ -29,10 +45,12 @@ describe("Read Permission Helpers", () => {
 
       // Create artifact
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         const shareToken = "test123";
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken,
           isDeleted: false,
           createdAt: Date.now(),
@@ -77,9 +95,12 @@ describe("Read Permission Helpers", () => {
 
       // Create artifact
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
+        await createOrgAndMember(ctx, reviewerId); // Give reviewer an org too
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "test456",
           isDeleted: false,
           createdAt: Date.now(),
@@ -127,9 +148,11 @@ describe("Read Permission Helpers", () => {
 
       // Create artifact
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "public789",
           isDeleted: false,
           createdAt: Date.now(),
@@ -164,9 +187,11 @@ describe("Read Permission Helpers", () => {
 
       // Create deleted artifact
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
         return await ctx.db.insert("artifacts", {
           name: "Deleted Artifact",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "deleted123",
           isDeleted: true,
           deletedAt: Date.now(),
@@ -216,9 +241,11 @@ describe("Read Permission Helpers", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -249,9 +276,11 @@ describe("Read Permission Helpers", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "public123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -282,9 +311,11 @@ describe("Read Permission Helpers", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, ownerId);
         return await ctx.db.insert("artifacts", {
           name: "Deleted Artifact",
           createdBy: ownerId,
+          organizationId: orgId,
           shareToken: "deleted123",
           isDeleted: true,
           deletedAt: Date.now(),
@@ -318,9 +349,11 @@ describe("Read Permission Helpers", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -364,9 +397,11 @@ describe("Read Permission Helpers", () => {
       });
 
       const artifactId = await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken: "test123",
           isDeleted: false,
           createdAt: Date.now(),
@@ -413,10 +448,13 @@ describe("Read Permission Helpers", () => {
       });
 
       const shareToken = "validToken123";
+      // Create artifact with valid token and org
       await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Test Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken,
           isDeleted: false,
           createdAt: Date.now(),
@@ -450,9 +488,11 @@ describe("Read Permission Helpers", () => {
 
       const shareToken = "deletedToken";
       await t.run(async (ctx) => {
+        const orgId = await createOrgAndMember(ctx, userId);
         return await ctx.db.insert("artifacts", {
           name: "Deleted Artifact",
           createdBy: userId,
+          organizationId: orgId,
           shareToken,
           isDeleted: true,
           deletedAt: Date.now(),

@@ -10,6 +10,7 @@ const globalManager = new AnnotationManager();
 
 export function useSelectionLayer(options?: {
     onSelectionCreate?: (selector: W3CSelector, domRect?: DOMRect) => void;
+    onSelectionCancel?: () => void;
 }) {
     // Use a ref to keep track of the manager (singleton or instantiated)
     const managerStr = useRef(globalManager);
@@ -41,6 +42,8 @@ export function useSelectionLayer(options?: {
         const unsub = managerStr.current.subscribe((event: SelectionEvent) => {
             if (event.type === "selection:create" && event.payload && options?.onSelectionCreate) {
                 options.onSelectionCreate(event.payload, event.domRect);
+            } else if (event.type === "selection:cancel" && options?.onSelectionCancel) {
+                options.onSelectionCancel();
             }
         });
 

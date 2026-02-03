@@ -1,9 +1,8 @@
-import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
-import { Doc, Id } from "./_generated/dataModel";
-
-const VIEW_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
+import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server"; // Re-added
+import { Doc, Id } from "./_generated/dataModel";      // Re-added
+import { TRACKING_CONFIG } from "./shared";
 
 /**
  * Record a new view for an artifact version.
@@ -29,7 +28,7 @@ export const record = mutation({
             )
             .unique();
 
-        const isNewSession = !existingStats || (now - existingStats.lastViewedAt) > VIEW_DEBOUNCE_MS;
+        const isNewSession = !existingStats || (now - existingStats.lastViewedAt) > TRACKING_CONFIG.VIEW_DEBOUNCE_MS;
 
         if (isNewSession) {
             // TIER 3: Ledger - Log the granular view record

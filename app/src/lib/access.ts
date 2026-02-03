@@ -2,7 +2,7 @@
  * Access control utilities for frontend
  */
 
-import type { Doc } from "../../../convex/_generated/dataModel";
+import type { Doc } from "@/convex/_generated/dataModel";
 
 /**
  * Derive reviewer status from access record

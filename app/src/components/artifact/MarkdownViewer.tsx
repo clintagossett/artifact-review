@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -20,9 +21,11 @@ export interface MarkdownViewerProps {
   isLoading?: boolean;
   /** Optional CSS class for container */
   className?: string;
+  /** Callback for intercepting link clicks */
+  onLinkClick?: (href: string) => void;
 }
 
-export function MarkdownViewer({ src, isLoading = false, className }: MarkdownViewerProps) {
+export function MarkdownViewer({ src, isLoading = false, className, onLinkClick }: MarkdownViewerProps) {
   const [content, setContent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(!isLoading);
@@ -48,6 +51,8 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
 
         const text = await response.text();
         setContent(text);
+
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load markdown content');
       } finally {
@@ -57,6 +62,19 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
 
     fetchContent();
   }, [src, isLoading]);
+
+  // Handle scrolling to anchor
+  useEffect(() => {
+    if (!loading && window.location.hash) {
+      const id = window.location.hash.substring(1);
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, [loading, content]);
 
   // Show loading skeleton
   if (loading || isLoading) {
@@ -101,7 +119,32 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSlug]}
         components={{
+          a({ node, className, children, href, ...props }) {
+            // Handle relative links
+            if (href && !href.startsWith('http') && !href.startsWith('mailto:') && !href.startsWith('tel:') && onLinkClick) {
+              return (
+                <a
+                  href={href}
+                  className={className}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onLinkClick(href);
+                  }}
+                  {...props}
+                >
+                  {children}
+                </a>
+              );
+            }
+
+            return (
+              <a href={href} className={className} target="_blank" rel="noopener noreferrer" {...props}>
+                {children}
+              </a>
+            );
+          },
           code({ node, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const lang = match ? match[1] : '';
@@ -115,7 +158,7 @@ export function MarkdownViewer({ src, isLoading = false, className }: MarkdownVi
                 {children}
               </code>
             );
-          }
+          },
         }}
       >
         {content}

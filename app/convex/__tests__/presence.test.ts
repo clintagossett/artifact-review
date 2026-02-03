@@ -4,25 +4,48 @@ import { api } from "../_generated/api";
 import schema from "../schema";
 import { Id } from "../_generated/dataModel";
 
-// Constants matching presence.ts
-const PRESENCE_SLA_MS = 45000;
+// Constants matching presence.ts (PRESENCE_TTL_MS is 150000ms = 2.5 mins)
+const PRESENCE_SLA_MS = 150000;
 
 async function createTestUser(t: any, email: string) {
     return await t.run(async (ctx: any) => {
-        return await ctx.db.insert("users", {
+        const userId = await ctx.db.insert("users", {
             email,
             name: email.split("@")[0],
             createdAt: Date.now(),
             updatedAt: Date.now(),
         });
+
+        const orgId = await ctx.db.insert("organizations", {
+            name: "Test Org",
+            createdAt: Date.now(),
+            createdBy: userId,
+        });
+
+        await ctx.db.insert("members", {
+            userId,
+            organizationId: orgId,
+            roles: ["owner"],
+            createdAt: Date.now(),
+            createdBy: userId,
+        });
+
+        return userId;
     });
 }
 
 async function createTestArtifact(t: any, userId: Id<"users">) {
     return await t.run(async (ctx: any) => {
+        const membership = await ctx.db.query("members")
+            .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+            .first();
+
+        if (!membership) throw new Error("Test User missing organization");
+
         return await ctx.db.insert("artifacts", {
             name: "Test Artifact",
             createdBy: userId,
+            organizationId: membership.organizationId,
             shareToken: "token-" + Date.now(),
             isDeleted: false,
             createdAt: Date.now(),

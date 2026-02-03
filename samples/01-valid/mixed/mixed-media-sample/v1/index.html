@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex HTML Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; background: #f0fdf4; }
+        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); margin-bottom: 1rem; }
+        h1 { color: #166534; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .metric { font-size: 2rem; font-weight: bold; color: #15803d; }
+    </style>
+</head>
+<body>
+    <h1>Executive Dashboard</h1>
+    <div class="grid">
+        <div class="card">
+            <h3>Revenue</h3>
+            <div class="metric">$124,500</div>
+        </div>
+        <div class="card">
+            <h3>Active Users</h3>
+            <div class="metric">1,234</div>
+        </div>
+        <div class="card">
+            <h3>Conversion Rate</h3>
+            <div class="metric">4.5%</div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>Performance Chart</h3>
+        <p><em>(Placeholder for Chart.js or D3 visualization)</em></p>
+        <div style="width: 100%; height: 200px; background: #dccf; display: flex; align-items: center; justify-content: center;">
+            Chart Area
+        </div>
+    </div>
+</body>
+</html>

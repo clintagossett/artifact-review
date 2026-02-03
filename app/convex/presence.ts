@@ -1,10 +1,8 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
-
-const PRESENCE_HEARTBEAT_MS = 30000; // 30 seconds
-const PRESENCE_SLA_MS = 45000; // 45 seconds (grace period)
+import { TRACKING_CONFIG } from "./shared";
 
 /**
  * Update user presence for an artifact version
@@ -65,7 +63,7 @@ export const list = query({
         })
     ),
     handler: async (ctx, args) => {
-        const cutoff = Date.now() - PRESENCE_SLA_MS;
+        const cutoff = Date.now() - TRACKING_CONFIG.PRESENCE_TTL_MS;
 
         const activePresence = await ctx.db
             .query("presence")
@@ -89,3 +87,28 @@ export const list = query({
         return enriched;
     },
 });
+
+/**
+ * Cleanup old presence records
+ */
+export const cleanup = internalMutation({
+    args: {},
+    handler: async (ctx) => {
+        const cutoff = Date.now() - TRACKING_CONFIG.PRESENCE_DATA_RETENTION_MS;
+
+        // Note: For large tables, we'd want an index on "lastSeenAt".
+        // With Upsert mechanics keeping this near 1-row-per-active-user,
+        // a full table scan is acceptable for now.
+        const oldRecords = await ctx.db
+            .query("presence")
+            .filter((q) => q.lt(q.field("lastSeenAt"), cutoff))
+            .collect();
+
+        for (const record of oldRecords) {
+            await ctx.db.delete(record._id);
+        }
+
+        console.log(`Presence Cleanup: Deleted ${oldRecords.length} old records.`);
+    },
+});
+

@@ -106,12 +106,13 @@ npx convex deploy --cmd 'npm run build'
 ```
 
 **Branch Deployments:**
-| Branch | Environment | Domain |
-|--------|-------------|--------|
-| `main` | Production | `app.yourdomain.com` |
-| `staging` | Staging | `staging.yourdomain.com` |
-| `dev` | Development | `dev.yourdomain.com` |
-| PR branches | Preview | Auto-generated Vercel URLs |
+| Branch | Environment | Infrastructure | Domain |
+|--------|-------------|----------------|--------|
+| `N/A` | Local Dev | Docker Compose (Local) | `localhost:3000` |
+| `dev` | Hosted Dev | Convex Cloud (Dev) | `dev.yourdomain.com` |
+| `staging` | Staging | Convex Cloud (Staging) | `staging.yourdomain.com` |
+| `main` | Production | Convex Cloud (Prod) | `app.yourdomain.com` |
+| PR branches | Preview | Convex Preview | Auto-generated Vercel URLs |
 
 ## Deployment Workflow
 
@@ -168,12 +169,12 @@ Email templates and content follow the same deployment pipeline:
 
 **Testing email content per environment:**
 
-| Environment | How to Test | What Happens |
-|-------------|-------------|--------------|
-| **Local** | Trigger email action | Captured in Mailpit (localhost:8025) |
-| **Preview** | Trigger email action | Resend test mode (logged, not sent) |
-| **Staging** | Trigger email action | Sent to restricted recipients only |
-| **Production** | Trigger email action | Sent to actual users |
+| Environment | Backend | How to Test | What Happens |
+|-------------|---------|-------------|--------------|
+| **Local Dev** | Docker | Trigger email action | Captured in Mailpit (localhost:8025) |
+| **Hosted Dev** | Cloud | Trigger email action | Resend (Test Mode) logged in Dashboard |
+| **Staging** | Cloud | Trigger email action | Sent to restricted recipients only |
+| **Production** | Cloud | Trigger email action | Sent to actual users |
 
 **Email preview workflow:**
 ```

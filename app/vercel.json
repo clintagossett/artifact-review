@@ -1,0 +1,6 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "buildCommand": "npx convex codegen && ls -R convex && npx convex deploy --cmd 'npm run build'",
+    "installCommand": "npm install --legacy-peer-deps",
+    "outputDirectory": ".next"
+}

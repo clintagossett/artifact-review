@@ -129,7 +129,7 @@ export function LibraryTestViewer() {
                     x={menuPosition.x}
                     y={menuPosition.y}
                     onComment={() => handleAction("comment")}
-                    onHighlight={() => handleAction("highlight")}
+
                     onStrike={() => handleAction("strike")}
                     onClose={handleCloseMenu}
                 />
@@ -153,7 +153,7 @@ export function LibraryTestViewer() {
                             className="prose prose-lg relative z-10"
                         >
                             <p>
-                                This Services Agreement ("Agreement") is entered into by and between
+                                {`This Services Agreement ("Agreement") is entered into by and between`}
                                 <strong> Acme Corp </strong> and <strong> John Doe </strong>.
                                 The Provider agrees to deliver the deliverables outlined in Exhibit A
                                 within the timeline specified in Exhibit B.
@@ -290,7 +290,7 @@ export function LibraryTestViewer() {
                                 {/* Quote / Context */}
                                 {comment.target.selector.type === "TextQuoteSelector" && (
                                     <blockquote className={`text-xs text-gray-400 mb-2 pl-2 border-l-2 ${comment.style === 'strike' ? 'border-red-400 line-through' : 'border-gray-200'} italic truncate`}>
-                                        "{(comment.target.selector as any).exact}"
+                                        {`"${(comment.target.selector as any).exact}"`}
                                     </blockquote>
                                 )}
 

@@ -1,0 +1,946 @@
+[
+  {
+    "name": "docs",
+    "type": "directory",
+    "path": "docs",
+    "children": [
+      {
+        "name": "architecture",
+        "type": "directory",
+        "path": "docs/architecture",
+        "children": [
+          {
+            "name": "decisions",
+            "type": "directory",
+            "path": "docs/architecture/decisions",
+            "children": [
+              {
+                "name": "_index.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/_index.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0001-authentication-provider.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0001-authentication-provider.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0002-html-artifact-storage.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0002-html-artifact-storage.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0003-deployment-hosting-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0003-deployment-hosting-strategy.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0004-email-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0004-email-strategy.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0005-domain-registrar.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0005-domain-registrar.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0006-frontend-stack.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0006-frontend-stack.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0007-logging-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0007-logging-strategy.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0008-nextjs-app-router-for-routing.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0008-nextjs-app-router-for-routing.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0009-artifact-file-storage-structure.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0009-artifact-file-storage-structure.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0010-reviewer-invitation-account-linking.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0010-reviewer-invitation-account-linking.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0011-soft-delete-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0011-soft-delete-strategy.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0012-naming-conventions.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0012-naming-conventions.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0013-comment-character-limits.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0013-comment-character-limits.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0013-rbac-strategy.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0013-rbac-strategy.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0014-pii-safe-relational-tracking.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0014-pii-safe-relational-tracking.md",
+                "ext": ".md"
+              },
+              {
+                "name": "0015-organization-first-architecture.md",
+                "type": "file",
+                "path": "docs/architecture/decisions/0015-organization-first-architecture.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/architecture/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "claude-integration-plan.md",
+            "type": "file",
+            "path": "docs/architecture/claude-integration-plan.md",
+            "ext": ".md"
+          },
+          {
+            "name": "convex-rules.md",
+            "type": "file",
+            "path": "docs/architecture/convex-rules.md",
+            "ext": ".md"
+          },
+          {
+            "name": "deployment-environments.md",
+            "type": "file",
+            "path": "docs/architecture/deployment-environments.md",
+            "ext": ".md"
+          },
+          {
+            "name": "invitation-states.md",
+            "type": "file",
+            "path": "docs/architecture/invitation-states.md",
+            "ext": ".md"
+          },
+          {
+            "name": "tracking-presence.md",
+            "type": "file",
+            "path": "docs/architecture/tracking-presence.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "design",
+        "type": "directory",
+        "path": "docs/design",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/design/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "dpa-outline.md",
+            "type": "file",
+            "path": "docs/design/dpa-outline.md",
+            "ext": ".md"
+          },
+          {
+            "name": "landing-page-figma-prompt.md",
+            "type": "file",
+            "path": "docs/design/landing-page-figma-prompt.md",
+            "ext": ".md"
+          },
+          {
+            "name": "notification-patterns.md",
+            "type": "file",
+            "path": "docs/design/notification-patterns.md",
+            "ext": ".md"
+          },
+          {
+            "name": "pricing-and-packaging.md",
+            "type": "file",
+            "path": "docs/design/pricing-and-packaging.md",
+            "ext": ".md"
+          },
+          {
+            "name": "privacy-policy-outline.md",
+            "type": "file",
+            "path": "docs/design/privacy-policy-outline.md",
+            "ext": ".md"
+          },
+          {
+            "name": "terms-of-service-outline.md",
+            "type": "file",
+            "path": "docs/design/terms-of-service-outline.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "development",
+        "type": "directory",
+        "path": "docs/development",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/development/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "logging-guide.md",
+            "type": "file",
+            "path": "docs/development/logging-guide.md",
+            "ext": ".md"
+          },
+          {
+            "name": "routing-patterns.md",
+            "type": "file",
+            "path": "docs/development/routing-patterns.md",
+            "ext": ".md"
+          },
+          {
+            "name": "testing-guide.md",
+            "type": "file",
+            "path": "docs/development/testing-guide.md",
+            "ext": ".md"
+          },
+          {
+            "name": "TESTING-QUICK-START.md",
+            "type": "file",
+            "path": "docs/development/TESTING-QUICK-START.md",
+            "ext": ".md"
+          },
+          {
+            "name": "workflow.md",
+            "type": "file",
+            "path": "docs/development/workflow.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "journeys",
+        "type": "directory",
+        "path": "docs/journeys",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/journeys/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "001-signup-and-login.md",
+            "type": "file",
+            "path": "docs/journeys/001-signup-and-login.md",
+            "ext": ".md"
+          },
+          {
+            "name": "001.01-expired-link-handling.md",
+            "type": "file",
+            "path": "docs/journeys/001.01-expired-link-handling.md",
+            "ext": ".md"
+          },
+          {
+            "name": "002-artifact-upload-and-view.md",
+            "type": "file",
+            "path": "docs/journeys/002-artifact-upload-and-view.md",
+            "ext": ".md"
+          },
+          {
+            "name": "003-reviewer-comments-and-feedback.md",
+            "type": "file",
+            "path": "docs/journeys/003-reviewer-comments-and-feedback.md",
+            "ext": ".md"
+          },
+          {
+            "name": "003.01-unauthenticated-reviewer-deep-link.md",
+            "type": "file",
+            "path": "docs/journeys/003.01-unauthenticated-reviewer-deep-link.md",
+            "ext": ".md"
+          },
+          {
+            "name": "003.02-access-denied-and-revocation.md",
+            "type": "file",
+            "path": "docs/journeys/003.02-access-denied-and-revocation.md",
+            "ext": ".md"
+          },
+          {
+            "name": "004-artifact-sharing-and-invites.md",
+            "type": "file",
+            "path": "docs/journeys/004-artifact-sharing-and-invites.md",
+            "ext": ".md"
+          },
+          {
+            "name": "004.01-reviewer-lifecycle-and-invites.md",
+            "type": "file",
+            "path": "docs/journeys/004.01-reviewer-lifecycle-and-invites.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005-plan-upgrade-and-limits.md",
+            "type": "file",
+            "path": "docs/journeys/005-plan-upgrade-and-limits.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005.01-stripe-checkout-flow.md",
+            "type": "file",
+            "path": "docs/journeys/005.01-stripe-checkout-flow.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005.02-customer-billing-portal.md",
+            "type": "file",
+            "path": "docs/journeys/005.02-customer-billing-portal.md",
+            "ext": ".md"
+          },
+          {
+            "name": "005.03-subscription-renewal-failure.md",
+            "type": "file",
+            "path": "docs/journeys/005.03-subscription-renewal-failure.md",
+            "ext": ".md"
+          },
+          {
+            "name": "006-account-settings-and-security.md",
+            "type": "file",
+            "path": "docs/journeys/006-account-settings-and-security.md",
+            "ext": ".md"
+          },
+          {
+            "name": "007-github-manual-pull.md",
+            "type": "file",
+            "path": "docs/journeys/007-github-manual-pull.md",
+            "ext": ".md"
+          },
+          {
+            "name": "008-team-workspace-onboarding.md",
+            "type": "file",
+            "path": "docs/journeys/008-team-workspace-onboarding.md",
+            "ext": ".md"
+          },
+          {
+            "name": "009-version-comparison-and-diff.md",
+            "type": "file",
+            "path": "docs/journeys/009-version-comparison-and-diff.md",
+            "ext": ".md"
+          },
+          {
+            "name": "010-email-verification-on-sharing.md",
+            "type": "file",
+            "path": "docs/journeys/010-email-verification-on-sharing.md",
+            "ext": ".md"
+          },
+          {
+            "name": "011-agent-powered-workflows.md",
+            "type": "file",
+            "path": "docs/journeys/011-agent-powered-workflows.md",
+            "ext": ".md"
+          },
+          {
+            "name": "012-free-tier-paywall-experience.md",
+            "type": "file",
+            "path": "docs/journeys/012-free-tier-paywall-experience.md",
+            "ext": ".md"
+          },
+          {
+            "name": "BACKLOG.md",
+            "type": "file",
+            "path": "docs/journeys/BACKLOG.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "market-intelligence",
+        "type": "directory",
+        "path": "docs/market-intelligence",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/market-intelligence/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "competitors.md",
+            "type": "file",
+            "path": "docs/market-intelligence/competitors.md",
+            "ext": ".md"
+          },
+          {
+            "name": "legal-frameworks.md",
+            "type": "file",
+            "path": "docs/market-intelligence/legal-frameworks.md",
+            "ext": ".md"
+          },
+          {
+            "name": "market-overview.md",
+            "type": "file",
+            "path": "docs/market-intelligence/market-overview.md",
+            "ext": ".md"
+          },
+          {
+            "name": "pricing-landscape.md",
+            "type": "file",
+            "path": "docs/market-intelligence/pricing-landscape.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "marketing",
+        "type": "directory",
+        "path": "docs/marketing",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/marketing/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "positioning.md",
+            "type": "file",
+            "path": "docs/marketing/positioning.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "personas",
+        "type": "directory",
+        "path": "docs/personas",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/personas/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "document-creator.md",
+            "type": "file",
+            "path": "docs/personas/document-creator.md",
+            "ext": ".md"
+          },
+          {
+            "name": "document-reviewer.md",
+            "type": "file",
+            "path": "docs/personas/document-reviewer.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "setup",
+        "type": "directory",
+        "path": "docs/setup",
+        "children": [
+          {
+            "name": "_index.md",
+            "type": "file",
+            "path": "docs/setup/_index.md",
+            "ext": ".md"
+          },
+          {
+            "name": "account-checklist.md",
+            "type": "file",
+            "path": "docs/setup/account-checklist.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "_index.md",
+        "type": "file",
+        "path": "docs/_index.md",
+        "ext": ".md"
+      },
+      {
+        "name": "ENVIRONMENT_VARIABLES.md",
+        "type": "file",
+        "path": "docs/ENVIRONMENT_VARIABLES.md",
+        "ext": ".md"
+      }
+    ]
+  },
+  {
+    "name": "tasks",
+    "type": "directory",
+    "path": "tasks",
+    "children": [
+      {
+        "name": "00001-trademark-clearance",
+        "type": "directory",
+        "path": "tasks/00001-trademark-clearance",
+        "children": [
+          {
+            "name": "01-research",
+            "type": "directory",
+            "path": "tasks/00001-trademark-clearance/01-research",
+            "children": [
+              {
+                "name": "common-law-usage-report.md",
+                "type": "file",
+                "path": "tasks/00001-trademark-clearance/01-research/common-law-usage-report.md",
+                "ext": ".md"
+              },
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00001-trademark-clearance/01-research/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "02-registration",
+            "type": "directory",
+            "path": "tasks/00001-trademark-clearance/02-registration",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00001-trademark-clearance/02-registration/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "03-filing-service-research",
+            "type": "directory",
+            "path": "tasks/00001-trademark-clearance/03-filing-service-research",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00001-trademark-clearance/03-filing-service-research/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00001-trademark-clearance/README.md",
+            "ext": ".md"
+          },
+          {
+            "name": "RESUME.md",
+            "type": "file",
+            "path": "tasks/00001-trademark-clearance/RESUME.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00029-commenting-libraries-research",
+        "type": "directory",
+        "path": "tasks/00029-commenting-libraries-research",
+        "children": [
+          {
+            "name": "archive",
+            "type": "directory",
+            "path": "tasks/00029-commenting-libraries-research/archive",
+            "children": [
+              {
+                "name": "00-READ-ME-FIRST.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/00-READ-ME-FIRST.md",
+                "ext": ".md"
+              },
+              {
+                "name": "COMPONENT-BREAKDOWN.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/COMPONENT-BREAKDOWN.md",
+                "ext": ".md"
+              },
+              {
+                "name": "DECISION-SUMMARY.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/DECISION-SUMMARY.md",
+                "ext": ".md"
+              },
+              {
+                "name": "LAYER-ANALYSIS.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/LAYER-ANALYSIS.md",
+                "ext": ".md"
+              },
+              {
+                "name": "MODE-SWITCHING-UX.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/MODE-SWITCHING-UX.md",
+                "ext": ".md"
+              },
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/README.md",
+                "ext": ".md"
+              },
+              {
+                "name": "research-output.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/research-output.md",
+                "ext": ".md"
+              },
+              {
+                "name": "SPIKE-PLAN.md",
+                "type": "file",
+                "path": "tasks/00029-commenting-libraries-research/archive/SPIKE-PLAN.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURAL-ANALYSIS.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/ARCHITECTURAL-ANALYSIS.md",
+            "ext": ".md"
+          },
+          {
+            "name": "INTEGRATION_PLAN.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/INTEGRATION_PLAN.md",
+            "ext": ".md"
+          },
+          {
+            "name": "LIBRARY-DESIGN-FINAL.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/LIBRARY-DESIGN-FINAL.md",
+            "ext": ".md"
+          },
+          {
+            "name": "LIBRARY-DESIGN.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/LIBRARY-DESIGN.md",
+            "ext": ".md"
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00029-commenting-libraries-research/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00034-claude-desktop-and-chatgpt-integration",
+        "type": "directory",
+        "path": "tasks/00034-claude-desktop-and-chatgpt-integration",
+        "children": [
+          {
+            "name": "claude-desktop-research.md",
+            "type": "file",
+            "path": "tasks/00034-claude-desktop-and-chatgpt-integration/claude-desktop-research.md",
+            "ext": ".md"
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00034-claude-desktop-and-chatgpt-integration/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00035-research-notification-infrastructure",
+        "type": "directory",
+        "path": "tasks/00035-research-notification-infrastructure",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00035-research-notification-infrastructure/output",
+            "children": [
+              {
+                "name": "notification-research.md",
+                "type": "file",
+                "path": "tasks/00035-research-notification-infrastructure/output/notification-research.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00035-research-notification-infrastructure/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00036-notification-platform-pricing-and-resend-replacement",
+        "type": "directory",
+        "path": "tasks/00036-notification-platform-pricing-and-resend-replacement",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/output",
+            "children": [
+              {
+                "name": "notification-pricing-report.md",
+                "type": "file",
+                "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/output/notification-pricing-report.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00036-notification-platform-pricing-and-resend-replacement/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00037-workflow-enrichment-with-novu",
+        "type": "directory",
+        "path": "tasks/00037-workflow-enrichment-with-novu",
+        "children": [
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "tasks/00037-workflow-enrichment-with-novu/output",
+            "children": [
+              {
+                "name": "novu-enrichment-integration-plan.md",
+                "type": "file",
+                "path": "tasks/00037-workflow-enrichment-with-novu/output/novu-enrichment-integration-plan.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "architecture.md",
+            "type": "file",
+            "path": "tasks/00037-workflow-enrichment-with-novu/architecture.md",
+            "ext": ".md"
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00037-workflow-enrichment-with-novu/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00038-team-accounts-rbac",
+        "type": "directory",
+        "path": "tasks/00038-team-accounts-rbac",
+        "children": [
+          {
+            "name": "01_organizational-hierarchy",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/01_organizational-hierarchy",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/01_organizational-hierarchy/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "02_roles-and-permissions",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/02_roles-and-permissions",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/02_roles-and-permissions/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "03_license-tiers",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/03_license-tiers",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/03_license-tiers/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "04_database-schema",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/04_database-schema",
+            "children": [
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00038-team-accounts-rbac/04_database-schema/README.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "05_migration-strategy",
+            "type": "directory",
+            "path": "tasks/00038-team-accounts-rbac/05_migration-strategy",
+            "children": []
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00038-team-accounts-rbac/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00039-agent-collaboration-workflow",
+        "type": "directory",
+        "path": "tasks/00039-agent-collaboration-workflow",
+        "children": [
+          {
+            "name": "api-spec",
+            "type": "directory",
+            "path": "tasks/00039-agent-collaboration-workflow/api-spec",
+            "children": [
+              {
+                "name": "api-keys-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/api-keys-design.md",
+                "ext": ".md"
+              },
+              {
+                "name": "notifications-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/notifications-design.md",
+                "ext": ".md"
+              },
+              {
+                "name": "openapi.yaml",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/openapi.yaml",
+                "ext": ".yaml"
+              },
+              {
+                "name": "README.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/README.md",
+                "ext": ".md"
+              },
+              {
+                "name": "versioning-design.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/api-spec/versioning-design.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "research",
+            "type": "directory",
+            "path": "tasks/00039-agent-collaboration-workflow/research",
+            "children": [
+              {
+                "name": "api-key-naming.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/research/api-key-naming.md",
+                "ext": ".md"
+              },
+              {
+                "name": "polymorphism-in-convex.md",
+                "type": "file",
+                "path": "tasks/00039-agent-collaboration-workflow/research/polymorphism-in-convex.md",
+                "ext": ".md"
+              }
+            ]
+          },
+          {
+            "name": "ARCHITECTURE.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/ARCHITECTURE.md",
+            "ext": ".md"
+          },
+          {
+            "name": "rate-limiting-research.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/rate-limiting-research.md",
+            "ext": ".md"
+          },
+          {
+            "name": "README.md",
+            "type": "file",
+            "path": "tasks/00039-agent-collaboration-workflow/README.md",
+            "ext": ".md"
+          }
+        ]
+      },
+      {
+        "name": "00034-github-manual-pull-feature.md",
+        "type": "file",
+        "path": "tasks/00034-github-manual-pull-feature.md",
+        "ext": ".md"
+      },
+      {
+        "name": "ISSUE-REVIEW-2026-01-03.md",
+        "type": "file",
+        "path": "tasks/ISSUE-REVIEW-2026-01-03.md",
+        "ext": ".md"
+      },
+      {
+        "name": "schema-compliance-review.md",
+        "type": "file",
+        "path": "tasks/schema-compliance-review.md",
+        "ext": ".md"
+      },
+      {
+        "name": "schema-redundancy-analysis.md",
+        "type": "file",
+        "path": "tasks/schema-redundancy-analysis.md",
+        "ext": ".md"
+      },
+      {
+        "name": "TEMPLATE.md",
+        "type": "file",
+        "path": "tasks/TEMPLATE.md",
+        "ext": ".md"
+      }
+    ]
+  }
+]

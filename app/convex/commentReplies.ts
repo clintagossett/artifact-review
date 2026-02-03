@@ -6,6 +6,7 @@
  */
 
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import {
@@ -126,6 +127,61 @@ export const createReply = mutation({
       isDeleted: false,
       createdAt: now,
     });
+
+    // NOTIFICATION LOGIC
+    // Notify: 1) Original comment author, 2) Other thread participants
+    const version = await ctx.db.get(comment.versionId);
+    if (!version) {
+      console.error("Version not found for reply notification");
+      return replyId;
+    }
+
+    const artifact = await ctx.db.get(version.artifactId);
+    if (!artifact) {
+      console.error("Artifact not found for reply notification");
+      return replyId;
+    }
+
+    const author = await ctx.db.get(userId);
+    const siteUrl = process.env.CONVEX_SITE_URL || "";
+    const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
+
+    // Collect all unique participants to notify (excluding self)
+    const participantsToNotify = new Set<string>();
+
+    // 1. Add original comment author (if not self)
+    if (comment.createdBy !== userId) {
+      participantsToNotify.add(comment.createdBy);
+    }
+
+    // 2. Add all previous repliers in this thread (if not self)
+    const existingReplies = await ctx.db
+      .query("commentReplies")
+      .withIndex("by_commentId_active", (q) =>
+        q.eq("commentId", args.commentId).eq("isDeleted", false)
+      )
+      .collect();
+
+    for (const reply of existingReplies) {
+      if (reply.createdBy !== userId && reply._id !== replyId) {
+        participantsToNotify.add(reply.createdBy);
+      }
+    }
+
+    // Send notification to each participant
+    for (const participantId of participantsToNotify) {
+      await ctx.scheduler.runAfter(0, internal.novu.triggerReplyNotification, {
+        subscriberId: participantId,
+        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
+        artifactUrl,
+        authorName: author?.name || "Someone",
+        authorAvatarUrl: author?.image,
+        commentPreview: trimmedContent.length > 50
+          ? `${trimmedContent.slice(0, 50)}...`
+          : trimmedContent,
+        isCommentAuthor: participantId === comment.createdBy,
+      });
+    }
 
     return replyId;
   },

@@ -8,7 +8,7 @@ How to write and organize tests in Artifact Review.
 |------|----------|---------|----------|
 | **Task-level** | `tasks/XXXXX/tests/` | Validate during development | Until promotion |
 | **Project-level** | `convex/__tests__/`, `e2e/` | Prevent regressions | Permanent |
-| **Validation** | `tasks/XXXXX/tests/validation-videos/` | Human review proof | Archived |
+| **Validation** | `tasks/XXXXX/tests/validation-trace/` | Trace archive | Archived |
 
 ## Sample Test Files
 
@@ -126,7 +126,7 @@ tasks/XXXXX-task-name/
 │   ├── playwright.config.ts
 │   ├── unit/
 │   ├── e2e/
-│   └── validation-videos/          # GITIGNORED
+│   └── validation-trace/           # GITIGNORED
 ├── 01-subtask-name/
 │   └── tests/
 │       ├── unit/                   # Subtask unit tests
@@ -348,7 +348,151 @@ test("user can only see their artifacts", async () => {
 - Error messages may differ from production
 - Use local backend when production parity matters
 
+## Visual/Async Testing
+
+For testing async UI states that transition too quickly to observe (uploading → processing → ready), use the **async state delay pattern**.
+
+See: [ADR 0020 - Async State Delay Testing Pattern](../architecture/decisions/0021-async-state-delay-testing.md)
+
+### Quick Start
+
+```bash
+# Run visual tests with 10 second delays between states
+npm run test:e2e:visual
+```
+
+### How It Works
+
+1. Set `NEXT_PUBLIC_TEST_ASYNC_DELAY_MS` to delay duration in milliseconds
+2. Backend adds delays at each state transition
+3. Tests can observe and capture each state
+
+```
+With NEXT_PUBLIC_TEST_ASYNC_DELAY_MS=3000:
+
+"uploading" ──(3 seconds)──► "processing" ──(3 seconds)──► "ready"
+```
+
+### When to Use
+
+| Scenario | Use Visual Testing? |
+|----------|-------------------|
+| Verifying async UI renders correctly | Yes |
+| Capturing screenshots for docs | Yes |
+| Debugging state transition issues | Yes |
+| Normal E2E regression tests | No (use regular `test:e2e`) |
+
+### Writing Visual Tests
+
+```typescript
+// Prefix with "visual:" to separate from normal E2E tests
+test('visual: upload processing states', async ({ page }) => {
+  // States will be visible long enough to capture
+  await page.waitForSelector('[data-version-status="uploading"]');
+  await page.screenshot({ path: 'state-uploading.png' });
+
+  await page.waitForSelector('[data-version-status="processing"]');
+  await page.screenshot({ path: 'state-processing.png' });
+
+  await page.waitForSelector('[data-version-status="ready"]');
+  await page.screenshot({ path: 'state-ready.png' });
+});
+```
+
+### Adding Delays to New Features
+
+1. Add `_testDelayMs: v.optional(v.number())` to your action args
+2. Add delay before/after state transitions:
+   ```typescript
+   if (args._testDelayMs && args._testDelayMs > 0) {
+     await new Promise(resolve => setTimeout(resolve, args._testDelayMs));
+   }
+   ```
+3. Thread from frontend via `process.env.NEXT_PUBLIC_TEST_ASYNC_DELAY_MS`
+
 ## E2E Testing with Playwright
+
+### HTTPS and TLS Certificates
+
+Local development uses HTTPS with mkcert certificates. Playwright tests must trust the mkcert CA to make HTTPS requests to `*.loc` domains.
+
+**Required Setup:**
+
+1. Find your mkcert CA root path:
+   ```bash
+   mkcert -CAROOT
+   # Example: /home/username/.local/share/mkcert
+   ```
+
+2. Set `NODE_EXTRA_CA_CERTS` in your environment. You have several options:
+
+   **Option A: Add to `.env.nextjs.local`** (recommended for this project)
+   ```bash
+   # In app/.env.nextjs.local
+   NODE_EXTRA_CA_CERTS=/home/YOUR_USERNAME/.local/share/mkcert/rootCA.pem
+   ```
+
+   **Option B: Add to shell profile** (applies globally)
+   ```bash
+   # In ~/.bashrc or ~/.zshrc
+   export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
+   ```
+
+   **Option C: Set inline when running tests**
+   ```bash
+   NODE_EXTRA_CA_CERTS=$(mkcert -CAROOT)/rootCA.pem npx playwright test
+   ```
+
+**Why this is needed:**
+
+- The orchestrator proxy serves HTTPS using mkcert certificates
+- Node.js (and by extension Playwright) does not trust mkcert's CA by default
+- Without `NODE_EXTRA_CA_CERTS`, HTTPS requests fail with certificate errors like:
+  - `UNABLE_TO_VERIFY_LEAF_SIGNATURE`
+  - `CERT_HAS_EXPIRED`
+  - `self signed certificate in certificate chain`
+
+**Note:** The `playwright.config.ts` uses `ignoreHTTPSErrors: true` which helps for some scenarios, but `NODE_EXTRA_CA_CERTS` is still needed for full certificate chain validation in Node.js HTTP requests (like API calls in tests).
+
+### Test Artifacts (Videos, Traces, Screenshots)
+
+**All test artifacts are retained on success AND failure.** This allows humans to review what was built/tested.
+
+**Artifact Locations:**
+```
+app/test-results/
+├── test-name-chromium/
+│   ├── video.webm          # Full test recording
+│   ├── trace.zip           # Detailed trace with DOM snapshots
+│   └── test-finished-1.png # Screenshot
+├── another-test-chromium/
+│   ├── video.webm
+│   ├── trace.zip
+│   └── test-finished-1.png
+...
+```
+
+**Viewing Artifacts:**
+```bash
+# View HTML report with embedded videos/screenshots
+cd app && npx playwright show-report
+
+# View trace interactively (timeline, network, DOM snapshots)
+npx playwright show-trace test-results/test-name-chromium/trace.zip
+
+# Play video directly
+xdg-open test-results/test-name-chromium/video.webm  # Linux
+open test-results/test-name-chromium/video.webm      # macOS
+```
+
+**What Each Artifact Shows:**
+| Artifact | Contents | Best For |
+|----------|----------|----------|
+| `video.webm` | Full test recording at 1280x720 | Quick visual review of what happened |
+| `trace.zip` | Timeline, clicks, network, DOM snapshots | Debugging failures, understanding flow |
+| `screenshot.png` | Final state after test | Quick pass/fail visual check |
+
+**Note:** `test-results/` is gitignored. Artifacts are for local review only.
 
 ### Task-Level E2E Setup
 
@@ -399,7 +543,6 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on',      // CRITICAL: Enables trace.zip with action tracking
-    video: 'on',      // MANDATORY - all e2e tests must record video
     screenshot: 'on',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
@@ -413,120 +556,7 @@ export default defineConfig({
 });
 ```
 
-**Why mandatory videos?**
-- Human review during development
-- Debug test failures visually
-- Stakeholder demonstrations
-- Documentation of feature behavior
 
-**Videos are gitignored** - they are NOT committed to the repository. To preserve videos:
-- Copy to shared drive
-- Attach to GitHub issue
-- Store in project documentation system
-
-### Click Indicator for Video Recordings
-
-**IMPORTANT:** All E2E tests should use the click indicator utility to make clicks visible in recorded videos.
-
-The click indicator adds:
-- **Red cursor dot** (12px) that follows mouse movement
-- **Click ripple** - Expanding red ring on every click
-- **Non-invasive** - Uses `pointer-events: none` so it doesn't interfere with tests
-
-#### Basic Usage
-
-```typescript
-import { test, expect } from '@playwright/test';
-import { injectClickIndicator } from '../../../app/tests/utils/clickIndicator';
-
-test('user can upload artifact', async ({ page }) => {
-  await page.goto('/');
-  await injectClickIndicator(page);  // Add click indicators
-
-  await page.getByRole('button', { name: 'Upload' }).click();
-  await page.setInputFiles('input[type="file"]', 'test-file.html');
-  await expect(page.getByText('Upload successful')).toBeVisible();
-});
-```
-
-#### Auto-Inject for Multi-Page Flows
-
-For tests that open new pages or popups, use `setupAutoInject`:
-
-```typescript
-import { test, expect } from '@playwright/test';
-import { injectClickIndicator, setupAutoInject } from '../../../app/tests/utils/clickIndicator';
-
-test('user flow with multiple pages', async ({ browser }) => {
-  const context = await browser.newContext({
-    recordVideo: { dir: 'test-results/videos' }
-  });
-
-  // Auto-inject on all new pages
-  setupAutoInject(context);
-
-  const page = await context.newPage();
-  await page.goto('/');
-  await injectClickIndicator(page);  // Backup for initial page
-
-  // All clicks show indicators, even on new pages
-  await page.click('a[target="_blank"]');
-
-  await context.close();
-});
-```
-
-**See:** `tasks/00013-update-validation-video-methodology/01-click-indicator/example/` for complete examples.
-
-### Validation Videos (Automated)
-
-**NEW APPROACH:** Final validation videos are automatically assembled from E2E test recordings.
-
-**DO NOT create manual screen recordings.** Instead:
-1. Write E2E tests with click indicators
-2. Run tests (generates .webm videos)
-3. Assemble videos with title slides using scripts
-
-**Benefits:**
-- ✅ Videos generated automatically from tests
-- ✅ Click indicators make actions visible
-- ✅ Consistent format and quality
-- ✅ Professional presentation with title slides
-- ✅ Single master video combines all test flows
-
-#### Workflow
-
-```bash
-cd tasks/XXXXX-task-name/tests
-
-# 1. Run E2E tests (generates videos with click indicators)
-npx playwright test
-
-# Result: test-results/ now contains multiple subdirectories,
-# each with video.webm for each test that ran
-
-# 2. Option A: Combine ALL tests into one validation video
-../../../../scripts/concat_journey.sh test-results
-../../../../scripts/normalize_video.sh test-results/flow.webm validation-videos/validation.mp4
-
-# 2. Option B: Organize by journey with title slides
-../../../../scripts/assemble-validation-video.sh \
-  --title "Magic Link Authentication" test-results \
-  --output validation-videos/master-validation.mp4
-
-# 3. View final video
-open validation-videos/master-validation.mp4
-```
-
-**What happens:**
-- Playwright creates one subdirectory per test in `test-results/`
-- Each subdirectory contains `video.webm`, `trace.zip`, screenshots
-- Scripts find all `video.webm` files in subdirectories
-- Videos are concatenated in sorted order
-- Title slides added between sections (if using assemble-validation-video.sh)
-- Final output: 1280x720, 30fps, H.264 MP4
-
-**See:** `tasks/00013-update-validation-video-methodology/02-video-assembly/` for implementation details.
 
 ### Playwright Trace (For Debugging)
 
@@ -544,7 +574,7 @@ The trace viewer shows:
 - Console logs
 - Full DOM snapshots
 
-**Use trace.zip for debugging, master-validation.mp4 for deliverables.**
+**Use trace.zip for debugging and deliverables.**
 
 ## File Organization
 
@@ -560,7 +590,7 @@ tasks/00015-feature/
 │   ├── e2e/
 │   │   └── full-flow.spec.ts          # Upleveled e2e tests
 │   ├── test-results/                   # GITIGNORED
-│   └── validation-videos/              # GITIGNORED - video output
+│   └── test-results/                   # GITIGNORED
 ├── 01-auth-subtask/
 │   ├── README.md
 │   └── tests/
@@ -593,36 +623,25 @@ tasks/00008-magic-link-authentication/
 │   ├── e2e/
 │   │   ├── magic-link.spec.ts     # E2E tests (with click indicators)
 │   │   └── password-auth.spec.ts  # E2E tests (with click indicators)
-│   ├── test-results/               # GITIGNORED - Playwright auto-generated
-│   │   ├── magic-link-Auth-hash1-chromium/
-│   │   │   ├── video.webm         # Video for test 1
-│   │   │   ├── trace.zip          # Debug trace
-│   │   │   └── test-finished-1.png
-│   │   ├── magic-link-Auth-hash2-chromium/
-│   │   │   ├── video.webm         # Video for test 2
-│   │   │   └── trace.zip
-│   │   ├── magic-link-Auth-hash3-chromium/
-│   │   │   └── video.webm         # Video for test 3
-│   │   └── flow.webm              # Combined (created by script)
-│   └── validation-videos/          # GITIGNORED - video output
-│       ├── master-validation.mp4  # Final assembled video
-│       └── README.md              # Viewing instructions
+│   └── test-results/               # GITIGNORED - Playwright auto-generated
+│       ├── magic-link-Auth-hash1-chromium/
+│       │   ├── trace.zip          # Debug trace
+│       │   └── test-finished-1.png
+│       ├── magic-link-Auth-hash2-chromium/
+│       │   └── trace.zip
+│       └── magic-link-Auth-hash3-chromium/
+│           └── trace.zip
 ├── test-report.md
 └── README.md
 ```
 
 **Key Points:**
 - **Playwright creates ONE subdirectory per test** with hash-based names
-- Each subdirectory contains `video.webm`, `trace.zip`, and screenshots
-- Multiple tests = multiple video.webm files in separate subdirectories
-- Assembly scripts find all `video.webm` files and concatenate them
-- `flow.webm` is the combined video (intermediate step)
-- `master-validation.mp4` is the final deliverable
+- Each subdirectory contains `trace.zip` and screenshots
+- Multiple tests = multiple trace.zip files in separate subdirectories
 - E2E tests need `package.json` + `node_modules` in `tests/` folder
-- `node_modules/`, `test-results/`, and `validation-videos/` are gitignored
+- `node_modules/` and `test-results/` are gitignored
 - Backend tests use app's vitest (no local deps needed)
-- All E2E tests use click indicators for visible interactions
-- Videos are MANDATORY but not committed to the repository
 
 ### Project-Level Tests (Promoted)
 
@@ -647,7 +666,7 @@ e2e/
 | Token verification (valid) | Unit | Core happy path |
 | Token verification (expired) | Unit | Critical security edge |
 | Token verification (used) | Unit | Prevent token reuse |
-| Full flow E2E tests | E2E + Validation | Videos auto-assembled for review |
+| Full flow E2E tests | E2E + Validation | Trace ensures correctness |
 
 ### Skip
 
@@ -684,7 +703,7 @@ npx playwright test --ui           # Interactive UI mode
 
 # View trace
 npx playwright show-trace test-results/*/trace.zip
-npx playwright show-trace validation-videos/feature-trace.zip
+npx playwright show-trace test-results/*/trace.zip
 ```
 
 ### Promoted E2E Tests (Project-Level)

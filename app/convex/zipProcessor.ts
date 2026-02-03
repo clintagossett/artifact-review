@@ -10,35 +10,74 @@ import {
   MAX_EXTRACTED_FILE_SIZE,
   isForbiddenExtension,
 } from "./lib/fileTypes";
+import { createLogger, LOG_TOPICS } from "./lib/logger";
+
+const log = createLogger("zipProcessor.processZipFile");
 
 /**
  * Process a ZIP file: validate, extract files, detect entry point, and store in database
  * Task 00019 - Phase 1: Added validation for file count, size, and forbidden types
+ *
+ * @param _testDelayMs - Optional delay in ms before completing (for visual/async testing)
  */
 export const processZipFile = internalAction({
   args: {
     versionId: v.id("artifactVersions"),
     storageId: v.id("_storage"),
+    _testDelayMs: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    log.debug(LOG_TOPICS.Artifact, "Starting ZIP processing", {
+      versionId: args.versionId,
+      storageId: args.storageId,
+      _testDelayMs: args._testDelayMs,
+    });
+
     try {
-      // Get the ZIP file from storage
-      const zipUrl = await ctx.storage.getUrl(args.storageId);
-      if (!zipUrl) {
-        throw new Error("ZIP file not found in storage");
+      // Optional delay for visual/async testing - stay in "uploading" state
+      if (args._testDelayMs && args._testDelayMs > 0) {
+        log.debug(LOG_TOPICS.Artifact, "Applying test delay in uploading state", {
+          delayMs: args._testDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, args._testDelayMs));
       }
 
-      // Download and process the ZIP file
-      const response = await fetch(zipUrl);
-      const zipBuffer = await response.arrayBuffer();
+      // Set status to "processing"
+      await ctx.runMutation(internal.zipProcessorMutations.updateVersionStatus, {
+        versionId: args.versionId,
+        status: "processing",
+      });
+
+      // Optional delay for visual/async testing - stay in "processing" state
+      if (args._testDelayMs && args._testDelayMs > 0) {
+        log.debug(LOG_TOPICS.Artifact, "Applying test delay in processing state", {
+          delayMs: args._testDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, args._testDelayMs));
+      }
+
+      // Get ZIP file from storage
+      log.debug(LOG_TOPICS.Artifact, "Fetching ZIP file from storage");
+      const blob = await ctx.storage.get(args.storageId);
+      if (!blob) throw new Error("ZIP not found");
+      const zipBuffer = await blob.arrayBuffer();
+      log.debug(LOG_TOPICS.Artifact, "ZIP buffer loaded", {
+        byteLength: zipBuffer.byteLength,
+      });
 
       const zip = new JSZip();
       const zipContents = await zip.loadAsync(zipBuffer);
 
       // VALIDATION PASS: Check constraints before extraction
       const fileEntries = Object.entries(zipContents.files).filter(
-        ([_, entry]) => !entry.dir
+        ([path, entry]) => {
+          if (entry.dir) return false;
+          // Ignore Mac system files
+          if (path.includes('__MACOSX')) return false;
+          if (path.endsWith('.DS_Store')) return false;
+          return true;
+        }
       );
 
       // DETECT COMMON ROOT PATH
@@ -119,23 +158,27 @@ export const processZipFile = internalAction({
 
         // Normalize path and strip common root folder
         const normalizedPath = stripRoot(relativePath);
+        const lowerPath = normalizedPath.toLowerCase();
 
-        if (
-          normalizedPath.toLowerCase().endsWith('.html') ||
-          normalizedPath.toLowerCase().endsWith('.htm')
-        ) {
+        if (lowerPath.endsWith('.html') || lowerPath.endsWith('.htm')) {
           htmlFiles.push(normalizedPath);
 
           // Priority 1: index.html in root
-          if (normalizedPath.toLowerCase() === 'index.html') {
+          if (lowerPath === 'index.html') {
             entryPoint = normalizedPath;
           }
           // Priority 2: index.htm in root
-          else if (!entryPoint && normalizedPath.toLowerCase() === 'index.htm') {
+          else if (!entryPoint && lowerPath === 'index.htm') {
             entryPoint = normalizedPath;
           }
           // Priority 3: index.html in subdirectory
-          else if (!entryPoint && normalizedPath.toLowerCase().endsWith('/index.html')) {
+          else if (!entryPoint && lowerPath.endsWith('/index.html')) {
+            entryPoint = normalizedPath;
+          }
+        }
+        // Support Markdown entry points if no HTML found yet
+        else if (lowerPath.endsWith('.md') || lowerPath.endsWith('.markdown') || lowerPath.endsWith('readme')) {
+          if (!entryPoint && (lowerPath === 'readme.md' || lowerPath === 'index.md' || lowerPath === 'readme')) {
             entryPoint = normalizedPath;
           }
         }
@@ -148,8 +191,27 @@ export const processZipFile = internalAction({
         entryPoint = htmlFiles[0];
       }
 
+      // Priority 5: First Markdown file (if no HTML)
       if (!entryPoint) {
-        throw new Error("No HTML file found in ZIP. At least one .html file is required.");
+        const mdFiles = fileEntries
+          .map(([path]) => stripRoot(path))
+          .filter(p => {
+            const lower = p.toLowerCase();
+            return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('readme');
+          })
+          .sort();
+
+        if (mdFiles.length > 0) {
+          entryPoint = mdFiles[0];
+        }
+      }
+
+      if (!entryPoint) {
+        // Collect a sample of files for the error message
+        const fileSample = filePaths.slice(0, 10).join(', ');
+        throw new Error(
+          `No HTML or Markdown file found in ZIP. At least one .html, .md, .markdown, or README file is required. Found files: ${fileSample}${filePaths.length > 10 ? '...' : ''}`
+        );
       }
 
       // EXTRACTION PASS: Extract and store all files
@@ -168,12 +230,17 @@ export const processZipFile = internalAction({
 
         const mimeType = getMimeType(normalizedPath);
 
-        // Store file using internal action
-        await ctx.runAction(internal.zipProcessorMutations.storeExtractedFile, {
+        // Store internally in the action context
+        const blob = new Blob([content], { type: mimeType });
+        const storageId = await ctx.storage.store(blob);
+
+        // Create the DB record using mutation
+        await ctx.runMutation(internal.zipProcessorMutations.createArtifactFileRecord, {
           versionId: args.versionId,
-          filePath: normalizedPath,
-          content: Array.from(new Uint8Array(content)),
+          path: normalizedPath,
+          storageId: storageId,
           mimeType,
+          size: content.byteLength,
         });
       }
 
@@ -187,7 +254,10 @@ export const processZipFile = internalAction({
       await ctx.storage.delete(args.storageId);
 
     } catch (error) {
-      console.error("Error processing ZIP file:", error);
+      log.error(LOG_TOPICS.Artifact, "ZIP processing failed", {
+        versionId: args.versionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
 
       // Mark processing as failed with specific error
       await ctx.runMutation(internal.zipProcessorMutations.markProcessingError, {
@@ -195,8 +265,8 @@ export const processZipFile = internalAction({
         error: error instanceof Error ? error.message : "Unknown error",
       });
 
-      // Re-throw to propagate error to caller
-      throw error;
+      // Don't re-throw - error is already logged and status is set to "error"
+      // Re-throwing causes UnhandledPromiseRejection in the Convex isolate
     }
 
     return null;

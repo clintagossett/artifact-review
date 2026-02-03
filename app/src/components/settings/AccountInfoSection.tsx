@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,13 +27,13 @@ export function AccountInfoSection() {
   const { toast } = useToast();
 
   // Sync name with user data when it loads or when exiting edit mode
-  if (user && !isEditing && name !== user.name) {
-    setName(user.name);
+  if (user && !isEditing && name !== (user.name ?? "")) {
+    setName(user.name ?? "");
   }
 
   const handleEdit = () => {
     if (user) {
-      setName(user.name);
+      setName(user.name ?? "");
       setIsEditing(true);
       setError("");
     }
@@ -41,7 +41,7 @@ export function AccountInfoSection() {
 
   const handleCancel = () => {
     if (user) {
-      setName(user.name);
+      setName(user.name ?? "");
     }
     setIsEditing(false);
     setError("");

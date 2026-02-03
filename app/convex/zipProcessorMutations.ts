@@ -7,31 +7,28 @@ import type { Id } from "./_generated/dataModel";
  * Store extracted file from ZIP archive
  * Uses action for storage.store() then calls mutation to create DB record
  */
-export const storeExtractedFile = internalAction({
+// storeExtractedFile action removed as it's replaced by direct storage call in zipProcessor.ts
+
+/**
+ * Update version processing status
+ * Task 00049 - Artifact Version Status
+ */
+export const updateVersionStatus = internalMutation({
   args: {
     versionId: v.id("artifactVersions"),
-    filePath: v.string(),
-    content: v.array(v.number()), // Uint8Array as number array
-    mimeType: v.string(),
+    status: v.union(
+      v.literal("uploading"),
+      v.literal("processing"),
+      v.literal("ready"),
+      v.literal("error")
+    ),
   },
-  returns: v.id("artifactFiles"),
-  handler: async (ctx, args): Promise<Id<"artifactFiles">> => {
-    // Convert number array back to Uint8Array and create Blob
-    const blob = new Blob([new Uint8Array(args.content)], { type: args.mimeType });
-
-    // Store in Convex storage (only available in actions)
-    const storageId = await ctx.storage.store(blob);
-
-    // Create artifactFile record via mutation
-    const fileId = await ctx.runMutation(internal.zipProcessorMutations.createArtifactFileRecord, {
-      versionId: args.versionId,
-      path: args.filePath,
-      storageId,
-      mimeType: args.mimeType,
-      size: args.content.length,
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.versionId, {
+      status: args.status,
     });
-
-    return fileId;
+    return null;
   },
 });
 
@@ -63,6 +60,7 @@ export const createArtifactFileRecord = internalMutation({
 
 /**
  * Mark ZIP processing as complete and update entry point
+ * Task 00049 - Set status to "ready"
  */
 export const markProcessingComplete = internalMutation({
   args: {
@@ -73,6 +71,7 @@ export const markProcessingComplete = internalMutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.versionId, {
       entryPoint: args.entryPoint,
+      status: "ready", // Task 00049 - Mark as ready
     });
     return null;
   },
@@ -80,7 +79,7 @@ export const markProcessingComplete = internalMutation({
 
 /**
  * Mark ZIP processing as failed with error details
- * Task 00019 - Phase 1: Soft-delete version on processing error
+ * Task 00049 - Set status to "error" and keep version visible
  */
 export const markProcessingError = internalMutation({
   args: {
@@ -91,11 +90,12 @@ export const markProcessingError = internalMutation({
   handler: async (ctx, args) => {
     console.error(`ZIP processing error for version ${args.versionId}:`, args.error);
 
-    // Soft-delete the version on error to prevent partial artifacts
-    // This makes the version invisible to users
+    // Set error status instead of soft-deleting
+    // This allows users to see what failed and potentially retry
+    // Task 00049 - Artifact Version Status
     await ctx.db.patch(args.versionId, {
-      isDeleted: true,
-      deletedAt: Date.now(),
+      status: "error",
+      errorMessage: args.error,
     });
 
     return null;

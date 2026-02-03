@@ -28,6 +28,7 @@ export const create = action({
     content: v.string(),   // File content as text
     originalFileName: v.optional(v.string()),
     versionName: v.optional(v.string()),
+    organizationId: v.optional(v.id("organizations")), // Task 33: Explicit Org support
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -85,6 +86,7 @@ export const create = action({
       storageId,
       mimeType: getMimeType(args.fileType),
       size: size,
+      organizationId: args.organizationId,
     });
 
     return result;
@@ -106,6 +108,9 @@ export const createInternal = internalMutation({
     storageId: v.id("_storage"),
     mimeType: v.string(),
     size: v.number(),
+    organizationId: v.optional(v.id("organizations")),
+    agentId: v.optional(v.id("agents")),
+    agentName: v.optional(v.string()), // Denormalized name
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -117,11 +122,28 @@ export const createInternal = internalMutation({
     const now = Date.now();
     const shareToken = nanoid(8);
 
+    // Task 33: Resolve Organization ID
+    let organizationId = args.organizationId;
+    if (!organizationId) {
+      // Fallback: Find user's first organization
+      // In the new model, every user has at least one (Personal Org)
+      const membership = await ctx.db
+        .query("members")
+        .withIndex("by_userId", q => q.eq("userId", args.userId))
+        .first();
+
+      if (!membership) {
+        throw new Error("User must belong to an organization to create artifacts.");
+      }
+      organizationId = membership.organizationId;
+    }
+
     // Create artifact
     const artifactId = await ctx.db.insert("artifacts", {
       name: args.name,
       description: args.description,
       createdBy: args.userId,
+      organizationId,
       shareToken,
       isDeleted: false,
       createdAt: now,
@@ -136,8 +158,11 @@ export const createInternal = internalMutation({
       fileType: args.fileType,
       entryPoint: args.path,
       size: args.size,
+      status: "ready", // Task 00049 - Synchronous uploads are immediately ready
       isDeleted: false,
       createdAt: now,
+      agentId: args.agentId,
+      agentName: args.agentName,
       // Keep inline content fields undefined (not used in new pattern)
     });
 
@@ -181,6 +206,7 @@ export const get = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -263,6 +289,7 @@ export const getFilesByVersion = query({
       size: v.number(),
       isDeleted: v.boolean(),
       deletedAt: v.optional(v.number()),
+      createdAt: v.number(),
     })
   ),
   handler: async (ctx, args) => {
@@ -295,6 +322,7 @@ export const getByShareToken = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -332,6 +360,7 @@ export const list = query({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     })
   ),
   handler: async (ctx, args) => {
@@ -457,6 +486,8 @@ export const addVersionInternal = internalMutation({
     storageId: v.id("_storage"),
     mimeType: v.string(),
     size: v.number(),
+    agentId: v.optional(v.id("agents")),
+    agentName: v.optional(v.string()), // Denormalized name
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),
@@ -1027,6 +1058,7 @@ export const getByIdInternal = internalQuery({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -1055,6 +1087,7 @@ export const getByShareTokenInternal = internalQuery({
       deletedBy: v.optional(v.id("users")),
       createdAt: v.number(),
       updatedAt: v.optional(v.number()),
+      organizationId: v.id("organizations"),
     }),
     v.null()
   ),
@@ -1273,6 +1306,43 @@ export const getDetailsForSettings = query({
       creatorEmail,
       versionCount,
       totalFileSize,
+    };
+  },
+});
+
+/**
+ * Get version status for real-time subscription
+ * Task 00049 - Subtask 02: Frontend Status Tracking
+ *
+ * Used by frontend to poll/subscribe to version processing status.
+ * Treats undefined status as "ready" for backward compatibility.
+ */
+export const getVersionStatus = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+  },
+  returns: v.union(
+    v.object({
+      status: v.union(
+        v.literal("uploading"),
+        v.literal("processing"),
+        v.literal("ready"),
+        v.literal("error")
+      ),
+      errorMessage: v.optional(v.string()),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const version = await ctx.db.get(args.versionId);
+    if (!version) return null;
+
+    // Treat undefined status as "ready" for backward compatibility
+    const status = version.status ?? "ready";
+
+    return {
+      status: status as "uploading" | "processing" | "ready" | "error",
+      errorMessage: version.errorMessage,
     };
   },
 });

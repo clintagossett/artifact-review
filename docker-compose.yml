@@ -1,0 +1,133 @@
+services:
+  backend:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-backend
+    image: ghcr.io/get-convex/convex-backend:latest
+    stop_grace_period: 10s
+    stop_signal: SIGINT
+    ports:
+      - "${CONVEX_ADMIN_PORT:?CONVEX_ADMIN_PORT not set - run agent-init.sh}:3210"
+      - "${CONVEX_HTTP_PORT:?CONVEX_HTTP_PORT not set - run agent-init.sh}:3211"
+    volumes:
+      - convex_data:/convex/data
+      # Mount combined CA bundle (system CAs + mkcert CA) for resend-proxy trust
+      # MKCERT_CERTS_PATH configured in .env.docker.local (default: orchestrator repo)
+      - ${MKCERT_CERTS_PATH:-../artifact-review-orchestrator/certs}/ca-certificates-with-mkcert.crt:/etc/ssl/certs/ca-certificates-with-mkcert.crt:ro
+    extra_hosts:
+      # Allow container to reach host machine for auth provider discovery and Novu
+      # AGENT_NAME is set by start-dev-servers.sh (required)
+      - "api.${AGENT_NAME:?AGENT_NAME is required}.loc:host-gateway"
+      - "${AGENT_NAME}.loc:host-gateway"
+      - "${AGENT_NAME}.convex.cloud.loc:host-gateway"
+      - "${AGENT_NAME}.convex.site.loc:host-gateway"
+      - "api.novu.loc:host-gateway"
+      # Route Resend API to local proxy for email interception (static IP on resend network)
+      # RESEND_PROXY_IP configured in .env.docker.local (agent-specific to avoid subnet conflicts)
+      - "api.resend.com:${RESEND_PROXY_IP:-172.28.0.10}"
+    environment:
+      # Use external URLs so browser can reach storage/API endpoints
+      # CONVEX_CLOUD_ORIGIN: Used for API + storage upload URLs (must be browser-accessible)
+      # CONVEX_SITE_ORIGIN: Used for HTTP actions (must be browser-accessible)
+      - CONVEX_CLOUD_ORIGIN=${CONVEX_URL:-https://${AGENT_NAME}.convex.cloud.loc}
+      - CONVEX_SITE_ORIGIN=${CONVEX_SITE_URL:-https://${AGENT_NAME}.convex.site.loc}
+      - RUST_LOG=info
+      - INSTANCE_NAME=${INSTANCE_NAME:-artifact-review-local}
+      # NOTE: Do NOT set INSTANCE_SECRET here - let the container generate it on first start
+      # and persist it in the volume. Setting it here would override the volume's value on
+      # every restart, causing admin key mismatches.
+      # If you need to reset, delete the volume: docker volume rm mark_convex_data
+      - DO_NOT_REQUIRE_SSL=true
+      - DISABLE_BEACON=true
+      - MAX_UDF_EXECUTION_SEC=10
+      # Trust mkcert CA for HTTPS to local services (see docs/setup/mkcert-setup.md)
+      # SSL_CERT_FILE tells Rust's native-tls/openssl to use our custom CA bundle
+      - SSL_CERT_FILE=/etc/ssl/certs/ca-certificates-with-mkcert.crt
+      # NODE_EXTRA_CA_CERTS tells Node.js (Convex actions) to trust mkcert CA
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates-with-mkcert.crt
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3210/version" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - default
+      - resend
+
+  # Port 80 proxy for Node executor compatibility
+  # The Convex Node executor's internal implementation tries to connect to 127.0.0.1:80
+  # but the backend only listens on 3210/3211. This sidecar proxies 80 → 3210.
+  # NOTE: Uses internal container port (always 3210), not the mapped host port.
+  # See: tasks/00045-node-action-storage-fix/README.md
+  port80-proxy:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-port80-proxy
+    image: alpine/socat:latest
+    network_mode: "service:backend"
+    # Proxy port 80 to the backend's internal admin port (3210)
+    # The backend always listens on 3210 internally, regardless of CONVEX_ADMIN_PORT mapping
+    command: TCP-LISTEN:80,fork,reuseaddr TCP:127.0.0.1:3210
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-dashboard
+    image: ghcr.io/get-convex/convex-dashboard:latest
+    ports:
+      - "${CONVEX_DASHBOARD_PORT:?CONVEX_DASHBOARD_PORT not set - run agent-init.sh}:6791"
+    environment:
+      - NEXT_PUBLIC_DEPLOYMENT_URL=http://127.0.0.1:${CONVEX_ADMIN_PORT:?CONVEX_ADMIN_PORT not set}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  mailpit:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-mailpit
+    image: axllent/mailpit
+    ports:
+      - "${MAILPIT_WEB_PORT:?MAILPIT_WEB_PORT not set - run agent-init.sh}:8025" # Web UI
+      - "${MAILPIT_SMTP_PORT:?MAILPIT_SMTP_PORT not set - run agent-init.sh}:1025" # SMTP server
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - mailpit  # Allow backend to reach via 'mailpit' hostname
+      resend:
+        aliases:
+          - mailpit
+
+  # Resend API proxy: Intercepts calls to api.resend.com and routes to Mailpit
+  # This allows @convex-dev/resend to work unchanged in local dev
+  # Backend resolves api.resend.com → RESEND_PROXY_IP (this container) via extra_hosts
+  resend-proxy:
+    container_name: ${AGENT_NAME:?AGENT_NAME is required}-resend-proxy
+    build:
+      context: ./docker/resend-proxy
+      dockerfile: Dockerfile
+    volumes:
+      # Mount mkcert certs for TLS (see docs/setup/mkcert-setup.md)
+      # MKCERT_CERTS_PATH configured in .env.docker.local (default: orchestrator repo)
+      - ${MKCERT_CERTS_PATH:-../artifact-review-orchestrator/certs}/api.resend.com.pem:/certs/cert.pem:ro
+      - ${MKCERT_CERTS_PATH:-../artifact-review-orchestrator/certs}/api.resend.com-key.pem:/certs/key.pem:ro
+    environment:
+      - MAILPIT_HOST=mailpit
+      - MAILPIT_PORT=8025
+    networks:
+      resend:
+        ipv4_address: ${RESEND_PROXY_IP:-172.28.0.10}
+    depends_on:
+      - mailpit
+    restart: unless-stopped
+
+networks:
+  resend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${RESEND_NETWORK_SUBNET:-172.28.0.0/16}
+
+volumes:
+  convex_data:
+    # Explicit name prevents volume changing when COMPOSE_PROJECT_NAME changes
+    # AGENT_NAME must be set (by start-dev-servers.sh or .env.agent.local)
+    name: ${AGENT_NAME}_convex_data

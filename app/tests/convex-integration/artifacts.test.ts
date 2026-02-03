@@ -16,11 +16,14 @@ describe("artifacts", () => {
 
       // Create a user first
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
           createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
       });
 
       // Create as authenticated user
@@ -72,11 +75,14 @@ describe("artifacts", () => {
 
       // Create a user first
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
           createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
       });
 
       // Create as authenticated user
@@ -119,19 +125,25 @@ describe("artifacts", () => {
 
       // Create two users
       const user1Id = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
           createdAt: Date.now(),
           email: "user1@example.com",
           name: "User 1",
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org1", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
       });
 
       const user2Id = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
           createdAt: Date.now(),
           email: "user2@example.com",
           name: "User 2",
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org2", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
       });
 
       const asUser1 = t.withIdentity({ subject: user1Id });
@@ -175,11 +187,14 @@ describe("artifacts", () => {
       const t = convexTest(schema);
 
       const userId = await t.run(async (ctx) => {
-        return await ctx.db.insert("users", {
+        const uid = await ctx.db.insert("users", {
           createdAt: Date.now(),
           email: "test@example.com",
           name: "Test User",
         });
+        const orgId = await ctx.db.insert("organizations", { name: "Org", createdAt: Date.now(), createdBy: uid });
+        await ctx.db.insert("members", { userId: uid, organizationId: orgId, roles: ["owner"], createdAt: Date.now(), createdBy: uid });
+        return uid;
       });
 
       const asUser = t.withIdentity({ subject: userId });

@@ -17,9 +17,8 @@ tasks/XXXXX-feature-name/
 │   │   └── feature.test.ts
 │   ├── e2e/              # Playwright E2E tests
 │   │   └── feature-flow.spec.ts
-│   └── validation-videos/
-│       ├── feature-trace.zip    # Playwright trace (PRIMARY)
-│       └── feature.webm         # Video backup (optional)
+│   └── validation-trace/
+│       └── feature-trace.zip    # Playwright trace (PRIMARY)
 ├── test-report.md        # What was tested, coverage, results
 └── PROMOTION.md          # Which tests to promote (if any)
 ```
@@ -76,13 +75,13 @@ After E2E tests pass:
 cd tasks/XXXXX/tests
 
 # Run tests (generates trace.zip automatically)
+# Run tests (generates trace.zip automatically)
 npx playwright test
 
-# Copy trace to validation-videos/
-cp test-results/*/trace.zip validation-videos/feature-trace.zip
-
-# Verify trace works
-npx playwright show-trace validation-videos/feature-trace.zip
+# Finding traces
+# They are located in test-results/*/trace.zip
+# View trace interactively
+npx playwright show-trace test-results/*/trace.zip
 ```
 
 Playwright config must have `trace: 'on'` to generate trace.zip.
@@ -93,20 +92,14 @@ The trace provides:
 - DOM snapshots
 - Better than manual videos for debugging
 
-**IMPORTANT:** All e2e tests MUST generate video recordings. Configure Playwright with:
+**IMPORTANT:** Ensure trace is enabled in Playwright config:
 ```typescript
 use: {
-  video: 'on',  // MANDATORY - records all tests
   trace: 'on',
 }
 ```
 
-Videos are gitignored and not committed to the repository. They are generated for:
-- Human review during development
-- Debugging failed tests
-- Stakeholder demonstrations
 
-To keep videos locally, copy them outside the git repo or to a shared drive.
 
 ### 7. Create Test Report
 
@@ -121,7 +114,7 @@ Create `test-report.md` documenting:
 Deliverables for review:
 - ✅ Working feature
 - ✅ Passing tests (backend + E2E)
-- ✅ Validation trace (`validation-videos/feature-trace.zip`)
+- ✅ Validation trace (`test-results/.../trace.zip`)
 - ✅ Test report (`test-report.md`)
 
 ## TDD Best Practices for AI Agents

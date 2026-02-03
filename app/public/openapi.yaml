@@ -1,0 +1,42 @@
+openapi: 3.0.0
+info:
+  title: Artifact Review Agent API (Discovery)
+  description: |
+    This is the discovery endpoint for the Artifact Review Agent API.
+    
+    **Full API Access:**
+    To access the full API capabilities (creating artifacts, reading comments), you must first obtain an API Key from the Artifact Review Settings page.
+    
+    Once existing, authenticate via the `X-API-Key` header implies fetching the full specification from `/api/v1/openapi.yaml`.
+  version: 1.0.0
+servers:
+  - url: https://api.artifact.review
+    description: Production Server
+  - url: https://api.ar.local.com
+    description: Local Development Server
+
+paths:
+  /api/v1/openapi.yaml:
+    get:
+      summary: Retrieve the Full API Specification
+      description: |
+        Returns the complete OpenAPI 3.0 specification for all Agent API endpoints.
+        Requires a valid API Key.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Full YAML Specification
+          content:
+            text/yaml:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized (Invalid or missing API Key)
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key

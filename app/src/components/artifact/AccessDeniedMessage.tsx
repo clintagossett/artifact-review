@@ -18,11 +18,11 @@ export function AccessDeniedMessage({ artifactTitle }: AccessDeniedMessageProps)
         <CardContent className="pt-8 pb-8">
           <Lock className="h-12 w-12 text-gray-400 mx-auto" />
           <h2 className="text-xl font-semibold text-gray-900 mt-4">
-            You don't have access
+            {"You don't have access"}
           </h2>
           {artifactTitle && (
             <p className="text-sm text-gray-600 mt-2">
-              to "{artifactTitle}"
+              {`to "${artifactTitle}"`}
             </p>
           )}
           <p className="text-sm text-gray-500 mt-4">

@@ -61,13 +61,27 @@ interface TestData {
  */
 async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData> {
   // Create users
-  const ownerId = await t.run(async (ctx) =>
-    await ctx.db.insert("users", {
+  const ownerId = await t.run(async (ctx) => {
+    const userId = await ctx.db.insert("users", {
       createdAt: Date.now(),
       name: "Alice Owner",
       email: "alice@example.com",
-    })
-  );
+    });
+    // Create Org
+    const orgId = await ctx.db.insert("organizations", {
+      name: "Alice's Org",
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    await ctx.db.insert("members", {
+      userId,
+      organizationId: orgId,
+      roles: ["owner"],
+      createdAt: Date.now(),
+      createdBy: userId,
+    });
+    return userId;
+  });
 
   const reviewerId = await t.run(async (ctx) =>
     await ctx.db.insert("users", {
@@ -88,16 +102,21 @@ async function setupTestData(t: ReturnType<typeof convexTest>): Promise<TestData
   // Create artifact (owned by Alice)
   const asOwner = t.withIdentity({ subject: ownerId });
   const now = Date.now();
-  const artifactId = await asOwner.run(async (ctx) =>
-    await ctx.db.insert("artifacts", {
+  const artifactId = await asOwner.run(async (ctx) => {
+    // Resolve Org
+    const member = await ctx.db.query("members").withIndex("by_userId", q => q.eq("userId", ownerId)).first();
+    const organizationId = member!.organizationId;
+
+    return await ctx.db.insert("artifacts", {
       name: "Test Artifact",
       createdBy: ownerId,
+      organizationId,
       shareToken: "test1234",
       isDeleted: false,
       createdAt: now,
       updatedAt: now,
-    })
-  );
+    });
+  });
 
   // Create version with storage
   const storageId = await asOwner.run(async (ctx) => {
