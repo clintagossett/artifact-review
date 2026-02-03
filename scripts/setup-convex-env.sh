@@ -189,10 +189,16 @@ check_convex_env() {
 
     cd "$APP_DIR"
 
+    # Determine which env file to use (same logic as set_convex_env)
+    local env_file="$APP_DIR/.env.nextjs.local"
+    if [ ! -f "$env_file" ]; then
+        env_file="$APP_DIR/.env.local"
+    fi
+
     # Check generated vars
     echo "  --- Generated vars ---"
     for var in "${GENERATED_VARS[@]}"; do
-        local value=$(npx convex env get "$var" 2>/dev/null || echo "")
+        local value=$(npx convex env get "$var" --env-file "$env_file" 2>/dev/null || echo "")
         if [ -n "$value" ]; then
             # Truncate long values
             if [ ${#value} -gt 50 ]; then
@@ -215,7 +221,7 @@ check_convex_env() {
             [[ "$var" =~ ^[[:space:]]*# ]] && continue
             var=$(echo "$var" | xargs)
             [ -z "$var" ] && continue
-            local convex_value=$(npx convex env get "$var" 2>/dev/null || echo "")
+            local convex_value=$(npx convex env get "$var" --env-file "$env_file" 2>/dev/null || echo "")
             if [ -n "$convex_value" ]; then
                 if [ ${#convex_value} -gt 50 ]; then
                     echo -e "  ${GREEN}$var${NC}: ${convex_value:0:47}..."
@@ -282,6 +288,9 @@ sync_passthrough_vars() {
 
     echo "  Syncing vars from .env.convex.local..."
     local count=0
+    local failed=0
+    local failed_vars=()
+
     while IFS='=' read -r var value; do
         # Skip comments and empty lines
         [[ "$var" =~ ^#.*$ || -z "$var" ]] && continue
@@ -292,10 +301,23 @@ sync_passthrough_vars() {
         value=$(echo "$value" | xargs)
         # Skip if no value
         [ -z "$value" ] && continue
+
         echo "  Setting ${var}..."
-        npx convex env set --env-file "$env_file" -- "$var" "$value"
-        ((count++))
+        if npx convex env set --env-file "$env_file" -- "$var" "$value" 2>/dev/null; then
+            ((count++))
+        else
+            echo -e "  ${RED}Failed to set $var in Convex${NC}"
+            ((failed++))
+            failed_vars+=("$var")
+        fi
     done < "$convex_env_file"
+
+    if [ $failed -gt 0 ]; then
+        echo -e "${RED}Failed to set $failed variable(s): ${failed_vars[*]}${NC}"
+        echo -e "${YELLOW}This usually indicates Convex backend is not ready or admin key is invalid${NC}"
+        echo -e "${YELLOW}Try: ./scripts/setup-convex-env.sh (refresh admin key) then retry${NC}"
+        return 1
+    fi
 
     echo -e "${GREEN}Synced $count variable(s)${NC}"
 }

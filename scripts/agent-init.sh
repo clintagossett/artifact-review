@@ -511,10 +511,28 @@ start_convex_container() {
         docker compose --env-file "$PROJECT_ROOT/.env.docker.local" up -d
 
         log_info "Waiting for Convex to initialize..."
-        sleep 10
+        local max_wait=30
+        local waited=0
+        local ready=false
 
-        if docker ps --format '{{.Names}}' | grep -q "^${AGENT_NAME}-backend$"; then
-            log_success "Convex container started"
+        while [ $waited -lt $max_wait ]; do
+            # Check if container is running and responsive
+            if docker ps --format '{{.Names}}' | grep -q "^${AGENT_NAME}-backend$"; then
+                # Try to check if Convex is accepting commands
+                if docker exec "${AGENT_NAME}-backend" test -f /root/.convex/initialized 2>/dev/null; then
+                    ready=true
+                    break
+                fi
+            fi
+            sleep 1
+            ((waited++))
+        done
+
+        if [ "$ready" = true ]; then
+            log_success "Convex container ready after ${waited}s"
+        elif docker ps --format '{{.Names}}' | grep -q "^${AGENT_NAME}-backend$"; then
+            log_warn "Convex container running but may not be fully initialized (waited ${max_wait}s)"
+            log_info "Continuing anyway - setup-convex-env.sh will verify later"
         else
             log_error "Failed to start Convex container"
             exit 1
@@ -554,11 +572,81 @@ configure_convex_env() {
     cd "$PROJECT_ROOT"
 
     if [ -x "./scripts/setup-convex-env.sh" ]; then
-        ./scripts/setup-convex-env.sh
-        log_success "Convex environment configured"
+        # Capture output to log file for debugging
+        local log_file="/tmp/convex-setup-${AGENT_NAME}.log"
+
+        if ./scripts/setup-convex-env.sh 2>&1 | tee "$log_file"; then
+            log_success "Convex environment configured"
+        else
+            log_error "Convex setup failed. Full log:"
+            echo "----------------------------------------"
+            cat "$log_file"
+            echo "----------------------------------------"
+            log_info "Log saved to: $log_file"
+            exit 1
+        fi
     else
         log_warn "setup-convex-env.sh not found or not executable"
     fi
+}
+
+# =============================================================================
+# STEP 6.5: Validate Convex Environment
+# =============================================================================
+validate_convex_env() {
+    log_step "Step 6.5: Validate Convex Environment"
+
+    cd "$APP_DIR"
+
+    # Determine which env file to use
+    local env_file="$APP_DIR/.env.nextjs.local"
+    [ ! -f "$env_file" ] && env_file="$APP_DIR/.env.local"
+
+    if [ ! -f "$env_file" ]; then
+        log_error "No .env.nextjs.local or .env.local found"
+        exit 1
+    fi
+
+    # Critical vars that MUST be set for the app to function
+    local critical_vars=(
+        "RESEND_API_KEY"
+        "EMAIL_FROM_AUTH"
+        "STRIPE_SECRET_KEY"
+        "JWT_PRIVATE_KEY"
+        "INTERNAL_API_KEY"
+    )
+
+    local missing=()
+    local checked=0
+
+    log_info "Validating critical environment variables..."
+
+    for var in "${critical_vars[@]}"; do
+        local value=$(npx convex env get "$var" --env-file "$env_file" 2>/dev/null || echo "")
+        if [ -z "$value" ]; then
+            missing+=("$var")
+            echo -e "  ${RED}❌ $var${NC}: not set in Convex"
+        else
+            echo -e "  ${GREEN}✅ $var${NC}: set"
+            ((checked++))
+        fi
+    done
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        echo ""
+        log_error "Critical Convex variables not set: ${missing[*]}"
+        log_info ""
+        log_info "This usually means setup-convex-env.sh failed to sync variables."
+        log_info ""
+        log_info "Troubleshooting steps:"
+        log_info "  1. Check if .env.convex.local has the missing variables"
+        log_info "  2. Try: ./scripts/setup-convex-env.sh --sync"
+        log_info "  3. Verify with: ./scripts/setup-convex-env.sh --check"
+        log_info "  4. Check Convex logs: docker logs ${AGENT_NAME}-backend --tail 50"
+        exit 1
+    fi
+
+    log_success "All $checked critical variables validated"
 }
 
 # =============================================================================
@@ -780,6 +868,7 @@ main() {
             start_convex_container
             setup_novu
             configure_convex_env
+            validate_convex_env
             show_status
             ;;
     esac
