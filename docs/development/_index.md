@@ -15,6 +15,7 @@ Operational instructions for AI-assisted development. These guides distill testi
 | [logging-guide.md](./logging-guide.md) | How to use structured logging |
 | [routing-patterns.md](./routing-patterns.md) | Next.js routing, pages vs components, SEO, auth redirects |
 | [novu-setup.md](./novu-setup.md) | Novu notifications setup and testing |
+| [vercel-deployment-debugging.md](./vercel-deployment-debugging.md) | **Debug failed Vercel deployments using CLI and API** |
 
 ## Quick Start
 
