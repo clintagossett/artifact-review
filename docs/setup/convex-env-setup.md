@@ -52,8 +52,10 @@ cp app/.env.convex.local.example app/.env.convex.local
 SITE_URL=https://james.loc  # Your agent's domain
 INTERNAL_API_KEY=your-secret-key
 RESEND_API_KEY=re_your_key
-EMAIL_FROM_AUTH=Artifact Review <auth@yourdomain.com>
-EMAIL_FROM_NOTIFICATIONS=Artifact Review <notify@yourdomain.com>
+
+# Email sender addresses (use staging domains for dev)
+EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>"
+EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>"
 
 # Stripe (if using billing)
 STRIPE_SECRET_KEY=sk_test_...
@@ -61,6 +63,13 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_ID_PRO=price_...
 STRIPE_PRICE_ID_PRO_ANNUAL=price_...
 ```
+
+**Note on email addresses:**
+- Use staging domains (`artifactreview-early.xyz`) for local/dev environments
+- Use production domains (`artifactreview.com`) for production
+- `auth@` is for authentication emails (magic links, password resets)
+- `notify@` is for notification emails (invitations, comments, mentions)
+- See [Email Configuration](./email-configuration.md) for details
 
 ### 3. Run setup
 

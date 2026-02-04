@@ -7,6 +7,8 @@ Documentation for setting up accounts, environments, and access for the Artifact
 | Document | Description |
 |----------|-------------|
 | [local-infrastructure.md](./local-infrastructure.md) | **Start here for local dev** - DNS routing, Convex endpoints, CORS handling |
+| [convex-project-creation.md](./convex-project-creation.md) | **Create Convex projects** - Step-by-step guide for staging and production Convex project setup |
+| [convex-env-setup.md](./convex-env-setup.md) | **Convex environment variables** - Local development Convex configuration with scripts |
 | [email-configuration.md](./email-configuration.md) | **Email setup** - Resend vs Mailpit, test modes, environment differences |
 | [mkcert-setup.md](./mkcert-setup.md) | **TLS certificates** - mkcert setup for resend-proxy, container trust |
 | [troubleshooting.md](./troubleshooting.md) | **When things break** - Auth issues, JWKS caching, Convex/Docker problems |

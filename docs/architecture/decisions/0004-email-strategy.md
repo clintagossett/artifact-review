@@ -107,19 +107,32 @@ When running locally via Docker Compose, all emails are routed to Mailpit. This 
 | Environment | Domain | DNS Required |
 |-------------|--------|--------------|
 | Local | N/A | No |
-| Dev | `dev.yourdomain.com` | No (test mode) |
-| Staging | `staging.yourdomain.com` | Yes (SPF/DKIM) |
+| Dev | `artifactreview-early.xyz` | No (test mode) |
+| Staging | `artifactreview-early.xyz` | Yes (SPF/DKIM) |
 | Production | `yourdomain.com` | Yes (SPF/DKIM) |
 
 ## Email Types
 
 ### MVP Email Templates
 
-| Email Type | Trigger | From Address |
-|------------|---------|--------------|
-| Magic link | User requests login | `auth@yourdomain.com` |
-| Share invitation | Creator shares document | `noreply@yourdomain.com` |
-| Comment notification | Someone comments | `notifications@yourdomain.com` |
+The application uses **two separate email addresses** for different types of communications:
+
+| Email Type | Trigger | From Address | Environment Variable | Sent Via |
+|------------|---------|--------------|---------------------|----------|
+| Magic link | User requests login | `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | `EMAIL_FROM_AUTH` | Direct Resend (Convex) |
+| Password reset | User requests password reset | `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | `EMAIL_FROM_AUTH` | Direct Resend (Convex) |
+| Share invitation | Creator shares document | `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | `EMAIL_FROM_NOTIFICATIONS` | Novu → Resend |
+| Comment notification | Someone comments | `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | `EMAIL_FROM_NOTIFICATIONS` | Novu → Resend |
+| Mention notification | @mentioned in comment | `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | `EMAIL_FROM_NOTIFICATIONS` | Novu → Resend |
+
+**Display Name:** All emails use `"Artifact Review"` as the sender name.
+
+**Why two addresses?**
+- Separates authentication-critical emails from social/notification emails
+- Allows users to filter notifications separately from login emails
+- Improves deliverability by segregating email types
+- Enables different rate limiting and monitoring per email type
+- Authentication emails remain independent of Novu (single point of failure isolation)
 
 ### Post-MVP Email Templates
 
@@ -134,7 +147,7 @@ When running locally via Docker Compose, all emails are routed to Mailpit. This 
 **Not configured for MVP.** Future consideration for reply-to-comment:
 
 - Resend supports inbound email via webhooks
-- Format: `reply+{commentId}@yourdomain.com`
+- Format: `reply+{commentId}@artifactreview.com`
 - Webhook → Convex HTTP action → Create comment
 
 ## Consequences

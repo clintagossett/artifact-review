@@ -172,10 +172,19 @@ These variables must be set in the **Convex Dashboard** under **Project Settings
 | `STRIPE_WEBHOOK_SECRET` | **Secret Key**. Webhook signing secret (starts with `whsec_`) for verifying Stripe events. | `convex/http.ts` |
 
 ### 📧 Email Configuration
-| Variable Name | Description | Used In Files |
-| :--- | :--- | :--- |
-| `EMAIL_FROM_AUTH` | **Sender Address**. The "From" address for magic link emails (e.g., `Auth <auth@domain.com>`). | `convex/http.ts` |
-| `EMAIL_FROM_NOTIFICATIONS` | **Sender Address**. The "From" address for invitation emails (e.g., `Notify <notify@domain.com>`). | `convex/access.ts` |
+
+The application uses **two separate email addresses** for different types of communications:
+
+| Variable Name | Description | Used In Files | Example Value |
+| :--- | :--- | :--- | :--- |
+| `EMAIL_FROM_AUTH` | **Sender Address**. The "From" address for authentication emails (magic links, password resets).<br/><br/>**Environments:**<br/>- Staging: `"Artifact Review <auth@artifactreview-early.xyz>"`<br/>- Production: `"Artifact Review <auth@artifactreview.com>"`<br/><br/>**Sent directly via Resend** from Convex. | `convex/http.ts` | `"Artifact Review <auth@artifactreview.com>"` |
+| `EMAIL_FROM_NOTIFICATIONS` | **Sender Address**. The "From" address for notification emails (invitations, comments, mentions).<br/><br/>**Environments:**<br/>- Staging: `"Artifact Review <notify@artifactreview-early.xyz>"`<br/>- Production: `"Artifact Review <notify@artifactreview.com>"`<br/><br/>**Sent via Novu** (which uses Resend as provider). Configure in Novu Dashboard → Integrations → Resend. | `convex/access.ts`, `convex/novu.ts` | `"Artifact Review <notify@artifactreview.com>"` |
+
+**Why two addresses?**
+- Separates authentication-critical emails from social/notification emails
+- Allows users to filter notifications separately from login emails
+- Improves deliverability by segregating email types
+- Enables different rate limiting and monitoring per email type
  
  ### 💳 Billing (Stripe)
  | Variable Name | Description | Used In Files |
@@ -271,10 +280,13 @@ They are set directly in Convex. See [JWT Key Management](#jwt-key-management) b
 # Internal API key for server-to-server auth
 INTERNAL_API_KEY=...
 
-# Email config (local dev uses Mailpit, not Resend)
+# Email configuration
+# Note: Local dev uses Mailpit, so RESEND_API_KEY is not actually used
 RESEND_API_KEY=re_dummy_key_for_localhost
-EMAIL_FROM_AUTH="Auth <auth@test.com>"
-EMAIL_FROM_NOTIFICATIONS="Notify <notify@test.com>"
+
+# Email sender addresses (used in email templates)
+EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>"
+EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>"
 
 # Novu config
 NOVU_SECRET_KEY=...

@@ -2,6 +2,17 @@
 
 This document explains how email works in different environments and clarifies the relationship between Resend, Mailpit, and test modes.
 
+## Quick Reference: Email Addresses
+
+| Email Address | Purpose | Used For | Environment Variable | Sent Via |
+|---------------|---------|----------|---------------------|----------|
+| `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | Authentication emails | Magic links, password resets | `EMAIL_FROM_AUTH` | Direct Resend (Convex) |
+| `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | Notification emails | Invitations, comments, mentions | `EMAIL_FROM_NOTIFICATIONS` | Novu → Resend |
+
+**Display Name:** Both use `"Artifact Review"` as the sender name.
+
+See [Email Addresses](#email-addresses) section below for detailed explanation.
+
 ## Overview
 
 The application sends emails for:
@@ -10,6 +21,21 @@ The application sends emails for:
 - Invitation emails
 
 The email delivery mechanism **differs by environment**.
+
+### Email Addresses
+
+The application uses **two separate email addresses** for different types of communications:
+
+| Email Address | Purpose | Environment Variable | Display Name |
+|---------------|---------|---------------------|--------------|
+| `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | Authentication emails (magic links, password resets) | `EMAIL_FROM_AUTH` | "Artifact Review" |
+| `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | Notification emails (invitations, comments, mentions) | `EMAIL_FROM_NOTIFICATIONS` | "Artifact Review" |
+
+**Why two addresses?**
+- Separates authentication-critical emails from social/notification emails
+- Allows users to filter notifications separately from login emails
+- Improves deliverability by segregating email types
+- Enables different rate limiting and monitoring per email type
 
 ## Local Development (Self-Hosted Convex)
 
@@ -30,6 +56,8 @@ In local dev, emails bypass Resend entirely and go directly to **Mailpit**.
 **Required:**
 - `MAILPIT_API_URL` in `app/.env.nextjs.local` (for tests to retrieve emails)
 - Mailpit Docker container running (handled by `docker-compose.yml`)
+- `EMAIL_FROM_AUTH` in `app/.env.convex.local` (used in email templates)
+- `EMAIL_FROM_NOTIFICATIONS` in `app/.env.convex.local` (used in email templates)
 
 **NOT Required:**
 - ❌ `RESEND_API_KEY` - Not used in local dev
@@ -39,6 +67,8 @@ In local dev, emails bypass Resend entirely and go directly to **Mailpit**.
 **Default values in `.env.*.local.example`:**
 - `RESEND_API_KEY=re_dummy_key_for_localhost` (documentation only)
 - `RESEND_FULL_ACCESS_API_KEY=re_dummy_key_for_localhost` (documentation only)
+- `EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>"` (example)
+- `EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>"` (example)
 
 These dummy keys:
 - ✅ Allow code to load without errors
@@ -65,6 +95,19 @@ In hosted environments, emails are sent through **Resend**.
 **Required:**
 - `RESEND_API_KEY` - API key for sending emails (set via `npx convex env set`)
 - `RESEND_FULL_ACCESS_API_KEY` - Full access key for test utilities to retrieve sent emails
+- `EMAIL_FROM_AUTH` - Sender address for authentication emails
+- `EMAIL_FROM_NOTIFICATIONS` - Sender address for notification emails
+
+**Example configuration:**
+```bash
+# Staging
+npx convex env set EMAIL_FROM_AUTH "Artifact Review <auth@artifactreview-early.xyz>" --project staging
+npx convex env set EMAIL_FROM_NOTIFICATIONS "Artifact Review <notify@artifactreview-early.xyz>" --project staging
+
+# Production
+npx convex env set EMAIL_FROM_AUTH "Artifact Review <auth@artifactreview.com>" --project prod
+npx convex env set EMAIL_FROM_NOTIFICATIONS "Artifact Review <notify@artifactreview.com>" --project prod
+```
 
 ## Common Confusion
 
@@ -99,6 +142,8 @@ Two different keys serve different purposes:
 |----------|------|---------|-----------|--------|
 | `RESEND_API_KEY` | `.env.convex.local` | Convex backend (sending) | ❌ Not needed | ✅ Required |
 | `RESEND_FULL_ACCESS_API_KEY` | `.env.nextjs.local` | Test utilities (retrieval) | ❌ Not needed | ✅ Required |
+| `EMAIL_FROM_AUTH` | `.env.convex.local` | Convex backend (auth emails) | ✅ Required | ✅ Required |
+| `EMAIL_FROM_NOTIFICATIONS` | `.env.convex.local` | Convex backend (notification emails) | ✅ Required | ✅ Required |
 | `MAILPIT_API_URL` | `.env.nextjs.local` | Test utilities (retrieval) | ✅ Required | ❌ Not used |
 
 ## Testing Email Flow
@@ -140,8 +185,49 @@ npx convex env set RESEND_API_KEY re_your_actual_key
 - Ensure `RESEND_FULL_ACCESS_API_KEY=re_dummy_key_for_localhost` is in `.env.nextjs.local`
 - This allows the Resend client to initialize even though it's not used
 
+## Novu Integration
+
+Notification emails (invitations, comments, mentions) are sent through **Novu**, which uses Resend as its email provider.
+
+### How Novu Uses Email Addresses
+
+Novu is configured with the `notify@` email address:
+
+**In Novu Dashboard (https://novu.loc or https://dashboard.novu.co):**
+1. Navigate to **Integrations** → **Email**
+2. Select **Resend** provider
+3. Configure:
+   - **API Key**: Resend API key for the environment
+   - **From Name**: `Artifact Review`
+   - **From Email**: `notify@artifactreview-early.xyz` (staging) or `notify@artifactreview.com` (prod)
+
+**Environment-specific configuration:**
+
+| Environment | Novu Instance | From Email | Resend API Key |
+|-------------|---------------|------------|----------------|
+| Local Dev | Self-hosted (https://novu.loc) | `notify@artifactreview-early.xyz` | Staging key |
+| Staging | Novu Cloud | `notify@artifactreview-early.xyz` | Staging key |
+| Production | Novu Cloud | `notify@artifactreview.com` | Production key |
+
+### Direct Email vs Novu
+
+The application sends emails through two different paths:
+
+| Email Type | Path | Email Address | Configuration Location |
+|------------|------|---------------|------------------------|
+| **Authentication** (magic links, password resets) | Direct Resend → Convex | `auth@` | Convex env vars (`EMAIL_FROM_AUTH`) |
+| **Notifications** (invitations, comments, mentions) | Novu → Resend | `notify@` | Novu Dashboard Integrations |
+
+This separation ensures:
+- Authentication emails are always delivered (not dependent on Novu)
+- Notifications can be orchestrated with digests, batching, and preferences
+- Different rate limits and monitoring per email type
+
 ## See Also
 
-- `app/convex/lib/email.ts` - Email sending logic
+- `app/convex/lib/email.ts` - Direct email sending logic (auth emails)
+- `app/convex/novu.ts` - Novu notification triggers
+- `app/src/app/api/novu/workflows/comment-workflow.ts` - Notification workflow
 - `app/tests/utils/resend.ts` - Test email retrieval utility
 - `app/playwright.config.ts` - Test environment configuration
+- [Novu Setup Guide](./novu-setup.md) - Complete Novu configuration guide

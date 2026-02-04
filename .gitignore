@@ -43,3 +43,4 @@ __pycache__/
 /SESSION-RESUME.md
 docs-artifact.zip
 /convex/
+.vercel

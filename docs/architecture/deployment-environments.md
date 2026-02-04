@@ -1,24 +1,31 @@
 # Deployment Environments & SDLC
 
 **Status:** Active
-**Last Updated:** 2024-12-24
+**Last Updated:** 2026-02-03
 
 ## Overview
 
-This project uses a 4-tier environment strategy to ensure quality and stability before production deployment.
+This project uses a 3-tier environment strategy with automatic preview deployments to ensure quality and stability before production deployment.
 
 ```
-Local Dev → Hosted Dev (Integration) → Staging (Validation) → Production
+Local Dev → Preview Deployments (Per PR) → Staging (Validation) → Production
 ```
+
+**Key Strategy:**
+- **Local Dev** - Individual developer testing with Docker stack
+- **Preview Deployments** - Automatic isolated environments per PR (Vercel + Convex preview)
+- **Staging** - Pre-production validation on `artifactreview-early.xyz`
+- **Production** - Customer-facing application on `artifactreview.com`
 
 ## Architectural Decisions
 
 ### Backend: Hybrid Strategy (Self-hosted Local, Cloud Hosted)
 
-**Decision:** Use a self-hosted Docker stack for **Local Dev** and Convex's hosted cloud service for **Hosted Dev, Staging, and Production**.
+**Decision:** Use a self-hosted Docker stack for **Local Dev** and Convex's hosted cloud service for **Preview, Staging, and Production**.
 
 **Rationale:**
 - **Local Isolation** — Complete control over the local environment, offline-capable, and faster sync.
+- **Preview Deployments** — Automatic isolated Convex backends per PR for testing changes.
 - **Hosted Parity** — Cloud-hosted environments mirror production-grade infrastructure with multi-tenant isolation.
 - **Cost-effective** — Local dev costs zero; production uses the Managed service for specialized features and scale.
 - **Managed Production** — Production benefits from Convex's automatic scaling, backups, and official support.
@@ -38,7 +45,7 @@ Local Dev → Hosted Dev (Integration) → Staging (Validation) → Production
 
 **Why Vercel:**
 - **Deployment orchestration** — Coordinates backend deploy before frontend build
-- **Preview deployments** — Automatic preview deploys per PR with separate Convex backends
+- **Preview deployments** — Automatic preview deploys per PR with isolated Convex backends (replaces need for persistent "Hosted Dev" environment)
 - **Next.js optimized** — Best-in-class for React/Next.js with SSR, App Router, Server Components
 - **Git-based workflow** — Auto-deploy on push to branches
 
@@ -58,21 +65,21 @@ Local Dev → Hosted Dev (Integration) → Staging (Validation) → Production
 
 This matrix ensures all components are compatible across environments.
 
-| Component | Local Dev | Hosted Dev | Staging | Production |
-|-----------|-----------|------------|---------|------------|
-| **Frontend Hosting** | Local dev server (`npm run dev`) | Vercel (auto-deploy from `dev` branch) | Vercel (deploy from `staging` branch) | Vercel (deploy from `main` branch) |
-| **Frontend Domain** | `http://localhost:3000` | `https://artifactreview-early.xyz/` | `staging.yourdomain.com` | `app.yourdomain.com` |
-| **Convex Backend** | **Self-hosted Docker** | Hosted cloud (`dev` project) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
-| **Convex URL** | `http://127.0.0.1:3210` | `https://beaming-oriole-310.convex.cloud` | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
-| **Database** | **SQLite (local container)** | Convex managed (shared dev data) | Convex managed (staging data) | Convex managed (production data) |
+| Component | Local Dev | Preview (PR) | Staging | Production |
+|-----------|-----------|--------------|---------|------------|
+| **Frontend Hosting** | Local dev server (`npm run dev`) | Vercel (auto per PR) | Vercel (`staging` branch) | Vercel (`main` branch) |
+| **Frontend Domain** | `http://localhost:3000` | Auto-generated Vercel URL | `https://artifactreview-early.xyz` | `https://artifactreview.com` |
+| **Convex Backend** | **Self-hosted Docker** | Hosted cloud (preview) | Hosted cloud (`staging` project) | Hosted cloud (`prod` project) |
+| **Convex URL** | `http://127.0.0.1:3210` | Auto-generated preview URL | Auto-generated (e.g., `wise-fox-789.convex.cloud`) | Auto-generated (e.g., `brave-lion-012.convex.cloud`) |
+| **Database** | **SQLite (local container)** | Convex managed (preview data) | Convex managed (staging data) | Convex managed (production data) |
 | **HTML Storage** | Local File Storage | Convex File Storage | Convex File Storage | Convex File Storage |
 | **Mail Send** | **Mailpit (Docker API)** | Resend (Test Mode) | Resend live (restricted) | Resend live (all users) |
 | **Mail Receive** | Not configured | Not configured | Not configured | Not configured* |
-| **Email Domain** | N/A (Mailpit capture) | `artifactreview-early.xyz` (test mode) | `staging.yourdomain.com` | `yourdomain.com` |
+| **Email Domain** | N/A (Mailpit capture) | `artifactreview-early.xyz` (test mode) | `artifactreview-early.xyz` | `artifactreview.com` |
 | **Resend API Key** | N/A (bypassed locally) | Test key | Staging key | Production key |
 | **Auth Provider** | Convex Auth | Convex Auth | Convex Auth | Convex Auth |
 | **OAuth Apps** | Dev credentials | Dev credentials | Staging credentials | Production credentials |
-| **OAuth Redirects** | `http://localhost:3000/auth/callback` | `https://artifactreview-early.xyz/auth/callback` | `https://staging.yourdomain.com/auth/callback` | `https://app.yourdomain.com/auth/callback` |
+| **OAuth Redirects** | `http://localhost:3000/auth/callback` | Auto-generated Vercel URL | `https://artifactreview-early.xyz/auth/callback` | `https://artifactreview.com/auth/callback` |
 
 **\*Note on Mail Receive:** Inbound email handling (e.g., reply-to-comment via email) is not required for MVP. If needed in future, consider:
 - Resend supports inbound email via webhooks
@@ -90,22 +97,24 @@ npm i -g vercel
 # Link project to Vercel (one time)
 vercel link
 
-# Set up Vercel projects for each environment
-# 1. Create Vercel project
+# Configure Vercel project:
+# 1. Create single Vercel project
 # 2. Link to GitHub repo
 # 3. Configure branch deployment:
-#    - dev branch → dev.yourdomain.com
-#    - staging branch → staging.yourdomain.com
-#    - main branch → app.yourdomain.com
+#    - staging branch → artifactreview-early.xyz
+#    - main branch → artifactreview.com
+#    - PR branches → automatic preview deployments
 
 # Set Convex environment variables in Vercel dashboard:
 # Project Settings > Environment Variables
-# NEXT_PUBLIC_CONVEX_URL = <convex deployment url per environment>
+# Set branch-specific values for:
+# - NEXT_PUBLIC_CONVEX_URL
+# - CONVEX_DEPLOY_KEY
 ```
 
 #### Convex Setup
 
-#### Local Dev (Self-hosted Docker)
+**Local Dev (Self-hosted Docker)**
 
 ```bash
 # 1. Start Docker stack
@@ -119,10 +128,13 @@ npx convex dev --once
 - **Emails**: Automatically routed to Mailpit API via `app/convex/lib/email.ts`.
 - **Dashboard**: Accessed via `http://localhost:6791`.
 
-# Hosted Dev
-npx convex deploy --project dev
-npx convex env set RESEND_API_KEY=re_test_xxx --project dev
-npx convex env set RESEND_TEST_MODE=true --project dev
+**Cloud Environments**
+
+```bash
+# Preview (automatic via Vercel)
+# - Convex creates isolated preview backend per PR
+# - Uses CONVEX_DEPLOY_KEY from Vercel environment variables
+# - Inherits staging environment variables by default
 
 # Staging
 npx convex deploy --project staging
@@ -199,35 +211,41 @@ Vercel deploys frontend
 
 ---
 
-### 2. Hosted Dev (Integration)
+### 2. Preview Deployments (Per PR)
 
-**Purpose:** Integration testing with real backend, shared team environment
+**Purpose:** Isolated testing environment for each pull request
 
 | Aspect | Configuration |
 |--------|--------------|
-| **Frontend** | Vercel (auto-deploy from `dev` branch) |
-| **Frontend URL** | `dev.yourdomain.com` (custom domain) or Vercel preview URL |
-| **Convex** | Hosted cloud (`dev` project) |
-| **Convex URL** | Auto-generated `*.convex.cloud` (e.g., `happy-horse-456.convex.cloud`) |
-| **Database** | Convex managed (shared across team) |
+| **Frontend** | Vercel (automatic per PR) |
+| **Frontend URL** | Auto-generated Vercel URL (e.g., `artifact-review-git-branch-team.vercel.app`) |
+| **Convex** | Hosted cloud (isolated preview backend) |
+| **Convex URL** | Auto-generated preview URL |
+| **Database** | Convex managed (isolated preview data) |
 | **Auth** | Convex Auth with dev OAuth apps |
 | **Mail Send** | Resend test mode (emails logged, not delivered) |
 | **Mail Receive** | Not configured |
-| **Data** | Test data, refreshed periodically |
+| **Data** | Isolated test data, auto-cleanup after 5-14 days |
 
 **Testing:**
-- Automated CI/CD tests
-- Integration tests across services
-- PR preview deployments
-- Team manual testing
+- Automated CI/CD tests per PR
+- Integration tests against isolated backend
+- Manual testing of changes before merge
+- Breaking changes can be tested safely
 
 **Promotion criteria:**
 - ✅ All unit tests pass
 - ✅ Integration tests pass
 - ✅ Code review approved
-- ✅ Feature functionally complete
+- ✅ No conflicts with base branch
 
 **Who uses it:** Development team, automated CI/CD
+
+**Key Benefits:**
+- Complete isolation per PR (no conflicts with other work)
+- Test breaking changes without affecting staging
+- Automatic cleanup (no manual teardown needed)
+- Replaces need for persistent "dev" environment
 
 ---
 
@@ -238,7 +256,7 @@ Vercel deploys frontend
 | Aspect | Configuration |
 |--------|--------------|
 | **Frontend** | Vercel (deploy from `staging` branch) |
-| **Frontend URL** | `staging.yourdomain.com` (custom domain) |
+| **Frontend URL** | `https://artifactreview-early.xyz` |
 | **Convex** | Hosted cloud (`staging` project) |
 | **Convex URL** | Auto-generated `*.convex.cloud` (e.g., `wise-fox-789.convex.cloud`) |
 | **Database** | Convex managed (production-like data) |
@@ -256,7 +274,7 @@ Vercel deploys frontend
 - Manual QA
 
 **Promotion criteria:**
-- ✅ All integration tests pass
+- ✅ All preview deployment tests pass
 - ✅ E2E tests pass
 - ✅ Performance benchmarks met
 - ✅ Security scan clean
@@ -274,7 +292,7 @@ Vercel deploys frontend
 | Aspect | Configuration |
 |--------|--------------|
 | **Frontend** | Vercel (deploy from `main` branch) |
-| **Frontend URL** | `app.yourdomain.com` (custom domain) |
+| **Frontend URL** | `https://artifactreview.com` |
 | **Convex** | Hosted cloud (`prod` project) |
 | **Convex URL** | Auto-generated `*.convex.cloud` (e.g., `brave-lion-012.convex.cloud`) |
 | **Database** | Convex managed (production data with automated backups) |
@@ -313,16 +331,13 @@ npx convex dev --once
 ```
 **Benefits:** Absolute isolation, offline-capable, zero Convex cloud usage.
 
-#### Hosted Dev (Cloud)
-Traditional cloud deployment for integration testing.
-```bash
-npx convex deploy --project dev
-```
-**Benefits:** Matches production infrastructure, shared team access.
+#### Cloud Environments (Preview, Staging, Production)
+Cloud deployments for testing and production.
 
 - **Local Dev** uses a self-hosted Docker container with a local SQLite database.
-- **Hosted/Staging/Prod** environments use Convex's managed cloud infrastructure.
+- **Preview/Staging/Prod** environments use Convex's managed cloud infrastructure.
 - Each cloud environment gets its own `*.convex.cloud` URL.
+- Preview deployments are automatically created per PR via Vercel's Convex integration.
 - Convex Managed handles: scaling, backups, monitoring, load balancing in the cloud.
 
 **Environment variables** managed per deployment:
@@ -330,9 +345,7 @@ npx convex deploy --project dev
 # Local: No Resend key needed (uses Mailpit)
 # Convex backend config points to localhost:1025 for SMTP
 
-# Hosted Dev
-npx convex env set RESEND_API_KEY=re_test_xxx --project dev
-npx convex env set RESEND_TEST_MODE=true --project dev
+# Preview: Inherits from staging by default (automatic via Vercel)
 
 # Staging
 npx convex env set RESEND_API_KEY=re_staging_xxx --project staging
@@ -350,16 +363,17 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 
 | Environment | OAuth Apps | OAuth Redirect URLs | Auth Method |
 |-------------|------------|---------------------|-------------|
-| **Local** | Dev credentials (Google, GitHub) | `http://localhost:5173/auth/callback` | Magic links (Mailpit) + OAuth |
-| **Hosted Dev** | Dev credentials (Google, GitHub) | `https://dev.yourdomain.com/auth/callback` | Magic links (Resend test) + OAuth |
-| **Staging** | Staging credentials (Google, GitHub) | `https://staging.yourdomain.com/auth/callback` | Magic links (Resend live) + OAuth |
-| **Production** | Production credentials (Google, GitHub) | `https://app.yourdomain.com/auth/callback` | Magic links (Resend live) + OAuth |
+| **Local** | Dev credentials (Google, GitHub) | `http://localhost:3000/auth/callback` | Magic links (Mailpit) + OAuth |
+| **Preview** | Dev credentials (Google, GitHub) | Auto-generated Vercel URL | Magic links (Resend test) + OAuth |
+| **Staging** | Staging credentials (Google, GitHub) | `https://artifactreview-early.xyz/auth/callback` | Magic links (Resend live) + OAuth |
+| **Production** | Production credentials (Google, GitHub) | `https://artifactreview.com/auth/callback` | Magic links (Resend live) + OAuth |
 
 **OAuth Apps Setup:**
-- Create separate OAuth applications for dev, staging, and production in:
+- Create separate OAuth applications for dev/preview, staging, and production in:
   - Google Cloud Console (for Google OAuth)
   - GitHub Developer Settings (for GitHub OAuth)
 - Each OAuth app must have the corresponding redirect URL registered
+- Preview deployments can share dev credentials or use wildcard domains
 - Store OAuth client IDs and secrets in Convex environment variables per project
 
 ### Email Configuration (Send & Receive)
@@ -369,7 +383,7 @@ npx convex env set RESEND_TEST_MODE=false --project prod
 | Environment | Provider | API Key | Mode | Delivery | Purpose |
 |-------------|----------|---------|------|----------|---------|
 | **Local** | Mailpit (Docker) | N/A | Capture | No delivery (localhost:8025 UI) | Magic links, dev testing |
-| **Hosted Dev** | Resend | Test key | Test mode | No delivery (logs only) | CI/CD testing, integration tests |
+| **Preview** | Resend | Test key | Test mode | No delivery (logs only) | CI/CD testing, PR validation |
 | **Staging** | Resend | Staging key | Live | Restricted (verified test emails) | QA, pre-prod validation |
 | **Production** | Resend | Production key | Live | All users | Customer magic links, notifications |
 
@@ -382,9 +396,9 @@ docker run -d -p 1025:1025 -p 8025:8025 axllent/mailpit
 
 **Resend Domain Configuration:**
 - Local: Not used (Mailpit)
-- Dev: `dev.yourdomain.com` (test mode, no SPF/DKIM needed)
-- Staging: `staging.yourdomain.com` (verify domain, add SPF/DKIM)
-- Production: `yourdomain.com` (verify domain, add SPF/DKIM)
+- Preview: `artifactreview-early.xyz` (test mode, no SPF/DKIM needed)
+- Staging: `artifactreview-early.xyz` (verify domain, add SPF/DKIM)
+- Production: `artifactreview.com` (verify domain, add SPF/DKIM)
 
 #### Mail Receive (Inbound)
 
@@ -405,11 +419,11 @@ Before deploying to any environment, verify these compatibility checks:
 
 ### ✅ Convex + Email Integration
 
-| Check | Local | Hosted Dev | Staging | Production |
-|-------|-------|------------|---------|------------|
+| Check | Local | Preview | Staging | Production |
+|-------|-------|---------|---------|------------|
 | Convex backend can send email | ✅ Via Mailpit | ✅ Via Resend test | ✅ Via Resend live | ✅ Via Resend live |
 | Magic links work | ✅ Captured in Mailpit | ✅ Logged (not sent) | ✅ Sent to test emails | ✅ Sent to all users |
-| OAuth redirects match | ✅ localhost | ✅ dev.yourdomain.com | ✅ staging.yourdomain.com | ✅ app.yourdomain.com |
+| OAuth redirects match | ✅ localhost | ✅ Vercel preview URL | ✅ artifactreview-early.xyz | ✅ artifactreview.com |
 | Email domain verified | N/A | N/A (test mode) | ✅ Required | ✅ Required |
 
 ### ✅ Auth + Domain Integration
@@ -426,7 +440,7 @@ Before deploying to any environment, verify these compatibility checks:
 | Environment | Convex Project | Database | Email Recipients |
 |-------------|----------------|----------|------------------|
 | Local | Separate per developer | Isolated | Mailpit (local only) |
-| Hosted Dev | Shared `dev` | Shared team data | Test mode (no delivery) |
+| Preview | Isolated per PR | Isolated preview data | Test mode (no delivery) |
 | Staging | Shared `staging` | Staging data | Restricted list |
 | Production | Shared `prod` | Production data | All users |
 
@@ -434,18 +448,18 @@ Before deploying to any environment, verify these compatibility checks:
 
 ## Promotion Process
 
-### Dev → Staging
+### Preview → Staging
 
-**Trigger:** Feature complete and tested in dev
+**Trigger:** PR approved and tests passing
 
 **Process:**
-1. Create release branch: `release/vX.Y.Z`
-2. Run full test suite
-3. Deploy to staging: `npx convex deploy --project staging`
-4. Run E2E tests against staging
-5. Notify QA team for testing
+1. Merge PR to `staging` branch
+2. Vercel automatically deploys to `artifactreview-early.xyz`
+3. Run E2E tests against staging
+4. Notify QA team for testing
+5. Preview deployment is automatically cleaned up
 
-**Rollback:** Redeploy previous staging version
+**Rollback:** Revert merge commit, redeploy previous staging version
 
 ---
 
@@ -484,7 +498,7 @@ Before deploying to any environment, verify these compatibility checks:
 
 ## CI/CD Pipeline
 
-### Pull Request → Hosted Dev
+### Pull Request → Preview Deployment
 
 ```yaml
 on: pull_request
@@ -492,30 +506,20 @@ steps:
   - Run unit tests (Vitest)
   - Run linters
   - Build application
-  - Deploy to preview environment (Convex preview deployment)
-  - Run integration tests
+  - Vercel automatically deploys preview (frontend + Convex preview backend)
+  - Run integration tests against preview URL
+  - Post preview URL to PR comments
 ```
 
-### Merge to main → Hosted Dev
+### Merge to staging → Staging
 
 ```yaml
-on: push (main branch)
+on: push (staging branch)
 steps:
   - Run full test suite
-  - Deploy to hosted dev: npx convex deploy --project dev
-  - Run smoke tests
-  - Notify team
-```
-
-### Manual Trigger → Staging
-
-```yaml
-on: workflow_dispatch
-steps:
-  - Create release branch
-  - Run full test suite
-  - Deploy to staging: npx convex deploy --project staging
+  - Vercel deploys to artifactreview-early.xyz
   - Run E2E tests
+  - Run smoke tests
   - Notify QA team
 ```
 
@@ -541,10 +545,11 @@ steps:
 - Can be reset/wiped freely
 - No real customer data
 
-### Hosted Dev
-- Test data refreshed periodically (weekly/monthly)
-- Shared across team
+### Preview Deployments
+- Isolated test data per PR
+- Automatically cleaned up after PR is closed/merged
 - No real customer data
+- Auto-expires after 5-14 days
 
 ### Staging
 - Production-like dataset
@@ -598,7 +603,7 @@ steps:
 | Environment | Access |
 |-------------|--------|
 | Local | Individual developer only |
-| Hosted Dev | All developers |
+| Preview | PR author + reviewers (via Vercel preview URL) |
 | Staging | Developers + QA + Product |
 | Production | Limited production access, audit logs |
 
@@ -609,7 +614,7 @@ steps:
 | Environment | Resources | Monthly Cost Estimate |
 |-------------|-----------|----------------------|
 | **Local** | Developer machine + Mailpit | Free |
-| **Hosted Dev** | Vercel Pro + Convex + Resend | ~$20 (Vercel Pro) + Convex free tier + Resend free tier |
+| **Preview** | Vercel (included in Pro) + Convex preview | Included in Vercel Pro + Convex free tier |
 | **Staging** | Vercel Pro + Convex + Resend | Shared with production Vercel plan |
 | **Production** | Vercel Pro + Convex + Resend | ~$20 (Vercel Pro) + Convex $25/mo (Professional) + Resend (may need paid) |
 

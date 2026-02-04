@@ -66,6 +66,19 @@ NOVU_DIGEST_INTERVAL=1
 
 ## Local Development Setup
 
+### Email Address Configuration
+
+**IMPORTANT:** Novu sends notification emails using the `notify@` email address, NOT the `auth@` address.
+
+| Email Type | Sent Via | Email Address | Configuration |
+|------------|----------|---------------|---------------|
+| Authentication (magic links, password resets) | Direct Resend (Convex) | `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | Convex env var: `EMAIL_FROM_AUTH` |
+| Notifications (invitations, comments, mentions) | Novu → Resend | `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | Novu Dashboard: Integrations → Resend |
+
+When configuring Novu's Resend integration (see steps below), use:
+- **From Name**: `Artifact Review`
+- **From Email**: `notify@artifactreview-early.xyz` (staging) or `notify@artifactreview.com` (production)
+
 ### 1. Create Novu Organization (First Time Only)
 
 **IMPORTANT:** On first-time setup, the local Novu database is empty. You must create an account and organization (data persists after setup).

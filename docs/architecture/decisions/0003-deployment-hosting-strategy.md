@@ -2,6 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2024-12-24
+**Last Updated:** 2026-02-03
 **Decision Maker:** Clint Gossett
 
 ## TL;DR
@@ -109,9 +110,8 @@ npx convex deploy --cmd 'npm run build'
 | Branch | Environment | Infrastructure | Domain |
 |--------|-------------|----------------|--------|
 | `N/A` | Local Dev | Docker Compose (Local) | `localhost:3000` |
-| `dev` | Hosted Dev | Convex Cloud (Dev) | `dev.yourdomain.com` |
-| `staging` | Staging | Convex Cloud (Staging) | `staging.yourdomain.com` |
-| `main` | Production | Convex Cloud (Prod) | `app.yourdomain.com` |
+| `staging` | Staging | Convex Cloud (Staging) | `artifactreview-early.xyz` |
+| `main` | Production | Convex Cloud (Prod) | `artifactreview.com` |
 | PR branches | Preview | Convex Preview | Auto-generated Vercel URLs |
 
 ## Deployment Workflow
@@ -172,7 +172,7 @@ Email templates and content follow the same deployment pipeline:
 | Environment | Backend | How to Test | What Happens |
 |-------------|---------|-------------|--------------|
 | **Local Dev** | Docker | Trigger email action | Captured in Mailpit (localhost:8025) |
-| **Hosted Dev** | Cloud | Trigger email action | Resend (Test Mode) logged in Dashboard |
+| **Preview** | Cloud | Trigger email action | Resend (Test Mode) logged in Dashboard |
 | **Staging** | Cloud | Trigger email action | Sent to restricted recipients only |
 | **Production** | Cloud | Trigger email action | Sent to actual users |
 

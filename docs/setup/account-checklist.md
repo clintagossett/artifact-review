@@ -91,7 +91,8 @@ NEXT_PUBLIC_CONVEX_URL=https://your-dev.convex.cloud
 **Convex Dev Project** (`npx convex env set`):
 ```bash
 RESEND_API_KEY=re_test_...
-RESEND_FROM_EMAIL=auth@yourdomain.com
+EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>"
+EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>"
 ```
 
 **Vercel Production** (dashboard or CLI):
@@ -325,7 +326,8 @@ For each project (staging, prod):
 ```bash
 # Staging
 npx convex env set RESEND_API_KEY="re_..." --project staging
-npx convex env set RESEND_FROM_EMAIL="auth@staging.yourdomain.com" --project staging
+npx convex env set EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>" --project staging
+npx convex env set EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>" --project staging
 npx convex env set GOOGLE_CLIENT_ID="..." --project staging
 npx convex env set GOOGLE_CLIENT_SECRET="..." --project staging
 npx convex env set GITHUB_CLIENT_ID="..." --project staging
@@ -333,7 +335,8 @@ npx convex env set GITHUB_CLIENT_SECRET="..." --project staging
 
 # Production
 npx convex env set RESEND_API_KEY="re_..." --project prod
-npx convex env set RESEND_FROM_EMAIL="auth@yourdomain.com" --project prod
+npx convex env set EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview.com>" --project prod
+npx convex env set EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview.com>" --project prod
 npx convex env set GOOGLE_CLIENT_ID="..." --project prod
 npx convex env set GOOGLE_CLIENT_SECRET="..." --project prod
 npx convex env set GITHUB_CLIENT_ID="..." --project prod
@@ -359,6 +362,25 @@ npx convex env ls --project prod
 
 **Plan Required:** Pro ($20/month) - 50,000 emails/month
 
+#### Email Address Strategy
+
+The application uses **two separate email addresses** for different types of communications:
+
+| Email Address | Purpose | Environment Variable | Used For |
+|---------------|---------|---------------------|----------|
+| `auth@artifactreview-early.xyz` (staging)<br/>`auth@artifactreview.com` (prod) | Authentication emails | `EMAIL_FROM_AUTH` | Magic links, password resets |
+| `notify@artifactreview-early.xyz` (staging)<br/>`notify@artifactreview.com` (prod) | Notification emails | `EMAIL_FROM_NOTIFICATIONS` | Invitations, comments, mentions |
+
+**Display Name:** Both use `"Artifact Review"` as the sender name.
+
+**Why two addresses?**
+- Separates authentication-critical emails from social/notification emails
+- Allows users to filter notifications separately from login emails
+- Improves deliverability by segregating email types
+- Enables different rate limiting and monitoring per email type
+
+**Note:** The `notify@` address is configured in Novu's Resend integration, while `auth@` is used directly by Convex for authentication flows.
+
 #### Phase 3: Test API Key (Hosted Dev)
 
 1. **Create Resend account**
@@ -375,7 +397,8 @@ npx convex env ls --project prod
 3. **Set in Convex**
    ```bash
    npx convex env set RESEND_API_KEY="re_test_..." --project dev
-   npx convex env set RESEND_FROM_EMAIL="auth@yourdomain.com" --project dev
+   npx convex env set EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>" --project dev
+   npx convex env set EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>" --project dev
    ```
 
 **What test mode does:**
@@ -403,41 +426,73 @@ npx convex env ls --project prod
 
 1. **For staging:**
    - Dashboard → Domains → Add Domain
-   - Enter: `staging.yourdomain.com`
+   - Enter: `artifactreview-early.xyz`
    - Add DNS records (copy from Resend):
      - SPF record (TXT)
      - DKIM records (CNAME x2-3)
    - Wait for verification (can take up to 48 hours, usually minutes)
 
 2. **For production:**
-   - Add Domain: `yourdomain.com`
+   - Add Domain: `artifactreview.com`
    - Add DNS records
    - Wait for verification
 
 **Set up sender addresses:**
 - Verified domains → Select domain
-- From addresses: `auth@yourdomain.com`
-- Click "Add from address"
+- Add both sender addresses:
+  - `auth@artifactreview.com` (authentication emails)
+  - `notify@artifactreview.com` (notification emails)
+- Click "Add from address" for each
 
 **Set in Convex:**
 ```bash
 # Staging
 npx convex env set RESEND_API_KEY="re_..." --project staging
-npx convex env set RESEND_FROM_EMAIL="auth@staging.yourdomain.com" --project staging
+npx convex env set EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview-early.xyz>" --project staging
+npx convex env set EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>" --project staging
 npx convex env set RESEND_ALLOWED_RECIPIENTS="qa@example.com,test@example.com" --project staging
 
 # Production
 npx convex env set RESEND_API_KEY="re_..." --project prod
-npx convex env set RESEND_FROM_EMAIL="auth@yourdomain.com" --project prod
+npx convex env set EMAIL_FROM_AUTH="Artifact Review <auth@artifactreview.com>" --project prod
+npx convex env set EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview.com>" --project prod
 ```
+
+**Configure Webhooks (Domain-Specific):**
+
+Each environment needs its own webhook endpoint:
+
+1. **Staging webhook:**
+   - Dashboard → Webhooks → Add Webhook
+   - **Domain:** Select `artifactreview-early.xyz`
+   - **Endpoint:** `https://[staging-convex-url].convex.site/resend-webhook`
+   - **Events:** Select all (email.sent, email.delivered, email.bounced, etc.)
+   - Save webhook
+
+2. **Production webhook:**
+   - Dashboard → Webhooks → Add Webhook
+   - **Domain:** Select `artifactreview.com`
+   - **Endpoint:** `https://[prod-convex-url].convex.site/resend-webhook`
+   - **Events:** Select all
+   - Save webhook
+
+**Why domain-specific webhooks:**
+- Each webhook only receives events for its domain
+- No code filtering needed - Resend handles routing
+- Staging and production webhooks are isolated
 
 **Verification:**
 ```bash
 # Check Resend dashboard
-open https://resend.com/emails
+open https://resend.com/domains
 
 # Verify domains are confirmed (staging + prod)
 # Should see green checkmark next to domain names
+
+# Check webhooks
+open https://resend.com/webhooks
+
+# Verify each domain has its webhook configured
 ```
 
 ---
@@ -569,8 +624,8 @@ open https://artifact-review.vercel.app
 
 3. **Add domains in Vercel**
    - Vercel → Project → Settings → Domains
-   - Add `app.yourdomain.com` → Production
-   - Add `staging.yourdomain.com` → Staging (use `staging` branch)
+   - Add `artifactreview.com` → Production
+   - Add `artifactreview-early.xyz` → Staging (use `staging` branch)
    - Wait for DNS propagation (5 mins - 48 hours, usually < 1 hour)
 
 4. **Configure DNS for Resend email**
@@ -581,16 +636,16 @@ open https://artifact-review.vercel.app
 **Verification:**
 ```bash
 # Check DNS propagation
-dig app.yourdomain.com
+dig artifactreview.com
 # Should resolve to Vercel IP
 
 # Check SSL
-curl -I https://app.yourdomain.com
+curl -I https://artifactreview.com
 # Should return 200 OK with valid SSL
 
 # Check Resend DNS
-dig TXT yourdomain.com | grep spf
-dig CNAME resend._domainkey.yourdomain.com
+dig TXT artifactreview.com | grep spf
+dig CNAME resend._domainkey.artifactreview.com
 ```
 
 ---
@@ -620,15 +675,15 @@ dig CNAME resend._domainkey.yourdomain.com
    - Name: `Artifact Review Dev`
    - Authorized redirect URIs:
      - `http://localhost:3000/api/auth/callback/google`
-     - `https://dev.yourdomain.com/api/auth/callback/google`
+     - `https://artifactreview-early.xyz/api/auth/callback/google`
    - Create
    - Copy Client ID and Client Secret
 
 4. **Create OAuth Credentials (Staging)**
-   - Repeat with redirect URI: `https://staging.yourdomain.com/api/auth/callback/google`
+   - Repeat with redirect URI: `https://artifactreview-early.xyz/api/auth/callback/google`
 
 5. **Create OAuth Credentials (Production)**
-   - Repeat with redirect URI: `https://app.yourdomain.com/api/auth/callback/google`
+   - Repeat with redirect URI: `https://artifactreview.com/api/auth/callback/google`
 
 #### GitHub OAuth Setup
 
@@ -645,14 +700,14 @@ dig CNAME resend._domainkey.yourdomain.com
 2. **Create GitHub OAuth App (Staging)**
    - Repeat with:
      - Name: `Artifact Review Staging`
-     - Homepage: `https://staging.yourdomain.com`
-     - Callback: `https://staging.yourdomain.com/api/auth/callback/github`
+     - Homepage: `https://artifactreview-early.xyz`
+     - Callback: `https://artifactreview-early.xyz/api/auth/callback/github`
 
 3. **Create GitHub OAuth App (Production)**
    - Repeat with:
      - Name: `Artifact Review Prod`
-     - Homepage: `https://app.yourdomain.com`
-     - Callback: `https://app.yourdomain.com/api/auth/callback/github`
+     - Homepage: `https://artifactreview.com`
+     - Callback: `https://artifactreview.com/api/auth/callback/github`
 
 **Set in Convex:**
 
@@ -687,7 +742,100 @@ npx convex env set GITHUB_CLIENT_SECRET="..." --project prod
 
 ---
 
-### G. Local Development Tools (Phases 1-2)
+### G. Novu (Notification Orchestration) - Phase 4
+
+**Purpose:** Notification workflows (in-app + email)
+
+**Plan Required:** Free tier for development/staging, Pro for production
+
+#### Create Novu Cloud Account
+
+1. **Sign up for Novu Cloud**
+   - Go to [dashboard.novu.co](https://dashboard.novu.co)
+   - Sign up with email
+   - Verify email address
+
+2. **Create Organizations/Environments**
+
+   **For Staging:**
+   - Create organization: `Artifact Review Staging`
+   - Use the default "Production" environment within this org
+   - Get credentials from Settings → API Keys:
+     - Secret Key
+     - Application Identifier
+
+   **For Production (later):**
+   - Create organization: `Artifact Review Production`
+   - Use the default "Production" environment
+   - Get credentials from Settings → API Keys
+
+#### Configure Resend as Email Provider
+
+**CRITICAL:** Novu needs Resend configured to send emails.
+
+**For each environment (Staging, Production):**
+
+1. **Navigate to Integrations**
+   - Dashboard → Integrations → Email
+
+2. **Add Resend Provider**
+   - Click "Add Provider"
+   - Select "Resend"
+
+3. **Configure Resend:**
+   ```
+   API Key: [domain-specific Resend API key]
+   From Name: Artifact Review
+   From Email: notify@[domain]
+   ```
+
+   **Environment-specific configuration:**
+   - **Staging**: `notify@artifactreview-early.xyz` with staging Resend key
+   - **Production**: `notify@artifactreview.com` with production Resend key
+
+   **Important:** Use the `notify@` email address (not `auth@`) because Novu handles notification emails (invitations, comments, mentions). Authentication emails (magic links, password resets) are sent directly through Convex using the `auth@` address.
+
+4. **Set as Active**
+   - Toggle to make it the active email provider
+   - Click "Test" to verify connection
+
+#### Set Novu Credentials in Convex
+
+```bash
+# Staging
+npx convex env set NOVU_SECRET_KEY="..." --project staging
+npx convex env set NOVU_API_URL="https://api.novu.co" --project staging
+
+# Production
+npx convex env set NOVU_SECRET_KEY="..." --project prod
+npx convex env set NOVU_API_URL="https://api.novu.co" --project prod
+```
+
+#### Set Novu Credentials in Vercel (Frontend)
+
+```bash
+# Staging environment
+NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=[app-id]
+NEXT_PUBLIC_NOVU_API_URL=https://api.novu.co
+NEXT_PUBLIC_NOVU_SOCKET_URL=wss://socket.novu.co
+
+# Production environment
+NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=[app-id]
+NEXT_PUBLIC_NOVU_API_URL=https://api.novu.co
+NEXT_PUBLIC_NOVU_SOCKET_URL=wss://socket.novu.co
+```
+
+**Verification:**
+```bash
+# Test notification flow in staging
+# 1. Create a comment
+# 2. Check Novu dashboard → Activity for notification events
+# 3. Verify email sent via Resend
+```
+
+---
+
+### H. Local Development Tools (Phases 1-2)
 
 **Purpose:** Email testing, environment management
 
