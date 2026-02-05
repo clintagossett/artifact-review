@@ -50,6 +50,8 @@ interface ArtifactHeaderProps {
   latestVersionNumber?: number;
   currentUser?: any;
   userPermission?: "owner" | "can-comment" | null;
+  /** When true, hides Back, Share, Manage, version selector, notifications for anonymous public viewers */
+  isPublicViewer?: boolean;
 }
 
 export function ArtifactHeader({
@@ -61,6 +63,7 @@ export function ArtifactHeader({
   latestVersionNumber,
   currentUser,
   userPermission,
+  isPublicViewer = false,
 }: ArtifactHeaderProps) {
   const router = useRouter();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -109,6 +112,28 @@ export function ArtifactHeader({
 
   // Find current version object
   const currentVersion = versions.find((v) => v.number === version.number);
+
+  // Public viewer mode: show minimal header with just title and version badge
+  if (isPublicViewer) {
+    return (
+      <header className="border-b border-gray-200 bg-white relative z-50">
+        <div className="flex items-center justify-between px-6 py-4">
+          {/* Left side: Title and Version (static, no dropdown) */}
+          <div className="flex items-center gap-3">
+            <h1 className="font-semibold text-gray-900">{artifact.name}</h1>
+            <Badge variant="outline" className="text-gray-600">
+              v{version.number}
+            </Badge>
+          </div>
+
+          {/* Right side: Just the status */}
+          <Badge className={getStatusColor(status)}>
+            {status === "in-review" ? "In Review" : "Draft"}
+          </Badge>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="border-b border-gray-200 bg-white relative z-50">

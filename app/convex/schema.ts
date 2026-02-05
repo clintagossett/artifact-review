@@ -1316,6 +1316,103 @@ const schema = defineSchema({
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_stripeSubscriptionId", ["stripeSubscriptionId"]),
+
+  // ============================================================================
+  // ARTIFACT SHARES TABLE (Issue #61)
+  // ============================================================================
+  /**
+   * Public shareable links for artifacts.
+   *
+   * ## Purpose
+   * Enables public access to artifacts via unique URL tokens.
+   * Supports two access modes: view-only (no auth) and view+comment (auth required).
+   *
+   * ## Lifecycle
+   * - **Created**: `shares.create` mutation (owner only)
+   * - **Updated**: `shares.toggleEnabled`, `shares.updateAccessMode`
+   * - **Deleted**: Never (only disabled via `enabled` flag)
+   *
+   * ## Access Model
+   * - One share link per artifact (can extend to multiple later)
+   * - Owner controls creation, toggling, and access mode
+   * - View-only: Anyone with link can view, no auth required
+   * - View+Comment: Anyone can view, auth required to comment
+   *
+   * ## URL Pattern
+   * Public links are accessed at `/share/{token}` (UUID format)
+   *
+   * @see convex/shares.ts - Share link CRUD operations
+   */
+  artifactShares: defineTable({
+    /**
+     * UUID token for public URL.
+     * Generated with crypto.randomUUID().
+     * Used in URL path: `/share/{token}`
+     * @example "550e8400-e29b-41d4-a716-446655440000"
+     */
+    token: v.string(),
+
+    /**
+     * Reference to the artifact being shared.
+     * One share link per artifact (enforced by application logic).
+     */
+    artifactId: v.id("artifacts"),
+
+    /**
+     * Capabilities granted by this share link.
+     * Each capability is a boolean flag that can be independently toggled.
+     */
+    capabilities: v.object({
+      /** Can view existing comments/annotations */
+      readComments: v.boolean(),
+      /** Can add new comments/annotations (requires authentication) */
+      writeComments: v.boolean(),
+    }),
+
+    /**
+     * Whether the share link is active.
+     * When false, resolveToken returns null (link appears unavailable).
+     */
+    enabled: v.boolean(),
+
+    /**
+     * User who created the share link.
+     * Must be the artifact owner (enforced in mutation).
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Timestamp when share link was created.
+     * Unix timestamp in milliseconds.
+     * Required per ADR 12.
+     */
+    createdAt: v.number(),
+
+    /**
+     * User who last updated the share link.
+     * Set on toggleEnabled or updateAccessMode.
+     */
+    updatedBy: v.optional(v.id("users")),
+
+    /**
+     * Timestamp of last modification.
+     * Unix timestamp in milliseconds.
+     */
+    updatedAt: v.optional(v.number()),
+  })
+    /**
+     * O(1) lookup by token for public access.
+     * Primary query pattern for resolving share URLs.
+     * @example ctx.db.query("artifactShares").withIndex("by_token", q => q.eq("token", uuid))
+     */
+    .index("by_token", ["token"])
+
+    /**
+     * Lookup share by artifact (for settings UI).
+     * Returns the share link for a given artifact.
+     * @example ctx.db.query("artifactShares").withIndex("by_artifactId", q => q.eq("artifactId", artifactId))
+     */
+    .index("by_artifactId", ["artifactId"]),
 });
 
 export default schema;

@@ -70,7 +70,10 @@ export default defineConfig({
     // Traces: ./test-results/{test-name}/trace.zip (open with `npx playwright show-trace`)
     trace: 'retain-on-failure',
     screenshot: 'on',
-    video: 'on',
+    video: {
+      mode: 'on',
+      size: { width: 1280, height: 720 },
+    },
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
   },
@@ -78,7 +81,14 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Explicitly set video recording (must be after devices spread to not be overwritten)
+        video: {
+          mode: 'on',
+          size: { width: 1280, height: 720 },
+        },
+      },
     },
   ],
 

@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { Id } from '@/convex/_generated/dataModel';
 import { logger, LOG_TOPICS } from '@/lib/logger';
+import { ShareLinkSection } from './ShareLinkSection';
 
 interface ArtifactAccessTabProps {
   artifactId: Id<"artifacts">;
@@ -203,6 +204,9 @@ export function ArtifactAccessTab({ artifactId }: ArtifactAccessTabProps) {
 
   return (
     <div className="max-w-6xl space-y-8">
+      {/* Public Share Link */}
+      <ShareLinkSection artifactId={artifactId} />
+
       {/* People with Access */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {/* Header */}

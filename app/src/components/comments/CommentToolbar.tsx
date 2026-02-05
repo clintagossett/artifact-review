@@ -25,6 +25,10 @@ interface CommentToolbarProps {
   currentVersionNumber?: number;
   latestVersionNumber?: number;
   onSwitchToLatest?: () => void;
+  // Hide tip for view-only users
+  canComment?: boolean;
+  /** When true, hides the entire toolbar for anonymous public viewers */
+  isPublicViewer?: boolean;
 }
 
 export function CommentToolbar({
@@ -37,7 +41,14 @@ export function CommentToolbar({
   currentVersionNumber,
   latestVersionNumber,
   onSwitchToLatest,
+  canComment = true,
+  isPublicViewer = false,
 }: CommentToolbarProps) {
+  // Hide entire toolbar for anonymous public viewers
+  if (isPublicViewer) {
+    return null;
+  }
+
   return (
     <div className="border-b border-gray-200 bg-white px-6 py-3">
       <div className="flex items-center justify-between">
@@ -92,7 +103,7 @@ export function CommentToolbar({
             </Button>
           )}
         </div>
-      ) : (
+      ) : canComment ? (
         <div className="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 flex items-center gap-3">
           <Badge variant="secondary" className="bg-purple-100 text-purple-700">
             💡 Tip
@@ -101,7 +112,7 @@ export function CommentToolbar({
             <strong>Select text</strong> to comment, or <strong>right-click images, buttons, or headings</strong> to add comments to them
           </p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

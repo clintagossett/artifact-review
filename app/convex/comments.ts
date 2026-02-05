@@ -14,6 +14,7 @@ import {
   canEditComment,
   canDeleteComment,
 } from "./lib/commentPermissions";
+import { Id } from "./_generated/dataModel";
 
 /**
  * Get all active comments for an artifact version.
@@ -337,5 +338,227 @@ export const softDelete = mutation({
     }
 
     return null;
+  },
+});
+
+/**
+ * Get comments via public share token (no auth required).
+ *
+ * Validates the share token and checks if annotations are visible
+ * based on the access mode (view_read or view_readwrite).
+ *
+ * @returns Comments array or null if access mode doesn't allow viewing annotations
+ */
+export const getByVersionPublic = query({
+  args: {
+    versionId: v.id("artifactVersions"),
+    publicShareToken: v.string(),
+  },
+  returns: v.union(
+    v.array(
+      v.object({
+        _id: v.id("comments"),
+        _creationTime: v.number(),
+        versionId: v.id("artifactVersions"),
+        createdBy: v.id("users"),
+        content: v.string(),
+        resolved: v.boolean(),
+        resolvedBy: v.optional(v.id("users")),
+        resolvedAt: v.optional(v.number()),
+        resolvedUpdatedAt: v.optional(v.number()),
+        resolvedUpdatedBy: v.optional(v.id("users")),
+        target: v.any(),
+        isEdited: v.boolean(),
+        editedAt: v.optional(v.number()),
+        isDeleted: v.boolean(),
+        deletedBy: v.optional(v.id("users")),
+        deletedAt: v.optional(v.number()),
+        createdAt: v.number(),
+        agentId: v.optional(v.id("agents")),
+        agentName: v.optional(v.string()),
+        author: v.object({
+          name: v.optional(v.string()),
+          email: v.optional(v.string()),
+        }),
+        replyCount: v.number(),
+      })
+    ),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    // Look up share by token
+    const share = await ctx.db
+      .query("artifactShares")
+      .withIndex("by_token", (q) => q.eq("token", args.publicShareToken))
+      .first();
+
+    // Return null if not found, disabled, or view-only mode
+    if (!share || !share.enabled) {
+      return null;
+    }
+
+    // readComments capability required to see annotations
+    if (!share.capabilities.readComments) {
+      return null;
+    }
+
+    // Get the version and verify it belongs to the shared artifact
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      return null;
+    }
+
+    // Verify version belongs to the shared artifact
+    if (version.artifactId !== share.artifactId) {
+      return null;
+    }
+
+    // Get active comments using index (no filter!)
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_versionId_active", (q) =>
+        q.eq("versionId", args.versionId).eq("isDeleted", false)
+      )
+      .order("asc")
+      .collect();
+
+    // Enrich with author data and reply counts
+    const enriched = await Promise.all(
+      comments.map(async (comment) => {
+        const author = await ctx.db.get(comment.createdBy);
+
+        // Count active replies
+        const replies = await ctx.db
+          .query("commentReplies")
+          .withIndex("by_commentId_active", (q) =>
+            q.eq("commentId", comment._id).eq("isDeleted", false)
+          )
+          .collect();
+
+        return {
+          ...comment,
+          resolved: !!comment.resolvedUpdatedAt,
+          author: {
+            name: author?.name,
+            email: author?.email,
+          },
+          replyCount: replies.length,
+        };
+      })
+    );
+
+    return enriched;
+  },
+});
+
+/**
+ * Create a comment via public share link (authenticated users only).
+ *
+ * Validates the share token has view_readwrite access mode.
+ * User must be authenticated to create comments.
+ */
+export const createViaPublicShare = mutation({
+  args: {
+    versionId: v.id("artifactVersions"),
+    publicShareToken: v.string(),
+    content: v.string(),
+    target: v.any(),
+  },
+  returns: v.id("comments"),
+  handler: async (ctx, args) => {
+    // Require authentication
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Authentication required to comment");
+    }
+
+    // Look up share by token
+    const share = await ctx.db
+      .query("artifactShares")
+      .withIndex("by_token", (q) => q.eq("token", args.publicShareToken))
+      .first();
+
+    // Validate share link
+    if (!share || !share.enabled) {
+      throw new Error("Share link not found or disabled");
+    }
+
+    // writeComments capability required to create comments
+    if (!share.capabilities.writeComments) {
+      throw new Error("This share link does not allow comments");
+    }
+
+    // Get the version and verify it belongs to the shared artifact
+    const version = await ctx.db.get(args.versionId);
+    if (!version || version.isDeleted) {
+      throw new Error("Version not found");
+    }
+
+    // Verify version belongs to the shared artifact
+    if (version.artifactId !== share.artifactId) {
+      throw new Error("Version does not belong to shared artifact");
+    }
+
+    // Check if this version is the latest
+    const latestVersion = await ctx.db
+      .query("artifactVersions")
+      .withIndex("by_artifactId_active", (q) =>
+        q.eq("artifactId", version.artifactId).eq("isDeleted", false)
+      )
+      .order("desc")
+      .first();
+
+    if (!latestVersion || version._id !== latestVersion._id) {
+      throw new Error("Comments are only allowed on the latest version");
+    }
+
+    // Validate content
+    const trimmedContent = args.content.trim();
+    if (trimmedContent.length === 0) {
+      throw new Error("Comment content cannot be empty");
+    }
+    if (trimmedContent.length > 10000) {
+      throw new Error("Comment content exceeds maximum length (10000 characters)");
+    }
+
+    const now = Date.now();
+
+    // Create comment
+    const commentId = await ctx.db.insert("comments", {
+      versionId: args.versionId,
+      createdBy: userId,
+      content: trimmedContent,
+      target: args.target,
+      isEdited: false,
+      isDeleted: false,
+      createdAt: now,
+    });
+
+    // NOTIFICATION LOGIC
+    const artifact = await ctx.db.get(version.artifactId);
+    if (!artifact) {
+      console.error("Artifact not found for notification");
+      return commentId;
+    }
+
+    // Don't notify if the author is commenting on their own artifact
+    if (artifact.createdBy !== userId) {
+      const author = await ctx.db.get(userId);
+      const siteUrl = process.env.CONVEX_SITE_URL || "";
+      const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
+
+      await ctx.scheduler.runAfter(0, internal.novu.triggerCommentNotification, {
+        subscriberId: artifact.createdBy,
+        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
+        artifactUrl,
+        authorName: author?.name || "Someone",
+        authorAvatarUrl: author?.image,
+        commentPreview: trimmedContent.length > 50
+          ? `${trimmedContent.slice(0, 50)}...`
+          : trimmedContent,
+      });
+    }
+
+    return commentId;
   },
 });

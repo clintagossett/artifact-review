@@ -8,7 +8,8 @@ import {
     Edit3,
     Trash2,
     MessageSquare,
-    Strikethrough
+    Strikethrough,
+    AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -35,6 +36,13 @@ interface AnnotationCardProps {
     editText: string;
     setEditText: (text: string) => void;
     onCancelEdit: () => void;
+
+    // Skip fetching replies (e.g., on public share pages)
+    skipReplies?: boolean;
+
+    // Permission to reply
+    canReply?: boolean;
+    replyDisabledReason?: "access_mode" | "not_authenticated";
 }
 
 export function AnnotationCard({
@@ -50,14 +58,18 @@ export function AnnotationCard({
     editText,
     setEditText,
     onCancelEdit,
+    skipReplies,
+    canReply = true,
+    replyDisabledReason,
 }: AnnotationCardProps) {
     const [replyingTo, setReplyingTo] = useState<boolean>(false);
+    const [showDisabledMessage, setShowDisabledMessage] = useState(false);
     const [replyText, setReplyText] = useState('');
     const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
     const [editReplyText, setEditReplyText] = useState('');
 
-    // Fetch replies for this annotation (using existing hook)
-    const backendReplies = useCommentReplies(annotation.id as Id<"comments">);
+    // Fetch replies for this annotation (skip on public share pages)
+    const backendReplies = useCommentReplies(annotation.id as Id<"comments">, skipReplies);
     const { updateReply, softDeleteReply } = useReplyActions();
 
     // Helper to get initials
@@ -161,8 +173,18 @@ export function AnnotationCard({
                 <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 px-2 text-xs text-gray-500 hover:text-gray-900"
-                    onClick={() => setReplyingTo(!replyingTo)}
+                    className={cn(
+                        "h-6 px-2 text-xs",
+                        canReply ? "text-gray-500 hover:text-gray-900" : "text-gray-300 cursor-not-allowed"
+                    )}
+                    onClick={() => {
+                        if (canReply) {
+                            setReplyingTo(!replyingTo);
+                            setShowDisabledMessage(false);
+                        } else {
+                            setShowDisabledMessage(true);
+                        }
+                    }}
                     data-testid="annotation-reply-button"
                 >
                     <MessageSquare className="w-3 h-3 mr-1" /> Reply
@@ -190,6 +212,44 @@ export function AnnotationCard({
                     </Button>
                 )}
             </div>
+
+            {/* Disabled Reply Message */}
+            {showDisabledMessage && !canReply && (
+                <div className={cn(
+                    "mt-3 p-3 rounded-md text-sm animate-in fade-in slide-in-from-top-2",
+                    replyDisabledReason === "access_mode"
+                        ? "bg-amber-50 border border-amber-200 text-amber-800"
+                        : "bg-blue-50 border border-blue-200 text-blue-800"
+                )}>
+                    <div className="flex items-start gap-2">
+                        {replyDisabledReason === "access_mode" ? (
+                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        ) : (
+                            <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        )}
+                        <div>
+                            {replyDisabledReason === "access_mode" ? (
+                                <p>The document owner has disabled comment contributions for those accessing the artifact via this shared link.</p>
+                            ) : (
+                                <p>Log in to contribute to comments and replies.</p>
+                            )}
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            "mt-2 h-6 text-xs",
+                            replyDisabledReason === "access_mode"
+                                ? "text-amber-600 hover:text-amber-800"
+                                : "text-blue-600 hover:text-blue-800"
+                        )}
+                        onClick={() => setShowDisabledMessage(false)}
+                    >
+                        Dismiss
+                    </Button>
+                </div>
+            )}
 
             {/* Reply Input */}
             {replyingTo && (
