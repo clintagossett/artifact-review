@@ -12,10 +12,14 @@ The notification system uses:
 ## Architecture
 
 ```
-User comments → Convex trigger → Novu (local) → Bridge → Workflow → Notification
+User comments → Convex trigger → Novu (local) → Bridge → Workflow → In-App (real-time)
                                                                   ↓
-                                                 In-App (real-time) + Email (digested)
+                                                            Digest (batching)
+                                                                  ↓
+                                              Email Webhook → Convex HTTP → Resend → Mailpit
 ```
+
+**Email Flow:** Instead of Novu sending emails directly via Resend, Novu POSTs to our Convex webhook. Convex renders React Email templates and sends via Resend (which goes to Mailpit in local dev).
 
 ## Prerequisites
 
@@ -59,9 +63,16 @@ After updating `.env.convex.local`, sync to Convex:
 ### Optional Variables
 
 ```bash
-# Override digest interval (default: 10 minutes)
-# Set to 1 for faster testing
-NOVU_DIGEST_INTERVAL=1
+# Digest interval: how long Novu batches notifications before sending email
+# Format: <number><unit> where unit is s (seconds), m (minutes), or h (hours)
+#
+# Examples:
+#   30s  - 30 seconds (recommended for local dev)
+#   2m   - 2 minutes (recommended for staging)
+#   20m  - 20 minutes (recommended for production)
+#
+# Default: 10m (10 minutes)
+NOVU_DIGEST_INTERVAL=30s
 ```
 
 ## Local Development Setup
@@ -141,7 +152,32 @@ NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=def456...
 ./scripts/start-dev-servers.sh
 ```
 
-### 4. Workflow Sync (Automatic)
+### 4. Configure Email Webhook Integration
+
+**IMPORTANT:** This step is required for email notifications to work. Novu sends emails via webhook to Convex, not directly to Resend.
+
+**Setup:**
+```bash
+./scripts/setup-novu-email-webhook.sh
+```
+
+This configures Novu to POST email payloads to `https://{AGENT_NAME}.convex.site.loc/novu-email-webhook`.
+
+**Check status:**
+```bash
+./scripts/setup-novu-email-webhook.sh --check
+```
+
+**Prerequisites:**
+- `NOVU_EMAIL_WEBHOOK_SECRET` must be set in `app/.env.convex.local`
+- Generate with: `openssl rand -hex 32`
+- Sync to Convex: `./scripts/setup-convex-env.sh --sync`
+
+**If emails aren't arriving:**
+1. Verify webhook exists: `./scripts/setup-novu-email-webhook.sh --check`
+2. Delete and recreate: `./scripts/setup-novu-email-webhook.sh --delete && ./scripts/setup-novu-email-webhook.sh`
+
+### 5. Workflow Sync (Automatic)
 
 **Workflows sync automatically** when you run `./scripts/start-dev-servers.sh`. The script:
 1. Waits for Next.js to be ready (bridge endpoint available)
@@ -249,7 +285,7 @@ npm run test -- ../tasks/00043-novu-comment-notifications/02-novu-workflow-setup
 ### Test Manually
 
 1. Create a comment on an artifact
-2. Wait for digest interval (default 10min, set `NOVU_DIGEST_INTERVAL=1` for faster)
+2. Wait for digest interval (default 10m, set `NOVU_DIGEST_INTERVAL=30s` for faster local testing)
 3. Check the bell icon for in-app notification
 4. Check email inbox for digest email
 
@@ -307,9 +343,32 @@ The NotificationCenter component includes test selectors:
 
 ### Email Not Sending
 
-1. Wait for digest interval to complete (default 10 min)
-2. Check Novu dashboard → Activity → Email logs
-3. Verify email integration is configured in Novu
+1. Wait for digest interval to complete (default 30s local, 10m prod)
+2. Verify Email Webhook integration: `./scripts/setup-novu-email-webhook.sh --check`
+3. Check Convex logs for webhook errors:
+   ```bash
+   source .env.docker.local
+   tmux capture-pane -t ${AGENT_NAME}-convex-dev -p | grep -i "novu"
+   ```
+4. Check Novu dashboard → Activity → Email logs for delivery status
+5. Verify email appears in Mailpit: `https://{AGENT_NAME}.mailpit.loc`
+
+### Bridge Endpoint Broken (BridgeMethodNotConfigured)
+
+**Symptom:** Novu returns `"BridgeMethodNotConfigured"` error.
+
+**Cause:** Usually `"use node"` directive in React Email templates being imported into Next.js.
+
+**Fix:**
+1. Ensure `convex/emails/*.tsx` templates do NOT have `"use node"` at the top
+2. Only `convex/lib/emailRenderer.ts` should have `"use node"`
+3. Restart dev servers: `./scripts/start-dev-servers.sh --restart`
+
+**Test bridge:**
+```bash
+curl -s https://{AGENT_NAME}.loc/api/novu | jq .
+# Should return: {"status":"ok","sdkVersion":"...","discovered":{"workflows":1,"steps":3}}
+```
 
 ### Wrong Content in Notifications
 
@@ -323,9 +382,16 @@ The NotificationCenter component includes test selectors:
 |------|---------|
 | `app/src/app/api/novu/route.ts` | Bridge endpoint (GET, POST, OPTIONS) |
 | `app/src/app/api/novu/workflows/comment-workflow.ts` | Workflow definition |
+| `app/src/lib/emailRenderer.ts` | Next.js email renderer (for bridge) |
 | `app/src/components/NotificationCenter.tsx` | React notification bell |
 | `app/convex/novu.ts` | Backend trigger functions |
-| `app/.env.local.example` | Environment variable template |
+| `app/convex/novuEmailWebhook.ts` | Email webhook handler |
+| `app/convex/http.ts` | HTTP routes (includes `/novu-email-webhook`) |
+| `app/convex/emails/*.tsx` | React Email templates |
+| `app/convex/lib/emailRenderer.ts` | Convex email renderer |
+| `scripts/setup-novu-email-webhook.sh` | Email Webhook integration setup |
+| `app/.env.convex.local.example` | Backend env vars (includes NOVU_EMAIL_WEBHOOK_SECRET) |
+| `app/.env.nextjs.local.example` | Frontend env vars |
 
 ## Related Documentation
 

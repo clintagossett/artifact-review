@@ -165,6 +165,78 @@ http.route({
   }),
 });
 
+// ============================================================================
+// NOVU EMAIL WEBHOOK - Renders React Email templates and sends via Resend
+// Novu orchestrates workflow (digest, preferences), we handle email rendering
+// ============================================================================
+
+http.route({
+  path: "/novu-email-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const webhookSecret = process.env.NOVU_EMAIL_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error("[Novu Email] NOVU_EMAIL_WEBHOOK_SECRET not configured");
+      return new Response("Webhook secret not configured", { status: 500 });
+    }
+
+    // Verify HMAC SHA-256 signature from x-novu-signature header
+    const signature = req.headers.get("x-novu-signature");
+    if (!signature) {
+      console.error("[Novu Email] No signature in request");
+      return new Response("No signature provided", { status: 400 });
+    }
+
+    const body = await req.text();
+
+    // Compute expected signature
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(webhookSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
+    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    // Compare signatures (timing-safe comparison)
+    if (signature !== expectedSignature) {
+      console.error("[Novu Email] Signature verification failed");
+      return new Response("Invalid signature", { status: 401 });
+    }
+
+    // Parse and process payload
+    let payload;
+    try {
+      payload = JSON.parse(body);
+    } catch (e) {
+      console.error("[Novu Email] Invalid JSON payload");
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    console.log(`[Novu Email] Processing webhook for ${payload.subscriber?.email || "unknown"}`);
+
+    try {
+      await ctx.runAction(internal.novuEmailWebhook.processEmailWebhook, {
+        payload,
+      });
+
+      return new Response(
+        JSON.stringify({ received: true }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } catch (error) {
+      console.error("[Novu Email] Error processing webhook:", error);
+      return new Response("Error processing webhook", { status: 500 });
+    }
+  }),
+});
+
 http.route({
   path: "/send-auth-email",
   method: "POST",

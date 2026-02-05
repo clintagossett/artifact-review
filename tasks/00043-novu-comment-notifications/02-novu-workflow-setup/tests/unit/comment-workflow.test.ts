@@ -444,35 +444,44 @@ describe("Comment Workflow - Digest Configuration (Test 4.x)", () => {
   });
 
   describe("Test 4.2: NOVU_DIGEST_INTERVAL env var overrides default", () => {
-    it("should use NOVU_DIGEST_INTERVAL when set to 5", () => {
-      process.env.NOVU_DIGEST_INTERVAL = "5";
+    it("should use NOVU_DIGEST_INTERVAL when set to 5m", () => {
+      process.env.NOVU_DIGEST_INTERVAL = "5m";
       const config = getDigestInterval();
       expect(config.amount).toBe(5);
+      expect(config.unit).toBe("minutes");
     });
 
-    it("should use NOVU_DIGEST_INTERVAL when set to 30", () => {
-      process.env.NOVU_DIGEST_INTERVAL = "30";
+    it("should use NOVU_DIGEST_INTERVAL when set to 30s", () => {
+      process.env.NOVU_DIGEST_INTERVAL = "30s";
       const config = getDigestInterval();
       expect(config.amount).toBe(30);
+      expect(config.unit).toBe("seconds");
     });
 
-    it("should use NOVU_DIGEST_INTERVAL when set to 1 for testing", () => {
-      process.env.NOVU_DIGEST_INTERVAL = "1";
+    it("should use NOVU_DIGEST_INTERVAL when set to 1h for longer batching", () => {
+      process.env.NOVU_DIGEST_INTERVAL = "1h";
       const config = getDigestInterval();
       expect(config.amount).toBe(1);
+      expect(config.unit).toBe("hours");
     });
   });
 
-  describe("Test 4.3: Digest unit is 'minutes'", () => {
-    it("should always use 'minutes' as the digest unit", () => {
+  describe("Test 4.3: Digest unit matches suffix", () => {
+    it("should use 'minutes' as the default digest unit", () => {
       const config = getDigestInterval();
       expect(config.unit).toBe("minutes");
     });
 
-    it("should use 'minutes' even when env var is set", () => {
-      process.env.NOVU_DIGEST_INTERVAL = "15";
+    it("should parse seconds suffix correctly", () => {
+      process.env.NOVU_DIGEST_INTERVAL = "45s";
       const config = getDigestInterval();
-      expect(config.unit).toBe("minutes");
+      expect(config.unit).toBe("seconds");
+    });
+
+    it("should parse hours suffix correctly", () => {
+      process.env.NOVU_DIGEST_INTERVAL = "2h";
+      const config = getDigestInterval();
+      expect(config.unit).toBe("hours");
     });
   });
 });

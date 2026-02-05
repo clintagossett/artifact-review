@@ -178,7 +178,7 @@ The application uses **two separate email addresses** for different types of com
 | Variable Name | Description | Used In Files | Example Value |
 | :--- | :--- | :--- | :--- |
 | `EMAIL_FROM_AUTH` | **Sender Address**. The "From" address for authentication emails (magic links, password resets).<br/><br/>**Environments:**<br/>- Staging: `"Artifact Review <auth@artifactreview-early.xyz>"`<br/>- Production: `"Artifact Review <auth@artifactreview.com>"`<br/><br/>**Sent directly via Resend** from Convex. | `convex/http.ts` | `"Artifact Review <auth@artifactreview.com>"` |
-| `EMAIL_FROM_NOTIFICATIONS` | **Sender Address**. The "From" address for notification emails (invitations, comments, mentions).<br/><br/>**Environments:**<br/>- Staging: `"Artifact Review <notify@artifactreview-early.xyz>"`<br/>- Production: `"Artifact Review <notify@artifactreview.com>"`<br/><br/>**Sent via Novu** (which uses Resend as provider). Configure in Novu Dashboard → Integrations → Resend. | `convex/access.ts`, `convex/novu.ts` | `"Artifact Review <notify@artifactreview.com>"` |
+| `EMAIL_FROM_NOTIFICATIONS` | **Sender Address**. The "From" address for notification emails (invitations, comments, mentions).<br/><br/>**Environments:**<br/>- Staging: `"Artifact Review <notify@artifactreview-early.xyz>"`<br/>- Production: `"Artifact Review <notify@artifactreview.com>"`<br/><br/>**Sent via Novu Email Webhook → Convex → Resend**. Configure webhook with `./scripts/setup-novu-email-webhook.sh`. | `convex/access.ts`, `convex/novuEmailWebhook.ts` | `"Artifact Review <notify@artifactreview.com>"` |
 
 **Why two addresses?**
 - Separates authentication-critical emails from social/notification emails
@@ -222,6 +222,7 @@ These are set in **Vercel** (or `.env.local` for local dev).
 | :--- | :--- | :--- |
 | `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts`, `convex/novu.ts` |
 | `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `https://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
+| `NOVU_EMAIL_WEBHOOK_SECRET` | **Secret Key**. HMAC secret for verifying Novu Email Webhook payloads. Generate with `openssl rand -hex 32`. Must match the secret configured in Novu's Email Webhook integration. Set in `.env.convex.local` and sync to Convex. | `convex/http.ts`, `convex/novuEmailWebhook.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
 | `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `https://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
 | `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Configuration**. Novu WebSocket URL (browser-side). For local dev: `wss://ws.novu.loc`. Required for self-hosted Novu real-time notifications. | `src/components/NotificationCenter.tsx` |
@@ -245,7 +246,7 @@ To use the shared instance:
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
 | `MAILPIT_API_URL` | **Configuration**. Mailpit API endpoint for local email testing. Set for local dev only (e.g., `https://{agent}.mailpit.loc/api/v1`). Leave unset for hosted environments. | `tests/utils/resend.ts` |
-| `NOVU_DIGEST_INTERVAL` | **Configuration**. Digest window in minutes (Default: `10`). Set to `0` or `1` for E2E tests. | `src/app/api/novu/workflows/comment-workflow.ts` |
+| `NOVU_DIGEST_INTERVAL` | **Configuration**. How long Novu batches notifications before sending email.<br/><br/>**Format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours).<br/><br/>**Examples:**<br/>- `30s` - 30 seconds (local dev)<br/>- `2m` - 2 minutes (staging)<br/>- `20m` - 20 minutes (production)<br/><br/>**Default:** `10m` | `src/app/api/novu/workflows/comment-workflow.ts` |
 
 ### ℹ️ Optional
 | Variable Name | Description | Default |
@@ -291,6 +292,7 @@ EMAIL_FROM_NOTIFICATIONS="Artifact Review <notify@artifactreview-early.xyz>"
 # Novu config
 NOVU_SECRET_KEY=...
 NOVU_API_URL=https://api.novu.loc
+NOVU_EMAIL_WEBHOOK_SECRET=...  # Generate: openssl rand -hex 32
 
 # URLs
 SITE_URL=https://{agent}.loc

@@ -1,6 +1,10 @@
-
 import { workflow } from "@novu/framework";
 import { z } from "zod";
+import {
+    renderEmailTemplate,
+    generateEmailSubject as generateDigestSubject,
+    type CommentEvent as RendererCommentEvent,
+} from "@/lib/emailRenderer";
 
 // Payload schema type
 export const commentPayloadSchema = z.object({
@@ -138,17 +142,32 @@ export function generateEmailBody(
 }
 
 /**
- * Get digest interval from environment or default
+ * Get digest interval from environment
+ *
+ * Format: <number><unit> where unit is s (seconds), m (minutes), or h (hours)
+ * Examples: "30s", "2m", "1h"
+ *
+ * Recommended values:
+ *   - Local dev: 30s (fast testing)
+ *   - Staging: 2m (verify batching works)
+ *   - Production: 20m (real user experience)
+ *
+ * Default: 10m (10 minutes)
  */
-export function getDigestInterval(): { amount: number; unit: "minutes" } {
-    const intervalFromEnv = process.env.NOVU_DIGEST_INTERVAL
-        ? parseInt(process.env.NOVU_DIGEST_INTERVAL)
-        : 10;
+export function getDigestInterval(): { amount: number; unit: "seconds" | "minutes" | "hours" } {
+    const raw = process.env.NOVU_DIGEST_INTERVAL || "10m";
 
-    return {
-        amount: intervalFromEnv,
-        unit: "minutes",
-    };
+    const match = raw.match(/^(\d+)(s|m|h)$/i);
+    if (!match) {
+        console.warn(`[Novu] Invalid NOVU_DIGEST_INTERVAL "${raw}", using default 10m`);
+        return { amount: 10, unit: "minutes" };
+    }
+
+    const amount = parseInt(match[1], 10);
+    const unitMap = { s: "seconds", m: "minutes", h: "hours" } as const;
+    const unit = unitMap[match[2].toLowerCase() as "s" | "m" | "h"];
+
+    return { amount, unit };
 }
 
 // Novu workflow definition (uses the helper functions above)
@@ -169,14 +188,33 @@ export const commentWorkflow = workflow(
         });
 
         // Step 3: Email Notification (Sent after digest finishes)
+        // Renders React Email template and returns full HTML
         await step.email("email-notification", async () => {
             // "digest.events" contains all the triggers that happened during the wait
-            const events = digest.events.length > 0 ? digest.events.map(e => e.payload as CommentPayload) : [payload];
+            const events: RendererCommentEvent[] = digest.events.length > 0
+                ? digest.events.map(e => ({
+                    authorName: (e.payload as any).authorName || "Someone",
+                    commentPreview: (e.payload as any).commentPreview || "",
+                    artifactUrl: (e.payload as any).artifactUrl || "",
+                    isReply: (e.payload as any).isReply === true,
+                }))
+                : [{
+                    authorName: payload.authorName,
+                    commentPreview: payload.commentPreview,
+                    artifactUrl: payload.artifactUrl,
+                    isReply,
+                }];
 
-            return {
-                subject: generateEmailSubject(events, payload, isReply),
-                body: generateEmailBody(events, payload, isReply),
+            const template = {
+                type: "comment-digest" as const,
+                events,
+                artifactTitle: payload.artifactDisplayTitle,
             };
+
+            const html = await renderEmailTemplate(template);
+            const subject = generateDigestSubject(template);
+
+            return { subject, body: html };
         });
     },
     {

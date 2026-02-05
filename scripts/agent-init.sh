@@ -285,9 +285,32 @@ setup_env_files() {
     if [ ! -f ".env.convex.local" ] && [ -f ".env.convex.local.example" ]; then
         # Substitute AGENT_NAME in the example (replaces james.loc placeholder)
         sed "s/james\.loc/${AGENT_NAME}.loc/g" .env.convex.local.example > .env.convex.local
+
+        # Generate NOVU_EMAIL_WEBHOOK_SECRET if placeholder exists
+        if grep -q "your-novu-email-webhook-secret" .env.convex.local; then
+            local webhook_secret=$(openssl rand -hex 32)
+            sed -i "s/your-novu-email-webhook-secret/${webhook_secret}/" .env.convex.local
+            log_info "Generated NOVU_EMAIL_WEBHOOK_SECRET"
+        fi
+
+        # Set default email addresses with staging domain (for local dev)
+        # Developers can override these for custom domains
+        if grep -q "yourdomain.com" .env.convex.local; then
+            sed -i "s/auth@yourdomain.com/auth@artifactreview-early.xyz/" .env.convex.local
+            sed -i "s/notify@yourdomain.com/notify@artifactreview-early.xyz/" .env.convex.local
+            log_info "Set EMAIL_FROM addresses to staging domain (artifactreview-early.xyz)"
+        fi
+
         log_success "Created app/.env.convex.local (will be populated by setup scripts)"
     elif [ -f ".env.convex.local" ]; then
         log_success "app/.env.convex.local exists"
+
+        # Ensure NOVU_EMAIL_WEBHOOK_SECRET is generated even for existing files
+        if grep -q "your-novu-email-webhook-secret" .env.convex.local; then
+            local webhook_secret=$(openssl rand -hex 32)
+            sed -i "s/your-novu-email-webhook-secret/${webhook_secret}/" .env.convex.local
+            log_info "Generated missing NOVU_EMAIL_WEBHOOK_SECRET"
+        fi
     fi
 
     cd "$PROJECT_ROOT"
@@ -557,6 +580,37 @@ setup_novu() {
         log_success "Novu organization configured"
     else
         log_warn "setup-novu-org.sh not found or not executable"
+    fi
+}
+
+# =============================================================================
+# STEP 5.5: Setup Novu Email Webhook
+# =============================================================================
+# This configures Novu to send emails via our Convex webhook instead of direct Resend.
+# Must run AFTER setup-novu-org.sh (needs Novu credentials) and BEFORE setup-convex-env.sh
+# (so the webhook secret is synced to Convex).
+setup_novu_email_webhook() {
+    log_step "Step 5.5: Setup Novu Email Webhook"
+
+    source "$PROJECT_ROOT/.env.docker.local"
+
+    cd "$PROJECT_ROOT"
+
+    if [ -x "./scripts/setup-novu-email-webhook.sh" ]; then
+        # Check if webhook already exists
+        if ./scripts/setup-novu-email-webhook.sh --check 2>&1 | grep -q "Email Webhook is configured"; then
+            log_success "Novu Email Webhook already configured"
+        else
+            log_info "Configuring Novu Email Webhook for $AGENT_NAME..."
+            if ./scripts/setup-novu-email-webhook.sh; then
+                log_success "Novu Email Webhook configured"
+            else
+                log_warn "Novu Email Webhook setup failed (emails may not work)"
+                log_info "You can retry later with: ./scripts/setup-novu-email-webhook.sh"
+            fi
+        fi
+    else
+        log_warn "setup-novu-email-webhook.sh not found or not executable"
     fi
 }
 
@@ -867,6 +921,7 @@ main() {
             install_dependencies
             start_convex_container
             setup_novu
+            setup_novu_email_webhook
             configure_convex_env
             validate_convex_env
             show_status

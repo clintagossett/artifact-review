@@ -187,47 +187,63 @@ npx convex env set RESEND_API_KEY re_your_actual_key
 
 ## Novu Integration
 
-Notification emails (invitations, comments, mentions) are sent through **Novu**, which uses Resend as its email provider.
+Notification emails (comment digests) are orchestrated through **Novu**, but sent via our Convex webhook.
 
-### How Novu Uses Email Addresses
+### Architecture: Novu → Convex → Resend
 
-Novu is configured with the `notify@` email address:
+**Flow:**
+```
+Comment → Convex triggers Novu → Novu orchestrates (digest/batching) →
+Email Webhook → Convex HTTP endpoint → React Email render → Resend → Mailpit (local)
+```
 
-**In Novu Dashboard (https://novu.loc or https://dashboard.novu.co):**
-1. Navigate to **Integrations** → **Email**
-2. Select **Resend** provider
-3. Configure:
-   - **API Key**: Resend API key for the environment
-   - **From Name**: `Artifact Review`
-   - **From Email**: `notify@artifactreview-early.xyz` (staging) or `notify@artifactreview.com` (prod)
+**Why this architecture?**
+- Templates live in our codebase (React Email), not Novu dashboard
+- All emails (auth + notifications) use the same rendering pipeline
+- Local dev emails go through Mailpit consistently
+- Novu still handles digest batching and user preferences
 
-**Environment-specific configuration:**
+### Email Webhook Setup
 
-| Environment | Novu Instance | From Email | Resend API Key |
-|-------------|---------------|------------|----------------|
-| Local Dev | Self-hosted (https://novu.loc) | `notify@artifactreview-early.xyz` | Staging key |
-| Staging | Novu Cloud | `notify@artifactreview-early.xyz` | Staging key |
-| Production | Novu Cloud | `notify@artifactreview.com` | Production key |
+Novu uses the **Email Webhook** provider instead of direct Resend integration:
+
+```bash
+# Configure webhook integration
+./scripts/setup-novu-email-webhook.sh
+
+# Check status
+./scripts/setup-novu-email-webhook.sh --check
+```
+
+**Environment variable required:**
+```bash
+# In app/.env.convex.local
+NOVU_EMAIL_WEBHOOK_SECRET=<generated with: openssl rand -hex 32>
+```
 
 ### Direct Email vs Novu
 
-The application sends emails through two different paths:
+The application sends emails through two paths, both ending at Resend:
 
-| Email Type | Path | Email Address | Configuration Location |
-|------------|------|---------------|------------------------|
-| **Authentication** (magic links, password resets) | Direct Resend → Convex | `auth@` | Convex env vars (`EMAIL_FROM_AUTH`) |
-| **Notifications** (invitations, comments, mentions) | Novu → Resend | `notify@` | Novu Dashboard Integrations |
+| Email Type | Path | Email Address | Configuration |
+|------------|------|---------------|---------------|
+| **Authentication** (magic links) | Convex → Resend | `auth@` | `EMAIL_FROM_AUTH` env var |
+| **Notifications** (comment digests) | Novu → Webhook → Convex → Resend | `notify@` | `EMAIL_FROM_NOTIFICATIONS` env var |
 
 This separation ensures:
 - Authentication emails are always delivered (not dependent on Novu)
 - Notifications can be orchestrated with digests, batching, and preferences
-- Different rate limits and monitoring per email type
+- All emails use React Email templates for consistent styling
 
 ## See Also
 
-- `app/convex/lib/email.ts` - Direct email sending logic (auth emails)
+- `app/convex/lib/email.ts` - Email sending logic (all emails go through here)
+- `app/convex/emails/*.tsx` - React Email templates
+- `app/convex/lib/emailRenderer.ts` - Convex email renderer
+- `app/convex/novuEmailWebhook.ts` - Novu webhook handler
 - `app/convex/novu.ts` - Novu notification triggers
 - `app/src/app/api/novu/workflows/comment-workflow.ts` - Notification workflow
+- `scripts/setup-novu-email-webhook.sh` - Webhook integration setup
 - `app/tests/utils/resend.ts` - Test email retrieval utility
-- `app/playwright.config.ts` - Test environment configuration
-- [Novu Setup Guide](./novu-setup.md) - Complete Novu configuration guide
+- [Novu Setup Guide](../development/novu-setup.md) - Complete Novu configuration guide
+- [Task #71 README](../../tasks/00071-novu-convex-resend-email-architecture/README.md) - Implementation details
