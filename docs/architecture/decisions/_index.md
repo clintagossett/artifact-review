@@ -28,6 +28,7 @@ Record of significant architectural decisions made for this project.
 | [0020](./0020-html-artifact-annotation-strategy.md) | HTML Artifact Annotation Strategy | Accepted | 2026-01-31 |
 | [0021](./0021-async-state-delay-testing.md) | Async State Delay Testing Pattern | Accepted | 2026-01-31 |
 | [0022](./0022-stripe-webhook-multi-deployment-filtering.md) | Stripe Webhook Multi-Deployment Filtering | Accepted | 2026-01-31 |
+| [0023](./0023-separate-novu-sync-mechanisms.md) | Separate Novu Workflow Sync Mechanisms | Accepted | 2026-02-03 |
 
 ---
 

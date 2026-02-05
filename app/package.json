@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:log": "./scripts/dev.sh",
     "build": "next build",
+    "postbuild": "npx novu@latest sync --bridge-url $SITE_URL/api/novu --secret-key $NOVU_SECRET_KEY --api-url $NOVU_API_URL || echo 'Novu sync failed (non-fatal)'",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
