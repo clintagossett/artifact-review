@@ -1,68 +1,31 @@
 import { test, expect } from '@playwright/test';
-import { getLatestEmail, extractMagicLink } from '../utils/resend';
+import { generateTestUser, signUpWithPassword } from '../utils/auth';
 import path from 'path';
 
 /**
  * End-to-End Artifact Workflow Test
  *
  * Flow:
- * 1. Login using Magic Link (polling Mailpit)
+ * 1. Sign up with password (avoids Resend API rate limits)
  * 2. Upload a multi-artifact ZIP (mixed-media-sample.zip)
  * 3. Verify File Tree visibility
  * 4. Add a comment on the main page via text selection
  * 5. Verify comment appears in sidebar
  *
  * Task 00049 - Updated to use data-version-status for deterministic waits
+ * Updated to use password auth to avoid Resend API rate limits in CI.
  */
-
-// Helper to generate unique users
-const generateUser = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000000);
-    return {
-        name: `Workflow User ${timestamp}`,
-        email: `test.user+${timestamp}-${random}@tolauante.resend.app`,
-    };
-};
 
 test.describe('End-to-End Artifact Workflow', () => {
 
     test('Complete artifact lifecycle: Login -> ZIP Upload -> Viewer', async ({ page }) => {
         test.setTimeout(90000); // Increased timeout for the full flow
-        const user = generateUser();
+        const user = generateTestUser('workflow');
 
-        // 1. Magic Link Login
-        console.log('Starting magic link login...');
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-
-        // Ensure we are on the Magic Link tab
-        console.log('Switching to Magic Link tab...');
-        await page.getByRole('button', { name: 'Magic Link' }).click();
-        await page.waitForTimeout(500); // Wait for tab switch animation
-
-        console.log('Filling email...');
-        await page.getByLabel('Email address').fill(user.email);
-        await page.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        // Wait for "Check Your Email" confirmation
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
-        console.log(`Email sent to ${user.email}, polling Mailpit...`);
-
-        // Poll for email
-        const emailData = await getLatestEmail(user.email);
-        expect(emailData).toBeTruthy();
-
-        const magicLink = extractMagicLink(emailData.html);
-        expect(magicLink).toBeTruthy();
-        console.log('Magic link found, proceeding to login.');
-
-        await page.goto(magicLink!);
-        await page.waitForLoadState('networkidle');
-
-        // Verify we are on the dashboard
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
-        console.log('Successfully logged into dashboard.');
+        // 1. Sign up with password (avoids Resend rate limits)
+        console.log('Signing up with password...');
+        await signUpWithPassword(page, user);
+        console.log('Successfully signed up and redirected to dashboard.');
 
         // 2. Upload Multi-artifact (ZIP)
         console.log('Opening upload dialog...');
@@ -151,24 +114,12 @@ test.describe('End-to-End Artifact Workflow', () => {
 
     test('Shows error state for ZIP with forbidden file types', async ({ page }) => {
         test.setTimeout(90000);
-        const user = generateUser();
+        const user = generateTestUser('error-test');
 
-        // 1. Login flow
-        console.log('Starting magic link login...');
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-        await page.getByRole('button', { name: 'Magic Link' }).click();
-        await page.waitForTimeout(500); // Wait for tab switch animation
-        await page.getByLabel('Email address').fill(user.email);
-        await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
-
-        const emailData = await getLatestEmail(user.email);
-        const magicLink = extractMagicLink(emailData.html);
-        await page.goto(magicLink!);
-        await page.waitForLoadState('networkidle');
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
-        console.log('Successfully logged in.');
+        // 1. Sign up with password
+        console.log('Signing up with password...');
+        await signUpWithPassword(page, user);
+        console.log('Successfully signed up.');
 
         // 2. Open upload dialog - handle both header button and empty state
         console.log('Opening upload dialog...');
@@ -236,22 +187,10 @@ test.describe('End-to-End Artifact Workflow', () => {
 
     test('Shows processing states during valid ZIP upload', async ({ page }) => {
         test.setTimeout(90000);
-        const user = generateUser();
+        const user = generateTestUser('status-test');
 
-        // Login and navigate to dashboard
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-        await page.getByRole('button', { name: 'Magic Link' }).click();
-        await page.waitForTimeout(500); // Wait for tab switch animation
-        await page.getByLabel('Email address').fill(user.email);
-        await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
-
-        const emailData = await getLatestEmail(user.email);
-        const magicLink = extractMagicLink(emailData.html);
-        await page.goto(magicLink!);
-        await page.waitForLoadState('networkidle');
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+        // Sign up with password and navigate to dashboard
+        await signUpWithPassword(page, user);
 
         // Open upload dialog - handle both header button and empty state
         const headerNewBtn = page.getByRole('button', { name: 'New Artifact' });
@@ -313,22 +252,10 @@ test.describe('End-to-End Artifact Workflow', () => {
      */
     test.fixme('Add comment via text selection in artifact', async ({ page }) => {
         test.setTimeout(90000);
-        const user = generateUser();
+        const user = generateTestUser('comment-test');
 
-        // Login and create artifact (same setup as above)
-        await page.goto('/login');
-        await page.waitForLoadState('networkidle');
-        await page.getByRole('button', { name: 'Magic Link' }).click();
-        await page.waitForTimeout(500); // Wait for tab switch animation
-        await page.getByLabel('Email address').fill(user.email);
-        await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
-
-        const emailData = await getLatestEmail(user.email);
-        const magicLink = extractMagicLink(emailData.html);
-        await page.goto(magicLink!);
-        await page.waitForLoadState('networkidle');
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+        // Sign up with password and navigate to dashboard
+        await signUpWithPassword(page, user);
 
         // Upload artifact
         await page.getByRole('button', { name: /Artifact/ }).first().click();

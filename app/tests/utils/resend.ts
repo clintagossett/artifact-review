@@ -60,8 +60,16 @@ export async function getLatestEmail(toEmail: string, subjectFilter?: string) {
                     limit: 10,
                 });
 
-                if (!response.data) {
-                    throw new Error('No data in resend response');
+                // Resend SDK returns { data, error } - check for error first
+                if (response.error) {
+                    throw new Error(`Resend API error: ${response.error.message}`);
+                }
+
+                if (!response.data?.data) {
+                    // No emails yet, continue polling
+                    await new Promise(resolve => setTimeout(resolve, delayMs));
+                    attempts++;
+                    continue;
                 }
 
                 const recentEmail = response.data.data.find((email) =>

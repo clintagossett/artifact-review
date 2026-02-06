@@ -15,41 +15,8 @@
  */
 
 import { test, expect } from "@playwright/test";
-import { getLatestEmail, extractMagicLink } from "../utils/resend";
+import { generateTestUser, signUpWithPassword } from "../utils/auth";
 import path from "path";
-
-/**
- * Generate unique user data for each test run.
- */
-const generateUser = (prefix = "user") => {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000000);
-  return {
-    name: `${prefix}-${timestamp}`,
-    email: `${prefix}+${timestamp}-${random}@tolauante.resend.app`,
-  };
-};
-
-/**
- * Helper: Login user via magic link flow
- */
-async function loginUser(page: any, email: string) {
-  await page.goto("/login");
-  await page.getByRole("button", { name: "Magic Link" }).click();
-  await page.getByLabel("Email address").fill(email);
-  await page.getByRole("button", { name: "Send Magic Link" }).click();
-
-  const emailData = await getLatestEmail(email, "Sign in");
-  let magicLink = extractMagicLink(emailData.html);
-  if (!magicLink) throw new Error("Failed to extract magic link");
-
-  const baseURL = process.env.SITE_URL || "http://localhost:3010";
-  const url = new URL(magicLink);
-  const transformedUrl = `${baseURL}${url.pathname}${url.search}`;
-
-  await page.goto(transformedUrl);
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
-}
 
 /**
  * Helper: Upload artifact and return URL
@@ -151,8 +118,10 @@ async function selectTextAndComment(page: any, commentText: string) {
 }
 
 /**
- * Helper: Wait for digest email in Mailpit
+ * Helper: Wait for digest email in Mailpit or Resend
  * Polls for email with expected content
+ * Uses Mailpit when MAILPIT_API_URL is set (local dev)
+ * Falls back to Resend API in CI/staging
  */
 async function waitForDigestEmail(
   toEmail: string,
@@ -160,56 +129,126 @@ async function waitForDigestEmail(
   timeoutMs = 90000
 ): Promise<{ html: string; subject: string }> {
   const MAILPIT_API_URL = process.env.MAILPIT_API_URL;
-  if (!MAILPIT_API_URL) {
-    throw new Error("MAILPIT_API_URL not set - required for email E2E tests");
+  const RESEND_FULL_ACCESS_API_KEY = process.env.RESEND_FULL_ACCESS_API_KEY;
+  const useMailpit = !!MAILPIT_API_URL;
+
+  if (!useMailpit && !RESEND_FULL_ACCESS_API_KEY) {
+    throw new Error(
+      "Either MAILPIT_API_URL or RESEND_FULL_ACCESS_API_KEY must be set for email E2E tests"
+    );
   }
 
   const startTime = Date.now();
-  const pollInterval = 2000;
+  const pollInterval = 3000; // 3s between polls
+
+  console.log(
+    `Polling for digest email via ${useMailpit ? "Mailpit" : "Resend API"}...`
+  );
 
   while (Date.now() - startTime < timeoutMs) {
     try {
-      const response = await fetch(`${MAILPIT_API_URL}/messages`);
-      if (!response.ok) throw new Error("Failed to fetch from Mailpit");
+      if (useMailpit && MAILPIT_API_URL) {
+        // Fetch from Mailpit API
+        const response = await fetch(`${MAILPIT_API_URL}/messages`);
+        if (!response.ok) throw new Error("Failed to fetch from Mailpit");
 
-      const data = await response.json();
-      const messages = data.messages || [];
+        const data = await response.json();
+        const messages = data.messages || [];
 
-      // Find email matching recipient and containing artifact title
-      const match = messages.find(
-        (m: any) =>
-          m.To.some((t: any) => t.Address.includes(toEmail)) &&
-          (m.Subject.includes(artifactTitle) ||
-            m.Subject.includes("comment") ||
-            m.Subject.includes("replied"))
-      );
-
-      if (match) {
-        const msgResponse = await fetch(
-          `${MAILPIT_API_URL}/message/${match.ID}`
+        // Find email matching recipient and containing artifact title
+        const match = messages.find(
+          (m: any) =>
+            m.To.some((t: any) => t.Address.includes(toEmail)) &&
+            (m.Subject.includes(artifactTitle) ||
+              m.Subject.includes("comment") ||
+              m.Subject.includes("replied"))
         );
-        const msgData = await msgResponse.json();
 
-        // Verify it's a digest email (contains React Email styling)
-        if (
-          msgData.HTML.includes("View Artifact") &&
-          msgData.HTML.includes(artifactTitle)
-        ) {
-          return {
-            html: msgData.HTML,
-            subject: msgData.Subject,
-          };
+        if (match) {
+          const msgResponse = await fetch(
+            `${MAILPIT_API_URL}/message/${match.ID}`
+          );
+          const msgData = await msgResponse.json();
+
+          // Verify it's a digest email (contains React Email styling)
+          if (
+            msgData.HTML.includes("View Artifact") &&
+            msgData.HTML.includes(artifactTitle)
+          ) {
+            return {
+              html: msgData.HTML,
+              subject: msgData.Subject,
+            };
+          }
+        }
+      } else {
+        // Fetch from Resend API
+        const { Resend } = await import("resend");
+        const resend = new Resend(RESEND_FULL_ACCESS_API_KEY);
+
+        const response = await resend.emails.list({ limit: 20 });
+
+        // Resend SDK returns { data, error } - check for error first
+        if (response.error) {
+          console.log(
+            `Resend API error: ${response.error.name} - ${response.error.message}`
+          );
+          throw new Error(`Resend API error: ${response.error.message}`);
+        }
+
+        if (!response.data?.data) {
+          console.log("Resend returned no emails");
+          // No emails yet, continue polling
+          await new Promise((resolve) => setTimeout(resolve, pollInterval));
+          continue;
+        }
+
+        // Find email matching recipient and digest content
+        // Look for emails within the timeout window
+        const cutoffTime = Date.now() - timeoutMs;
+        const allEmails = response.data.data;
+        console.log(`Found ${allEmails.length} emails in Resend, filtering for ${toEmail}...`);
+
+        const candidates = allEmails.filter(
+          (email) =>
+            email.to.includes(toEmail) &&
+            new Date(email.created_at).getTime() > cutoffTime &&
+            (email.subject.includes(artifactTitle) ||
+              email.subject.includes("comment") ||
+              email.subject.includes("replied") ||
+              email.subject.includes("New Comment"))
+        );
+
+        console.log(`Found ${candidates.length} candidate digest emails`);
+
+        // Check each candidate for digest content
+        for (const candidate of candidates) {
+          const emailContent = await resend.emails.get(candidate.id);
+          if (emailContent.data?.html) {
+            const html = emailContent.data.html;
+            // Verify it's a digest email (contains artifact title and CTA)
+            if (html.includes("View Artifact") && html.includes(artifactTitle)) {
+              console.log(`Found matching digest email: ${candidate.subject}`);
+              return {
+                html,
+                subject: candidate.subject,
+              };
+            }
+          }
         }
       }
     } catch (e) {
-      console.log("Error polling Mailpit, retrying...", e);
+      console.log(
+        `Error polling ${useMailpit ? "Mailpit" : "Resend"}, retrying...`,
+        e
+      );
     }
 
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
   }
 
   throw new Error(
-    `Timeout waiting for digest email to ${toEmail} for artifact "${artifactTitle}"`
+    `Timeout waiting for digest email to ${toEmail} for artifact "${artifactTitle}" (source=${useMailpit ? "Mailpit" : "Resend"})`
   );
 }
 
@@ -228,15 +267,28 @@ async function clearMailpit() {
 }
 
 test.describe("Email Digest System", () => {
-  // These tests take longer due to digest wait time
+  // These tests take longer due to digest wait time (30s interval + email delivery)
   test.setTimeout(180000);
+
+  // Email digest tests need either Mailpit (local) or Resend API key (CI/staging).
+  // Now that we use password auth (not magic link), Resend API polling is viable
+  // since we're not hitting rate limits during login.
+  test.beforeEach(async () => {
+    const hasMailpit = !!process.env.MAILPIT_API_URL;
+    const hasResendKey = !!process.env.RESEND_FULL_ACCESS_API_KEY;
+
+    if (!hasMailpit && !hasResendKey) {
+      console.log("Skipping email digest tests: MAILPIT_API_URL or RESEND_FULL_ACCESS_API_KEY required");
+      test.skip();
+    }
+  });
 
   test.describe("Single Comment Digest", () => {
     test("reviewer comment triggers digest email to owner", async ({
       browser,
     }) => {
-      const owner = generateUser("owner");
-      const reviewer = generateUser("reviewer");
+      const owner = generateTestUser("owner");
+      const reviewer = generateTestUser("reviewer");
       const artifactName = `Email Digest Test ${Date.now()}`;
 
       // Clear mailpit before test
@@ -249,9 +301,9 @@ test.describe("Email Digest System", () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // 1. Owner: Login and upload artifact
-        console.log("Owner logging in...");
-        await loginUser(ownerPage, owner.email);
+        // 1. Owner: Sign up and upload artifact
+        console.log("Owner signing up...");
+        await signUpWithPassword(ownerPage, owner);
 
         console.log("Owner uploading artifact...");
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
@@ -265,22 +317,12 @@ test.describe("Email Digest System", () => {
         await ownerPage.keyboard.press("Escape");
         await ownerPage.waitForTimeout(500);
 
-        // 3. Reviewer: Login and access artifact
-        console.log("Reviewer logging in...");
+        // 3. Reviewer: Sign up and access artifact
+        console.log("Reviewer signing up...");
+        await signUpWithPassword(reviewerPage, reviewer);
+
+        console.log("Reviewer accessing artifact...");
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage
-          .getByRole("button", { name: "Sign In to Review" })
-          .click();
-        await reviewerPage.getByRole("button", { name: "Magic Link" }).click();
-        await reviewerPage.getByLabel("Email address").fill(reviewer.email);
-        await reviewerPage
-          .getByRole("button", { name: "Send Magic Link" })
-          .click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, "Sign in");
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
-
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({
           timeout: 30000,
         });
@@ -342,8 +384,8 @@ test.describe("Email Digest System", () => {
     test("multiple comments within digest window are batched into one email", async ({
       browser,
     }) => {
-      const owner = generateUser("owner");
-      const reviewer = generateUser("reviewer");
+      const owner = generateTestUser("owner");
+      const reviewer = generateTestUser("reviewer");
       const artifactName = `Batch Test ${Date.now()}`;
 
       await clearMailpit();
@@ -355,26 +397,15 @@ test.describe("Email Digest System", () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // Setup
-        await loginUser(ownerPage, owner.email);
+        // Setup - Owner signs up and creates artifact
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer.email);
         await ownerPage.keyboard.press("Escape");
 
-        // Reviewer login
+        // Reviewer signs up and accesses artifact
+        await signUpWithPassword(reviewerPage, reviewer);
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage
-          .getByRole("button", { name: "Sign In to Review" })
-          .click();
-        await reviewerPage.getByRole("button", { name: "Magic Link" }).click();
-        await reviewerPage.getByLabel("Email address").fill(reviewer.email);
-        await reviewerPage
-          .getByRole("button", { name: "Send Magic Link" })
-          .click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, "Sign in");
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({
           timeout: 30000,
         });
@@ -443,8 +474,8 @@ test.describe("Email Digest System", () => {
     test("digest email contains properly styled React Email components", async ({
       browser,
     }) => {
-      const owner = generateUser("owner");
-      const reviewer = generateUser("reviewer");
+      const owner = generateTestUser("owner");
+      const reviewer = generateTestUser("reviewer");
       const artifactName = `Styled Email Test ${Date.now()}`;
 
       await clearMailpit();
@@ -456,25 +487,15 @@ test.describe("Email Digest System", () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // Quick setup
-        await loginUser(ownerPage, owner.email);
+        // Quick setup - Owner signs up and creates artifact
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer.email);
         await ownerPage.keyboard.press("Escape");
 
-        // Reviewer login and comment
+        // Reviewer signs up and accesses artifact
+        await signUpWithPassword(reviewerPage, reviewer);
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage
-          .getByRole("button", { name: "Sign In to Review" })
-          .click();
-        await reviewerPage.getByRole("button", { name: "Magic Link" }).click();
-        await reviewerPage.getByLabel("Email address").fill(reviewer.email);
-        await reviewerPage
-          .getByRole("button", { name: "Send Magic Link" })
-          .click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, "Sign in");
-        await reviewerPage.goto(extractMagicLink(reviewerEmailData.html)!);
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({
           timeout: 30000,
         });

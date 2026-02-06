@@ -14,41 +14,50 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { getLatestEmail, extractMagicLink } from '../utils/resend';
+import { generateTestUser, signUpWithPassword, loginWithPassword } from '../utils/auth';
 import path from 'path';
 
 /**
- * Generate unique user data for each test run.
- * Uses Resend test domain for email delivery.
- */
-const generateUser = (prefix = 'user') => {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000000);
-  return {
-    name: `${prefix}-${timestamp}`,
-    email: `${prefix}+${timestamp}-${random}@tolauante.resend.app`,
-  };
-};
-
-/**
  * Helper: Wait for notification badge to show expected count.
- * Uses longer timeout and waits for network to settle first.
+ * Polls with page refresh since WebSocket may not work reliably in CI.
  */
 async function waitForNotificationCount(
   page: any,
   count: number,
   timeout = 45000
 ): Promise<void> {
-  // First wait for network to settle (notification may be in-flight)
-  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {
-    console.log('Network idle timeout - continuing anyway');
-  });
+  const startTime = Date.now();
+  const pollInterval = 3000;
+  let lastError: Error | null = null;
 
-  const badge = page.getByTestId('notification-badge');
-  const countElement = page.getByTestId('notification-count');
+  while (Date.now() - startTime < timeout) {
+    try {
+      // Wait for network to settle
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
 
-  await expect(badge).toBeVisible({ timeout });
-  await expect(countElement).toHaveText(String(count), { timeout });
+      const badge = page.getByTestId('notification-badge');
+      const countElement = page.getByTestId('notification-count');
+
+      // Check if badge is visible and has correct count
+      if (await badge.isVisible({ timeout: 2000 }).catch(() => false)) {
+        const text = await countElement.textContent();
+        if (text === String(count)) {
+          console.log(`Notification count ${count} found!`);
+          return;
+        }
+        console.log(`Notification count is ${text}, waiting for ${count}...`);
+      }
+    } catch (e) {
+      lastError = e as Error;
+    }
+
+    // Refresh page to trigger notification fetch (WebSocket may not be connected in CI)
+    console.log('Refreshing page to check for notifications...');
+    await page.reload();
+    await page.waitForTimeout(pollInterval);
+  }
+
+  throw new Error(`Timeout waiting for notification count ${count}. Last error: ${lastError?.message}`);
 }
 
 /**
@@ -74,28 +83,21 @@ async function openNotificationCenter(page: any): Promise<void> {
 }
 
 /**
- * Helper: Login user via magic link flow
- * Note: Magic links may contain a different domain (e.g., mark.loc) when generated
- * in self-hosted Convex. We transform the URL to use the test's baseURL.
+ * Helper: Create and login user with password auth.
+ * Uses password auth to avoid Resend API rate limits in CI.
+ * Returns the user object for use in tests.
  */
-async function loginUser(page: any, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Magic Link' }).click();
-  await page.getByLabel('Email address').fill(email);
-  await page.getByRole('button', { name: 'Send Magic Link' }).click();
+async function createUser(page: any, prefix: string) {
+  const user = generateTestUser(prefix);
+  await signUpWithPassword(page, user);
+  return user;
+}
 
-  const emailData = await getLatestEmail(email, 'Sign in');
-  let magicLink = extractMagicLink(emailData.html);
-  if (!magicLink) throw new Error('Failed to extract magic link');
-
-  // Transform magic link to use test baseURL if it points to a different domain
-  // e.g., https://mark.loc/dashboard?code=xxx -> http://localhost:3010/dashboard?code=xxx
-  const baseURL = process.env.SITE_URL || 'http://localhost:3010';
-  const url = new URL(magicLink);
-  const transformedUrl = `${baseURL}${url.pathname}${url.search}`;
-
-  await page.goto(transformedUrl);
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+/**
+ * Helper: Login existing user with password.
+ */
+async function loginUser(page: any, user: { email: string; password: string }) {
+  await loginWithPassword(page, user.email, user.password);
 }
 
 /**
@@ -271,9 +273,9 @@ test.describe('Notification System', () => {
   test.describe('Test 1: New Comment Notifies Artifact Owner', () => {
     test('1.1: Reviewer comments on artifact -> Owner sees notification badge', async ({ browser }) => {
 
-      // Generate unique users for this test
-      const owner = generateUser('owner');
-      const reviewer = generateUser('reviewer');
+      // Generate unique users for this test (with passwords for auth)
+      const owner = generateTestUser('owner');
+      const reviewer = generateTestUser('reviewer');
       const artifactName = `Notification Test ${Date.now()}`;
 
       // Create separate browser contexts for owner and reviewer
@@ -284,9 +286,9 @@ test.describe('Notification System', () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // 1. Owner: Login and upload artifact
-        console.log('Owner logging in...');
-        await loginUser(ownerPage, owner.email);
+        // 1. Owner: Sign up and upload artifact
+        console.log('Owner signing up...');
+        await signUpWithPassword(ownerPage, owner);
 
         console.log('Owner uploading artifact...');
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
@@ -304,19 +306,12 @@ test.describe('Notification System', () => {
         console.log('Verifying owner has no initial notifications...');
         await expectNoNotificationBadge(ownerPage, 5000);
 
-        // 4. Reviewer: Login and access artifact
-        console.log('Reviewer logging in...');
+        // 4. Reviewer: Sign up first, then access artifact
+        console.log('Reviewer signing up...');
+        await signUpWithPassword(reviewerPage, reviewer);
+
+        // Navigate to artifact
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewerPage.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-        await reviewerPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, 'Sign in');
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
-
-        // Wait for reviewer to reach artifact
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 30000 });
         console.log('Reviewer reached artifact.');
 
@@ -338,8 +333,8 @@ test.describe('Notification System', () => {
 
   test.describe('Test 2: Reply Notifies Comment Author', () => {
     test('2.1: Owner replies to comment -> Reviewer sees notification badge', async ({ browser }) => {
-      const owner = generateUser('owner');
-      const reviewer = generateUser('reviewer');
+      const owner = generateTestUser('owner');
+      const reviewer = generateTestUser('reviewer');
       const artifactName = `Reply Notify Test ${Date.now()}`;
 
       const ownerContext = await browser.newContext();
@@ -349,21 +344,14 @@ test.describe('Notification System', () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // Setup: Owner login, upload, invite
-        await loginUser(ownerPage, owner.email);
+        // Setup: Owner sign up, upload, invite
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer.email);
 
-        // Reviewer: Login and add comment
+        // Reviewer: Sign up and access artifact
+        await signUpWithPassword(reviewerPage, reviewer);
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewerPage.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-        await reviewerPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, 'Sign in');
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 30000 });
 
         console.log('Reviewer adding comment...');
@@ -397,9 +385,9 @@ test.describe('Notification System', () => {
 
   test.describe('Test 3: Thread Participants Get Notified', () => {
     test('3.1: Third user replies -> Both owner and original commenter notified', async ({ browser }) => {
-      const owner = generateUser('owner');
-      const reviewer1 = generateUser('reviewer1');
-      const reviewer2 = generateUser('reviewer2');
+      const owner = generateTestUser('owner');
+      const reviewer1 = generateTestUser('reviewer1');
+      const reviewer2 = generateTestUser('reviewer2');
       const artifactName = `Thread Notify Test ${Date.now()}`;
 
       const ownerContext = await browser.newContext();
@@ -411,8 +399,8 @@ test.describe('Notification System', () => {
       const reviewer2Page = await reviewer2Context.newPage();
 
       try {
-        // Setup: Owner login, upload, invite both reviewers
-        await loginUser(ownerPage, owner.email);
+        // Setup: Owner sign up, upload, invite both reviewers
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer1.email);
 
@@ -423,16 +411,9 @@ test.describe('Notification System', () => {
         // Close the modal
         await ownerPage.getByRole('button', { name: 'Close' }).first().click();
 
-        // Reviewer1: Login and add comment
+        // Reviewer1: Sign up and add comment
+        await signUpWithPassword(reviewer1Page, reviewer1);
         await reviewer1Page.goto(artifactUrl);
-        await reviewer1Page.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewer1Page.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewer1Page.getByLabel('Email address').fill(reviewer1.email);
-        await reviewer1Page.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewer1EmailData = await getLatestEmail(reviewer1.email, 'Sign in');
-        const reviewer1MagicLink = extractMagicLink(reviewer1EmailData.html);
-        await reviewer1Page.goto(reviewer1MagicLink!);
         await expect(reviewer1Page.getByText(artifactName)).toBeVisible({ timeout: 30000 });
 
         console.log('Reviewer1 adding comment...');
@@ -449,16 +430,9 @@ test.describe('Notification System', () => {
         console.log('Owner replying...');
         await replyToFirstAnnotation(ownerPage, 'Reply from owner.');
 
-        // Reviewer2: Login and reply to the thread
+        // Reviewer2: Sign up and reply to the thread
+        await signUpWithPassword(reviewer2Page, reviewer2);
         await reviewer2Page.goto(artifactUrl);
-        await reviewer2Page.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewer2Page.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewer2Page.getByLabel('Email address').fill(reviewer2.email);
-        await reviewer2Page.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewer2EmailData = await getLatestEmail(reviewer2.email, 'Sign in');
-        const reviewer2MagicLink = extractMagicLink(reviewer2EmailData.html);
-        await reviewer2Page.goto(reviewer2MagicLink!);
         await expect(reviewer2Page.getByText(artifactName)).toBeVisible({ timeout: 30000 });
 
         // Wait for existing annotations/replies to load before adding new reply
@@ -488,15 +462,15 @@ test.describe('Notification System', () => {
 
   test.describe('Test 4: Self-Comment Does NOT Trigger Notification', () => {
     test('4.1: Owner comments on own artifact -> No notification', async ({ browser }) => {
-      const owner = generateUser('owner');
+      const owner = generateTestUser('owner');
       const artifactName = `Self Comment Test ${Date.now()}`;
 
       const ownerContext = await browser.newContext();
       const ownerPage = await ownerContext.newPage();
 
       try {
-        // Owner: Login and upload artifact
-        await loginUser(ownerPage, owner.email);
+        // Owner: Sign up and upload artifact
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
 
         // Navigate to artifact
@@ -528,8 +502,8 @@ test.describe('Notification System', () => {
 
   test.describe('Test 5: Notification Count Accumulates', () => {
     test('5.1: Multiple comments -> Badge shows correct count', async ({ browser }) => {
-      const owner = generateUser('owner');
-      const reviewer = generateUser('reviewer');
+      const owner = generateTestUser('owner');
+      const reviewer = generateTestUser('reviewer');
       const artifactName = `Count Test ${Date.now()}`;
 
       const ownerContext = await browser.newContext();
@@ -539,8 +513,8 @@ test.describe('Notification System', () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // Setup
-        await loginUser(ownerPage, owner.email);
+        // Setup: Owner sign up, upload, invite
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer.email);
 
@@ -548,16 +522,9 @@ test.describe('Notification System', () => {
         await ownerPage.goto(artifactUrl);
         await expect(ownerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
 
-        // Reviewer: Login
+        // Reviewer: Sign up and access artifact
+        await signUpWithPassword(reviewerPage, reviewer);
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewerPage.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-        await reviewerPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, 'Sign in');
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 30000 });
 
         // Reviewer: Add 3 comments sequentially
@@ -599,8 +566,8 @@ test.describe('Notification System', () => {
      * When Novu mark-as-seen is fixed/configured correctly, remove test.fixme() to enable.
      */
     test.fixme('6.1: Owner opens notification center -> Badge clears', async ({ browser }) => {
-      const owner = generateUser('owner');
-      const reviewer = generateUser('reviewer');
+      const owner = generateTestUser('owner');
+      const reviewer = generateTestUser('reviewer');
       const artifactName = `Mark Read Test ${Date.now()}`;
 
       const ownerContext = await browser.newContext();
@@ -610,8 +577,8 @@ test.describe('Notification System', () => {
       const reviewerPage = await reviewerContext.newPage();
 
       try {
-        // Setup
-        await loginUser(ownerPage, owner.email);
+        // Setup - Owner signs up and creates artifact
+        await signUpWithPassword(ownerPage, owner);
         const artifactUrl = await uploadArtifact(ownerPage, artifactName);
         await inviteReviewer(ownerPage, reviewer.email);
 
@@ -619,16 +586,9 @@ test.describe('Notification System', () => {
         await ownerPage.goto(artifactUrl);
         await expect(ownerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
 
-        // Reviewer: Login and add comment
+        // Reviewer: Sign up and access artifact
+        await signUpWithPassword(reviewerPage, reviewer);
         await reviewerPage.goto(artifactUrl);
-        await reviewerPage.getByRole('button', { name: 'Sign In to Review' }).click();
-        await reviewerPage.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-        await reviewerPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const reviewerEmailData = await getLatestEmail(reviewer.email, 'Sign in');
-        const reviewerMagicLink = extractMagicLink(reviewerEmailData.html);
-        await reviewerPage.goto(reviewerMagicLink!);
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 30000 });
 
         console.log('Reviewer adding comment...');

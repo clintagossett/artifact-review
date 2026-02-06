@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { getLatestEmail, extractMagicLink } from '../utils/resend';
+import { generateTestUser, signUpWithPassword } from '../utils/auth';
 import path from 'path';
 
 /**
  * Agent API E2E Tests
- * 
+ *
  * Verifies the full lifecycle of an Agent interacting with the platform:
- * 1. User creates an artifact.
+ * 1. User creates an artifact (signed up with password to avoid Resend rate limits).
  * 2. User generates an API Key.
  * 3. Agent (via script) uses API Key to:
  *    - Discover API via /api/v1/openapi.yaml
@@ -17,42 +17,22 @@ import path from 'path';
  *    - Delete comment.
  */
 
-const generateUser = (prefix = 'dev') => {
-    const timestamp = Date.now();
-    return {
-        name: `${prefix}-${timestamp}`,
-        email: `${prefix}+${timestamp}@tolauante.resend.app`,
-    };
-};
-
 test.describe('Agent API Integration', () => {
-    let user: { name: string; email: string };
+    let user: { name: string; email: string; password: string };
     let shareToken: string;
     let apiKey: string;
     let artifactUrl: string;
 
     test.beforeAll(async ({ browser }) => {
         test.setTimeout(90000); // Setup is heavy
-        user = generateUser('agent-tester');
+        user = generateTestUser('agent-tester');
 
         const context = await browser.newContext();
         const page = await context.newPage();
 
-        // 1. Login
-        console.log('Logging in...');
-        await page.goto('/login');
-        await page.waitForLoadState('domcontentloaded');
-
-        await page.getByRole('button', { name: 'Magic Link' }).click();
-        await page.getByLabel('Email address').fill(user.email);
-        await page.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const email = await getLatestEmail(user.email);
-        expect(email).not.toBeNull();
-        const magicLink = extractMagicLink(email!.html);
-        await page.goto(magicLink!);
-        await page.waitForLoadState('domcontentloaded');
-        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
+        // 1. Sign up with password (avoids Resend rate limits)
+        console.log('Signing up with password...');
+        await signUpWithPassword(page, user);
 
         // 2. Create Artifact
         console.log('Creating artifact...');

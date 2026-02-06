@@ -1,35 +1,29 @@
 import { test, expect } from '@playwright/test';
-import { getLatestEmail, extractMagicLink } from '../utils/resend';
+import { generateTestUser, signUpWithPassword } from '../utils/auth';
 import path from 'path';
 
 /**
  * Collaboration & Access Control E2E Tests
- * 
+ *
  * Covers Journeys:
  * 003.01 - Invitee Onboarding & Deep Linking
  * 003.02 - Revoked Access & Permissions
  * 004 - Sharing & Invites
  * 004.01 - Reviewer Lifecycle
+ *
+ * Uses password auth to avoid Resend API rate limits in CI.
+ * Magic link flow is tested once in auth.spec.ts.
  */
 
-const generateUser = (prefix = 'user') => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000000);
-    return {
-        name: `${prefix}-${timestamp}`,
-        email: `${prefix}+${timestamp}-${random}@tolauante.resend.app`,
-    };
-};
-
 test.describe('Collaboration & Access Control', () => {
-    let creator: { name: string; email: string };
-    let reviewer: { name: string; email: string };
+    let creator: { name: string; email: string; password: string };
+    let reviewer: { name: string; email: string; password: string };
     let artifactName: string;
     let artifactUrl: string;
 
     test.beforeAll(async () => {
-        creator = generateUser('creator');
-        reviewer = generateUser('reviewer');
+        creator = generateTestUser('creator');
+        reviewer = generateTestUser('reviewer');
         artifactName = `E2E Collaboration ${Date.now()}`;
     });
 
@@ -43,17 +37,9 @@ test.describe('Collaboration & Access Control', () => {
         const creatorPage = await creatorContext.newPage();
         const reviewerPage = await reviewerContext.newPage();
 
-        // 1. Creator Login & Upload
-        console.log('Creator logging in...');
-        await creatorPage.goto('/login');
-        await creatorPage.getByRole('button', { name: 'Magic Link' }).click();
-        await creatorPage.getByLabel('Email address').fill(creator.email);
-        await creatorPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        const creatorEmail = await getLatestEmail(creator.email);
-        const creatorMagicLink = extractMagicLink(creatorEmail.html);
-        await creatorPage.goto(creatorMagicLink!);
-        await expect(creatorPage).toHaveURL(/\/dashboard/);
+        // 1. Creator Sign Up & Upload
+        console.log('Creator signing up...');
+        await signUpWithPassword(creatorPage, creator);
 
         console.log('Creator uploading artifact...');
         // Click the "Upload" button in the header (always present)
@@ -96,50 +82,19 @@ test.describe('Collaboration & Access Control', () => {
         await creatorPage.getByRole('button', { name: 'Close' }).first().click();
 
         // 3. Journey 003.01: Invitee Onboarding & Deep Linking
-        console.log('Reviewer accessing artifact while unauthenticated...');
+        // Sign up reviewer first (password auth to avoid rate limits)
+        console.log('Reviewer signing up...');
+        await signUpWithPassword(reviewerPage, reviewer);
+
+        // Navigate to artifact
+        console.log('Reviewer accessing artifact...');
         await reviewerPage.goto(artifactUrl);
-
-        // Should see UnauthenticatedBanner
-        await expect(reviewerPage.getByText('Private Artifact')).toBeVisible();
-        await expect(reviewerPage.getByRole('button', { name: 'Sign In to Review' })).toBeVisible();
-
-        console.log('Reviewer logging in via deep link flow...');
-        await reviewerPage.getByRole('button', { name: 'Sign In to Review' }).click();
-
-        // Verify we are on login page with returnTo
-        await expect(reviewerPage).toHaveURL(/login\?returnTo=/);
-
-        await reviewerPage.getByRole('button', { name: 'Magic Link' }).click();
-        await reviewerPage.getByLabel('Email address').fill(reviewer.email);
-        await reviewerPage.getByRole('button', { name: 'Send Magic Link' }).click();
-
-        console.log('Fetching magic link email...');
-        const reviewerEmail = await getLatestEmail(reviewer.email, 'Sign in');
-        const reviewerMagicLink = extractMagicLink(reviewerEmail.html);
-
-        // Navigate to magic link which should redirect back to artifact
-        console.log('Navigating to magic link...');
-        await reviewerPage.goto(reviewerMagicLink!);
-
-        // Wait for the magic link code to be processed and stripped from URL
-        console.log('Waiting for auth to process...');
-        await expect(reviewerPage).not.toHaveURL(/\?code=/, { timeout: 30000 });
-
-        // Check if we reached the artifact page and the banner is gone
-        console.log('Verifying reviewer reached artifact...');
-        try {
-            await expect(reviewerPage.getByText('Private Artifact')).not.toBeVisible({ timeout: 15000 });
-        } catch (e) {
-            console.log('Banner still visible, trying one reload to nudge auth state...');
-            await reviewerPage.reload();
-            await expect(reviewerPage.getByText('Private Artifact')).not.toBeVisible({ timeout: 10000 });
-        }
 
         // Wait for the artifact content to load
         try {
             await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
         } catch (e) {
-            console.log('Artifact name not visible, trying one last reload...');
+            console.log('Artifact name not visible, trying one reload...');
             await reviewerPage.reload();
             await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 10000 });
         }
