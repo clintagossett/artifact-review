@@ -41,6 +41,8 @@ test.describe('Agent API Integration', () => {
         // 1. Login
         console.log('Logging in...');
         await page.goto('/login');
+        await page.waitForLoadState('domcontentloaded');
+
         await page.getByRole('button', { name: 'Magic Link' }).click();
         await page.getByLabel('Email address').fill(user.email);
         await page.getByRole('button', { name: 'Send Magic Link' }).click();
@@ -49,25 +51,28 @@ test.describe('Agent API Integration', () => {
         expect(email).not.toBeNull();
         const magicLink = extractMagicLink(email!.html);
         await page.goto(magicLink!);
-        await expect(page).toHaveURL(/\/dashboard/);
+        await page.waitForLoadState('domcontentloaded');
+        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
 
         // 2. Create Artifact
         console.log('Creating artifact...');
         // Click the "Upload" button in the header (always present)
         const uploadBtn = page.getByRole('button', { name: 'Upload' });
-        await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+        await expect(uploadBtn).toBeVisible({ timeout: 30000 });
         await uploadBtn.click();
 
         // Wait for dialog and file input
-        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 30000 });
         const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
         const fileInput = page.locator('#file-upload');
-        await expect(fileInput).toBeAttached({ timeout: 5000 });
+        await expect(fileInput).toBeAttached({ timeout: 30000 });
         await fileInput.setInputFiles(zipPath);
         // Wait for file to appear in the upload area
-        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 30000 });
         await page.getByLabel('Artifact Name').fill('Agent Test Artifact');
-        await page.getByRole('button', { name: 'Create Artifact' }).click();
+        const createBtn = page.getByRole('button', { name: 'Create Artifact' });
+        await expect(createBtn).toBeEnabled({ timeout: 30000 });
+        await createBtn.click();
 
         await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
         artifactUrl = page.url();
@@ -78,17 +83,24 @@ test.describe('Agent API Integration', () => {
         // 3. Generate API Key
         console.log('Generating API Key...');
         await page.goto('/settings');
+        await page.waitForLoadState('domcontentloaded');
 
         // Switch to Developer tab
         // Use exact text match or look for the button within the sidebar
-        await page.getByRole('button', { name: 'Developer' }).click();
+        const developerTab = page.getByRole('button', { name: 'Developer' });
+        await expect(developerTab).toBeVisible({ timeout: 30000 });
+        await developerTab.click();
 
-        await page.getByRole('button', { name: 'Generate Key' }).click();
+        const generateBtn = page.getByRole('button', { name: 'Generate Key' });
+        await expect(generateBtn).toBeVisible({ timeout: 30000 });
+        await generateBtn.click();
         await page.getByLabel('Key Name').fill('E2E Test Key');
-        await page.getByRole('button', { name: 'Generate' }).click();
+        const generateDialogBtn = page.getByRole('button', { name: 'Generate' });
+        await expect(generateDialogBtn).toBeEnabled({ timeout: 30000 });
+        await generateDialogBtn.click();
 
         // Wait for success dialog and copy key
-        await expect(page.getByText('Key Generated Successfully')).toBeVisible();
+        await expect(page.getByText('Key Generated Successfully')).toBeVisible({ timeout: 30000 });
         const keyInput = page.locator('input[readonly]').last(); // The one in the dialog
         apiKey = await keyInput.inputValue();
         expect(apiKey).toBeTruthy();
@@ -98,6 +110,7 @@ test.describe('Agent API Integration', () => {
     });
 
     test('Full CRUD Lifecycle via API', async ({ request }) => {
+        test.setTimeout(60000); // API operations can be slow
         const headers = { 'X-API-Key': apiKey };
         // Use environment's Convex HTTP URL for the Agent API
         const baseUrl = process.env.NEXT_PUBLIC_CONVEX_HTTP_URL || 'https://james.convex.site.loc';

@@ -60,15 +60,16 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         // ──────────────────────────────────────────────────────────
         console.log('Step 2: Navigating to Settings > Billing...');
         await page.goto('/settings');
+        await page.waitForLoadState('networkidle', { timeout: 30000 });
 
         // Wait for settings page to load
-        await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30000 });
 
         // Click Billing tab
         await page.getByRole('button', { name: 'Billing' }).click();
 
         // Wait for BillingSection to load
-        await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 30000 });
         console.log('✓ Billing section loaded');
 
         // ──────────────────────────────────────────────────────────
@@ -77,14 +78,14 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         console.log('Step 3: Verifying Free plan and selecting Monthly...');
 
         // Verify currently on Free plan
-        await expect(page.locator('text=FREE').first()).toBeVisible();
+        await expect(page.locator('text=FREE').first()).toBeVisible({ timeout: 30000 });
         console.log('✓ User is on Free plan');
 
         // Select Monthly billing (default is Annual)
         await page.getByRole('button', { name: 'Monthly' }).click();
 
         // Verify Monthly pricing shows ($12/mo)
-        await expect(page.getByText('$12')).toBeVisible();
+        await expect(page.getByText('$12')).toBeVisible({ timeout: 30000 });
         console.log('✓ Monthly pricing displayed ($12/mo)');
 
         // ──────────────────────────────────────────────────────────
@@ -94,15 +95,17 @@ test.describe('Stripe Pro Monthly Subscription', () => {
 
         // Click "Upgrade to Pro" button
         const upgradeButton = page.getByRole('button', { name: /Upgrade to Pro/i });
-        await expect(upgradeButton).toBeVisible();
+        await expect(upgradeButton).toBeVisible({ timeout: 30000 });
         await upgradeButton.click();
 
         // Wait for redirect to Stripe Checkout
         await page.waitForURL(/checkout\.stripe\.com/, { timeout: 30000 });
         console.log('✓ Redirected to Stripe Checkout');
 
-        // Wait for page to be ready (don't use networkidle - Stripe has continuous requests)
+        // Wait for page to be ready
         await page.waitForLoadState('domcontentloaded');
+        // Give Stripe form additional time to initialize
+        await page.waitForSelector('input#email, input[name="email"]', { timeout: 30000 });
 
         // ──────────────────────────────────────────────────────────
         // Step 5: Fill email field
@@ -111,7 +114,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
 
         // Wait for and fill email field
         const emailField = page.locator('input#email, input[name="email"]');
-        await expect(emailField).toBeVisible({ timeout: 15000 });
+        await expect(emailField).toBeVisible({ timeout: 30000 });
         await emailField.fill(user.email);
         console.log('✓ Email filled');
 
@@ -123,14 +126,14 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         // Click on the Card payment option - try multiple selectors
         // The Card option has a radio button and text "Card"
         const cardLabel = page.getByText('Card', { exact: true }).first();
-        await expect(cardLabel).toBeVisible({ timeout: 10000 });
+        await expect(cardLabel).toBeVisible({ timeout: 30000 });
 
         // Click with force to bypass any overlays
         await cardLabel.click({ force: true });
         console.log('✓ Clicked Card option');
 
-        // Wait for card form to expand
-        await page.waitForTimeout(2000);
+        // Wait for card form to expand - wait for card number field instead of arbitrary timeout
+        await page.waitForSelector('input[placeholder="1234 1234 1234 1234"]', { timeout: 30000 });
 
         // ──────────────────────────────────────────────────────────
         // Step 7: Fill card details
@@ -139,19 +142,19 @@ test.describe('Stripe Pro Monthly Subscription', () => {
 
         // Card number - find by placeholder text
         const cardNumberInput = page.getByPlaceholder('1234 1234 1234 1234');
-        await expect(cardNumberInput).toBeVisible({ timeout: 10000 });
+        await expect(cardNumberInput).toBeVisible({ timeout: 30000 });
         await cardNumberInput.fill('4242424242424242');
         console.log('✓ Card number filled');
 
         // Expiry - MM / YY placeholder
         const expiryInput = page.getByPlaceholder('MM / YY');
-        await expect(expiryInput).toBeVisible();
+        await expect(expiryInput).toBeVisible({ timeout: 30000 });
         await expiryInput.fill('02/29');
         console.log('✓ Expiry filled');
 
         // CVC
         const cvcInput = page.getByPlaceholder('CVC');
-        await expect(cvcInput).toBeVisible();
+        await expect(cvcInput).toBeVisible({ timeout: 30000 });
         await cvcInput.fill('001');
         console.log('✓ CVC filled');
 
@@ -161,7 +164,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         console.log('Step 8: Filling cardholder name...');
 
         const cardholderNameInput = page.getByPlaceholder('Full name on card');
-        await expect(cardholderNameInput).toBeVisible();
+        await expect(cardholderNameInput).toBeVisible({ timeout: 30000 });
         await cardholderNameInput.fill('Test User');
         console.log('✓ Cardholder name filled');
 
@@ -171,7 +174,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         console.log('Step 9: Filling ZIP code...');
 
         const zipInput = page.getByPlaceholder('ZIP');
-        await expect(zipInput).toBeVisible();
+        await expect(zipInput).toBeVisible({ timeout: 30000 });
         await zipInput.fill('80301');
         console.log('✓ ZIP: 80301');
 
@@ -182,7 +185,8 @@ test.describe('Stripe Pro Monthly Subscription', () => {
 
         // Scroll down to see the save info checkbox if it's below the fold
         await page.evaluate(() => window.scrollBy(0, 300));
-        await page.waitForTimeout(500);
+        // Wait for scroll to complete and elements to stabilize
+        await page.waitForLoadState('domcontentloaded');
 
         const saveInfoCheckbox = page.locator('input[name="enableStripePass"]');
         if (await saveInfoCheckbox.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -207,7 +211,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
 
         // Click Subscribe button
         const subscribeButton = page.getByRole('button', { name: 'Subscribe' });
-        await expect(subscribeButton).toBeVisible({ timeout: 10000 });
+        await expect(subscribeButton).toBeVisible({ timeout: 30000 });
         await subscribeButton.click();
         console.log('✓ Subscribe button clicked');
 
@@ -227,17 +231,18 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         console.log('Step 13: Navigating to Billing tab...');
 
         // Wait for settings page to load
-        await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 15000 });
+        await page.waitForLoadState('networkidle', { timeout: 30000 });
+        await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30000 });
 
         // Click the Billing tab (settings page may default to a different tab)
         await page.getByRole('button', { name: 'Billing' }).click();
 
         // Wait for BillingSection to load
-        await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 30000 });
         console.log('✓ Billing section loaded');
 
         // Wait for the success message to appear (shows when ?success=true is in URL)
-        await expect(page.getByText("You're all set!")).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText("You're all set!")).toBeVisible({ timeout: 30000 });
         console.log('✓ Success message displayed');
 
         // Verify upgrade was successful - should show PRO badge

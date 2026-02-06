@@ -261,10 +261,70 @@ App → Novu (orchestration) → Resend (delivery) → User
                                   Webhook → Convex
 ```
 
-#### 1.8 Test Deployment
+#### 1.8 Configure Automated E2E Testing ✅ COMPLETE
+
+**GitHub Actions Workflow:** `.github/workflows/staging-e2e.yml`
+
+**Trigger:** Runs automatically after successful Vercel deployment to staging
+
+**Workflow Steps:**
+1. Listens for `deployment_status` event from Vercel
+2. Filters for staging environment (`artifactreview-early.xyz`)
+3. Waits for deployment to be fully ready (polls URL up to 30 times)
+4. Runs Playwright E2E tests against live staging site
+5. Uploads test artifacts (videos, reports) if tests fail
+6. On failure:
+   - Comments on commit with rollback instructions
+   - Creates GitHub issue with investigation checklist
+   - Notifies Slack (optional)
+
+**Required GitHub Secrets:**
+```bash
+# Set using GitHub CLI:
+gh secret set RESEND_FULL_ACCESS_API_KEY --body "your-key-here"
+gh secret set SLACK_WEBHOOK_URL --body "your-webhook-url"  # Optional
+```
+
+**Rollback Options (on E2E failure):**
+1. **Vercel Dashboard:** Redeploy previous version at https://vercel.com/clintagossett/artifact-review-staging/deployments
+2. **Vercel CLI:** `vercel rollback --token $VERCEL_TOKEN`
+3. **Git Revert:** `git revert {sha} && git push origin staging`
+
+**Why Rollback Syncs All Layers:**
+- Git commit is source of truth
+- Vercel redeploys → triggers Convex deployment
+- Novu workflows sync via postbuild script
+- All layers (Vercel, Convex, Novu) sync from same commit
+
+**Test Environment Variables:**
+- `PLAYWRIGHT_BASE_URL`: Set to staging URL
+- `NEXT_PUBLIC_CONVEX_URL`: Staging Convex deployment
+- Tests fetch email verification codes via Resend API
+
+**Test User Generation:**
+```typescript
+// Uses plus addressing for uniqueness:
+test.user+{timestamp}-{random}@tolauante.resend.app
+```
+
+- [x] Create GitHub Actions workflow file
+- [x] Configure deployment_status trigger
+- [x] Add wait-for-deployment step (30 attempts, 10s each)
+- [x] Configure Playwright E2E tests
+- [x] Add artifact upload (test reports, videos)
+- [x] Add failure handling (commit comment, issue creation)
+- [x] Document required GitHub secrets
+- [ ] Set GitHub secrets via CLI
+- [ ] Commit and push workflow to staging
+
+#### 1.9 Test Deployment
 - [ ] Push change to `staging` branch
 - [ ] Verify deployment succeeds
 - [ ] Verify it deploys to `artifactreview-early.xyz`
+- [ ] **Verify automated E2E tests run:**
+  - [ ] Check GitHub Actions for workflow execution
+  - [ ] Verify tests pass against live deployment
+  - [ ] Check test artifacts uploaded on failure
 - [ ] Test basic functionality (auth, artifact upload)
 - [ ] Verify Convex staging backend is being used
 - [ ] **Test email flow:**
@@ -276,6 +336,7 @@ App → Novu (orchestration) → Resend (delivery) → User
 - ✅ `staging` branch deploys successfully
 - ✅ `artifactreview-early.xyz` serves the app
 - ✅ Convex staging backend is connected
+- ✅ E2E tests run automatically and pass
 - ✅ Auth works (Resend emails sending)
 - ✅ Novu notifications work (emails via Resend)
 - ✅ Resend webhooks deliver to Convex

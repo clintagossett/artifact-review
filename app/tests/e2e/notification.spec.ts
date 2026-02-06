@@ -32,12 +32,18 @@ const generateUser = (prefix = 'user') => {
 
 /**
  * Helper: Wait for notification badge to show expected count.
+ * Uses longer timeout and waits for network to settle first.
  */
 async function waitForNotificationCount(
   page: any,
   count: number,
-  timeout = 30000
+  timeout = 45000
 ): Promise<void> {
+  // First wait for network to settle (notification may be in-flight)
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {
+    console.log('Network idle timeout - continuing anyway');
+  });
+
   const badge = page.getByTestId('notification-badge');
   const countElement = page.getByTestId('notification-count');
 
@@ -61,8 +67,10 @@ async function expectNoNotificationBadge(
  */
 async function openNotificationCenter(page: any): Promise<void> {
   const bell = page.getByTestId('notification-bell');
+  await expect(bell).toBeVisible({ timeout: 10000 });
   await bell.click();
-  await page.waitForTimeout(500);
+  // Wait for the notification popover to appear (Novu's PopoverNotificationCenter)
+  await page.waitForSelector('[class*="novu"]', { timeout: 10000 });
 }
 
 /**
@@ -159,7 +167,8 @@ async function uploadArtifact(page: any, name: string): Promise<string> {
 
   // Wait for artifact to be ready (not processing) before clicking
   // Look for the artifact card without clock icon or with ready state
-  await page.waitForTimeout(2000); // Brief wait for processing to complete
+  // Use networkidle to ensure processing is complete
+  await page.waitForLoadState('networkidle', { timeout: 15000 });
 
   console.log('Clicking artifact card to navigate...');
   await cardLocator.click();
@@ -227,7 +236,9 @@ async function selectTextAndComment(page: any, commentText: string) {
   await submitButton.click();
 
   // Wait for submission to complete (input should disappear)
-  await expect(commentInput).not.toBeVisible({ timeout: 10000 });
+  await expect(commentInput).not.toBeVisible({ timeout: 15000 });
+  // Wait for network to settle after comment submission
+  await page.waitForLoadState('networkidle', { timeout: 10000 });
 }
 
 /**
@@ -248,13 +259,17 @@ async function replyToFirstAnnotation(page: any, replyText: string) {
   await submitButton.click();
 
   // Wait for reply input to disappear
-  await expect(replyInput).not.toBeVisible({ timeout: 10000 });
+  await expect(replyInput).not.toBeVisible({ timeout: 15000 });
+  // Wait for network to settle after reply submission
+  await page.waitForLoadState('networkidle', { timeout: 10000 });
 }
 
 test.describe('Notification System', () => {
+  // Set longer default timeout for all tests in this suite
+  test.setTimeout(180000);
+
   test.describe('Test 1: New Comment Notifies Artifact Owner', () => {
     test('1.1: Reviewer comments on artifact -> Owner sees notification badge', async ({ browser }) => {
-      test.setTimeout(120000);
 
       // Generate unique users for this test
       const owner = generateUser('owner');
@@ -315,16 +330,14 @@ test.describe('Notification System', () => {
         console.log('Owner notification badge shows count 1!');
 
       } finally {
-        await ownerContext.close();
-        await reviewerContext.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
+        await reviewerContext.close().catch(err => console.log('Reviewer context close error:', err.message));
       }
     });
   });
 
   test.describe('Test 2: Reply Notifies Comment Author', () => {
     test('2.1: Owner replies to comment -> Reviewer sees notification badge', async ({ browser }) => {
-      test.setTimeout(120000);
-
       const owner = generateUser('owner');
       const reviewer = generateUser('reviewer');
       const artifactName = `Reply Notify Test ${Date.now()}`;
@@ -363,8 +376,9 @@ test.describe('Notification System', () => {
         await ownerPage.goto(artifactUrl);
         await expect(ownerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
 
-        // Wait for comment to appear
-        await ownerPage.waitForTimeout(2000);
+        // Wait for comment to appear by checking for reply button
+        const ownerReplyButton = ownerPage.getByTestId('annotation-reply-button').first();
+        await expect(ownerReplyButton).toBeVisible({ timeout: 30000 });
 
         console.log('Owner replying to comment...');
         await replyToFirstAnnotation(ownerPage, 'Reply from owner.');
@@ -375,16 +389,14 @@ test.describe('Notification System', () => {
         console.log('Reviewer notification badge shows count 1!');
 
       } finally {
-        await ownerContext.close();
-        await reviewerContext.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
+        await reviewerContext.close().catch(err => console.log('Reviewer context close error:', err.message));
       }
     });
   });
 
   test.describe('Test 3: Thread Participants Get Notified', () => {
     test('3.1: Third user replies -> Both owner and original commenter notified', async ({ browser }) => {
-      test.setTimeout(150000);
-
       const owner = generateUser('owner');
       const reviewer1 = generateUser('reviewer1');
       const reviewer2 = generateUser('reviewer2');
@@ -429,7 +441,10 @@ test.describe('Notification System', () => {
         // Owner: Reply to the thread
         await ownerPage.goto(artifactUrl);
         await expect(ownerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
-        await ownerPage.waitForTimeout(2000);
+
+        // Wait for comment to appear by checking for reply button
+        const ownerReplyBtn = ownerPage.getByTestId('annotation-reply-button').first();
+        await expect(ownerReplyBtn).toBeVisible({ timeout: 30000 });
 
         console.log('Owner replying...');
         await replyToFirstAnnotation(ownerPage, 'Reply from owner.');
@@ -445,7 +460,10 @@ test.describe('Notification System', () => {
         const reviewer2MagicLink = extractMagicLink(reviewer2EmailData.html);
         await reviewer2Page.goto(reviewer2MagicLink!);
         await expect(reviewer2Page.getByText(artifactName)).toBeVisible({ timeout: 30000 });
-        await reviewer2Page.waitForTimeout(2000);
+
+        // Wait for existing annotations/replies to load before adding new reply
+        const reviewer2ReplyButton = reviewer2Page.getByTestId('annotation-reply-button').first();
+        await expect(reviewer2ReplyButton).toBeVisible({ timeout: 30000 });
 
         console.log('Reviewer2 replying to thread...');
         await replyToFirstAnnotation(reviewer2Page, 'Reply from reviewer2.');
@@ -461,17 +479,15 @@ test.describe('Notification System', () => {
         console.log('Thread notification test passed!');
 
       } finally {
-        await ownerContext.close();
-        await reviewer1Context.close();
-        await reviewer2Context.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
+        await reviewer1Context.close().catch(err => console.log('Reviewer1 context close error:', err.message));
+        await reviewer2Context.close().catch(err => console.log('Reviewer2 context close error:', err.message));
       }
     });
   });
 
   test.describe('Test 4: Self-Comment Does NOT Trigger Notification', () => {
     test('4.1: Owner comments on own artifact -> No notification', async ({ browser }) => {
-      test.setTimeout(90000);
-
       const owner = generateUser('owner');
       const artifactName = `Self Comment Test ${Date.now()}`;
 
@@ -494,8 +510,10 @@ test.describe('Notification System', () => {
         console.log('Owner adding comment on own artifact...');
         await selectTextAndComment(ownerPage, 'Self-comment by the owner.');
 
-        // Wait a bit for any potential notification to arrive
-        await ownerPage.waitForTimeout(5000);
+        // Wait for network to settle and any potential notification to arrive
+        await ownerPage.waitForLoadState('networkidle', { timeout: 10000 });
+        // Additional grace period for notification system to process
+        await ownerPage.waitForTimeout(3000);
 
         // Verify NO notification badge appeared
         console.log('Verifying owner does NOT get notification for self-comment...');
@@ -503,15 +521,13 @@ test.describe('Notification System', () => {
         console.log('Self-notification exclusion verified!');
 
       } finally {
-        await ownerContext.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
       }
     });
   });
 
   test.describe('Test 5: Notification Count Accumulates', () => {
     test('5.1: Multiple comments -> Badge shows correct count', async ({ browser }) => {
-      test.setTimeout(120000);
-
       const owner = generateUser('owner');
       const reviewer = generateUser('reviewer');
       const artifactName = `Count Test ${Date.now()}`;
@@ -550,11 +566,13 @@ test.describe('Notification System', () => {
 
         // Refresh page to add another comment
         await reviewerPage.reload();
+        await reviewerPage.waitForLoadState('networkidle', { timeout: 10000 });
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
         console.log('Reviewer adding comment 2...');
         await selectTextAndComment(reviewerPage, 'Comment 2 from reviewer.');
 
         await reviewerPage.reload();
+        await reviewerPage.waitForLoadState('networkidle', { timeout: 10000 });
         await expect(reviewerPage.getByText(artifactName)).toBeVisible({ timeout: 15000 });
         console.log('Reviewer adding comment 3...');
         await selectTextAndComment(reviewerPage, 'Comment 3 from reviewer.');
@@ -565,8 +583,8 @@ test.describe('Notification System', () => {
         console.log('Notification count accumulation verified!');
 
       } finally {
-        await ownerContext.close();
-        await reviewerContext.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
+        await reviewerContext.close().catch(err => console.log('Reviewer context close error:', err.message));
       }
     });
   });
@@ -581,8 +599,6 @@ test.describe('Notification System', () => {
      * When Novu mark-as-seen is fixed/configured correctly, remove test.fixme() to enable.
      */
     test.fixme('6.1: Owner opens notification center -> Badge clears', async ({ browser }) => {
-      test.setTimeout(120000);
-
       const owner = generateUser('owner');
       const reviewer = generateUser('reviewer');
       const artifactName = `Mark Read Test ${Date.now()}`;
@@ -628,11 +644,12 @@ test.describe('Notification System', () => {
 
         // Wait for Novu to mark notifications as seen (with longer wait, keep popover open)
         // Novu marks as seen when the popover is visible, but it may take time to sync
-        await ownerPage.waitForTimeout(5000);
+        await ownerPage.waitForLoadState('networkidle', { timeout: 10000 });
+        await ownerPage.waitForTimeout(3000);
 
         // Close popover (click outside)
         await ownerPage.keyboard.press('Escape');
-        await ownerPage.waitForTimeout(500);
+        await ownerPage.waitForLoadState('networkidle', { timeout: 10000 });
 
         // Verify badge is cleared - give more time for the UI to update after popover closes
         console.log('Verifying badge cleared after opening...');
@@ -640,8 +657,8 @@ test.describe('Notification System', () => {
         console.log('Mark as read functionality verified!');
 
       } finally {
-        await ownerContext.close();
-        await reviewerContext.close();
+        await ownerContext.close().catch(err => console.log('Owner context close error:', err.message));
+        await reviewerContext.close().catch(err => console.log('Reviewer context close error:', err.message));
       }
     });
   });

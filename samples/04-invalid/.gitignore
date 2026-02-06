@@ -1,6 +1,6 @@
 # Generated test files (too large to commit)
 too-large/huge.zip
-wrong-type/presentation-with-video.zip
+# wrong-type/presentation-with-video.zip is small (111KB) and needed for E2E tests
 
 # Keep the generation scripts
 !too-large/generate.sh

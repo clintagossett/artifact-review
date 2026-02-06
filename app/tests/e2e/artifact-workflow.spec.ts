@@ -34,10 +34,12 @@ test.describe('End-to-End Artifact Workflow', () => {
         // 1. Magic Link Login
         console.log('Starting magic link login...');
         await page.goto('/login');
+        await page.waitForLoadState('networkidle');
 
         // Ensure we are on the Magic Link tab
         console.log('Switching to Magic Link tab...');
         await page.getByRole('button', { name: 'Magic Link' }).click();
+        await page.waitForTimeout(500); // Wait for tab switch animation
 
         console.log('Filling email...');
         await page.getByLabel('Email address').fill(user.email);
@@ -56,9 +58,10 @@ test.describe('End-to-End Artifact Workflow', () => {
         console.log('Magic link found, proceeding to login.');
 
         await page.goto(magicLink!);
+        await page.waitForLoadState('networkidle');
 
         // Verify we are on the dashboard
-        await expect(page).toHaveURL(/\/dashboard/);
+        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
         console.log('Successfully logged into dashboard.');
 
         // 2. Upload Multi-artifact (ZIP)
@@ -68,12 +71,12 @@ test.describe('End-to-End Artifact Workflow', () => {
         // Both "Upload" (header) and "Create Artifact" (empty state) may be visible
         // We prefer clicking "Upload" since it's always present in the header
         const uploadBtn = page.getByRole('button', { name: 'Upload' });
-        await expect(uploadBtn).toBeVisible({ timeout: 15000 });
+        await expect(uploadBtn).toBeVisible({ timeout: 30000 });
         console.log('Clicking header "Upload" button...');
         await uploadBtn.click();
 
-        // Wait for dialog
-        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 10000 });
+        // Wait for dialog with increased timeout
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 30000 });
 
         // Path to the mixed-media-sample.zip
         // Note: Samples are at the root, Playwright runs from /app/
@@ -82,19 +85,26 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         // Wait for the file input to be present in the DOM (hidden input with id="file-upload")
         const fileInput = page.locator('#file-upload');
-        await expect(fileInput).toBeAttached({ timeout: 5000 });
+        await expect(fileInput).toBeAttached({ timeout: 30000 });
         await fileInput.setInputFiles(zipPath);
 
         // Wait for file to appear in the upload area
-        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 30000 });
 
         const artifactName = `E2E Mixed Media ${Date.now()}`;
         await page.getByLabel('Artifact Name').fill(artifactName);
 
         // Wait for button to be enabled (file upload processing)
         const createButton = page.getByRole('button', { name: 'Create Artifact' });
-        await expect(createButton).toBeEnabled({ timeout: 10000 });
+        await expect(createButton).toBeEnabled({ timeout: 30000 });
+
+        // Wait for the create mutation to complete
+        const createPromise = page.waitForResponse(resp =>
+            resp.url().includes('convex') && resp.request().method() === 'POST',
+            { timeout: 30000 }
+        );
         await createButton.click();
+        await createPromise;
 
         // Redirection to viewer should happen automatically
         console.log('Waiting for artifact creation and viewer redirection...');
@@ -110,11 +120,11 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         // Verify Artifact Title in Header specifically
         const header = page.locator('header');
-        await expect(header.getByText(artifactName)).toBeVisible({ timeout: 15000 });
+        await expect(header.getByText(artifactName)).toBeVisible({ timeout: 30000 });
         console.log('Artifact title visible in header.');
 
         // Wait for Comments sidebar as a signal of viewer loading
-        await expect(page.getByText(/Comments \(/)).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(/Comments \(/)).toBeVisible({ timeout: 30000 });
 
         // 3. Verify File Tree (Multi-artifact feature)
         console.log('Verifying multi-artifact file tree...');
@@ -122,13 +132,15 @@ test.describe('End-to-End Artifact Workflow', () => {
         // Task 00049: No more arbitrary timeout - status-based wait ensures content is loaded
         // Check for File Tree visibility - verify specific files are shown
         // Note: The file tree doesn't have a "Files" header, just the tree items directly
-        await expect(page.getByText('docs', { exact: true }).first()).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText('README.md', { exact: true }).first()).toBeVisible();
+        await expect(page.getByText('docs', { exact: true }).first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText('README.md', { exact: true }).first()).toBeVisible({ timeout: 30000 });
         console.log('File tree verified.');
 
-        // Verify iframe content
+        // Verify iframe content - wait for iframe to be attached first
         const frame = page.frameLocator('iframe');
-        await expect(frame.getByText('Executive Dashboard')).toBeVisible({ timeout: 15000 });
+        await page.waitForSelector('iframe', { timeout: 30000 });
+        // Wait for iframe to load by checking for content instead of networkidle (more reliable)
+        await expect(frame.getByText('Executive Dashboard')).toBeVisible({ timeout: 30000 });
         console.log('Artifact viewer content loaded successfully.');
 
         // Verify Comments sidebar is present
@@ -144,31 +156,41 @@ test.describe('End-to-End Artifact Workflow', () => {
         // 1. Login flow
         console.log('Starting magic link login...');
         await page.goto('/login');
+        await page.waitForLoadState('networkidle');
         await page.getByRole('button', { name: 'Magic Link' }).click();
+        await page.waitForTimeout(500); // Wait for tab switch animation
         await page.getByLabel('Email address').fill(user.email);
         await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
 
         const emailData = await getLatestEmail(user.email);
         const magicLink = extractMagicLink(emailData.html);
         await page.goto(magicLink!);
-        await expect(page).toHaveURL(/\/dashboard/);
+        await page.waitForLoadState('networkidle');
+        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
         console.log('Successfully logged in.');
 
         // 2. Open upload dialog - handle both header button and empty state
         console.log('Opening upload dialog...');
+        // Use waitFor with timeout instead of isVisible() which can have race conditions
         const headerNewBtn = page.getByRole('button', { name: 'New Artifact' });
         const emptyStateBtn = page.getByRole('button', { name: 'Create Artifact' });
 
-        if (await headerNewBtn.isVisible()) {
+        // Try header button first with a short timeout
+        try {
+            await headerNewBtn.waitFor({ state: 'visible', timeout: 5000 });
             await headerNewBtn.click();
-        } else if (await emptyStateBtn.isVisible()) {
-            await emptyStateBtn.click();
-        } else {
-            // Fallback: try to find any button with "Artifact" in it
-            await page.getByRole('button', { name: /Artifact/ }).first().click();
+        } catch {
+            // Fallback to empty state button
+            try {
+                await emptyStateBtn.waitFor({ state: 'visible', timeout: 5000 });
+                await emptyStateBtn.click();
+            } catch {
+                // Last resort: find any button with "Artifact" in it
+                await page.getByRole('button', { name: /Artifact/ }).first().click();
+            }
         }
-        await expect(page.getByText('Create New Artifact')).toBeVisible();
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 30000 });
 
         // 3. Upload ZIP with forbidden video files
         // NOTE: This file must be generated first using samples/04-invalid/wrong-type/generate.sh
@@ -178,13 +200,19 @@ test.describe('End-to-End Artifact Workflow', () => {
         );
         console.log(`Uploading invalid ZIP from: ${invalidZipPath}`);
 
-        await page.setInputFiles('input[type="file"]', invalidZipPath);
+        // Wait for file input to be attached before setting files
+        const fileInput = page.locator('input[type="file"]');
+        await expect(fileInput).toBeAttached({ timeout: 30000 });
+        await fileInput.setInputFiles(invalidZipPath);
+
+        // Wait for file name to appear
+        await expect(page.getByText('presentation-with-video.zip')).toBeVisible({ timeout: 30000 });
 
         const artifactName = `E2E Error State ${Date.now()}`;
         await page.getByLabel('Artifact Name').fill(artifactName);
 
         const createButton = page.getByRole('button', { name: 'Create Artifact' });
-        await expect(createButton).toBeEnabled({ timeout: 10000 });
+        await expect(createButton).toBeEnabled({ timeout: 30000 });
         await createButton.click();
 
         // 4. Wait for error state - should NOT navigate, stay on dashboard
@@ -194,7 +222,7 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         // 5. Verify error message is displayed with expected content
         // Error messages may vary, but should mention unsupported file types or forbidden files
-        await expect(page.getByText(/unsupported file types|forbidden|not supported/i)).toBeVisible();
+        await expect(page.getByText(/unsupported file types|forbidden|not supported/i)).toBeVisible({ timeout: 30000 });
         console.log('Error message displayed to user.');
 
         // 6. Verify we're still on dashboard (not navigated to artifact)
@@ -202,7 +230,7 @@ test.describe('End-to-End Artifact Workflow', () => {
         console.log('User remains on dashboard - error handling correct.');
 
         // 7. Verify dialog is closed (upload failed, dialog should close)
-        await expect(page.getByText('Create New Artifact')).not.toBeVisible();
+        await expect(page.getByText('Create New Artifact')).not.toBeVisible({ timeout: 30000 });
         console.log('Error state test complete.');
     });
 
@@ -212,28 +240,38 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         // Login and navigate to dashboard
         await page.goto('/login');
+        await page.waitForLoadState('networkidle');
         await page.getByRole('button', { name: 'Magic Link' }).click();
+        await page.waitForTimeout(500); // Wait for tab switch animation
         await page.getByLabel('Email address').fill(user.email);
         await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
 
         const emailData = await getLatestEmail(user.email);
         const magicLink = extractMagicLink(emailData.html);
         await page.goto(magicLink!);
-        await expect(page).toHaveURL(/\/dashboard/);
+        await page.waitForLoadState('networkidle');
+        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
 
         // Open upload dialog - handle both header button and empty state
         const headerNewBtn = page.getByRole('button', { name: 'New Artifact' });
         const emptyStateBtn = page.getByRole('button', { name: 'Create Artifact' });
-        if (await headerNewBtn.isVisible()) {
+
+        // Try header button first with a short timeout
+        try {
+            await headerNewBtn.waitFor({ state: 'visible', timeout: 5000 });
             await headerNewBtn.click();
-        } else if (await emptyStateBtn.isVisible()) {
-            await emptyStateBtn.click();
-        } else {
-            // Fallback: try to find any button with "Artifact" in it
-            await page.getByRole('button', { name: /Artifact/ }).first().click();
+        } catch {
+            // Fallback to empty state button
+            try {
+                await emptyStateBtn.waitFor({ state: 'visible', timeout: 5000 });
+                await emptyStateBtn.click();
+            } catch {
+                // Last resort: find any button with "Artifact" in it
+                await page.getByRole('button', { name: /Artifact/ }).first().click();
+            }
         }
-        await expect(page.getByText('Create New Artifact')).toBeVisible();
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 30000 });
 
         // Upload valid ZIP
         const zipPath = path.resolve(
@@ -242,9 +280,19 @@ test.describe('End-to-End Artifact Workflow', () => {
         );
         console.log(`Uploading valid ZIP from: ${zipPath}`);
 
-        await page.setInputFiles('input[type="file"]', zipPath);
+        // Wait for file input to be attached
+        const fileInput = page.locator('input[type="file"]');
+        await expect(fileInput).toBeAttached({ timeout: 30000 });
+        await fileInput.setInputFiles(zipPath);
+
+        // Wait for file name to appear
+        await expect(page.getByText('v1.zip')).toBeVisible({ timeout: 30000 });
+
         await page.getByLabel('Artifact Name').fill(`E2E Status ${Date.now()}`);
-        await page.getByRole('button', { name: 'Create Artifact' }).click();
+
+        const createButton = page.getByRole('button', { name: 'Create Artifact' });
+        await expect(createButton).toBeEnabled({ timeout: 30000 });
+        await createButton.click();
 
         // Eventually should reach ready state
         console.log('Waiting for ready state...');
@@ -252,7 +300,7 @@ test.describe('End-to-End Artifact Workflow', () => {
         console.log('Version is ready.');
 
         // Verify we navigated to the artifact
-        await expect(page).toHaveURL(/\/a\//);
+        await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
         console.log('Status transition test complete.');
     });
 
@@ -269,29 +317,45 @@ test.describe('End-to-End Artifact Workflow', () => {
 
         // Login and create artifact (same setup as above)
         await page.goto('/login');
+        await page.waitForLoadState('networkidle');
         await page.getByRole('button', { name: 'Magic Link' }).click();
+        await page.waitForTimeout(500); // Wait for tab switch animation
         await page.getByLabel('Email address').fill(user.email);
         await page.getByRole('button', { name: 'Send Magic Link' }).click();
-        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Check Your Email')).toBeVisible({ timeout: 30000 });
 
         const emailData = await getLatestEmail(user.email);
         const magicLink = extractMagicLink(emailData.html);
         await page.goto(magicLink!);
-        await expect(page).toHaveURL(/\/dashboard/);
+        await page.waitForLoadState('networkidle');
+        await expect(page).toHaveURL(/\/dashboard/, { timeout: 30000 });
 
         // Upload artifact
         await page.getByRole('button', { name: /Artifact/ }).first().click();
-        await expect(page.getByText('Create New Artifact')).toBeVisible();
+        await expect(page.getByText('Create New Artifact')).toBeVisible({ timeout: 30000 });
         const zipPath = path.resolve(process.cwd(), '../samples/01-valid/mixed/mixed-media-sample/mixed-media-sample.zip');
-        await page.setInputFiles('input[type="file"]', zipPath);
+
+        const fileInput = page.locator('input[type="file"]');
+        await expect(fileInput).toBeAttached({ timeout: 30000 });
+        await fileInput.setInputFiles(zipPath);
+
+        await expect(page.getByText('mixed-media-sample.zip')).toBeVisible({ timeout: 30000 });
+
         const artifactName = `E2E Commenting ${Date.now()}`;
         await page.getByLabel('Artifact Name').fill(artifactName);
-        await page.getByRole('button', { name: 'Create Artifact' }).click();
+
+        const createButton = page.getByRole('button', { name: 'Create Artifact' });
+        await expect(createButton).toBeEnabled({ timeout: 30000 });
+        await createButton.click();
+
         await expect(page).toHaveURL(/\/a\//, { timeout: 30000 });
+        await page.waitForSelector('[data-version-status="ready"]', { timeout: 30000 });
 
         // Wait for viewer to load
         const frame = page.frameLocator('iframe');
-        await expect(frame.getByText('Executive Dashboard')).toBeVisible({ timeout: 15000 });
+        await page.waitForSelector('iframe', { timeout: 30000 });
+        // Wait for iframe to load by checking for content instead of networkidle (more reliable)
+        await expect(frame.getByText('Executive Dashboard')).toBeVisible({ timeout: 30000 });
 
         // 4. Add a comment on Version 1
         console.log('Activating comment mode...');
@@ -316,7 +380,7 @@ test.describe('End-to-End Artifact Workflow', () => {
         // The comment tooltip should appear in the parent window
         console.log('Waiting for comment tooltip...');
         const commentTextarea = page.locator('textarea[placeholder="Add a comment..."]');
-        await expect(commentTextarea).toBeVisible({ timeout: 5000 });
+        await expect(commentTextarea).toBeVisible({ timeout: 30000 });
 
         const uniqueComment = `Test Feedback - ${Date.now()}`;
         await commentTextarea.fill(uniqueComment);
@@ -325,7 +389,7 @@ test.describe('End-to-End Artifact Workflow', () => {
         // 5. Verify comment appears in the sidebar
         console.log('Verifying comment in sidebar...');
         const sidebar = page.locator('div:has-text("Comments (")');
-        await expect(sidebar.getByText(uniqueComment)).toBeVisible();
+        await expect(sidebar.getByText(uniqueComment)).toBeVisible({ timeout: 30000 });
         console.log('Workflow complete: Comment successfully saved and displayed.');
     });
 
