@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PublicOnlyPage } from "@/components/auth/PublicOnlyPage";
 import { validateReturnTo } from "@/lib/validateReturnTo";
+import { safeSetItem, safeGetItem, safeRemoveItem } from "@/lib/safeStorage";
 
 import { useEffect, Suspense } from "react";
 
@@ -17,20 +18,20 @@ function LoginContent() {
   useEffect(() => {
     const returnTo = searchParams.get("returnTo");
     if (returnTo) {
-      localStorage.setItem("returnTo", returnTo);
+      safeSetItem("returnTo", returnTo);
     }
   }, [searchParams]);
 
   const handleSuccess = () => {
     // Check for returnTo parameter and validate it
     const queryReturnTo = searchParams.get("returnTo");
-    const localReturnTo = localStorage.getItem("returnTo");
+    const localReturnTo = safeGetItem("returnTo");
     const returnTo = queryReturnTo || localReturnTo;
 
     const validatedReturnTo = validateReturnTo(returnTo);
 
     if (validatedReturnTo) {
-      localStorage.removeItem("returnTo");
+      safeRemoveItem("returnTo");
       router.push(validatedReturnTo);
     } else {
       router.push("/dashboard");

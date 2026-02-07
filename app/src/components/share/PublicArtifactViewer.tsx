@@ -114,7 +114,9 @@ export function PublicArtifactViewer({
   }
 
   // Determine if this is the latest version
-  const latestVersionNum = Math.max(...versions.map((v) => v.number));
+  const latestVersionNum = versions.length > 0
+    ? Math.max(...versions.map((v) => v.number))
+    : 0;
   const isLatestVersion = targetVersion.number === latestVersionNum;
 
   // Handle version change - stay within public share route

@@ -495,7 +495,7 @@ export function ArtifactViewer({
         versions={versions}
         isLatestVersion={isLatestVersion}
         onVersionChange={onVersionChange}
-        latestVersionNumber={Math.max(...versions.map(v => v.number))}
+        latestVersionNumber={versions.length > 0 ? Math.max(...versions.map(v => v.number)) : 0}
         currentUser={currentUser}
         userPermission={userPermission}
         isPublicViewer={isPublicViewer}
@@ -509,8 +509,8 @@ export function ArtifactViewer({
         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         isViewingOldVersion={!isLatestVersion}
         currentVersionNumber={version.number}
-        latestVersionNumber={Math.max(...versions.map(v => v.number))}
-        onSwitchToLatest={() => onVersionChange(Math.max(...versions.map(v => v.number)))}
+        latestVersionNumber={versions.length > 0 ? Math.max(...versions.map(v => v.number)) : 0}
+        onSwitchToLatest={() => onVersionChange(versions.length > 0 ? Math.max(...versions.map(v => v.number)) : 1)}
         canComment={userPermission !== null}
         isPublicViewer={isPublicViewer}
       />
