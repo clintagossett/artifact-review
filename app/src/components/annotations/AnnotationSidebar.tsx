@@ -86,7 +86,7 @@ export function AnnotationSidebar({
     if (!isOpen) return null;
 
     return (
-        <div className="w-80 bg-white border-l border-gray-200 shadow-xl flex flex-col h-full fixed right-0 top-0 z-40 animate-in slide-in-from-right duration-200">
+        <div className="w-80 bg-white border-l border-gray-200 shadow-xl flex flex-col h-full flex-shrink-0 z-40 animate-in slide-in-from-right duration-200">
             {/* Header */}
             <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <h2 className="font-semibold text-gray-700 flex items-center gap-2">
