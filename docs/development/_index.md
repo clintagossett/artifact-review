@@ -40,10 +40,16 @@ REPEAT → Next test
 1. Run E2E tests (generates `trace.zip` automatically)
 2. **Uplevel tests** from subtasks to task level if appropriate
 3. Create `test-report.md` in task folder
-4. Hand over for review with:
+4. Create PR targeting `dev` branch:
+   ```bash
+   gh pr create --base dev --title "feat: Your feature"
+   ```
+5. Hand over for review with:
    - Passing tests (backend + E2E)
    - Validation trace (`trace.zip`)
    - Test report
+
+**Branch Strategy:** `dev → staging → main`. Always PR to `dev`. See CLAUDE.md for details.
 
 **Note:** Use Playwright trace.zip for debugging. See [testing-guide.md](./testing-guide.md#test-upleveling)
 
