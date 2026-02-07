@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { MAX_VERSION_NAME_LENGTH } from "./lib/fileTypes";
 
 /**
  * Get the latest version for an artifact.
@@ -913,5 +914,201 @@ export const getStats = internalQuery({
             },
             versions: versionStats.sort((a, b) => a.number - b.number),
         };
+    },
+});
+
+// ============================================================================
+// VERSION MANAGEMENT (Agent API)
+// ============================================================================
+
+/**
+ * List active versions for an artifact (Agent).
+ */
+export const listVersionsInternal = internalQuery({
+    args: {
+        artifactId: v.id("artifacts"),
+    },
+    returns: v.array(v.object({
+        number: v.number(),
+        name: v.union(v.string(), v.null()),
+        fileType: v.string(),
+        size: v.number(),
+        createdAt: v.number(),
+        isLatest: v.boolean(),
+    })),
+    handler: async (ctx, args) => {
+        const versions = await ctx.db
+            .query("artifactVersions")
+            .withIndex("by_artifactId_active", (q) =>
+                q.eq("artifactId", args.artifactId).eq("isDeleted", false)
+            )
+            .collect();
+
+        if (versions.length === 0) return [];
+
+        const maxNumber = Math.max(...versions.map((v) => v.number));
+
+        return versions
+            .sort((a, b) => a.number - b.number)
+            .map((v) => ({
+                number: v.number,
+                name: v.name ?? null,
+                fileType: v.fileType,
+                size: v.size,
+                createdAt: v.createdAt,
+                isLatest: v.number === maxNumber,
+            }));
+    },
+});
+
+/**
+ * Soft-delete a version (Agent).
+ * Cannot delete the last active version.
+ */
+export const softDeleteVersionInternal = internalMutation({
+    args: {
+        artifactId: v.id("artifacts"),
+        number: v.number(),
+        userId: v.id("users"),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const version = await ctx.db
+            .query("artifactVersions")
+            .withIndex("by_artifactId_number", (q) =>
+                q.eq("artifactId", args.artifactId).eq("number", args.number)
+            )
+            .first();
+
+        if (!version || version.isDeleted) {
+            throw new Error("Version not found");
+        }
+
+        // Check this isn't the last active version
+        const activeVersions = await ctx.db
+            .query("artifactVersions")
+            .withIndex("by_artifactId_active", (q) =>
+                q.eq("artifactId", args.artifactId).eq("isDeleted", false)
+            )
+            .collect();
+
+        if (activeVersions.length <= 1) {
+            throw new Error("Cannot delete the last active version");
+        }
+
+        const now = Date.now();
+
+        // Soft-delete version
+        await ctx.db.patch(version._id, {
+            isDeleted: true,
+            deletedAt: now,
+            deletedBy: args.userId,
+        });
+
+        // Cascade soft-delete to artifact files
+        const files = await ctx.db
+            .query("artifactFiles")
+            .withIndex("by_versionId_active", (q) =>
+                q.eq("versionId", version._id).eq("isDeleted", false)
+            )
+            .collect();
+
+        for (const file of files) {
+            await ctx.db.patch(file._id, {
+                isDeleted: true,
+                deletedAt: now,
+                deletedBy: args.userId,
+            });
+        }
+
+        return null;
+    },
+});
+
+/**
+ * Update version name (Agent).
+ */
+export const updateVersionNameInternal = internalMutation({
+    args: {
+        artifactId: v.id("artifacts"),
+        number: v.number(),
+        name: v.union(v.string(), v.null()),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        if (args.name !== null && args.name.length > MAX_VERSION_NAME_LENGTH) {
+            throw new Error(`Version name must be ${MAX_VERSION_NAME_LENGTH} characters or less`);
+        }
+
+        const version = await ctx.db
+            .query("artifactVersions")
+            .withIndex("by_artifactId_number", (q) =>
+                q.eq("artifactId", args.artifactId).eq("number", args.number)
+            )
+            .first();
+
+        if (!version || version.isDeleted) {
+            throw new Error("Version not found");
+        }
+
+        await ctx.db.patch(version._id, {
+            name: args.name ?? undefined,
+        });
+
+        return null;
+    },
+});
+
+/**
+ * Restore a soft-deleted version (Agent).
+ */
+export const restoreVersionInternal = internalMutation({
+    args: {
+        artifactId: v.id("artifacts"),
+        number: v.number(),
+    },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const version = await ctx.db
+            .query("artifactVersions")
+            .withIndex("by_artifactId_number", (q) =>
+                q.eq("artifactId", args.artifactId).eq("number", args.number)
+            )
+            .first();
+
+        if (!version) {
+            throw new Error("Version not found");
+        }
+
+        if (!version.isDeleted) {
+            throw new Error("Version is not deleted");
+        }
+
+        // Restore version
+        await ctx.db.patch(version._id, {
+            isDeleted: false,
+            deletedAt: undefined,
+            deletedBy: undefined,
+        });
+
+        // Cascade restore to artifact files
+        const files = await ctx.db
+            .query("artifactFiles")
+            .withIndex("by_versionId", (q) =>
+                q.eq("versionId", version._id)
+            )
+            .collect();
+
+        for (const file of files) {
+            if (file.isDeleted) {
+                await ctx.db.patch(file._id, {
+                    isDeleted: false,
+                    deletedAt: undefined,
+                    deletedBy: undefined,
+                });
+            }
+        }
+
+        return null;
     },
 });

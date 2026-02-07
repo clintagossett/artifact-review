@@ -602,6 +602,189 @@ paths:
         '404':
           description: Artifact not found
 
+  /api/v1/artifacts/{shareToken}/versions:
+    get:
+      summary: List versions
+      description: List all active (non-deleted) versions of an artifact.
+      operationId: listVersions
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: List of active versions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        number:
+                          type: integer
+                        name:
+                          type: string
+                          nullable: true
+                        fileType:
+                          type: string
+                        size:
+                          type: number
+                        createdAt:
+                          type: number
+                        isLatest:
+                          type: boolean
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (not owner)
+
+    post:
+      summary: Publish new version
+      description: Upload a new version of an artifact.
+      operationId: createVersion
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fileType
+                - content
+              properties:
+                fileType:
+                  type: string
+                  enum: [html, markdown, zip]
+                  example: "html"
+                content:
+                  type: string
+                  description: Raw content (string for html/markdown, base64 for zip).
+                name:
+                  type: string
+                  description: Optional version label.
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versionId:
+                    type: string
+                  number:
+                    type: integer
+                  status:
+                    type: string
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /api/v1/artifacts/{shareToken}/versions/{number}:
+    patch:
+      summary: Rename version
+      description: Update the name/label of a version.
+      operationId: renameVersion
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: number
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  nullable: true
+                  description: New name for the version. Pass null to clear.
+      responses:
+        '200':
+          description: Version renamed
+        '400':
+          description: Invalid request (bad version number or name too long)
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+    delete:
+      summary: Soft-delete version
+      description: Soft-delete a version. Cannot delete the last active version.
+      operationId: deleteVersion
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: number
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Version deleted
+        '400':
+          description: Cannot delete last version or version not found
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /api/v1/artifacts/{shareToken}/versions/{number}/restore:
+    post:
+      summary: Restore version
+      description: Restore a previously soft-deleted version.
+      operationId: restoreVersion
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: number
+          schema:
+            type: integer
+          required: true
+      responses:
+        '200':
+          description: Version restored
+        '400':
+          description: Version not found or not deleted
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
   /api/v1/comments/{commentId}/replies:
     post:
       summary: Reply to a comment
