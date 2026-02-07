@@ -24,6 +24,7 @@
     "@apache-annotator/selector": "^0.2.0",
     "@auth/core": "^0.37.0",
     "@convex-dev/auth": "^0.0.90",
+    "@convex-dev/migrations": "^0.3.1",
     "@convex-dev/resend": "^0.2.3",
     "@convex-dev/stripe": "^0.1.2",
     "@hookform/resolvers": "^5.2.2",
@@ -44,6 +45,8 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-toast": "^1.2.15",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@react-email/components": "^0.0.30",
+    "@react-email/render": "^1.0.0",
     "@types/nodemailer": "^7.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -67,12 +70,9 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.1",
-    "zod-to-json-schema": "^3.24.1",
-    "@react-email/components": "^0.0.30",
-    "@react-email/render": "^1.0.0"
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
-    "react-email": "^3.0.0",
     "@edge-runtime/vm": "^5.0.0",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/typography": "^0.5.19",
@@ -92,6 +92,7 @@
     "jsdom": "^27.3.0",
     "playwright": "^1.57.0",
     "postcss": "^8",
+    "react-email": "^3.0.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vitest": "^4.0.16"

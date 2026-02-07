@@ -126,8 +126,8 @@ export const createCheckoutSession = action({
             customerId: org.stripeCustomerId, // Use existing Stripe customer if available
             priceId: args.priceId,
             mode: "subscription",
-            successUrl: `${domain}/settings?success=true`,
-            cancelUrl: `${domain}/settings?canceled=true`,
+            successUrl: `${domain}/settings/billing?success=true`,
+            cancelUrl: `${domain}/settings/billing?canceled=true`,
             metadata: {
                 organizationId: args.organizationId,
                 siteOrigin: domain, // For webhook filtering
@@ -167,7 +167,7 @@ export const createBillingPortalSession = action({
 
         const session = await stripe.billingPortal.sessions.create({
             customer: org.stripeCustomerId,
-            return_url: `${domain}/settings`,
+            return_url: `${domain}/settings/billing`,
         });
 
         return session.url;
