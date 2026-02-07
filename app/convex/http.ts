@@ -424,135 +424,6 @@ http.route({
 });
 
 /**
- * GET /api/v1/artifacts/:shareToken/comments
- * Get comments for an artifact (Agent workflow)
- */
-http.route({
-  pathPrefix: "/api/v1/artifacts/",
-  method: "GET",
-  handler: httpAction(async (ctx, req) => {
-    const url = new URL(req.url);
-    const parts = url.pathname.split("/");
-    // Expect: /api/v1/artifacts/:shareToken/comments
-    if (parts.length < 6 || parts[5] !== "comments") {
-      return new Response("Not found", { status: 404 });
-    }
-    const shareToken = parts[4];
-    const versionParam = url.searchParams.get("version");
-
-    const identity = await validateApiKey(ctx, req);
-    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-
-    const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
-    if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-
-    if (artifact.createdBy !== identity.userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
-    }
-
-    let versionId: any;
-    let versionNumber: number;
-
-    if (versionParam) {
-      const match = versionParam.match(/^v(\d+)$/);
-      if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400 });
-      const number = parseInt(match[1]);
-      const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
-        artifactId: artifact._id,
-        number
-      });
-      if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
-      versionId = version._id;
-      versionNumber = version.number;
-    } else {
-      const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
-      if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
-      versionId = version._id;
-      versionNumber = version.number;
-    }
-
-    const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
-
-    return new Response(JSON.stringify({
-      version: `v${versionNumber}`,
-      comments
-    }), { status: 200, headers: { "Content-Type": "application/json" } });
-  }),
-});
-
-/**
- * POST /api/v1/artifacts/:shareToken/comments
- * Create a comment on an artifact
- */
-http.route({
-  pathPrefix: "/api/v1/artifacts/",
-  method: "POST",
-  handler: httpAction(async (ctx, req) => {
-    const url = new URL(req.url);
-    const parts = url.pathname.split("/");
-    // Expect: /api/v1/artifacts/:shareToken/comments
-    if (parts.length < 6 || parts[5] !== "comments") {
-      return new Response("Not found", { status: 404 });
-    }
-    const shareToken = parts[4];
-    const versionParam = url.searchParams.get("version");
-
-    const identity = await validateApiKey(ctx, req);
-    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-
-    let body;
-    try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400 }); }
-
-    const { content, target } = body;
-    if (!content || !target || !target.selector) {
-      return new Response(JSON.stringify({ error: "Missing required fields (content, target.selector)" }), { status: 400 });
-    }
-
-    const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
-    if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-
-    if (artifact.createdBy !== identity.userId) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
-    }
-
-    let versionId: any;
-
-    if (versionParam) {
-      const match = versionParam.match(/^v(\d+)$/);
-      if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400 });
-      const number = parseInt(match[1]);
-      const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
-        artifactId: artifact._id,
-        number
-      });
-      if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404 });
-      versionId = version._id;
-    } else {
-      const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
-      if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404 });
-      versionId = version._id;
-    }
-
-    let agentName: string | undefined;
-    if (identity.agentId) {
-      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
-      agentName = agent?.name;
-    }
-
-    const commentId = await ctx.runMutation(internal.agentApi.createComment, {
-      versionId,
-      content,
-      target,
-      agentId: identity.agentId,
-      agentName,
-      userId: identity.userId,
-    });
-
-    return new Response(JSON.stringify({ id: commentId, status: "created" }), { status: 201, headers: { "Content-Type": "application/json" } });
-  }),
-});
-
-/**
  * POST /api/v1/comments/:commentId/replies
  * Create a reply
  */
@@ -873,10 +744,48 @@ http.route({
       }
     }
 
-    // Route: /api/v1/artifacts/:shareToken/comments (existing handler, skip here)
+    // Route: /api/v1/artifacts/:shareToken/comments
     if (parts.length >= 6 && parts[5] === "comments") {
-      // Let the existing handler process this
-      return new Response("Not found", { status: 404 });
+      const shareToken = parts[4];
+      const versionParam = url.searchParams.get("version");
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      let versionId: any;
+      let versionNumber: number;
+
+      if (versionParam) {
+        const match = versionParam.match(/^v(\d+)$/);
+        if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const number = parseInt(match[1]);
+        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+          artifactId: artifact._id,
+          number
+        });
+        if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        versionId = version._id;
+        versionNumber = version.number;
+      } else {
+        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+        if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        versionId = version._id;
+        versionNumber = version.number;
+      }
+
+      const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
+
+      return new Response(JSON.stringify({
+        version: `v${versionNumber}`,
+        comments
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
     }
 
     return new Response("Not found", { status: 404 });
@@ -973,10 +882,63 @@ http.route({
       }
     }
 
-    // Route: /api/v1/artifacts/:shareToken/comments (existing handler)
+    // Route: /api/v1/artifacts/:shareToken/comments
     if (parts.length >= 6 && parts[5] === "comments") {
-      // Let the existing handler process this
-      return new Response("Not found", { status: 404 });
+      const shareToken = parts[4];
+      const versionParam = url.searchParams.get("version");
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      let body;
+      try { body = await req.json(); } catch (e) { return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } }); }
+
+      const { content, target } = body;
+      if (!content || !target || !target.selector) {
+        return new Response(JSON.stringify({ error: "Missing required fields (content, target.selector)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      let versionId: any;
+
+      if (versionParam) {
+        const match = versionParam.match(/^v(\d+)$/);
+        if (!match) return new Response(JSON.stringify({ error: "Invalid version format (use v1, v2)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        const number = parseInt(match[1]);
+        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+          artifactId: artifact._id,
+          number
+        });
+        if (!version) return new Response(JSON.stringify({ error: "Version not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        versionId = version._id;
+      } else {
+        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+        if (!version) return new Response(JSON.stringify({ error: "No version found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        versionId = version._id;
+      }
+
+      let agentName: string | undefined;
+      if (identity.agentId) {
+        const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
+        agentName = agent?.name;
+      }
+
+      const commentId = await ctx.runMutation(internal.agentApi.createComment, {
+        versionId,
+        content,
+        target,
+        agentId: identity.agentId,
+        agentName,
+        userId: identity.userId,
+      });
+
+      return new Response(JSON.stringify({ id: commentId, status: "created" }), { status: 201, headers: { "Content-Type": "application/json" } });
     }
 
     // Route: /api/v1/artifacts (create artifact - existing handler)
