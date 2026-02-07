@@ -752,4 +752,378 @@ http.route({
   }),
 });
 
+// ============================================================================
+// API V1 - SHARING & ACCESS MANAGEMENT
+// ============================================================================
+
+/**
+ * GET /api/v1/artifacts
+ * List all artifacts for the authenticated user
+ */
+http.route({
+  path: "/api/v1/artifacts",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const identity = await validateApiKey(ctx, req);
+    if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+    try {
+      const artifacts = await ctx.runQuery(internal.agentApi.listArtifacts, {
+        userId: identity.userId,
+      });
+
+      return new Response(JSON.stringify({ artifacts }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (e: any) {
+      return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+  }),
+});
+
+/**
+ * GET /api/v1/artifacts/:shareToken/sharelink
+ * Get share link settings
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+
+    // Route: /api/v1/artifacts/:shareToken/sharelink
+    if (parts.length === 6 && parts[5] === "sharelink") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      const shareLink = await ctx.runQuery(internal.agentApi.getShareLink, {
+        artifactId: artifact._id,
+      });
+
+      if (!shareLink) {
+        return new Response(JSON.stringify({ error: "No share link exists" }), { status: 404, headers: { "Content-Type": "application/json" } });
+      }
+
+      return new Response(JSON.stringify(shareLink), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/access
+    if (parts.length === 6 && parts[5] === "access") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      const access = await ctx.runQuery(internal.agentApi.listAccess, {
+        artifactId: artifact._id,
+      });
+
+      return new Response(JSON.stringify({ access }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/stats
+    if (parts.length === 6 && parts[5] === "stats") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const stats = await ctx.runQuery(internal.agentApi.getStats, {
+          artifactId: artifact._id,
+        });
+
+        return new Response(JSON.stringify(stats), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/comments (existing handler, skip here)
+    if (parts.length >= 6 && parts[5] === "comments") {
+      // Let the existing handler process this
+      return new Response("Not found", { status: 404 });
+    }
+
+    return new Response("Not found", { status: 404 });
+  }),
+});
+
+/**
+ * POST /api/v1/artifacts/:shareToken/sharelink
+ * Create a share link
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+
+    // Route: /api/v1/artifacts/:shareToken/sharelink
+    if (parts.length === 6 && parts[5] === "sharelink") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      let body: any = {};
+      try {
+        body = await req.json();
+      } catch (e) {
+        // Empty body is OK for create
+      }
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const result = await ctx.runMutation(internal.agentApi.createShareLink, {
+          artifactId: artifact._id,
+          userId: identity.userId,
+          enabled: body.enabled,
+          capabilities: body.capabilities,
+        });
+
+        return new Response(JSON.stringify(result), {
+          status: 201,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/access
+    if (parts.length === 6 && parts[5] === "access") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      let body;
+      try {
+        body = await req.json();
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+
+      if (!body.email) {
+        return new Response(JSON.stringify({ error: "Missing required field: email" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const accessId = await ctx.runMutation(internal.agentApi.grantAccess, {
+          artifactId: artifact._id,
+          userId: identity.userId,
+          email: body.email,
+        });
+
+        return new Response(JSON.stringify({ id: accessId, status: "created" }), {
+          status: 201,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/comments (existing handler)
+    if (parts.length >= 6 && parts[5] === "comments") {
+      // Let the existing handler process this
+      return new Response("Not found", { status: 404 });
+    }
+
+    // Route: /api/v1/artifacts (create artifact - existing handler)
+    // This should be handled by the existing path: "/api/v1/artifacts" route
+    return new Response("Not found", { status: 404 });
+  }),
+});
+
+/**
+ * PATCH /api/v1/artifacts/:shareToken/sharelink
+ * Update share link settings
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "PATCH",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+
+    // Route: /api/v1/artifacts/:shareToken/sharelink
+    if (parts.length === 6 && parts[5] === "sharelink") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      let body;
+      try {
+        body = await req.json();
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Invalid JSON" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const result = await ctx.runMutation(internal.agentApi.updateShareLink, {
+          artifactId: artifact._id,
+          userId: identity.userId,
+          enabled: body.enabled,
+          capabilities: body.capabilities,
+        });
+
+        if (!result) {
+          return new Response(JSON.stringify({ error: "No share link exists" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        }
+
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    return new Response("Not found", { status: 404 });
+  }),
+});
+
+/**
+ * DELETE /api/v1/artifacts/:shareToken/sharelink
+ * DELETE /api/v1/artifacts/:shareToken/access/:accessId
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "DELETE",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const path = url.pathname;
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const parts = cleanPath.split("/");
+
+    // Route: /api/v1/artifacts/:shareToken/sharelink
+    if (parts.length === 6 && parts[5] === "sharelink") {
+      const shareToken = parts[4];
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const deleted = await ctx.runMutation(internal.agentApi.deleteShareLink, {
+          artifactId: artifact._id,
+          userId: identity.userId,
+        });
+
+        if (!deleted) {
+          return new Response(JSON.stringify({ error: "No share link exists" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        }
+
+        return new Response(JSON.stringify({ status: "deleted" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/access/:accessId
+    if (parts.length === 7 && parts[5] === "access") {
+      const shareToken = parts[4];
+      const accessId = parts[6] as any;
+
+      const identity = await validateApiKey(ctx, req);
+      if (!identity) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
+
+      const artifact = await ctx.runQuery(internal.artifacts.getByShareTokenInternal, { shareToken });
+      if (!artifact) return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+
+      if (artifact.createdBy !== identity.userId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      }
+
+      try {
+        const revoked = await ctx.runMutation(internal.agentApi.revokeAccess, {
+          accessId,
+          userId: identity.userId,
+        });
+
+        if (!revoked) {
+          return new Response(JSON.stringify({ error: "Access record not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+        }
+
+        return new Response(JSON.stringify({ status: "deleted" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
+    return new Response("Not found", { status: 404 });
+  }),
+});
+
 export default http;

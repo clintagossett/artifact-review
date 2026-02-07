@@ -27,6 +27,47 @@ security:
 
 paths:
   /api/v1/artifacts:
+    get:
+      summary: List all artifacts
+      description: Get a list of all artifacts owned by the authenticated user with summary stats.
+      operationId: listArtifacts
+      responses:
+        '200':
+          description: List of artifacts with stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifacts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        shareToken:
+                          type: string
+                        shareUrl:
+                          type: string
+                        createdAt:
+                          type: number
+                        latestVersion:
+                          type: number
+                        stats:
+                          type: object
+                          properties:
+                            totalViews:
+                              type: number
+                            commentCount:
+                              type: number
+                            unresolvedCommentCount:
+                              type: number
+        '401':
+          description: Unauthorized
+
     post:
       summary: Publish a new artifact
       description: Create a new artifact (web page or document) visible to reviewers.
@@ -238,6 +279,328 @@ paths:
                     type: string
                   status:
                     type: string
+
+  /api/v1/artifacts/{shareToken}/sharelink:
+    get:
+      summary: Get share link settings
+      description: Get the public share link settings for an artifact.
+      operationId: getShareLink
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Share link settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shareUrl:
+                    type: string
+                  enabled:
+                    type: boolean
+                  capabilities:
+                    type: object
+                    properties:
+                      readComments:
+                        type: boolean
+                      writeComments:
+                        type: boolean
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden (not owner)
+        '404':
+          description: No share link exists
+
+    post:
+      summary: Create share link
+      description: Create a public share link for an artifact.
+      operationId: createShareLink
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  default: true
+                capabilities:
+                  type: object
+                  properties:
+                    readComments:
+                      type: boolean
+                      default: true
+                    writeComments:
+                      type: boolean
+                      default: false
+      responses:
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shareUrl:
+                    type: string
+                  enabled:
+                    type: boolean
+                  capabilities:
+                    type: object
+                    properties:
+                      readComments:
+                        type: boolean
+                      writeComments:
+                        type: boolean
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+    patch:
+      summary: Update share link
+      description: Update share link settings.
+      operationId: updateShareLink
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                capabilities:
+                  type: object
+                  properties:
+                    readComments:
+                      type: boolean
+                    writeComments:
+                      type: boolean
+      responses:
+        '200':
+          description: Share link updated
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: No share link exists
+
+    delete:
+      summary: Disable share link
+      description: Disable the public share link (sets enabled=false).
+      operationId: deleteShareLink
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Share link disabled
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: No share link exists
+
+  /api/v1/artifacts/{shareToken}/access:
+    get:
+      summary: List access grants
+      description: Get all users with access to an artifact.
+      operationId: listAccess
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: List of access grants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        role:
+                          type: string
+                          enum: [can-comment]
+                        status:
+                          type: string
+                          enum: [pending, added, viewed]
+                        firstViewedAt:
+                          type: number
+                        lastViewedAt:
+                          type: number
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+    post:
+      summary: Grant access
+      description: Invite a user to review an artifact.
+      operationId: grantAccess
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [can-comment]
+                  default: can-comment
+      responses:
+        '201':
+          description: Access granted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+
+  /api/v1/artifacts/{shareToken}/access/{accessId}:
+    delete:
+      summary: Revoke access
+      description: Remove a user's access to an artifact.
+      operationId: revokeAccess
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: accessId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Access revoked
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Access record not found
+
+  /api/v1/artifacts/{shareToken}/stats:
+    get:
+      summary: Get artifact stats
+      description: Get detailed view and comment statistics for an artifact.
+      operationId: getArtifactStats
+      parameters:
+        - in: path
+          name: shareToken
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Artifact statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifact:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      shareToken:
+                        type: string
+                      createdAt:
+                        type: number
+                  stats:
+                    type: object
+                    properties:
+                      totalViews:
+                        type: number
+                      uniqueViewers:
+                        type: number
+                      commentCount:
+                        type: number
+                      unresolvedCommentCount:
+                        type: number
+                      lastViewedAt:
+                        type: number
+                      lastViewedBy:
+                        type: string
+                  versions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        number:
+                          type: number
+                        commentCount:
+                          type: number
+                        viewCount:
+                          type: number
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Artifact not found
 
   /api/v1/comments/{commentId}/replies:
     post:
