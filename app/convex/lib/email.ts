@@ -27,6 +27,6 @@ export async function sendEmail(
 ) {
     await resend.sendEmail(ctx, {
         ...args,
-        from: args.from || process.env.RESEND_FROM_EMAIL || "hello@artifactreview-early.xyz",
+        from: args.from || process.env.RESEND_FROM_EMAIL || "notify@artifactreview-early.xyz",
     });
 }
