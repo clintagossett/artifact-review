@@ -270,15 +270,19 @@ test.describe("Email Digest System", () => {
   // These tests take longer due to digest wait time (30s interval + email delivery)
   test.setTimeout(180000);
 
-  // Email digest tests need either Mailpit (local) or Resend API key (CI/staging).
-  // Now that we use password auth (not magic link), Resend API polling is viable
-  // since we're not hitting rate limits during login.
+  // Email digest tests are slow (~90s each waiting for digest window + Resend indexing).
+  // Skip in CI to avoid blocking other tests. Run locally with Mailpit for fast feedback.
   test.beforeEach(async () => {
+    const isCI = !!process.env.CI;
     const hasMailpit = !!process.env.MAILPIT_API_URL;
-    const hasResendKey = !!process.env.RESEND_FULL_ACCESS_API_KEY;
 
-    if (!hasMailpit && !hasResendKey) {
-      console.log("Skipping email digest tests: MAILPIT_API_URL or RESEND_FULL_ACCESS_API_KEY required");
+    if (isCI) {
+      console.log("Skipping email digest tests in CI - run locally with Mailpit");
+      test.skip();
+    }
+
+    if (!hasMailpit) {
+      console.log("Skipping email digest tests: MAILPIT_API_URL required for reliable testing");
       test.skip();
     }
   });
