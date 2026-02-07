@@ -30,15 +30,22 @@ interface AnnotationSidebarProps {
     onToggleResolve: (id: string) => Promise<void>;
     onDelete: (id: string) => Promise<void>;
 
-    // Editing State (lifted up if needed, or local per card? 
+    // Editing State (lifted up if needed, or local per card?
     // CommentCard usually handled its own "is editing" state but here we have a list.
     // Let's rely on the parent to manage "which card is being edited" or simpler: let card handle it?
-    // The previous implementation had a "editingCommentId" state in the parent. 
+    // The previous implementation had a "editingCommentId" state in the parent.
     // I will emulate that pattern for consistency.
     editingId: string | null;
     editText: string;
     setEditText: (t: string) => void;
     onCancelEdit: () => void;
+
+    // Skip fetching replies (e.g., on public share pages)
+    skipReplies?: boolean;
+
+    // Permission to reply
+    canReply?: boolean;
+    replyDisabledReason?: "access_mode" | "not_authenticated";
 }
 
 export function AnnotationSidebar({
@@ -59,7 +66,10 @@ export function AnnotationSidebar({
     editingId,
     editText,
     setEditText,
-    onCancelEdit
+    onCancelEdit,
+    skipReplies,
+    canReply,
+    replyDisabledReason,
 }: AnnotationSidebarProps) {
     const [draftContent, setDraftContent] = React.useState("");
 
@@ -165,6 +175,9 @@ export function AnnotationSidebar({
                             editText={editText}
                             setEditText={setEditText}
                             onCancelEdit={onCancelEdit}
+                            skipReplies={skipReplies}
+                            canReply={canReply}
+                            replyDisabledReason={replyDisabledReason}
                         />
                     ))}
                 </div>

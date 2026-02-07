@@ -17,7 +17,7 @@ import { FileTree, FileNode } from "@/components/file-tree";
 import { MarkdownViewer } from "./MarkdownViewer";
 
 // Annotation System
-import { useComments } from "@/hooks/useComments";
+import { useComments, usePublicComments } from "@/hooks/useComments";
 import { useSelectionLayer } from "@/lib/annotation/react/useSelectionLayer";
 import { SelectionOverlay } from "@/lib/annotation/react/SelectionOverlay";
 import { W3CSelector, AnnotationTarget } from "@/lib/annotation/types";
@@ -56,6 +56,14 @@ interface ArtifactViewerProps {
   filePath?: string;
   /** Task 00049: Version processing status for E2E testing */
   versionStatus?: "uploading" | "processing" | "ready" | "error";
+  /** Skip fetching comments (for public share pages where permission check would fail) */
+  skipCommentsQuery?: boolean;
+  /** When true, hides controls for anonymous public viewers (Back, Share, Manage, etc.) */
+  isPublicViewer?: boolean;
+  /** Public share token for fetching comments via public query */
+  publicShareToken?: string;
+  /** Public share capabilities (used to determine reply disabled reason) */
+  publicCapabilities?: { readComments: boolean; writeComments: boolean };
 }
 
 export function ArtifactViewer({
@@ -68,6 +76,10 @@ export function ArtifactViewer({
   userPermission,
   filePath,
   versionStatus = "ready",
+  skipCommentsQuery = false,
+  isPublicViewer = false,
+  publicShareToken,
+  publicCapabilities,
 }: ArtifactViewerProps) {
   const router = useRouter();
 
@@ -81,7 +93,12 @@ export function ArtifactViewer({
     setCurrentPageState(page);
     // Update URL to reflect current page
     const cleanPage = page.startsWith("/") ? page.slice(1) : page;
-    router.push(`/a/${artifact.shareToken}/v/${version.number}/${cleanPage}`, { scroll: false });
+    // Use different URL format for public share routes vs authenticated routes
+    if (publicShareToken) {
+      router.push(`/share/${publicShareToken}/${cleanPage}`, { scroll: false });
+    } else {
+      router.push(`/a/${artifact.shareToken}/v/${version.number}/${cleanPage}`, { scroll: false });
+    }
   };
   const [history, setHistory] = useState<string[]>([]);
   const [forwardHistory, setForwardHistory] = useState<string[]>([]);
@@ -93,11 +110,24 @@ export function ArtifactViewer({
   );
 
   // Fetch raw comments from Convex
-  const rawComments = useComments(version._id);
+  // Use public query when publicShareToken is provided
+  // Otherwise use authenticated query
+  const rawAuthenticatedComments = useComments(
+    version._id,
+    userPermission === null || skipCommentsQuery || !!publicShareToken
+  );
+  const rawPublicComments = usePublicComments(
+    version._id,
+    publicShareToken,
+    !publicShareToken || skipCommentsQuery // skip if no public token or skipCommentsQuery
+  );
+  // Use public comments if available, otherwise authenticated comments
+  const rawComments = publicShareToken ? rawPublicComments : rawAuthenticatedComments;
   const convexComments = rawComments || [];
 
   // Mutations
   const createComment = useMutation(api.comments.create);
+  const createCommentViaPublicShare = useMutation(api.comments.createViaPublicShare);
   const updateContent = useMutation(api.comments.updateContent);
   const toggleResolved = useMutation(api.comments.toggleResolved);
   const softDelete = useMutation(api.comments.softDelete);
@@ -332,11 +362,21 @@ export function ArtifactViewer({
     const target = selectionToConvexTarget(currentPage, draftSelector, draftStyle);
 
     try {
-      await createComment({
-        versionId: version._id,
-        content,
-        target
-      });
+      // Use public share mutation when accessing via public link
+      if (publicShareToken) {
+        await createCommentViaPublicShare({
+          versionId: version._id,
+          publicShareToken,
+          content,
+          target
+        });
+      } else {
+        await createComment({
+          versionId: version._id,
+          content,
+          target
+        });
+      }
 
       // Cleanup
       setDraftSelector(null);
@@ -458,6 +498,7 @@ export function ArtifactViewer({
         latestVersionNumber={Math.max(...versions.map(v => v.number))}
         currentUser={currentUser}
         userPermission={userPermission}
+        isPublicViewer={isPublicViewer}
       />
 
       <CommentToolbar
@@ -470,6 +511,8 @@ export function ArtifactViewer({
         currentVersionNumber={version.number}
         latestVersionNumber={Math.max(...versions.map(v => v.number))}
         onSwitchToLatest={() => onVersionChange(Math.max(...versions.map(v => v.number)))}
+        canComment={userPermission !== null}
+        isPublicViewer={isPublicViewer}
       />
 
       <div className="flex flex-1 overflow-hidden relative">
@@ -572,30 +615,39 @@ export function ArtifactViewer({
           </div>
         </div>
 
-        {/* Right Sidebar (Annotations) */}
-        <AnnotationSidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-          annotations={filteredAnnotations}
-          currentUser={currentUser ? { id: currentUser._id, name: currentUser.name || "Me" } : null}
-          artifactOwnerId={artifact.createdBy}
+        {/* Right Sidebar (Annotations) - hidden for public viewers */}
+        {!isPublicViewer && (
+          <AnnotationSidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+            annotations={filteredAnnotations}
+            currentUser={currentUser ? { id: currentUser._id, name: currentUser.name || "Me" } : null}
+            artifactOwnerId={artifact.createdBy}
 
-          draftSelector={draftSelector}
-          draftStyle={draftStyle}
-          onCancelDraft={() => setDraftSelector(null)}
-          onSaveDraft={handleCreateAnnotation}
+            draftSelector={draftSelector}
+            draftStyle={draftStyle}
+            onCancelDraft={() => setDraftSelector(null)}
+            onSaveDraft={handleCreateAnnotation}
 
-          onReply={handleReply}
-          onEdit={handleEdit}
-          onSaveEdit={handleSaveEdit}
-          onToggleResolve={handleToggleResolve}
-          onDelete={handleDelete}
+            onReply={handleReply}
+            onEdit={handleEdit}
+            onSaveEdit={handleSaveEdit}
+            onToggleResolve={handleToggleResolve}
+            onDelete={handleDelete}
 
-          editingId={editingId}
-          editText={editText}
-          setEditText={setEditText}
-          onCancelEdit={() => setEditingId(null)}
-        />
+            editingId={editingId}
+            editText={editText}
+            setEditText={setEditText}
+            onCancelEdit={() => setEditingId(null)}
+            skipReplies={!!publicShareToken}
+            canReply={userPermission !== null}
+            replyDisabledReason={
+              publicShareToken && userPermission === null
+                ? (publicCapabilities?.readComments && !publicCapabilities?.writeComments ? "access_mode" : "not_authenticated")
+                : undefined
+            }
+          />
+        )}
 
       </div>
     </div>

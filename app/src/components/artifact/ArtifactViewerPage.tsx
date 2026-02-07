@@ -174,6 +174,7 @@ export function ArtifactViewerPage({
         currentUser={currentUser}
         userPermission={userPermission}
         versionStatus={versionStatus}
+        filePath={filePath}
       />
 
       <ShareModal
