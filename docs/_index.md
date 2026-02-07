@@ -33,6 +33,12 @@ To keep our documentation clear, we distinguish between **Decisions** and **Desi
 
 ## Recent Updates
 
+**February 4, 2026** - Agent onboarding experience report:
+- Detailed setup experience from agent "lux" (`docs/lux-setup-experience.md`)
+- Documents issues with env file syntax, Convex sync, missing test samples
+- Includes recommended fixes for `agent-init.sh` and example files
+- Provides working manual setup sequence
+
 **February 2, 2026** - Agent DX documentation:
 - Comprehensive agent lifecycle guide (`docs/development/agent-dx-flow.md`)
 - Script responsibilities and environment variable flow
