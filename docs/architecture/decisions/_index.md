@@ -29,6 +29,7 @@ Record of significant architectural decisions made for this project.
 | [0021](./0021-async-state-delay-testing.md) | Async State Delay Testing Pattern | Accepted | 2026-01-31 |
 | [0022](./0022-stripe-webhook-multi-deployment-filtering.md) | Stripe Webhook Multi-Deployment Filtering | Accepted | 2026-01-31 |
 | [0023](./0023-separate-novu-sync-mechanisms.md) | Separate Novu Workflow Sync Mechanisms | Accepted | 2026-02-03 |
+| [0024](./0024-agent-api-routing-via-nextjs-rewrite.md) | Agent API Routing via Next.js Rewrite | Accepted | 2026-02-06 |
 
 ---
 

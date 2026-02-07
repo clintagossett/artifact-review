@@ -34,20 +34,9 @@ test.describe('Stripe Pro Monthly Subscription', () => {
     // Extended timeout for full Stripe flow
     test.setTimeout(180000);
 
-    // Skip in CI - Stripe webhooks require local Stripe CLI listener or
-    // properly configured webhook endpoint with orchestrator running.
-    // In GitHub Actions, no webhook listener is available.
-    test.beforeEach(async () => {
-        // Check if we're in a CI environment without local webhook handling
-        const isCI = !!process.env.CI;
-        const hasLocalStripe = !!process.env.STRIPE_CLI_RUNNING;
-
-        if (isCI && !hasLocalStripe) {
-            console.log('Skipping Stripe tests in CI: No webhook listener available');
-            console.log('Stripe tests require local Stripe CLI for webhook delivery');
-            test.skip();
-        }
-    });
+    // Stripe webhooks are configured in the Stripe Dashboard to point to
+    // the staging Convex endpoint: https://adventurous-mosquito-571.convex.site/stripe/webhook
+    // No local Stripe CLI needed - webhooks are delivered directly by Stripe.
 
     test('Complete Pro Monthly subscription signup via Stripe Checkout', async ({ page }) => {
         const user = generateUser();
