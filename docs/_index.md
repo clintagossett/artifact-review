@@ -8,6 +8,7 @@ Project documentation for **Artifact Review**.
 
 | Section | Description |
 |---------|-------------|
+| [api/](./api/_index.md) | **Agent API documentation for integrations** |
 | [development/](./development/_index.md) | **TDD workflow, testing, and logging guides** |
 | [setup/](./setup/) | Account setup, environment configuration, agent access |
 | [market-intelligence/](./market-intelligence/_index.md) | Market analysis, competitive landscape, TAM/SAM/SOM |
