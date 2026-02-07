@@ -109,13 +109,24 @@ Create `test-report.md` documenting:
 - Coverage achieved
 - Known limitations
 
-### 8. Hand Off
+### 8. Create Pull Request
+
+Create a PR targeting the `dev` branch:
+
+```bash
+gh pr create --base dev --title "feat: Feature name" --body "Closes #ISSUE"
+```
+
+**Branch promotion:** `dev → staging → main`. Agents always PR to `dev`.
+
+### 9. Hand Off
 
 Deliverables for review:
 - ✅ Working feature
 - ✅ Passing tests (backend + E2E)
 - ✅ Validation trace (`test-results/.../trace.zip`)
 - ✅ Test report (`test-report.md`)
+- ✅ PR targeting `dev` branch
 
 ## TDD Best Practices for AI Agents
 

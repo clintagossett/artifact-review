@@ -10,6 +10,51 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 See `PRODUCT-DISCOVERY.md` for full product research and strategy.
 
+## Git Workflow & Branch Strategy
+
+### Promotion Process
+
+Code flows through three branches before reaching production:
+
+```
+dev → staging → main
+```
+
+| Branch | Purpose | Deploys To |
+|--------|---------|------------|
+| `dev` | Active development, agent PRs land here | Dev environment |
+| `staging` | Pre-production testing and validation | Staging environment |
+| `main` | Production-ready code | Production |
+
+### Agent PR Rules
+
+**ALWAYS create PRs targeting `dev`** - never directly to `main` or `staging`.
+
+```bash
+# Correct - PR to dev
+gh pr create --base dev --title "feat: Add new feature"
+
+# WRONG - Never do this
+gh pr create --base main --title "feat: Add new feature"
+```
+
+Promotion from `dev → staging → main` is handled by the project maintainer, not agents.
+
+### Working Branch Convention
+
+Agents work on branches named `{agent-name}/dev-work` (e.g., `james/dev-work`, `mark/dev-work`).
+
+```bash
+# Start of session - sync with dev
+git checkout {agent}/dev-work
+git fetch origin
+git rebase origin/dev
+
+# After PR is merged to dev - sync again
+git fetch origin
+git rebase origin/dev
+```
+
 ## Session Startup (Do This First)
 
 **At the start of every session, spawn the `session-startup` agent as a background task.**
