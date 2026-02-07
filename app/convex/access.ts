@@ -1009,7 +1009,7 @@ export const sendEmailInternal = internalAction({
     try {
       const fromEmail =
         process.env.EMAIL_FROM_NOTIFICATIONS ||
-        "notifications@artifactreview-early.xyz";
+        "notify@artifactreview-early.xyz";
 
       await sendEmail(ctx, {
         from: fromEmail,
