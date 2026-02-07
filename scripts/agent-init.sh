@@ -277,8 +277,24 @@ setup_env_files() {
     if [ ! -f ".env.nextjs.local" ] && [ -f ".env.nextjs.local.example" ]; then
         # Substitute AGENT_NAME in the example
         sed "s/\${AGENT_NAME}/$AGENT_NAME/g" .env.nextjs.local.example > .env.nextjs.local
+
+        # Substitute YOUR_USERNAME with actual mkcert CA path
+        local mkcert_ca_root=$(mkcert -CAROOT 2>/dev/null)
+        if [ -n "$mkcert_ca_root" ] && [ -f "$mkcert_ca_root/rootCA.pem" ]; then
+            sed -i "s|NODE_EXTRA_CA_CERTS=/home/YOUR_USERNAME/.local/share/mkcert/rootCA.pem|NODE_EXTRA_CA_CERTS=$mkcert_ca_root/rootCA.pem|" .env.nextjs.local
+            log_info "Set NODE_EXTRA_CA_CERTS to $mkcert_ca_root/rootCA.pem"
+        fi
+
         log_success "Created app/.env.nextjs.local (secrets will be populated by setup scripts)"
     elif [ -f ".env.nextjs.local" ]; then
+        # Also fix mkcert path in existing file if it has placeholder
+        if grep -q "YOUR_USERNAME" .env.nextjs.local; then
+            local mkcert_ca_root=$(mkcert -CAROOT 2>/dev/null)
+            if [ -n "$mkcert_ca_root" ] && [ -f "$mkcert_ca_root/rootCA.pem" ]; then
+                sed -i "s|NODE_EXTRA_CA_CERTS=/home/YOUR_USERNAME/.local/share/mkcert/rootCA.pem|NODE_EXTRA_CA_CERTS=$mkcert_ca_root/rootCA.pem|" .env.nextjs.local
+                log_info "Fixed NODE_EXTRA_CA_CERTS path"
+            fi
+        fi
         log_success "app/.env.nextjs.local exists"
     fi
 
@@ -291,6 +307,17 @@ setup_env_files() {
             local webhook_secret=$(openssl rand -hex 32)
             sed -i "s/your-novu-email-webhook-secret/${webhook_secret}/" .env.convex.local
             log_info "Generated NOVU_EMAIL_WEBHOOK_SECRET"
+        fi
+
+        # Generate INTERNAL_API_KEY if placeholder exists
+        if grep -q "INTERNAL_API_KEY=your-random-secret-key-here" .env.convex.local; then
+            local internal_key=$(openssl rand -hex 32)
+            sed -i "s/INTERNAL_API_KEY=your-random-secret-key-here/INTERNAL_API_KEY=${internal_key}/" .env.convex.local
+            # Also sync to .env.nextjs.local
+            if [ -f ".env.nextjs.local" ]; then
+                sed -i "s/^INTERNAL_API_KEY=$/INTERNAL_API_KEY=${internal_key}/" .env.nextjs.local
+            fi
+            log_info "Generated INTERNAL_API_KEY"
         fi
 
         # Set default email addresses with staging domain (for local dev)
@@ -310,6 +337,17 @@ setup_env_files() {
             local webhook_secret=$(openssl rand -hex 32)
             sed -i "s/your-novu-email-webhook-secret/${webhook_secret}/" .env.convex.local
             log_info "Generated missing NOVU_EMAIL_WEBHOOK_SECRET"
+        fi
+
+        # Ensure INTERNAL_API_KEY is generated even for existing files
+        if grep -q "INTERNAL_API_KEY=your-random-secret-key-here" .env.convex.local; then
+            local internal_key=$(openssl rand -hex 32)
+            sed -i "s/INTERNAL_API_KEY=your-random-secret-key-here/INTERNAL_API_KEY=${internal_key}/" .env.convex.local
+            # Also sync to .env.nextjs.local
+            if [ -f ".env.nextjs.local" ]; then
+                sed -i "s/^INTERNAL_API_KEY=$/INTERNAL_API_KEY=${internal_key}/" .env.nextjs.local
+            fi
+            log_info "Generated missing INTERNAL_API_KEY"
         fi
     fi
 
@@ -576,8 +614,30 @@ setup_novu() {
 
     if [ -x "./scripts/setup-novu-org.sh" ]; then
         log_info "Setting up Novu organization for $AGENT_NAME..."
-        ./scripts/setup-novu-org.sh
-        log_success "Novu organization configured"
+
+        # Retry logic - Novu container may not be ready immediately
+        local max_retries=5
+        local retry_delay=5
+        local success=false
+
+        for i in $(seq 1 $max_retries); do
+            if ./scripts/setup-novu-org.sh 2>&1; then
+                success=true
+                break
+            fi
+
+            if [ $i -lt $max_retries ]; then
+                log_warn "Novu not ready, retrying in ${retry_delay}s... ($i/$max_retries)"
+                sleep $retry_delay
+            fi
+        done
+
+        if [ "$success" = true ]; then
+            log_success "Novu organization configured"
+        else
+            log_warn "Novu setup failed after $max_retries attempts"
+            log_info "Run manually later: ./scripts/setup-novu-org.sh"
+        fi
     else
         log_warn "setup-novu-org.sh not found or not executable"
     fi
@@ -701,6 +761,48 @@ validate_convex_env() {
     fi
 
     log_success "All $checked critical variables validated"
+}
+
+# =============================================================================
+# STEP 6.7: Generate Test Samples
+# =============================================================================
+# Some E2E tests require generated sample files (e.g., ZIP with video files).
+# These require ffmpeg and are gitignored, so must be generated locally.
+generate_test_samples() {
+    log_step "Step 6.7: Generate Test Samples"
+
+    local samples_dir="$PROJECT_ROOT/samples/04-invalid/wrong-type"
+
+    # Check if sample already exists
+    if [ -f "$samples_dir/presentation-with-video.zip" ]; then
+        log_success "Test samples already generated"
+        return 0
+    fi
+
+    # Check if ffmpeg is available
+    if ! command -v ffmpeg &> /dev/null; then
+        log_warn "ffmpeg not found - skipping test sample generation"
+        log_info "Some E2E tests may fail. To fix:"
+        log_info "  1. Install ffmpeg: sudo apt install ffmpeg"
+        log_info "  2. Run: cd samples/04-invalid/wrong-type && ./generate.sh"
+        return 0
+    fi
+
+    # Check if generate script exists
+    if [ ! -x "$samples_dir/generate.sh" ]; then
+        log_warn "Test sample generator not found at $samples_dir/generate.sh"
+        return 0
+    fi
+
+    log_info "Generating test samples (requires ffmpeg)..."
+    cd "$samples_dir"
+    if ./generate.sh > /dev/null 2>&1; then
+        log_success "Test samples generated"
+    else
+        log_warn "Test sample generation failed"
+        log_info "Run manually: cd samples/04-invalid/wrong-type && ./generate.sh"
+    fi
+    cd "$PROJECT_ROOT"
 }
 
 # =============================================================================
@@ -924,6 +1026,7 @@ main() {
             setup_novu_email_webhook
             configure_convex_env
             validate_convex_env
+            generate_test_samples
             show_status
             ;;
     esac
