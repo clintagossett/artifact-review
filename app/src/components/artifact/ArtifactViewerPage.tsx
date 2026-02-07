@@ -11,6 +11,7 @@ import { UnauthenticatedBanner } from "./UnauthenticatedBanner";
 import { AccessDeniedMessage } from "./AccessDeniedMessage";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVersionStatus } from "@/hooks/useVersionStatus";
+import { safeSetItem } from "@/lib/safeStorage";
 
 interface ArtifactViewerPageProps {
   shareToken: string;
@@ -37,7 +38,7 @@ export function ArtifactViewerPage({
   // Save returnTo path for unauthenticated users
   useEffect(() => {
     if (currentUser === null) {
-      localStorage.setItem("returnTo", pathname);
+      safeSetItem("returnTo", pathname);
     }
   }, [currentUser, pathname]);
   const userPermission = useQuery(
@@ -144,7 +145,9 @@ export function ArtifactViewerPage({
   }
 
   // Determine if this is the latest version
-  const latestVersionNumber = Math.max(...versions.map((v) => v.number));
+  const latestVersionNumber = versions.length > 0
+    ? Math.max(...versions.map((v) => v.number))
+    : 0;
   const isLatestVersion = targetVersion.number === latestVersionNumber;
 
   // Handle version change

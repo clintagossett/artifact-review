@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { validateReturnTo } from "@/lib/validateReturnTo";
+import { safeGetItem, safeRemoveItem } from "@/lib/safeStorage";
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -30,13 +31,13 @@ function VerifyEmailContent() {
     // If authenticated, redirect to destination
     if (!isLoading && isAuthenticated) {
       const queryReturnTo = searchParams.get("returnTo");
-      const localReturnTo = localStorage.getItem("returnTo");
+      const localReturnTo = safeGetItem("returnTo");
       const returnTo = queryReturnTo || localReturnTo;
 
       const validatedReturnTo = validateReturnTo(returnTo);
 
       if (validatedReturnTo) {
-        localStorage.removeItem("returnTo");
+        safeRemoveItem("returnTo");
         router.push(validatedReturnTo);
       } else {
         router.push("/dashboard");
