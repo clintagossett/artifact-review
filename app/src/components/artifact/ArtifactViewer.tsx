@@ -137,8 +137,8 @@ export function ArtifactViewer({
   const [pendingSelector, setPendingSelector] = useState<W3CSelector | null>(null); // Menu visible
   const [menuPosition, setMenuPosition] = useState<{ x: number, y: number } | null>(null);
 
-  // Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Sidebar State - starts closed, only open if user clicks the Comments button
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [draftSelector, setDraftSelector] = useState<W3CSelector | null>(null);
   const [draftStyle, setDraftStyle] = useState<"comment" | "strike">("comment");
 
@@ -241,6 +241,16 @@ export function ArtifactViewer({
     if (filter === 'resolved') return annotations.filter(a => a.resolved);
     return annotations.filter(a => !a.resolved);
   }, [annotations, filter]);
+
+  // Auto-open sidebar when annotations exist (only on initial load)
+  const hasAutoOpenedRef = useRef(false);
+  useEffect(() => {
+    // Only auto-open once when annotations first become available
+    if (!hasAutoOpenedRef.current && annotations.length > 0) {
+      setIsSidebarOpen(true);
+      hasAutoOpenedRef.current = true;
+    }
+  }, [annotations.length]);
 
   // Extract selectors for the overlay
   // Filter out resolved ones if we want to hide them, currently showing all with visual distinction
