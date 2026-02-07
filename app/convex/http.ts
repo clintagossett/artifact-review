@@ -422,12 +422,6 @@ http.route({
       return errorResponse("Missing required fields", 400);
     }
 
-    let agentName: string | undefined;
-    if (identity.agentId) {
-      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
-      agentName = agent?.name;
-    }
-
     let blob: Blob;
     let mimeType: string;
     let entryPoint: string;
@@ -457,7 +451,6 @@ http.route({
       const result = await ctx.runMutation(internal.artifacts.createInternal, {
         userId: identity.userId,
         agentId: identity.agentId,
-        agentName: agentName,
         name,
         description,
         fileType,
@@ -594,18 +587,11 @@ http.route({
       versionId = version._id;
     }
 
-    let agentName: string | undefined;
-    if (identity.agentId) {
-      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
-      agentName = agent?.name;
-    }
-
     const commentId = await ctx.runMutation(internal.agentApi.createComment, {
       versionId,
       content,
       target,
       agentId: identity.agentId,
-      agentName,
       userId: identity.userId,
     });
 
@@ -638,18 +624,11 @@ http.route({
 
     if (!body.content) return errorResponse("Missing content", 400);
 
-    let agentName: string | undefined;
-    if (identity.agentId) {
-      const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
-      agentName = agent?.name;
-    }
-
     try {
       const replyId = await ctx.runMutation(internal.agentApi.createReply, {
         commentId,
         content: body.content,
         agentId: identity.agentId,
-        agentName,
         userId: identity.userId,
       });
 
@@ -1006,12 +985,6 @@ http.route({
         return errorResponse("Missing required fields: fileType, content", 400);
       }
 
-      let agentName: string | undefined;
-      if (identity.agentId) {
-        const agent = await ctx.runQuery(internal.agents.getByIdInternal, { id: identity.agentId });
-        agentName = agent?.name;
-      }
-
       let blob: Blob;
       let mimeType: string;
       let entryPoint: string;
@@ -1048,7 +1021,6 @@ http.route({
           mimeType,
           size: blob.size,
           agentId: identity.agentId,
-          agentName,
         });
 
         if (fileType === "zip") {

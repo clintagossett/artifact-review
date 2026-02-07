@@ -65,12 +65,22 @@ export const getReplies = query({
       .order("asc")
       .collect();
 
-    // Enrich with author data
+    // Enrich with author data and agent lookup
     const enriched = await Promise.all(
       replies.map(async (reply) => {
         const author = await ctx.db.get(reply.createdBy);
+        const anyReply = reply as any;
+
+        // Look up agent name at display time if agentId is present
+        let agentName: string | undefined;
+        if (anyReply.agentId) {
+          const agent = await ctx.db.get(anyReply.agentId) as { name?: string } | null;
+          agentName = agent?.name;
+        }
+
         return {
           ...reply,
+          agentName, // Computed at display time, not stored
           author: {
             name: author?.name,
             email: author?.email,

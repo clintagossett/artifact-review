@@ -110,7 +110,7 @@ export const createInternal = internalMutation({
     size: v.number(),
     organizationId: v.optional(v.id("organizations")),
     agentId: v.optional(v.id("agents")),
-    agentName: v.optional(v.string()), // Denormalized name
+    // Note: agentName no longer stored. Look up from agentId at display time.
   },
   returns: v.object({
     artifactId: v.id("artifacts"),
@@ -162,8 +162,7 @@ export const createInternal = internalMutation({
       isDeleted: false,
       createdAt: now,
       agentId: args.agentId,
-      agentName: args.agentName,
-      // Keep inline content fields undefined (not used in new pattern)
+      // Note: agentName no longer stored. Look up from agentId at display time.
     });
 
     // Create file record
@@ -487,7 +486,7 @@ export const addVersionInternal = internalMutation({
     mimeType: v.string(),
     size: v.number(),
     agentId: v.optional(v.id("agents")),
-    agentName: v.optional(v.string()), // Denormalized name
+    // Note: agentName no longer stored. Look up from agentId at display time.
   },
   returns: v.object({
     versionId: v.id("artifactVersions"),

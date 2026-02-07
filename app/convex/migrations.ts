@@ -78,22 +78,9 @@ export const setDefaultCreatedAt = migrations.define({
 // =============================================================================
 // FUTURE MIGRATIONS
 // =============================================================================
-// Add new migrations here as schema evolves. Examples:
+// Add new migrations here as schema evolves.
 //
-// export const addUserPreferences = migrations.define({
-//   table: "users",
-//   migrateOne: async (ctx, user) => {
-//     if (user.preferences === undefined) {
-//       await ctx.db.patch(user._id, { preferences: { theme: "light" } });
-//     }
-//   },
-// });
-//
-// export const normalizeEmails = migrations.define({
-//   table: "users",
-//   migrateOne: async (ctx, user) => {
-//     if (user.email && user.email !== user.email.toLowerCase()) {
-//       await ctx.db.patch(user._id, { email: user.email.toLowerCase() });
-//     }
-//   },
-// });
+// Note: agentName is no longer stored (denormalized). It's looked up at display time
+// from the agentId. The backfillReplyAgentName migration was removed as it's
+// no longer needed. Old data with agentName will be ignored - display logic looks up
+// from agentId instead.

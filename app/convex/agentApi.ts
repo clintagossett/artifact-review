@@ -60,12 +60,22 @@ export const getComments = internalQuery({
                     replies.map(async (reply) => {
                         const replyAuthor = await ctx.db.get(reply.createdBy);
                         const anyReply = reply as any;
+
+                        // Look up agent name if this is an agent-created reply
+                        let displayName = replyAuthor?.name || "Unknown";
+                        if (anyReply.agentId) {
+                            const agent = await ctx.db.get(anyReply.agentId) as { name?: string } | null;
+                            if (agent?.name) {
+                                displayName = agent.name;
+                            }
+                        }
+
                         return {
                             id: reply._id,
                             content: reply.content,
                             createdAt: reply.createdAt,
                             author: {
-                                name: anyReply.agentName || replyAuthor?.name || "Unknown",
+                                name: displayName,
                                 agentId: anyReply.agentId,
                             },
                         };
@@ -88,6 +98,15 @@ export const getComments = internalQuery({
                     };
                 }
 
+                // Look up agent name if this is an agent-created comment
+                let displayName = author?.name || "Unknown";
+                if (anyComment.agentId) {
+                    const agent = await ctx.db.get(anyComment.agentId) as { name?: string } | null;
+                    if (agent?.name) {
+                        displayName = agent.name;
+                    }
+                }
+
                 return {
                     id: comment._id,
                     content: comment.content,
@@ -95,7 +114,7 @@ export const getComments = internalQuery({
                     resolved: !!comment.resolvedUpdatedAt,
                     target: safeTarget,
                     author: {
-                        name: anyComment.agentName || author?.name || "Unknown",
+                        name: displayName,
                         avatar: author?.image,
                         agentId: anyComment.agentId,
                     },
@@ -117,16 +136,22 @@ export const createComment = internalMutation({
         content: v.string(),
         target: v.any(), // Validated by HTTP handler
         agentId: v.optional(v.id("agents")),
-        agentName: v.optional(v.string()),
         userId: v.id("users"), // The user associated with the API key
     },
     handler: async (ctx, args) => {
         const now = Date.now();
+
+        // Look up agent name if agentId provided (for notification)
+        let agentName: string | undefined;
+        if (args.agentId) {
+            const agent = await ctx.db.get(args.agentId);
+            agentName = agent?.name;
+        }
+
         const commentId = await ctx.db.insert("comments", {
             versionId: args.versionId,
             createdBy: args.userId,
             agentId: args.agentId,
-            agentName: args.agentName,
             content: args.content,
             target: args.target,
             isEdited: false,
@@ -146,7 +171,7 @@ export const createComment = internalMutation({
                     subscriberId: artifact.createdBy,
                     artifactDisplayTitle: `${artifact.name} (v${version.number})`,
                     artifactUrl,
-                    authorName: args.agentName || "AI Agent",
+                    authorName: agentName || "AI Agent",
                     authorAvatarUrl: undefined, // Agents don't have avatars yet
                     commentPreview: args.content.slice(0, 50)
                 });
@@ -165,7 +190,6 @@ export const createReply = internalMutation({
         commentId: v.id("comments"),
         content: v.string(),
         agentId: v.optional(v.id("agents")),
-        agentName: v.optional(v.string()),
         userId: v.id("users"),
     },
     handler: async (ctx, args) => {
@@ -177,7 +201,6 @@ export const createReply = internalMutation({
             commentId: args.commentId,
             createdBy: args.userId,
             agentId: args.agentId,
-            agentName: args.agentName,
             content: args.content,
             isEdited: false,
             isDeleted: false,
