@@ -621,6 +621,38 @@ The `figma-designs/` directory is a git submodule containing Figma Make exports.
 
 Failure to follow these rules will result in broken or insecure code.
 
+### Schema Migrations
+
+When modifying the Convex schema, determine if a migration is needed:
+
+**Migrations REQUIRED:**
+- Adding a required field to existing documents
+- Renaming fields (copy data to new field)
+- Changing field types
+- Backfilling computed/derived fields
+
+**Migrations NOT needed:**
+- Adding optional fields (`v.optional()`)
+- Adding new tables
+- Adding new indexes
+- Removing fields
+
+**Migration Workflow:**
+
+```bash
+# 1. Define migration in convex/migrations.ts
+# 2. Test locally
+npx convex run migrations:run '{"fn": "migrations:yourMigration"}'
+
+# 3. Check status
+npx convex run --component migrations lib:getStatus --watch
+
+# 4. Run in production (after deploy)
+npx convex run migrations:run '{"fn": "migrations:yourMigration"}' --prod
+```
+
+**Full documentation:** `docs/development/migrations.md`
+
 ## Agent Delegation
 
 Always prefer handing tasks off to specialized agents (Task tool) when the task matches an agent's capabilities. Use parallel agents when tasks are independent. This maximizes efficiency and keeps context focused.
@@ -641,6 +673,7 @@ Always prefer handing tasks off to specialized agents (Task tool) when the task 
 | [workflow.md](docs/development/workflow.md) | TDD workflow, task structure |
 | [testing-guide.md](docs/development/testing-guide.md) | How to write tests, **use /samples/** |
 | [logging-guide.md](docs/development/logging-guide.md) | How to log |
+| [migrations.md](docs/development/migrations.md) | Schema migrations workflow |
 | [/samples/README.md](samples/README.md) | **Central test data** - 15+ sample files |
 
 ### TDD Cycle

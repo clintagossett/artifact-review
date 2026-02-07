@@ -13,6 +13,7 @@ Operational instructions for AI-assisted development. These guides distill testi
 | [test-failure-analysis.md](./test-failure-analysis.md) | Categorize test failures by root cause |
 | [e2e-timing-patterns.md](./e2e-timing-patterns.md) | Fix patterns for E2E timing issues |
 | [logging-guide.md](./logging-guide.md) | How to use structured logging |
+| [migrations.md](./migrations.md) | **Convex schema migrations workflow** |
 | [routing-patterns.md](./routing-patterns.md) | Next.js routing, pages vs components, SEO, auth redirects |
 | [novu-setup.md](./novu-setup.md) | Novu notifications setup and testing |
 | [vercel-deployment-debugging.md](./vercel-deployment-debugging.md) | **Debug failed Vercel deployments using CLI and API** |
