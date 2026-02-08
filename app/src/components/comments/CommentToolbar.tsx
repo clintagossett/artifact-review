@@ -77,7 +77,7 @@ export function CommentToolbar({
           className="text-gray-600 hover:text-gray-900"
         >
           {isSidebarOpen ? <ChevronRight className="w-4 h-4 mr-1" /> : <ChevronLeft className="w-4 h-4 mr-1" />}
-          Comments ({totalCount})
+          Annotations ({totalCount})
         </Button>
       </div>
 

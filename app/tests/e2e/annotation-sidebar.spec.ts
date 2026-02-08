@@ -113,9 +113,9 @@ test.describe('Annotation Sidebar Behavior', () => {
     console.log('Verified: Sidebar is closed when no comments exist');
 
     // Verify the Comments button shows 0 count
-    const commentsButton = page.getByRole('button', { name: /comments/i });
-    await expect(commentsButton).toBeVisible();
-    await expect(commentsButton).toContainText('0');
+    const annotationsButton = page.getByRole('button', { name: /annotations/i });
+    await expect(annotationsButton).toBeVisible();
+    await expect(annotationsButton).toContainText('0');
   });
 
   test('sidebar auto-opens when artifact has comments', async ({ page }) => {
@@ -145,8 +145,8 @@ test.describe('Annotation Sidebar Behavior', () => {
     console.log('Verified: Sidebar auto-opens when comments exist');
 
     // Verify Comments button shows count of 1
-    const commentsButton = page.getByRole('button', { name: /comments/i });
-    await expect(commentsButton).toContainText('1');
+    const annotationsButton = page.getByRole('button', { name: /annotations/i });
+    await expect(annotationsButton).toContainText('1');
   });
 
   test('comments button toggles sidebar open/closed', async ({ page }) => {
@@ -160,8 +160,8 @@ test.describe('Annotation Sidebar Behavior', () => {
     await expect(page.locator('[data-version-status="ready"]')).toBeVisible({ timeout: 30000 });
 
     // Find the Comments button
-    const commentsButton = page.getByRole('button', { name: /comments/i });
-    await expect(commentsButton).toBeVisible();
+    const annotationsButton = page.getByRole('button', { name: /annotations/i });
+    await expect(annotationsButton).toBeVisible();
 
     // Initially sidebar should be closed (no comments)
     const sidebarHeader = page.getByRole('heading', { name: 'Annotations' });
@@ -169,19 +169,19 @@ test.describe('Annotation Sidebar Behavior', () => {
 
     // Click to open sidebar
     console.log('Clicking Comments button to open sidebar...');
-    await commentsButton.click();
+    await annotationsButton.click();
     await expect(sidebarHeader).toBeVisible({ timeout: 5000 });
     console.log('Sidebar opened');
 
     // Click again to close sidebar
     console.log('Clicking Comments button to close sidebar...');
-    await commentsButton.click();
+    await annotationsButton.click();
     await expect(sidebarHeader).not.toBeVisible({ timeout: 5000 });
     console.log('Sidebar closed');
 
     // Click once more to verify it can be reopened
     console.log('Clicking Comments button to reopen sidebar...');
-    await commentsButton.click();
+    await annotationsButton.click();
     await expect(sidebarHeader).toBeVisible({ timeout: 5000 });
     console.log('Sidebar reopened - toggle working correctly');
   });
@@ -197,8 +197,8 @@ test.describe('Annotation Sidebar Behavior', () => {
     await expect(page.locator('[data-version-status="ready"]')).toBeVisible({ timeout: 30000 });
 
     // Open the sidebar
-    const commentsButton = page.getByRole('button', { name: /comments/i });
-    await commentsButton.click();
+    const annotationsButton = page.getByRole('button', { name: /annotations/i });
+    await annotationsButton.click();
 
     // Wait for sidebar to open
     const sidebarHeader = page.getByRole('heading', { name: 'Annotations' });
