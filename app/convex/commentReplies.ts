@@ -82,7 +82,7 @@ export const getReplies = query({
           ...reply,
           agentName, // Computed at display time, not stored
           author: {
-            name: author?.name,
+            name: agentName || author?.name, // Agent name takes precedence for agent replies
             email: author?.email,
           },
         };
