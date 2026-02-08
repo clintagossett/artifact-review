@@ -31,6 +31,8 @@ export const getReplies = query({
       _creationTime: v.number(),
       commentId: v.id("comments"),
       createdBy: v.id("users"),
+      agentId: v.optional(v.id("agents")),
+      agentName: v.optional(v.string()),
       content: v.string(),
       isEdited: v.boolean(),
       editedAt: v.optional(v.number()),

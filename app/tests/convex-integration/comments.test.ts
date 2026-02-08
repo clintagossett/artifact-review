@@ -1300,6 +1300,50 @@ describe("Reply Operations", () => {
       expect(replies[0].author.email).toBe("alice@example.com");
     });
 
+    it("should return agent-created replies without validator error (regression #114)", async () => {
+      const t = convexTest(schema);
+      const { ownerId, versionId } = await setupTestData(t);
+
+      const asOwner = t.withIdentity({ subject: ownerId });
+      const commentId = await asOwner.mutation(api.comments.create, {
+        versionId,
+        content: "Parent comment",
+        target: sampleTarget,
+      });
+
+      // Simulate agent-created reply (has agentId and agentName fields)
+      const agentId = await t.run(async (ctx) => {
+        return await ctx.db.insert("agents", {
+          createdBy: ownerId,
+          name: "Claude",
+          role: "coding",
+          createdAt: Date.now(),
+          isDeleted: false,
+        });
+      });
+
+      await t.run(async (ctx) => {
+        await ctx.db.insert("commentReplies", {
+          commentId,
+          createdBy: ownerId,
+          agentId,
+          agentName: "Claude",
+          content: "Agent reply content",
+          isEdited: false,
+          isDeleted: false,
+          createdAt: Date.now(),
+        });
+      });
+
+      // This query would fail before the fix because the return validator
+      // didn't include agentId/agentName fields
+      const replies = await asOwner.query(api.commentReplies.getReplies, { commentId });
+      expect(replies).toHaveLength(1);
+      expect(replies[0].content).toBe("Agent reply content");
+      expect(replies[0].agentId).toBe(agentId);
+      expect(replies[0].agentName).toBe("Claude");
+    });
+
     it("should not allow querying deleted comment", async () => {
       const t = convexTest(schema);
       const { ownerId, versionId } = await setupTestData(t);
