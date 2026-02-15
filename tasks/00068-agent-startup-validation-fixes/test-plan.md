@@ -164,7 +164,7 @@ bash -n scripts/agent-init.sh
 **Only do this if orchestrator can support test-agent:**
 ```bash
 # From orchestrator, create test-agent
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 # Add test-agent to config.json with port 5999, subnet 172.99
 
 # Create worktree

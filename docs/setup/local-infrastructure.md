@@ -337,7 +337,7 @@ This handles everything: orchestrator verification, environment generation, serv
 
 ```bash
 # 1. Start the orchestrator proxy (required for DNS routing)
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 ./start.sh
 
 # 2. Start artifact-review dev servers

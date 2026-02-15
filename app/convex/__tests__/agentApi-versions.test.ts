@@ -43,8 +43,8 @@ async function createTestArtifact(
   userId: Id<"users">
 ): Promise<{ artifactId: Id<"artifacts">; versionId: Id<"artifactVersions"> }> {
   return await t.run(async (ctx) => {
-    const membership = await ctx.db
-      .query("members")
+    const membership = await (ctx.db
+      .query("members") as any)
       .withIndex("by_userId", (q: any) => q.eq("userId", userId))
       .first();
 

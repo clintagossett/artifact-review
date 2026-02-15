@@ -89,9 +89,9 @@ timestamp=$(date -Iseconds)
 
 ### 6. Hardcoded mkcert Path
 
-**Decision:** Use static path `../artifact-review-orchestrator/certs`
+**Decision:** Use static path `../orchestrator-artifact-review/certs`
 ```bash
-local mkcert_certs_path="../artifact-review-orchestrator/certs"
+local mkcert_certs_path="../orchestrator-artifact-review/certs"
 ```
 
 **Rationale:**

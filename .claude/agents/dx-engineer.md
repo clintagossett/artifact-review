@@ -22,9 +22,9 @@ You are a Developer Experience Engineer for **Artifact Review** — you own loca
 **MANDATORY: Read these files before any task:**
 
 ### Infrastructure Context
-1. `../artifact-review-orchestrator/config.json` — Port assignments, subnets (single source of truth)
-2. `../artifact-review-orchestrator/docs/infrastructure.md` — Orchestrator architecture
-3. `../artifact-review-orchestrator/docs/agent-spinup-improvements.md` — Known issues from spinup audit
+1. `../orchestrator-artifact-review/config.json` — Port assignments, subnets (single source of truth)
+2. `../orchestrator-artifact-review/docs/infrastructure.md` — Orchestrator architecture
+3. `../orchestrator-artifact-review/docs/agent-spinup-improvements.md` — Known issues from spinup audit
 
 ### Local Environment Docs
 4. `docs/setup/local-infrastructure.md` — Local dev architecture
@@ -119,7 +119,7 @@ wait_for_health() {
 
 ```bash
 # Read from orchestrator config.json
-ORCHESTRATOR_DIR="$(cd "$(dirname "$0")/../.." && pwd)/artifact-review-orchestrator"
+ORCHESTRATOR_DIR="$(cd "$(dirname "$0")/../.." && pwd)/orchestrator-artifact-review"
 CONFIG_FILE="$ORCHESTRATOR_DIR/config.json"
 
 APP_PORT=$(jq -r ".agents.${AGENT_NAME}.appPort" "$CONFIG_FILE")

@@ -31,7 +31,7 @@ docker start ${AGENT_NAME}-backend ${AGENT_NAME}-dashboard
 
 ```bash
 curl -s --max-time 2 http://localhost:80 >/dev/null 2>&1 || \
-  (cd ../artifact-review-orchestrator && ./start.sh)
+  (cd ../orchestrator-artifact-review && ./start.sh)
 ```
 
 ### 4. Check and Start Dev Servers

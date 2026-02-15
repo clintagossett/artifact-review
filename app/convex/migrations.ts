@@ -76,24 +76,90 @@ export const setDefaultCreatedAt = migrations.define({
 });
 
 // =============================================================================
-// FUTURE MIGRATIONS
+// ACTIVE MIGRATIONS
 // =============================================================================
-// Add new migrations here as schema evolves. Examples:
-//
-// export const addUserPreferences = migrations.define({
-//   table: "users",
-//   migrateOne: async (ctx, user) => {
-//     if (user.preferences === undefined) {
-//       await ctx.db.patch(user._id, { preferences: { theme: "light" } });
-//     }
-//   },
-// });
-//
-// export const normalizeEmails = migrations.define({
-//   table: "users",
-//   migrateOne: async (ctx, user) => {
-//     if (user.email && user.email !== user.email.toLowerCase()) {
-//       await ctx.db.patch(user._id, { email: user.email.toLowerCase() });
-//     }
-//   },
-// });
+
+/**
+ * Migration: Remove agentName denormalization from comment replies
+ *
+ * Background:
+ * Previously, agentName was stored alongside agentId for performance (avoid lookup).
+ * This caused stale data when agents were renamed. We now look up agent name at
+ * display time from agentId, making the stored agentName obsolete.
+ *
+ * What this does:
+ * - Removes agentName field from all commentReplies that have it
+ * - The field will be set to undefined, effectively removing it from the document
+ *
+ * Safe to run:
+ * - Display logic already ignores stored agentName and looks up from agentId
+ * - This is a cleanup migration, not required for correctness
+ *
+ * Usage:
+ *   npx convex run migrations:run '{"fn": "migrations:removeReplyAgentName"}'
+ *
+ * @see Issue #114 - API reply bug fix and denormalization removal
+ */
+export const removeReplyAgentName = migrations.define({
+  table: "commentReplies",
+  migrateOne: async (ctx, reply) => {
+    // Cast to access the deprecated agentName field
+    const anyReply = reply as any;
+
+    // Skip if agentName is already undefined (nothing to remove)
+    if (anyReply.agentName === undefined) {
+      return;
+    }
+
+    // Remove the deprecated agentName field
+    await ctx.db.patch(reply._id, {
+      agentName: undefined,
+    } as any);
+  },
+});
+
+/**
+ * Migration: Remove agentName denormalization from comments
+ *
+ * Same as removeReplyAgentName but for the comments table.
+ *
+ * Usage:
+ *   npx convex run migrations:run '{"fn": "migrations:removeCommentAgentName"}'
+ */
+export const removeCommentAgentName = migrations.define({
+  table: "comments",
+  migrateOne: async (ctx, comment) => {
+    const anyComment = comment as any;
+
+    if (anyComment.agentName === undefined) {
+      return;
+    }
+
+    await ctx.db.patch(comment._id, {
+      agentName: undefined,
+    } as any);
+  },
+});
+
+/**
+ * Migration: Remove agentName denormalization from artifact versions
+ *
+ * Same cleanup for artifactVersions table.
+ *
+ * Usage:
+ *   npx convex run migrations:run '{"fn": "migrations:removeVersionAgentName"}'
+ */
+export const removeVersionAgentName = migrations.define({
+  table: "artifactVersions",
+  migrateOne: async (ctx, version) => {
+    const anyVersion = version as any;
+
+    if (anyVersion.agentName === undefined) {
+      return;
+    }
+
+    await ctx.db.patch(version._id, {
+      agentName: undefined,
+    } as any);
+  },
+});

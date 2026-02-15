@@ -1,7 +1,7 @@
 # Orchestrator: Stripe CLI Fan-out Integration
 
 **Parent Task:** #56 - Integrate Stripe CLI into Agentic DX Flow
-**Target Repo:** `artifact-review-orchestrator`
+**Target Repo:** `orchestrator-artifact-review`
 **Related ADR:** `docs/architecture/decisions/0022-stripe-webhook-multi-deployment-filtering.md`
 
 ---

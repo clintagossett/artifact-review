@@ -89,8 +89,8 @@ Depending on architectural redesign:
 
 ## References
 
-- Luke's analysis: `../artifact-review-orchestrator/analysis/luke-agent-startup-issue.md`
-- Lux's analysis: `../artifact-review-orchestrator/analysis/lux-agent-startup-issues.md`
+- Luke's analysis: `../orchestrator-artifact-review/analysis/luke-agent-startup-issue.md`
+- Lux's analysis: `../orchestrator-artifact-review/analysis/lux-agent-startup-issues.md`
 - Lux addendum (stashed): `tasks/00068-agent-startup-validation-fixes/lux-addendum.md`
 - Luke's commit in dev: `030fe3e`
 

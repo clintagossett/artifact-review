@@ -231,7 +231,7 @@ NC='\033[0m' # No Color
 setup() {
     # Create temporary test directory
     TEST_DIR=$(mktemp -d)
-    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "${MOCK_ORCHESTRATOR_DIR}"
 
     # Save original directory

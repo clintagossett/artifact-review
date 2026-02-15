@@ -244,7 +244,7 @@ ERROR: Orchestrator proxy is not running
   Expected: HTTP server listening on port 80
   Actual:   Connection refused to 127.0.0.1:80
   
-Fix: cd ../artifact-review-orchestrator && ./start.sh
+Fix: cd ../orchestrator-artifact-review && ./start.sh
 ```
 
 **DNS not configured:**
@@ -287,7 +287,7 @@ ERROR: Orchestrator health check timed out after 30s
 ## Related Files
 
 - `docs/setup/local-infrastructure.md` - Infrastructure architecture
-- `../artifact-review-orchestrator/docs/infrastructure.md` - Orchestrator details
+- `../orchestrator-artifact-review/docs/infrastructure.md` - Orchestrator details
 - `scripts/lib/parse-config.sh` - Config reading dependency
 - `tasks/00048-agent-init-overhaul/tests/unit/06-check-dev-servers.test.sh` - Similar pattern
 </artifact>
@@ -330,7 +330,7 @@ setup() {
     mkdir -p "${TEST_PROJECT_DIR}/scripts/lib"
 
     # Create mock orchestrator config.json
-    TEST_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    TEST_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "$TEST_ORCHESTRATOR_DIR"
 
     cat > "$TEST_ORCHESTRATOR_DIR/config.json" << 'EOF'

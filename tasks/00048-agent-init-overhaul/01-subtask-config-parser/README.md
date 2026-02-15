@@ -99,7 +99,7 @@ fi
 ## Features
 
 ### Automatic Config Location
-- Automatically finds `../artifact-review-orchestrator/config.json` relative to script location
+- Automatically finds `../orchestrator-artifact-review/config.json` relative to script location
 - Caches the config file path for performance
 - No need to hardcode paths
 

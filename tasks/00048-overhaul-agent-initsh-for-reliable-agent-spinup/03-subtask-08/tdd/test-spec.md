@@ -144,7 +144,7 @@ setup() {
     mkdir -p "${TEST_PROJECT_DIR}/app"
     
     # Create mock orchestrator directory for agent config
-    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "${MOCK_ORCHESTRATOR_DIR}"
     
     # Create basic config for AGENT_NAME

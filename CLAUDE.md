@@ -90,7 +90,7 @@ This project uses a structured env file system. All `.local` files are gitignore
 | `app/.env.nextjs.local` | Next.js runtime config | Yes |
 | `app/.env.convex.local` | Convex backend secrets | Yes |
 
-**Configuration Source of Truth:** All port assignments and agent configuration come from `../artifact-review-orchestrator/config.json`. Environment files are **GENERATED** from this config, not manually edited. Never hardcode ports - they are derived from config.json to support multi-agent development.
+**Configuration Source of Truth:** All port assignments and agent configuration come from `../orchestrator-artifact-review/config.json`. Environment files are **GENERATED** from this config, not manually edited. Never hardcode ports - they are derived from config.json to support multi-agent development.
 
 **First-time setup:** Run the initialization script (recommended) or manually copy example files.
 
@@ -150,7 +150,7 @@ Run the initialization script which handles dependencies and order of operations
 
 This script:
 1. Verifies prerequisites (Node, Docker, tmux, jq, mkcert)
-2. Reads configuration from `../artifact-review-orchestrator/config.json` (single source of truth)
+2. Reads configuration from `../orchestrator-artifact-review/config.json` (single source of truth)
 3. Generates environment files with correct ports and auto-detected mkcert CA path
 4. Verifies orchestrator is running
 5. Installs npm dependencies
@@ -181,14 +181,14 @@ Before developing, ensure these shared services are configured.
 The orchestrator proxy provides DNS-based routing for all local services. **Required for local development.**
 
 ```bash
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 ./start.sh
 ```
 
 The orchestrator lives alongside this project in the `artifact-review-dev/` workspace:
 ```
 artifact-review-dev/
-  ├── artifact-review-orchestrator/   ← Shared infrastructure
+  ├── orchestrator-artifact-review/   ← Shared infrastructure
   ├── artifact-review/                ← Main repo (main branch)
   └── artifact-review-{agent}/        ← Your worktree
 ```
@@ -215,7 +215,7 @@ This script will:
 ./scripts/setup-novu-org.sh --check
 ```
 
-See: `../artifact-review-orchestrator/docs/shared-novu.md` for manual setup details.
+See: `../orchestrator-artifact-review/docs/shared-novu.md` for manual setup details.
 
 #### 3. Configure Stripe (Payments)
 
@@ -248,7 +248,7 @@ The webhook secret comes from the Stripe CLI when the orchestrator starts it:
 
 ```bash
 # Start orchestrator (includes Stripe listener if configured)
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 export STRIPE_API_KEY="sk_test_..."
 ./start.sh
 

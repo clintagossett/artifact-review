@@ -177,7 +177,7 @@ read -p "Press enter to continue..." # Pause to inspect
 
 # Then manually explore:
 ls -la $TEST_DIR
-cat $TEST_DIR/artifact-review-orchestrator/config.json
+cat $TEST_DIR/orchestrator-artifact-review/config.json
 ```
 
 ### Run Single Test Case

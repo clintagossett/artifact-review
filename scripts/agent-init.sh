@@ -23,7 +23,7 @@ export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 APP_DIR="$PROJECT_ROOT/app"
-ORCHESTRATOR_DIR="$(dirname "$PROJECT_ROOT")/artifact-review-orchestrator"
+ORCHESTRATOR_DIR="$(dirname "$PROJECT_ROOT")/orchestrator-artifact-review"
 ORCHESTRATOR_CONFIG="$ORCHESTRATOR_DIR/config.json"
 
 # Colors for output
@@ -141,7 +141,7 @@ INSTANCE_NAME=artifact-review-local
 # =============================================================================
 # TLS CERTIFICATES (for resend-proxy)
 # =============================================================================
-MKCERT_CERTS_PATH=../artifact-review-orchestrator/certs
+MKCERT_CERTS_PATH=../orchestrator-artifact-review/certs
 
 # =============================================================================
 # RESEND PROXY NETWORK (agent-specific to avoid conflicts)
@@ -227,7 +227,7 @@ setup_env_files() {
     # Check orchestrator config exists
     if [ ! -f "$ORCHESTRATOR_CONFIG" ]; then
         log_error "Orchestrator config not found at $ORCHESTRATOR_CONFIG"
-        log_info "Make sure artifact-review-orchestrator is set up first"
+        log_info "Make sure orchestrator-artifact-review is set up first"
         exit 1
     fi
 
@@ -510,7 +510,7 @@ verify_orchestrator() {
             fi
         else
             log_error "Orchestrator not found at $ORCHESTRATOR_DIR"
-            log_info "Please start it manually: cd ../artifact-review-orchestrator && ./start.sh"
+            log_info "Please start it manually: cd ../orchestrator-artifact-review && ./start.sh"
             exit 1
         fi
     fi
@@ -721,6 +721,14 @@ validate_convex_env() {
         exit 1
     fi
 
+    # Check if Convex backend is reachable before attempting validation
+    local convex_port="${CONVEX_HTTP_PORT:-3210}"
+    if ! curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$convex_port" 2>/dev/null; then
+        log_warn "Convex dev server not reachable on port $convex_port — skipping env validation"
+        log_info "Validation will happen when you run start-dev-servers.sh"
+        return 0
+    fi
+
     # Critical vars that MUST be set for the app to function
     local critical_vars=(
         "RESEND_API_KEY"
@@ -748,16 +756,19 @@ validate_convex_env() {
 
     if [ ${#missing[@]} -gt 0 ]; then
         echo ""
-        log_error "Critical Convex variables not set: ${missing[*]}"
+        log_warn "Some critical Convex variables not set: ${missing[*]}"
         log_info ""
-        log_info "This usually means setup-convex-env.sh failed to sync variables."
+        log_info "This usually means setup-convex-env.sh failed to sync, or the Convex"
+        log_info "dev server wasn't running when vars were pushed."
         log_info ""
         log_info "Troubleshooting steps:"
         log_info "  1. Check if .env.convex.local has the missing variables"
         log_info "  2. Try: ./scripts/setup-convex-env.sh --sync"
         log_info "  3. Verify with: ./scripts/setup-convex-env.sh --check"
         log_info "  4. Check Convex logs: docker logs ${AGENT_NAME}-backend --tail 50"
-        exit 1
+        # Don't exit — missing vars are a warning, not a fatal error during init.
+        # The dev servers will re-sync when started.
+        return 0
     fi
 
     log_success "All $checked critical variables validated"

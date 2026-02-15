@@ -377,7 +377,7 @@ This pattern directly supports production scenarios:
 | `convex/http.ts` | Replace `registerRoutes()` with owned route + filtering |
 | `CLAUDE.md` | Document Stripe setup for agents |
 
-### Orchestrator Repo (`artifact-review-orchestrator`)
+### Orchestrator Repo (`orchestrator-artifact-review`)
 
 | File | Change |
 |------|--------|

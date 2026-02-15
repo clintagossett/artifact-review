@@ -171,7 +171,7 @@ subnet             172.28         172.27               ⚠️ MISMATCH
 
 ━━━ Configuration Sources ━━━
 
-config.json: /path/to/artifact-review-orchestrator/config.json
+config.json: /path/to/orchestrator-artifact-review/config.json
   ✓ Agent: james
   ✓ appPort: 3020
   ✓ convexCloudPort: 3230
@@ -288,7 +288,7 @@ setup() {
     mkdir -p "${TEST_PROJECT_DIR}/app"
 
     # Create mock orchestrator directory
-    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "${MOCK_ORCHESTRATOR_DIR}"
 
     # Create orchestrator config.json with test agent
