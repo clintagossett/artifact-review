@@ -481,7 +481,380 @@ http.route({
   }),
 });
 
-/* Comments GET/POST handlers merged into consolidated route handlers below */
+/**
+ * GET /api/v1/artifacts/:shareToken/{comments,sharelink,access,stats,versions}
+ * Consolidated GET handler for all artifact sub-routes
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "GET",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+
+    if (parts.length < 6) {
+      return errorResponse("Not found", 404);
+    }
+
+    const shareToken = parts[4];
+    const subRoute = parts[5];
+
+    // Route: /api/v1/artifacts/:shareToken/comments
+    if (subRoute === "comments") {
+      const versionParam = url.searchParams.get("version");
+
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      let versionId: any;
+      let versionNumber: number;
+
+      if (versionParam) {
+        const match = versionParam.match(/^v(\d+)$/);
+        if (!match) return errorResponse("Invalid version format (use v1, v2)", 400);
+        const number = parseInt(match[1]);
+        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+          artifactId: artifact._id,
+          number
+        });
+        if (!version) return errorResponse("Version not found", 404);
+        versionId = version._id;
+        versionNumber = version.number;
+      } else {
+        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+        if (!version) return errorResponse("No version found", 404);
+        versionId = version._id;
+        versionNumber = version.number;
+      }
+
+      const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
+
+      return new Response(JSON.stringify({
+        version: `v${versionNumber}`,
+        comments
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Routes: sharelink, access, stats, versions - all require auth + owner
+    if (parts.length === 6 && ["sharelink", "access", "stats", "versions"].includes(subRoute)) {
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      // Route: /api/v1/artifacts/:shareToken/versions
+      if (subRoute === "versions") {
+        try {
+          const versions = await ctx.runQuery(internal.agentApi.listVersionsInternal, {
+            artifactId: artifact._id,
+          });
+
+          return new Response(JSON.stringify({ versions }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (e: any) {
+          return errorResponse(e.message, 500);
+        }
+      }
+
+      // Route: /api/v1/artifacts/:shareToken/sharelink
+      if (subRoute === "sharelink") {
+        const shareLink = await ctx.runQuery(internal.agentApi.getShareLink, {
+          artifactId: artifact._id,
+        });
+
+        if (!shareLink) {
+          return errorResponse("No share link exists", 404);
+        }
+
+        return new Response(JSON.stringify(shareLink), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // Route: /api/v1/artifacts/:shareToken/access
+      if (subRoute === "access") {
+        const access = await ctx.runQuery(internal.agentApi.listAccess, {
+          artifactId: artifact._id,
+        });
+
+        return new Response(JSON.stringify({ access }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      // Route: /api/v1/artifacts/:shareToken/stats
+      if (subRoute === "stats") {
+        try {
+          const stats = await ctx.runQuery(internal.agentApi.getStats, {
+            artifactId: artifact._id,
+          });
+
+          return new Response(JSON.stringify(stats), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (e: any) {
+          return errorResponse(e.message, 500);
+        }
+      }
+    }
+
+    return errorResponse("Not found", 404);
+  }),
+});
+
+/**
+ * POST /api/v1/artifacts/:shareToken/{comments,sharelink,access,versions}
+ * Consolidated POST handler for all artifact sub-routes
+ */
+http.route({
+  pathPrefix: "/api/v1/artifacts/",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const url = new URL(req.url);
+    const parts = url.pathname.split("/");
+
+    if (parts.length < 6) {
+      return errorResponse("Not found", 404);
+    }
+
+    const shareToken = parts[4];
+    const subRoute = parts[5];
+
+    // Route: /api/v1/artifacts/:shareToken/comments
+    if (subRoute === "comments") {
+      const versionParam = url.searchParams.get("version");
+
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      let body;
+      try { body = await req.json(); } catch (e) { return errorResponse("Invalid JSON", 400); }
+
+      const { content, target } = body;
+      if (!content || !target || !target.selector) {
+        return errorResponse("Missing required fields (content, target.selector)", 400);
+      }
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      let versionId: any;
+
+      if (versionParam) {
+        const match = versionParam.match(/^v(\d+)$/);
+        if (!match) return errorResponse("Invalid version format (use v1, v2)", 400);
+        const number = parseInt(match[1]);
+        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
+          artifactId: artifact._id,
+          number
+        });
+        if (!version) return errorResponse("Version not found", 404);
+        versionId = version._id;
+      } else {
+        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
+        if (!version) return errorResponse("No version found", 404);
+        versionId = version._id;
+      }
+
+      const commentId = await ctx.runMutation(internal.agentApi.createComment, {
+        versionId,
+        content,
+        target,
+        agentId: identity.agentId,
+        userId: identity.userId,
+      });
+
+      return new Response(JSON.stringify({ id: commentId, status: "created" }), { status: 201, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/versions/{n}/restore (POST)
+    if (parts.length === 8 && subRoute === "versions" && parts[7] === "restore") {
+      const versionNumber = parseInt(parts[6]);
+
+      if (isNaN(versionNumber) || versionNumber < 1) {
+        return errorResponse("Invalid version number", 400);
+      }
+
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      try {
+        await ctx.runMutation(internal.agentApi.restoreVersionInternal, {
+          artifactId: artifact._id,
+          number: versionNumber,
+        });
+
+        return new Response(JSON.stringify({ status: "restored" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      } catch (e: any) {
+        return errorResponse(e.message, 400);
+      }
+    }
+
+    // Route: /api/v1/artifacts/:shareToken/versions (POST - create new version)
+    if (parts.length === 6 && subRoute === "versions") {
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      let body;
+      try { body = await req.json(); } catch (e) { return errorResponse("Invalid JSON", 400); }
+
+      const { fileType, content: bodyContent, name } = body;
+      if (!fileType || !bodyContent) {
+        return errorResponse("Missing required fields: fileType, content", 400);
+      }
+
+      let blob: Blob;
+      let mimeType: string;
+      let entryPoint: string;
+
+      if (fileType === "zip") {
+        try {
+          const binaryString = atob(bodyContent);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          blob = new Blob([bytes], { type: "application/zip" });
+          mimeType = "application/zip";
+          entryPoint = "index.html";
+        } catch (e) {
+          return errorResponse("Invalid Base64 content for ZIP", 400);
+        }
+      } else {
+        blob = new Blob([bodyContent], { type: "text/plain" });
+        mimeType = fileType === "html" ? "text/html" : "text/markdown";
+        entryPoint = fileType === "html" ? "index.html" : "README.md";
+      }
+
+      const storageId = await ctx.storage.store(blob);
+
+      try {
+        const result = await ctx.runMutation(internal.artifacts.addVersionInternal, {
+          userId: identity.userId,
+          artifactId: artifact._id,
+          fileType,
+          name,
+          filePath: entryPoint,
+          storageId,
+          mimeType,
+          size: blob.size,
+          agentId: identity.agentId,
+        });
+
+        if (fileType === "zip") {
+          await ctx.runAction(internal.zipProcessor.processZipFile, {
+            versionId: result.versionId,
+            storageId,
+          });
+        }
+
+        return new Response(JSON.stringify({
+          versionId: result.versionId,
+          number: result.number,
+          status: "created",
+        }), { status: 201, headers: { "Content-Type": "application/json" } });
+      } catch (e: any) {
+        return errorResponse(e.message, 500);
+      }
+    }
+
+    // Routes: sharelink, access - require auth + ownership
+    if (parts.length === 6 && ["sharelink", "access"].includes(subRoute)) {
+      const auth = await requireAuth(ctx, req);
+      if ("error" in auth) return auth.error;
+      const { identity } = auth;
+
+      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
+      if ("error" in ownerCheck) return ownerCheck.error;
+      const { artifact } = ownerCheck;
+
+      // Route: /api/v1/artifacts/:shareToken/sharelink
+      if (subRoute === "sharelink") {
+        let body: any = {};
+        try {
+          body = await req.json();
+        } catch (e) {
+          // Empty body is OK for create
+        }
+
+        try {
+          const result = await ctx.runMutation(internal.agentApi.createShareLink, {
+            artifactId: artifact._id,
+            userId: identity.userId,
+            enabled: body.enabled,
+            capabilities: body.capabilities,
+          });
+
+          return new Response(JSON.stringify(result), {
+            status: 201,
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (e: any) {
+          return errorResponse(e.message, 500);
+        }
+      }
+
+      // Route: /api/v1/artifacts/:shareToken/access
+      if (subRoute === "access") {
+        let body;
+        try {
+          body = await req.json();
+        } catch (e) {
+          return errorResponse("Invalid JSON", 400);
+        }
+
+        if (!body.email) {
+          return errorResponse("Missing required field: email", 400);
+        }
+
+        try {
+          const accessId = await ctx.runMutation(internal.agentApi.grantAccess, {
+            artifactId: artifact._id,
+            userId: identity.userId,
+            email: body.email,
+          });
+
+          return new Response(JSON.stringify({ id: accessId, status: "created" }), {
+            status: 201,
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (e: any) {
+          return errorResponse(e.message, 500);
+        }
+      }
+    }
+
+    return errorResponse("Not found", 404);
+  }),
+});
 
 /**
  * POST /api/v1/comments/:commentId/replies
@@ -709,376 +1082,6 @@ http.route({
     } catch (e: any) {
       return errorResponse(e.message, 500);
     }
-  }),
-});
-
-/**
- * GET /api/v1/artifacts/:shareToken/sharelink
- * Get share link settings
- */
-http.route({
-  pathPrefix: "/api/v1/artifacts/",
-  method: "GET",
-  handler: httpAction(async (ctx, req) => {
-    const url = new URL(req.url);
-    const parts = url.pathname.split("/");
-
-    // All sub-routes require auth + owner verification
-    if (parts.length === 6 && ["sharelink", "access", "stats", "versions"].includes(parts[5])) {
-      const shareToken = parts[4];
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      // Route: /api/v1/artifacts/:shareToken/versions
-      if (parts[5] === "versions") {
-        try {
-          const versions = await ctx.runQuery(internal.agentApi.listVersionsInternal, {
-            artifactId: artifact._id,
-          });
-
-          return new Response(JSON.stringify({ versions }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          });
-        } catch (e: any) {
-          return errorResponse(e.message, 500);
-        }
-      }
-
-      // Route: /api/v1/artifacts/:shareToken/sharelink
-      if (parts[5] === "sharelink") {
-        const shareLink = await ctx.runQuery(internal.agentApi.getShareLink, {
-          artifactId: artifact._id,
-        });
-
-        if (!shareLink) {
-          return errorResponse("No share link exists", 404);
-        }
-
-        return new Response(JSON.stringify(shareLink), {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-
-      // Route: /api/v1/artifacts/:shareToken/access
-      if (parts[5] === "access") {
-        const access = await ctx.runQuery(internal.agentApi.listAccess, {
-          artifactId: artifact._id,
-        });
-
-        return new Response(JSON.stringify({ access }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        });
-      }
-
-      // Route: /api/v1/artifacts/:shareToken/stats
-      if (parts[5] === "stats") {
-        try {
-          const stats = await ctx.runQuery(internal.agentApi.getStats, {
-            artifactId: artifact._id,
-          });
-
-          return new Response(JSON.stringify(stats), {
-            status: 200,
-            headers: { "Content-Type": "application/json" }
-          });
-        } catch (e: any) {
-          return errorResponse(e.message, 500);
-        }
-      }
-    }
-
-    // Route: /api/v1/artifacts/:shareToken/comments
-    if (parts.length >= 6 && parts[5] === "comments") {
-      const shareToken = parts[4];
-      const versionParam = url.searchParams.get("version");
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      let versionId: any;
-      let versionNumber: number;
-
-      if (versionParam) {
-        const match = versionParam.match(/^v(\d+)$/);
-        if (!match) return errorResponse("Invalid version format (use v1, v2)", 400);
-        const number = parseInt(match[1]);
-        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
-          artifactId: artifact._id,
-          number
-        });
-        if (!version) return errorResponse("Version not found", 404);
-        versionId = version._id;
-        versionNumber = version.number;
-      } else {
-        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
-        if (!version) return errorResponse("No version found", 404);
-        versionId = version._id;
-        versionNumber = version.number;
-      }
-
-      const comments = await ctx.runQuery(internal.agentApi.getComments, { versionId });
-
-      return new Response(JSON.stringify({
-        version: `v${versionNumber}`,
-        comments
-      }), { status: 200, headers: { "Content-Type": "application/json" } });
-    }
-
-    return errorResponse("Not found", 404);
-  }),
-});
-
-/**
- * POST /api/v1/artifacts/:shareToken/sharelink
- * Create a share link
- */
-http.route({
-  pathPrefix: "/api/v1/artifacts/",
-  method: "POST",
-  handler: httpAction(async (ctx, req) => {
-    const url = new URL(req.url);
-    const parts = url.pathname.split("/");
-
-    // Route: /api/v1/artifacts/:shareToken/versions/{n}/restore (POST)
-    if (parts.length === 8 && parts[5] === "versions" && parts[7] === "restore") {
-      const shareToken = parts[4];
-      const versionNumber = parseInt(parts[6]);
-
-      if (isNaN(versionNumber) || versionNumber < 1) {
-        return errorResponse("Invalid version number", 400);
-      }
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      try {
-        await ctx.runMutation(internal.agentApi.restoreVersionInternal, {
-          artifactId: artifact._id,
-          number: versionNumber,
-        });
-
-        return new Response(JSON.stringify({ status: "restored" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-        });
-      } catch (e: any) {
-        return errorResponse(e.message, 400);
-      }
-    }
-
-    // Route: /api/v1/artifacts/:shareToken/versions (POST - create new version)
-    if (parts.length === 6 && parts[5] === "versions") {
-      const shareToken = parts[4];
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      let body;
-      try { body = await req.json(); } catch (e) { return errorResponse("Invalid JSON", 400); }
-
-      const { fileType, content, name } = body;
-      if (!fileType || !content) {
-        return errorResponse("Missing required fields: fileType, content", 400);
-      }
-
-      let blob: Blob;
-      let mimeType: string;
-      let entryPoint: string;
-
-      if (fileType === "zip") {
-        try {
-          const binaryString = atob(content);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          blob = new Blob([bytes], { type: "application/zip" });
-          mimeType = "application/zip";
-          entryPoint = "index.html";
-        } catch (e) {
-          return errorResponse("Invalid Base64 content for ZIP", 400);
-        }
-      } else {
-        blob = new Blob([content], { type: "text/plain" });
-        mimeType = fileType === "html" ? "text/html" : "text/markdown";
-        entryPoint = fileType === "html" ? "index.html" : "README.md";
-      }
-
-      const storageId = await ctx.storage.store(blob);
-
-      try {
-        const result = await ctx.runMutation(internal.artifacts.addVersionInternal, {
-          userId: identity.userId,
-          artifactId: artifact._id,
-          fileType,
-          name,
-          filePath: entryPoint,
-          storageId,
-          mimeType,
-          size: blob.size,
-          agentId: identity.agentId,
-        });
-
-        if (fileType === "zip") {
-          await ctx.runAction(internal.zipProcessor.processZipFile, {
-            versionId: result.versionId,
-            storageId,
-          });
-        }
-
-        return new Response(JSON.stringify({
-          versionId: result.versionId,
-          number: result.number,
-          status: "created",
-        }), { status: 201, headers: { "Content-Type": "application/json" } });
-      } catch (e: any) {
-        return errorResponse(e.message, 500);
-      }
-    }
-
-    // Routes requiring auth + ownership (sharelink, access)
-    if (parts.length === 6 && ["sharelink", "access"].includes(parts[5])) {
-      const shareToken = parts[4];
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      // Route: /api/v1/artifacts/:shareToken/sharelink
-      if (parts[5] === "sharelink") {
-        let body: any = {};
-        try {
-          body = await req.json();
-        } catch (e) {
-          // Empty body is OK for create
-        }
-
-        try {
-          const result = await ctx.runMutation(internal.agentApi.createShareLink, {
-            artifactId: artifact._id,
-            userId: identity.userId,
-            enabled: body.enabled,
-            capabilities: body.capabilities,
-          });
-
-          return new Response(JSON.stringify(result), {
-            status: 201,
-            headers: { "Content-Type": "application/json" }
-          });
-        } catch (e: any) {
-          return errorResponse(e.message, 500);
-        }
-      }
-
-      // Route: /api/v1/artifacts/:shareToken/access
-      if (parts[5] === "access") {
-        let body;
-        try {
-          body = await req.json();
-        } catch (e) {
-          return errorResponse("Invalid JSON", 400);
-        }
-
-        if (!body.email) {
-          return errorResponse("Missing required field: email", 400);
-        }
-
-        try {
-          const accessId = await ctx.runMutation(internal.agentApi.grantAccess, {
-            artifactId: artifact._id,
-            userId: identity.userId,
-            email: body.email,
-          });
-
-          return new Response(JSON.stringify({ id: accessId, status: "created" }), {
-            status: 201,
-            headers: { "Content-Type": "application/json" }
-          });
-        } catch (e: any) {
-          return errorResponse(e.message, 500);
-        }
-      }
-    }
-
-    // Route: /api/v1/artifacts/:shareToken/comments
-    if (parts.length >= 6 && parts[5] === "comments") {
-      const shareToken = parts[4];
-      const versionParam = url.searchParams.get("version");
-
-      const auth = await requireAuth(ctx, req);
-      if ("error" in auth) return auth.error;
-      const { identity } = auth;
-
-      let body;
-      try { body = await req.json(); } catch (e) { return errorResponse("Invalid JSON", 400); }
-
-      const { content, target } = body;
-      if (!content || !target || !target.selector) {
-        return errorResponse("Missing required fields (content, target.selector)", 400);
-      }
-
-      const ownerCheck = await requireArtifactOwner(ctx, shareToken, identity.userId);
-      if ("error" in ownerCheck) return ownerCheck.error;
-      const { artifact } = ownerCheck;
-
-      let versionId: any;
-
-      if (versionParam) {
-        const match = versionParam.match(/^v(\d+)$/);
-        if (!match) return errorResponse("Invalid version format (use v1, v2)", 400);
-        const number = parseInt(match[1]);
-        const version = await ctx.runQuery(internal.artifacts.getVersionByNumberInternal, {
-          artifactId: artifact._id,
-          number
-        });
-        if (!version) return errorResponse("Version not found", 404);
-        versionId = version._id;
-      } else {
-        const version = await ctx.runQuery(internal.agentApi.getLatestVersion, { artifactId: artifact._id });
-        if (!version) return errorResponse("No version found", 404);
-        versionId = version._id;
-      }
-
-      const commentId = await ctx.runMutation(internal.agentApi.createComment, {
-        versionId,
-        content,
-        target,
-        agentId: identity.agentId,
-        userId: identity.userId,
-      });
-
-      return new Response(JSON.stringify({ id: commentId, status: "created" }), { status: 201, headers: { "Content-Type": "application/json" } });
-    }
-
-    return errorResponse("Not found", 404);
   }),
 });
 
