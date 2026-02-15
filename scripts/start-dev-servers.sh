@@ -125,7 +125,7 @@ fi
 echo "========================================"
 
 # Calculate orchestrator directory (already have SCRIPT_DIR and PROJECT_ROOT from config loading)
-ORCHESTRATOR_DIR="$AGENT_DIR/../.."
+ORCHESTRATOR_DIR="$(dirname "$PROJECT_ROOT")/orchestrator-artifact-review"
 
 # DNS Check (skip in CI mode)
 # With dnsmasq configured, *.loc resolves automatically - just verify it works

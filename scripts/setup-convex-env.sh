@@ -439,8 +439,19 @@ main() {
             echo -e "${GREEN}JWT keys regenerated. All users must re-authenticate.${NC}"
             ;;
         *)
-            # Check if JWT keys already exist
+            # Check if JWT keys already exist in Convex
             cd "$APP_DIR"
+
+            # First verify Convex backend is reachable — if not, npx convex env get
+            # will fail and return empty, causing unnecessary key regeneration
+            container=$(check_container)
+            local convex_url="http://127.0.0.1:${CONVEX_HTTP_PORT:-3210}"
+            if ! curl -s -o /dev/null --max-time 3 "$convex_url" 2>/dev/null; then
+                echo -e "${RED}Convex backend container is running but not yet accepting connections.${NC}"
+                echo "Wait a moment and re-run, or run ./scripts/start-dev-servers.sh first."
+                exit 1
+            fi
+
             existing_jwt=$(npx convex env get JWT_PRIVATE_KEY 2>/dev/null || echo "")
 
             if [ -n "$existing_jwt" ]; then
@@ -450,7 +461,6 @@ main() {
                 echo ""
 
                 # Still update admin key (it can change on container restart)
-                container=$(check_container)
                 get_admin_key "$container"
 
                 # Get existing internal key or generate new
@@ -461,7 +471,6 @@ main() {
             else
                 echo "No JWT keys found. Running full setup..."
 
-                container=$(check_container)
                 generate_jwt_keys
                 get_admin_key "$container"
                 update_env_local  # Update env file BEFORE set_convex_env so admin key is available
