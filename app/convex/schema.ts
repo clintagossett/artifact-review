@@ -1285,6 +1285,20 @@ const schema = defineSchema({
     name: v.string(),
     description: v.string(),
     prices: v.any(), // JSON object with intervals (month/year)
+
+    /**
+     * Rate limit configuration per plan.
+     * Optional - if not set, global defaults are used.
+     * All values are per-minute limits.
+     */
+    limits: v.optional(v.object({
+      readPerMinute: v.number(),
+      writePerMinute: v.number(),
+      uploadPerMinute: v.number(),
+      authPerMinute: v.number(),
+      publicPerMinute: v.number(),
+    })),
+
     createdAt: v.number(), // ADR 12
   })
     .index("key", ["key"])
@@ -1413,6 +1427,169 @@ const schema = defineSchema({
      * @example ctx.db.query("artifactShares").withIndex("by_artifactId", q => q.eq("artifactId", artifactId))
      */
     .index("by_artifactId", ["artifactId"]),
+
+  // ============================================================================
+  // RATE LIMIT OVERRIDES TABLE (Issue #107)
+  // ============================================================================
+  /**
+   * Custom rate limit overrides for specific users, organizations, or API keys.
+   *
+   * ## Purpose
+   * Allows organization owners to customize rate limits beyond their plan defaults.
+   * Supports both increases (premium/enterprise customers) and decreases (abuse prevention).
+   *
+   * ## Lifecycle
+   * - **Created**: `rateLimitOverrides.setOverride` mutation (org owner only)
+   * - **Updated**: Create new override (overrides are immutable once created)
+   * - **Deleted**: Soft-deleted via `rateLimitOverrides.deleteOverride`
+   * - **Expired**: Automatically ignored if expiresAt < now
+   *
+   * ## Scope Hierarchy (checked in order, first match wins)
+   * 1. API Key override (most specific)
+   * 2. User override
+   * 3. Organization override (least specific)
+   * 4. Plan limits (from subscriptions)
+   * 5. Global defaults (from env vars)
+   *
+   * ## Audit Trail
+   * All changes are logged with:
+   * - Who made the change (createdBy)
+   * - Why it was made (reason)
+   * - When it was made (createdAt)
+   * - When it expires (expiresAt, optional)
+   *
+   * @see convex/rateLimitOverrides.ts - Override management mutations
+   */
+  rateLimitOverrides: defineTable({
+    /**
+     * Reference to user (optional).
+     * If set, override applies to all API keys owned by this user.
+     * One of userId, organizationId, or apiKeyId must be set.
+     */
+    userId: v.optional(v.id("users")),
+
+    /**
+     * Reference to organization (optional).
+     * If set, override applies to all users in the organization.
+     * One of userId, organizationId, or apiKeyId must be set.
+     */
+    organizationId: v.optional(v.id("organizations")),
+
+    /**
+     * Reference to API key (optional).
+     * If set, override applies only to this specific API key.
+     * One of userId, organizationId, or apiKeyId must be set.
+     */
+    apiKeyId: v.optional(v.id("apiKeys")),
+
+    /**
+     * Type of rate limit being overridden.
+     * Must match one of the limit types defined in rateLimits.ts.
+     */
+    limitType: v.union(
+      v.literal("auth"),
+      v.literal("read"),
+      v.literal("write"),
+      v.literal("upload"),
+      v.literal("public")
+    ),
+
+    /**
+     * Custom limit value (requests per minute).
+     * Overrides the plan or global default for this scope.
+     * Can be higher (premium) or lower (abuse prevention) than default.
+     */
+    customLimit: v.number(),
+
+    /**
+     * Human-readable reason for this override.
+     * Required for audit trail and support inquiries.
+     * @example "Enterprise customer premium support"
+     * @example "Abuse prevention - excessive API usage"
+     */
+    reason: v.string(),
+
+    /**
+     * User who created this override.
+     * Must be an organization owner for the target scope.
+     */
+    createdBy: v.id("users"),
+
+    /**
+     * Timestamp when override was created.
+     * Unix timestamp in milliseconds.
+     * Required for all tables per ADR 12.
+     */
+    createdAt: v.number(),
+
+    /**
+     * Optional expiration timestamp.
+     * If set, override is automatically ignored after this time.
+     * Useful for temporary increases (e.g., during a marketing campaign).
+     * Unix timestamp in milliseconds.
+     */
+    expiresAt: v.optional(v.number()),
+
+    /**
+     * Soft deletion flag.
+     * When true, override is no longer active.
+     * Preserves audit trail instead of hard-deleting records.
+     */
+    isDeleted: v.boolean(),
+
+    /**
+     * Timestamp when override was soft-deleted.
+     * Unix timestamp in milliseconds.
+     */
+    deletedAt: v.optional(v.number()),
+
+    /**
+     * User who soft-deleted this override.
+     * Must be an organization owner.
+     */
+    deletedBy: v.optional(v.id("users")),
+  })
+    /**
+     * Lookup overrides by user ID.
+     * Used to find all custom limits for a user.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_userId", q => q.eq("userId", userId))
+     */
+    .index("by_userId", ["userId"])
+
+    /**
+     * Lookup overrides by organization ID.
+     * Used to find all custom limits for an organization.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_organizationId", q => q.eq("organizationId", orgId))
+     */
+    .index("by_organizationId", ["organizationId"])
+
+    /**
+     * Lookup overrides by API key ID.
+     * Used to find custom limit for a specific API key.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_apiKeyId", q => q.eq("apiKeyId", keyId))
+     */
+    .index("by_apiKeyId", ["apiKeyId"])
+
+    /**
+     * Lookup override by user and limit type (compound index).
+     * Most common query pattern for rate limit checks.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_userId_limitType", q => q.eq("userId", userId).eq("limitType", "read"))
+     */
+    .index("by_userId_limitType", ["userId", "limitType"])
+
+    /**
+     * Lookup override by organization and limit type (compound index).
+     * Used for organization-wide rate limit checks.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_organizationId_limitType", q => q.eq("organizationId", orgId).eq("limitType", "write"))
+     */
+    .index("by_organizationId_limitType", ["organizationId", "limitType"])
+
+    /**
+     * Lookup override by API key and limit type (compound index).
+     * Used for API key-specific rate limit checks.
+     * @example ctx.db.query("rateLimitOverrides").withIndex("by_apiKeyId_limitType", q => q.eq("apiKeyId", keyId).eq("limitType", "upload"))
+     */
+    .index("by_apiKeyId_limitType", ["apiKeyId", "limitType"]),
 });
 
 export default schema;
