@@ -47,7 +47,7 @@ Make `agent-init.sh` the single entry point that:
 
 ## Task File
 
-See `artifact-review-orchestrator/tasks/agent-init-overhaul.md` for detailed implementation plan with 5 phases.
+See `orchestrator-artifact-review/tasks/agent-init-overhaul.md` for detailed implementation plan with 5 phases.
 
 ## Acceptance Criteria
 

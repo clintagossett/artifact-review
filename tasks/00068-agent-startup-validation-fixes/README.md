@@ -10,7 +10,7 @@ Implement critical fixes to agent startup scripts based on Luke's startup issues
 
 ## Source Analysis
 
-See: `../artifact-review-orchestrator/analysis/luke-agent-startup-issue.md`
+See: `../orchestrator-artifact-review/analysis/luke-agent-startup-issue.md`
 
 ## Implementation Plan
 

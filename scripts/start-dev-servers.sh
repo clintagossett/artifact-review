@@ -384,7 +384,7 @@ pushd "$PROJECT_ROOT" > /dev/null
 
 # Generate mkcert CA bundle for resend-proxy TLS trust if needed
 # MKCERT_CERTS_PATH can be set in .env.docker.local (default: orchestrator repo)
-CERTS_DIR="${MKCERT_CERTS_PATH:-$PROJECT_ROOT/../artifact-review-orchestrator/certs}"
+CERTS_DIR="${MKCERT_CERTS_PATH:-$PROJECT_ROOT/../orchestrator-artifact-review/certs}"
 CA_BUNDLE="$CERTS_DIR/ca-certificates-with-mkcert.crt"
 if [ ! -f "$CA_BUNDLE" ] && [ -f "$CERTS_DIR/rootCA.pem" ]; then
     echo "  Generating CA bundle for resend-proxy TLS trust..."
@@ -603,7 +603,7 @@ sync_novu_workflows() {
     novu_status=$(curl -sk --max-time 5 -o /dev/null -w "%{http_code}" "$novu_api_url/v1/health" 2>/dev/null || echo "000")
     if [ "$novu_status" = "000" ]; then
         echo "  ⚠️  Novu API not reachable at $novu_api_url"
-        echo "     Ensure orchestrator is running: cd ../artifact-review-orchestrator && ./start.sh"
+        echo "     Ensure orchestrator is running: cd ../orchestrator-artifact-review && ./start.sh"
         return 0
     fi
 

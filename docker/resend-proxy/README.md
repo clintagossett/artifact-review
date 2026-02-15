@@ -22,7 +22,7 @@ Certificates are stored in the **orchestrator repo** and mounted into the contai
 - `rootCA.pem` - mkcert root CA
 - `ca-certificates-with-mkcert.crt` - Combined CA bundle (generated at startup)
 
-Location: Configured via `MKCERT_CERTS_PATH` in `.env.docker.local` (default: `../artifact-review-orchestrator/certs/`)
+Location: Configured via `MKCERT_CERTS_PATH` in `.env.docker.local` (default: `../orchestrator-artifact-review/certs/`)
 
 See [docs/setup/mkcert-setup.md](../../docs/setup/mkcert-setup.md) for full certificate documentation.
 

@@ -23,7 +23,7 @@ export NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 APP_DIR="$PROJECT_ROOT/app"
-ORCHESTRATOR_DIR="$(dirname "$PROJECT_ROOT")/artifact-review-orchestrator"
+ORCHESTRATOR_DIR="$(dirname "$PROJECT_ROOT")/orchestrator-artifact-review"
 ORCHESTRATOR_CONFIG="$ORCHESTRATOR_DIR/config.json"
 
 # Colors for output
@@ -141,7 +141,7 @@ INSTANCE_NAME=artifact-review-local
 # =============================================================================
 # TLS CERTIFICATES (for resend-proxy)
 # =============================================================================
-MKCERT_CERTS_PATH=../artifact-review-orchestrator/certs
+MKCERT_CERTS_PATH=../orchestrator-artifact-review/certs
 
 # =============================================================================
 # RESEND PROXY NETWORK (agent-specific to avoid conflicts)
@@ -227,7 +227,7 @@ setup_env_files() {
     # Check orchestrator config exists
     if [ ! -f "$ORCHESTRATOR_CONFIG" ]; then
         log_error "Orchestrator config not found at $ORCHESTRATOR_CONFIG"
-        log_info "Make sure artifact-review-orchestrator is set up first"
+        log_info "Make sure orchestrator-artifact-review is set up first"
         exit 1
     fi
 
@@ -510,7 +510,7 @@ verify_orchestrator() {
             fi
         else
             log_error "Orchestrator not found at $ORCHESTRATOR_DIR"
-            log_info "Please start it manually: cd ../artifact-review-orchestrator && ./start.sh"
+            log_info "Please start it manually: cd ../orchestrator-artifact-review && ./start.sh"
             exit 1
         fi
     fi

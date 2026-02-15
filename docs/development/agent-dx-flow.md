@@ -58,7 +58,7 @@ git worktree add ../artifact-review-{name} -b {name}/dev-work
 
 # Result:
 # artifact-review-dev/
-#   ├── artifact-review-orchestrator/  ← Shared infrastructure
+#   ├── orchestrator-artifact-review/  ← Shared infrastructure
 #   ├── artifact-review/               ← Main repo
 #   └── artifact-review-{name}/        ← Your new worktree
 ```
@@ -399,7 +399,7 @@ Syncing Novu workflows...
 
 ORCHESTRATOR (Source of Truth for Ports)
 ┌─────────────────────────────────────┐
-│ ../artifact-review-orchestrator/    │
+│ ../orchestrator-artifact-review/    │
 │ config.json                         │
 │ ┌─────────────────────────────────┐ │
 │ │ {                               │ │
@@ -615,7 +615,7 @@ cd /path/to/artifact-review
 git worktree add ../artifact-review-{name} -b {name}/dev-work
 
 # Step 2: Ensure orchestrator is running
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 ./start.sh
 
 # Step 3: Initialize agent
@@ -638,7 +638,7 @@ cd ../artifact-review-{name}
 
 ```bash
 # Step 1: Start orchestrator (if not running)
-cd ../artifact-review-orchestrator
+cd ../orchestrator-artifact-review
 ./start.sh
 
 # Step 2: Start dev servers

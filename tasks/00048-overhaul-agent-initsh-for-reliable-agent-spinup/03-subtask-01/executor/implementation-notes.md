@@ -372,7 +372,7 @@ This tells the user:
 
 ## Manual Validation
 
-Tested against real orchestrator config (`../artifact-review-orchestrator/config.json`):
+Tested against real orchestrator config (`../orchestrator-artifact-review/config.json`):
 
 ### Test 1: Single Port Value
 ```bash
@@ -496,7 +496,7 @@ fi
 if ! validate_agent_exists "$AGENT_NAME"; then
     echo "ERROR: Agent '$AGENT_NAME' not configured"
     echo "Available agents:"
-    jq -r 'keys[]' "../artifact-review-orchestrator/config.json"
+    jq -r 'keys[]' "../orchestrator-artifact-review/config.json"
     exit 1
 fi
 
@@ -555,7 +555,7 @@ _find_config_file() {
     local project_dir="$(cd "$script_dir/../.." && pwd)"
     
     # Orchestrator is sibling to project
-    local orchestrator_dir="$(cd "$project_dir/.." && pwd)/artifact-review-orchestrator"
+    local orchestrator_dir="$(cd "$project_dir/.." && pwd)/orchestrator-artifact-review"
     
     # ... validate and cache ...
 }
@@ -728,7 +728,7 @@ Implement proper PATH mocking for jq dependency test using a temporary PATH wrap
 All acceptance criteria from the original requirements met:
 
 - ✅ **R1:** Locate orchestrator config.json
-  - Automatically finds `../artifact-review-orchestrator/config.json`
+  - Automatically finds `../orchestrator-artifact-review/config.json`
   - Handles missing directories gracefully
   - Provides clear error messages
 

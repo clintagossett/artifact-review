@@ -168,4 +168,4 @@ orchestrating agent (james/mark)
 
 ## Reference
 
-Source: `artifact-review-orchestrator/tasks/test-fixer-workflow.md`
+Source: `orchestrator-artifact-review/tasks/test-fixer-workflow.md`

@@ -201,7 +201,7 @@ setup() {
     fi
     
     # Find orchestrator config
-    ORCHESTRATOR_DIR="$(cd "${PROJECT_ROOT}/.." && pwd)/artifact-review-orchestrator"
+    ORCHESTRATOR_DIR="$(cd "${PROJECT_ROOT}/.." && pwd)/orchestrator-artifact-review"
     if [ ! -f "${ORCHESTRATOR_DIR}/config.json" ]; then
         echo -e "${RED}ERROR:${NC} Orchestrator config.json not found at ${ORCHESTRATOR_DIR}"
         exit 2
@@ -533,7 +533,7 @@ run_all_tests() {
         echo ""
         echo "Troubleshooting:"
         echo "  1. Check orchestrator is running:"
-        echo "     cd ../artifact-review-orchestrator && ./start.sh"
+        echo "     cd ../orchestrator-artifact-review && ./start.sh"
         echo "  2. Check dev servers are running:"
         echo "     ./scripts/start-dev-servers.sh"
         echo "  3. Check Docker containers:"

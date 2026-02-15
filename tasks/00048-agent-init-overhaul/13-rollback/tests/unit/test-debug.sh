@@ -6,7 +6,7 @@ TEST_PROJECT_DIR="${TEST_DIR}/artifact-review-james"
 mkdir -p "${TEST_PROJECT_DIR}/scripts/lib"
 mkdir -p "${TEST_PROJECT_DIR}/app"
 
-MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
 mkdir -p "${MOCK_ORCHESTRATOR_DIR}"
 
 cat > "${MOCK_ORCHESTRATOR_DIR}/config.json" << 'EOF'

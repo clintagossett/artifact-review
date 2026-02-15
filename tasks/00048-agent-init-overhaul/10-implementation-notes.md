@@ -209,7 +209,7 @@ The mkcert prerequisite check integrates with:
    - Provides clear remediation steps
 
 2. **Orchestrator Infrastructure**
-   - mkcert generates certs in `artifact-review-orchestrator/certs/`
+   - mkcert generates certs in `orchestrator-artifact-review/certs/`
    - Required for resend-proxy TLS
    - Needed for `NODE_EXTRA_CA_CERTS` configuration
 

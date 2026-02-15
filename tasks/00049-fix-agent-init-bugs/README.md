@@ -6,7 +6,7 @@
 
 ## Problem Statement
 
-Task 48 broke agent-init.sh by refactoring it to source non-existent library files. Mark spent 80% of init time debugging issues that should have been caught before merge. See `../artifact-review-orchestrator/analysis/mark-init-observations-2026-01-31.md` for full details.
+Task 48 broke agent-init.sh by refactoring it to source non-existent library files. Mark spent 80% of init time debugging issues that should have been caught before merge. See `../orchestrator-artifact-review/analysis/mark-init-observations-2026-01-31.md` for full details.
 
 ## Root Causes
 

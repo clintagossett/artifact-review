@@ -16,7 +16,7 @@ We use [mkcert](https://github.com/FiloSottile/mkcert) to generate locally-trust
 Certificates are stored in the **orchestrator repo** (shared across all agents):
 
 ```
-artifact-review-orchestrator/certs/
+orchestrator-artifact-review/certs/
 ├── api.resend.com.pem      # TLS cert for resend-proxy
 ├── api.resend.com-key.pem  # TLS private key
 ├── rootCA.pem              # mkcert root CA
@@ -26,7 +26,7 @@ artifact-review-orchestrator/certs/
 
 Agent repos reference these via the `MKCERT_CERTS_PATH` environment variable in `.env.docker.local`:
 ```bash
-MKCERT_CERTS_PATH=../artifact-review-orchestrator/certs
+MKCERT_CERTS_PATH=../orchestrator-artifact-review/certs
 ```
 
 The `.pem` files are committed to the orchestrator repo. The `.crt` bundle files are generated at startup and gitignored.
@@ -71,7 +71,7 @@ The Convex backend container needs to trust certificates signed by mkcert's CA. 
 If certificates expire or need regeneration:
 
 ```bash
-cd ../artifact-review-orchestrator/certs
+cd ../orchestrator-artifact-review/certs
 
 # Generate new cert for api.resend.com
 mkcert api.resend.com
@@ -98,12 +98,12 @@ docker compose --env-file .env.docker.local up -d resend-proxy backend
 **Causes:**
 1. **CA bundle not generated**: Run `./scripts/start-dev-servers.sh` (generates bundle on first run)
 2. **mkcert not installed on host**: Run `mkcert -install`
-3. **rootCA.pem missing**: Check that `../artifact-review-orchestrator/certs/rootCA.pem` exists
+3. **rootCA.pem missing**: Check that `../orchestrator-artifact-review/certs/rootCA.pem` exists
 
 **Fix:**
 ```bash
 # Regenerate CA bundle
-rm ../artifact-review-orchestrator/certs/ca-certificates-with-mkcert.crt
+rm ../orchestrator-artifact-review/certs/ca-certificates-with-mkcert.crt
 ./scripts/start-dev-servers.sh --restart
 ```
 

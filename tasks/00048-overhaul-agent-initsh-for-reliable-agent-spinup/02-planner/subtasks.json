@@ -2,7 +2,7 @@
   {
     "number": 1,
     "title": "Create config.json parser utility",
-    "description": "Extract port mappings and agent config from orchestrator config.json. Create reusable bash functions for reading FRONTEND_PORT, BACKEND_PORT, AGENT_NAME from ../artifact-review-orchestrator/config.json",
+    "description": "Extract port mappings and agent config from orchestrator config.json. Create reusable bash functions for reading FRONTEND_PORT, BACKEND_PORT, AGENT_NAME from ../orchestrator-artifact-review/config.json",
     "files": [
       "scripts/lib/parse-config.sh",
       "tasks/00048-agent-init-overhaul/tests/unit/01-parse-config.test.sh"

@@ -557,7 +557,7 @@ setup() {
     mkdir -p "${TEST_PROJECT_DIR}/scripts/lib"
 
     # Create mock orchestrator config.json
-    TEST_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    TEST_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "$TEST_ORCHESTRATOR_DIR"
     
     cat > "$TEST_ORCHESTRATOR_DIR/config.json" << 'EOF'

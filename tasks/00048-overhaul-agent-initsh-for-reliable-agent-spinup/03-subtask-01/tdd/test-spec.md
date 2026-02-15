@@ -11,7 +11,7 @@ Create `scripts/lib/parse-config.sh` - a reusable bash library for reading agent
 ### Requirements
 
 **R1: Locate orchestrator config.json**
-- Must find `../artifact-review-orchestrator/config.json` relative to script location
+- Must find `../orchestrator-artifact-review/config.json` relative to script location
 - Must fail gracefully if orchestrator directory doesn't exist
 - Must fail gracefully if config.json doesn't exist or is unreadable
 
@@ -63,7 +63,7 @@ validate_agent_exists "james"             # Returns: 0 (success) or 1 (failure)
 - **Exit Code:** 1
 
 #### TC2: Orchestrator Directory Not Found
-- **Given:** `../artifact-review-orchestrator/` doesn't exist
+- **Given:** `../orchestrator-artifact-review/` doesn't exist
 - **When:** `get_agent_port` is called
 - **Then:** Error message: "Orchestrator directory not found"
 - **Exit Code:** 2
@@ -183,7 +183,7 @@ NC='\033[0m' # No Color
 setup() {
     # Create temporary test directory
     TEST_DIR=$(mktemp -d)
-    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/artifact-review-orchestrator"
+    MOCK_ORCHESTRATOR_DIR="${TEST_DIR}/orchestrator-artifact-review"
     mkdir -p "${MOCK_ORCHESTRATOR_DIR}"
     
     # Save original directory
@@ -954,7 +954,7 @@ read -p "Press enter to continue..." # Pause to inspect
 
 # Then manually explore:
 ls -la $TEST_DIR
-cat $TEST_DIR/artifact-review-orchestrator/config.json
+cat $TEST_DIR/orchestrator-artifact-review/config.json
 ```
 
 ### Run Single Test Case
