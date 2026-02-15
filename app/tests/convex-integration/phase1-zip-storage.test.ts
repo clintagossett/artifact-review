@@ -625,10 +625,10 @@ describe("ZIP Processing Integration Tests (requires sample files)", () => {
       error: `ZIP contains unsupported file types: ${[...new Set(forbiddenFiles.map((f) => "." + f.split(".").pop()!.toLowerCase()))].join(", ")}`,
     });
 
-    // Verify version was soft-deleted due to error
+    // Verify version was marked with error status (task 00049 changed from soft-delete to error status)
     const version = await t.run(async (ctx) => ctx.db.get(versionId));
-    expect(version?.isDeleted).toBe(true);
-    expect(version?.deletedAt).toBeDefined();
+    expect(version?.status).toBe("error");
+    expect(version?.errorMessage).toContain("unsupported file types");
   });
 
   test("should reject ZIP with too many files", async () => {

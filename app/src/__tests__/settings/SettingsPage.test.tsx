@@ -1,26 +1,34 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import SettingsPage from "@/app/settings/page";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen } from "@testing-library/react";
 
-// Mock all child components
-vi.mock("@/components/auth/ProtectedPage", () => ({
-  ProtectedPage: ({ children }: { children: React.ReactNode }) => <div data-testid="protected-page">{children}</div>,
+// ============================================================================
+// Mocks
+// ============================================================================
+
+// Mock next/navigation — layout.tsx uses useRouter + usePathname, page.tsx uses redirect
+const mockPush = vi.fn();
+const mockRedirect = vi.fn();
+let mockPathname = "/settings/account";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+  usePathname: () => mockPathname,
+  redirect: (...args: unknown[]) => {
+    mockRedirect(...args);
+    // Next.js redirect throws to halt rendering; simulate that
+    throw new Error("NEXT_REDIRECT");
+  },
 }));
 
-vi.mock("@/components/settings/SidebarNav", () => ({
-  SidebarNav: ({ items, activeTab, onTabChange }: any) => (
-    <div data-testid="sidebar-nav">
-      {items.map((item: any) => (
-        <button
-          key={item.id}
-          data-testid={`nav-${item.id}`}
-          onClick={() => onTabChange(item.id)}
-          className={activeTab === item.id ? "active" : ""}
-        >
-          {item.title}
-        </button>
-      ))}
-    </div>
+vi.mock("next/link", () => ({
+  default: ({ children, href, ...props }: any) => (
+    <a href={href} {...props}>{children}</a>
+  ),
+}));
+
+vi.mock("@/components/auth/ProtectedPage", () => ({
+  ProtectedPage: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="protected-page">{children}</div>
   ),
 }));
 
@@ -48,108 +56,141 @@ vi.mock("@/components/settings/DebugToggle", () => ({
   DebugToggle: ({ onOverride }: any) => (
     <div data-testid="debug-toggle">
       <button onClick={() => onOverride("auto")}>Auto</button>
-      <button onClick={() => onOverride("fresh")}>Fresh</button>
-      <button onClick={() => onOverride("stale")}>Stale</button>
     </div>
   ),
 }));
 
-describe("SettingsPage", () => {
-  it("should render inside ProtectedPage", () => {
-    render(<SettingsPage />);
+// Lazy imports so mocks are applied first
+const importSettingsPage = () => import("@/app/settings/page");
+const importSettingsLayout = () => import("@/app/settings/layout");
+const importAccountPage = () => import("@/app/settings/account/page");
+const importAgentsPage = () => import("@/app/settings/agents/page");
+const importDeveloperPage = () => import("@/app/settings/developer/page");
+const importBillingPage = () => import("@/app/settings/billing/page");
 
+// ============================================================================
+// Tests: /settings redirect page
+// ============================================================================
+
+describe("SettingsPage (/settings)", () => {
+  beforeEach(() => {
+    mockRedirect.mockClear();
+  });
+
+  it("should redirect to /settings/account", async () => {
+    const { default: SettingsPage } = await importSettingsPage();
+    expect(() => SettingsPage()).toThrow("NEXT_REDIRECT");
+    expect(mockRedirect).toHaveBeenCalledWith("/settings/account");
+  });
+});
+
+// ============================================================================
+// Tests: Settings layout (shared across all settings sub-pages)
+// ============================================================================
+
+describe("SettingsLayout", () => {
+  beforeEach(() => {
+    mockPathname = "/settings/account";
+    mockPush.mockClear();
+  });
+
+  async function renderLayout(children?: React.ReactNode) {
+    const { default: SettingsLayout } = await importSettingsLayout();
+    return render(
+      <SettingsLayout>{children ?? <div>Content</div>}</SettingsLayout>
+    );
+  }
+
+  it("should render inside ProtectedPage", async () => {
+    await renderLayout();
     expect(screen.getByTestId("protected-page")).toBeInTheDocument();
   });
 
-  it("should have back button to dashboard", () => {
-    render(<SettingsPage />);
+  it("should have Settings title", async () => {
+    await renderLayout();
+    expect(screen.getByRole("heading", { name: /^settings$/i })).toBeInTheDocument();
+  });
 
+  it("should have back button to dashboard", async () => {
+    await renderLayout();
     const backButton = screen.getByRole("button", { name: /back to dashboard/i });
     expect(backButton).toBeInTheDocument();
   });
 
-  it("should have Settings title", () => {
-    render(<SettingsPage />);
-
-    expect(screen.getByRole("heading", { name: /^settings$/i })).toBeInTheDocument();
+  it("should render sidebar navigation with all sections", async () => {
+    await renderLayout();
+    expect(screen.getByRole("link", { name: /account/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /agents/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /developer/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /billing/i })).toBeInTheDocument();
   });
 
-  it("should render sidebar navigation", () => {
-    render(<SettingsPage />);
-
-    expect(screen.getByTestId("sidebar-nav")).toBeInTheDocument();
+  it("should render children in content area", async () => {
+    await renderLayout(<div data-testid="child-content">Hello</div>);
+    expect(screen.getByTestId("child-content")).toBeInTheDocument();
   });
+});
 
-  it("should show AgentsSection by default", () => {
-    render(<SettingsPage />);
+// ============================================================================
+// Tests: Sub-page components
+// ============================================================================
 
-    // Default tab is "agents"
-    expect(screen.getByTestId("agents-section")).toBeInTheDocument();
-  });
-
-  it("should render AccountInfoSection when general tab is selected", () => {
-    render(<SettingsPage />);
-
-    // Click on General tab
-    fireEvent.click(screen.getByTestId("nav-general"));
-
+describe("AccountSettingsPage (/settings/account)", () => {
+  it("should render AccountInfoSection", async () => {
+    const { default: AccountPage } = await importAccountPage();
+    render(<AccountPage />);
     expect(screen.getByTestId("account-info-section")).toBeInTheDocument();
   });
 
-  it("should render PasswordSection when general tab is selected", () => {
-    render(<SettingsPage />);
-
-    // Click on General tab
-    fireEvent.click(screen.getByTestId("nav-general"));
-
+  it("should render PasswordSection", async () => {
+    const { default: AccountPage } = await importAccountPage();
+    render(<AccountPage />);
     expect(screen.getByTestId("password-section")).toBeInTheDocument();
   });
 
-  it("should render DebugToggle in development mode when general tab is selected", () => {
+  it("should render DebugToggle in development mode", async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = "development";
 
-    render(<SettingsPage />);
-
-    // Click on General tab
-    fireEvent.click(screen.getByTestId("nav-general"));
-
-    // DebugToggle should be rendered
+    const { default: AccountPage } = await importAccountPage();
+    render(<AccountPage />);
     expect(screen.getByTestId("debug-toggle")).toBeInTheDocument();
 
     process.env.NODE_ENV = originalEnv;
   });
 
-  it("should not render DebugToggle in production mode", () => {
+  it("should not render DebugToggle in production mode", async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = "production";
 
-    render(<SettingsPage />);
-
-    // Click on General tab
-    fireEvent.click(screen.getByTestId("nav-general"));
-
-    // DebugToggle should NOT be rendered
+    const { default: AccountPage } = await importAccountPage();
+    render(<AccountPage />);
     expect(screen.queryByTestId("debug-toggle")).not.toBeInTheDocument();
 
     process.env.NODE_ENV = originalEnv;
   });
+});
 
-  it("should render DeveloperSection when developer tab is selected", () => {
-    render(<SettingsPage />);
+describe("AgentsSettingsPage (/settings/agents)", () => {
+  it("should render AgentsSection", async () => {
+    const { default: AgentsPage } = await importAgentsPage();
+    render(<AgentsPage />);
+    expect(screen.getByTestId("agents-section")).toBeInTheDocument();
+  });
+});
 
-    // Click on Developer tab
-    fireEvent.click(screen.getByTestId("nav-developer"));
-
+describe("DeveloperSettingsPage (/settings/developer)", () => {
+  it("should render DeveloperSection", async () => {
+    const { default: DeveloperPage } = await importDeveloperPage();
+    render(<DeveloperPage />);
     expect(screen.getByTestId("developer-section")).toBeInTheDocument();
   });
+});
 
-  it("should render BillingSection when billing tab is selected", () => {
-    render(<SettingsPage />);
-
-    // Click on Billing tab
-    fireEvent.click(screen.getByTestId("nav-billing"));
-
+describe("BillingSettingsPage (/settings/billing)", () => {
+  it("should render BillingSection", async () => {
+    const { default: BillingPage } = await importBillingPage();
+    render(<BillingPage />);
     expect(screen.getByTestId("billing-section")).toBeInTheDocument();
   });
 });

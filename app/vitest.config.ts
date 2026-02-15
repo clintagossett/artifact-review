@@ -12,7 +12,7 @@ export default defineConfig({
       "tests/convex-integration/**/*.test.ts",
       "../tasks/**/*.test.ts",
     ],
-    exclude: ["tests/e2e/**/*", "node_modules"],
+    exclude: ["tests/e2e/**/*", "e2e/**/*", "node_modules"],
     // Use node for Convex tests, jsdom for React component tests
     // @ts-expect-error - environmentMatchGlobs is supported but not in type definitions
     environmentMatchGlobs: [
