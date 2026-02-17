@@ -1,0 +1,254 @@
+name: Dev E2E Tests
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: write  # Needed for commit comments
+  issues: write
+  pull-requests: write
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm install --legacy-peer-deps
+
+      - name: Install Playwright browsers
+        working-directory: ./app
+        run: npx playwright install chromium --with-deps
+
+      - name: Wait for deployment to be fully ready
+        run: |
+          echo "Waiting for dev deployment to be fully operational..."
+          DEPLOY_URL="https://artifactreview-early.dev"
+          MAX_ATTEMPTS=30
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            if curl -sf "$DEPLOY_URL" > /dev/null; then
+              echo "✅ Deployment is ready at $DEPLOY_URL"
+              break
+            fi
+            echo "⏳ Attempt $ATTEMPT/$MAX_ATTEMPTS - waiting for deployment..."
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+
+          if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+            echo "❌ Deployment not ready after $MAX_ATTEMPTS attempts"
+            exit 1
+          fi
+
+      - name: Run E2E tests
+        working-directory: ./app
+        env:
+          # Test against live dev deployment (not local server)
+          TEST_BASE_URL: https://artifactreview-early.dev
+          # SITE_URL is used for magic link redirect URL rewriting
+          SITE_URL: https://artifactreview-early.dev
+          # Use dev Convex deployment
+          NEXT_PUBLIC_CONVEX_URL: https://beaming-oriole-310.convex.cloud
+          # Convex HTTP actions endpoint (for API tests)
+          NEXT_PUBLIC_CONVEX_HTTP_URL: https://beaming-oriole-310.convex.site
+          # Required for email verification in tests
+          RESEND_FULL_ACCESS_API_KEY: ${{ secrets.RESEND_FULL_ACCESS_API_KEY }}
+        run: |
+          # Run tests and capture output (don't exit on failure)
+          npm run test:e2e 2>&1 | tee test-output.log || true
+
+          # Parse test results from summary line (e.g., "8 failed", "11 passed", "4 skipped")
+          FAILED=$(grep -oP '\d+(?= failed)' test-output.log | tail -1 || echo "0")
+          PASSED=$(grep -oP '\d+(?= passed)' test-output.log | tail -1 || echo "0")
+          SKIPPED=$(grep -oP '\d+(?= skipped)' test-output.log | tail -1 || echo "0")
+
+          # Default to 0 if empty
+          FAILED=${FAILED:-0}
+          PASSED=${PASSED:-0}
+          SKIPPED=${SKIPPED:-0}
+
+          echo "test_failed=$FAILED" >> $GITHUB_OUTPUT
+          echo "test_passed=$PASSED" >> $GITHUB_OUTPUT
+          echo "test_skipped=$SKIPPED" >> $GITHUB_OUTPUT
+
+          echo "📊 Test Results: $PASSED passed, $FAILED failed, $SKIPPED skipped"
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "tests_passed=false" >> $GITHUB_OUTPUT
+            echo "❌ $FAILED tests failed"
+          else
+            echo "tests_passed=true" >> $GITHUB_OUTPUT
+            echo "✅ All tests passed"
+          fi
+        id: e2e_tests
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: app/playwright-report/
+          retention-days: 7
+
+      - name: Upload test videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-videos
+          path: app/test-results/
+          retention-days: 7
+
+      - name: Comment on commit with results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const testsPassed = '${{ steps.e2e_tests.outputs.tests_passed }}' === 'true';
+            const passed = '${{ steps.e2e_tests.outputs.test_passed }}' || '0';
+            const failed = '${{ steps.e2e_tests.outputs.test_failed }}' || '0';
+            const skipped = '${{ steps.e2e_tests.outputs.test_skipped }}' || '0';
+            const deployUrl = 'https://artifactreview-early.dev';
+            const sha = '${{ github.sha }}';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+
+            const body = testsPassed
+              ? `✅ **E2E Tests Passed** for dev deployment
+
+            | Passed | Failed | Skipped |
+            |--------|--------|---------|
+            | ${passed} | ${failed} | ${skipped} |
+
+            **Deployment:** ${deployUrl}
+            **Commit:** ${sha.substring(0, 7)}
+
+            All tests passed. Dev is healthy. 🎉`
+              : `❌ **E2E Tests Failed** for dev deployment
+
+            | Passed | Failed | Skipped |
+            |--------|--------|---------|
+            | ${passed} | ${failed} | ${skipped} |
+
+            **Deployment:** ${deployUrl}
+            **Commit:** ${sha.substring(0, 7)}
+            **Test Run:** [View Details](${runUrl})
+
+            Review test artifacts for failure details.`;
+
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: sha,
+              body: body
+            });
+
+      - name: Create issue if tests fail
+        if: steps.e2e_tests.outputs.tests_passed != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ github.sha }}';
+            const passed = '${{ steps.e2e_tests.outputs.test_passed }}' || '0';
+            const failed = '${{ steps.e2e_tests.outputs.test_failed }}' || '0';
+            const skipped = '${{ steps.e2e_tests.outputs.test_skipped }}' || '0';
+            const deployUrl = 'https://artifactreview-early.dev';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `E2E Tests Failed - ${failed} failures (${sha.substring(0, 7)})`,
+              body: `## E2E Test Failure on Dev
+
+            | Passed | Failed | Skipped |
+            |--------|--------|---------|
+            | ${passed} | ${failed} | ${skipped} |
+
+            **Deployment:** ${deployUrl}
+            **Commit:** ${sha}
+            **Test Run:** [View Details](${runUrl})
+
+            ### Next Steps
+
+            1. Review test artifacts in the [Actions run](${runUrl})
+            2. Check if failures are flaky tests or real issues
+            3. Fix and push to dev
+
+            ---
+            *Auto-generated by dev E2E workflow*`,
+              labels: ['dev', 'e2e-failure']
+            });
+
+      - name: Fail workflow if tests failed
+        if: steps.e2e_tests.outputs.tests_passed != 'true'
+        run: |
+          echo "❌ E2E tests failed"
+          echo "Review test artifacts and consider investigating failures"
+          exit 1
+
+  notify-slack:
+    needs: e2e-tests
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack on failure
+        # Only enable if you have Slack webhook configured
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🚨 Dev E2E Tests Failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Dev E2E Tests Failed*\n\nCommit: `${{ github.sha }}`\nDeployment: https://artifactreview-early.dev\n\n*Action Required:* Review failures and investigate."
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Test Results"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Vercel Dashboard"
+                      },
+                      "url": "https://vercel.com/clintagossett/artifact-review-dev/deployments"
+                    }
+                  ]
+                }
+              ]
+            }'
