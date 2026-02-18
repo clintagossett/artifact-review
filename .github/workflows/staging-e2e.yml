@@ -4,7 +4,16 @@ on:
   push:
     branches:
       - staging
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      test_suites:
+        description: 'Test suites to run (comma-separated, or "all"). Available: agent-api, agent-api-versions, annotation-sidebar, artifact-workflow, auth, collaboration, email-digest, notification, public-share, smoke-integrations, stripe-subscription'
+        required: false
+        default: 'all'
+      exclude_suites:
+        description: 'Test suites to exclude (comma-separated). Takes precedence over test_suites.'
+        required: false
+        default: ''
 
 permissions:
   contents: write  # Needed for commit comments
@@ -74,8 +83,46 @@ jobs:
           # Required for email verification in tests
           RESEND_FULL_ACCESS_API_KEY: ${{ secrets.RESEND_FULL_ACCESS_API_KEY }}
         run: |
+          # Build test file list based on workflow inputs
+          TEST_SUITES="${{ github.event.inputs.test_suites || 'all' }}"
+          EXCLUDE_SUITES="${{ github.event.inputs.exclude_suites || '' }}"
+          TEST_FILES=""
+
+          if [ "$TEST_SUITES" != "all" ] && [ -n "$TEST_SUITES" ]; then
+            # Run only specified suites
+            IFS=',' read -ra SUITES <<< "$TEST_SUITES"
+            for suite in "${SUITES[@]}"; do
+              suite=$(echo "$suite" | xargs)  # trim whitespace
+              TEST_FILES="$TEST_FILES tests/e2e/${suite}.spec.ts"
+            done
+          elif [ -n "$EXCLUDE_SUITES" ]; then
+            # Run all except excluded suites
+            for f in tests/e2e/*.spec.ts; do
+              BASENAME=$(basename "$f" .spec.ts)
+              SKIP=false
+              IFS=',' read -ra EXCLUDES <<< "$EXCLUDE_SUITES"
+              for exc in "${EXCLUDES[@]}"; do
+                exc=$(echo "$exc" | xargs)
+                if [ "$BASENAME" = "$exc" ]; then
+                  SKIP=true
+                  break
+                fi
+              done
+              if [ "$SKIP" = false ]; then
+                TEST_FILES="$TEST_FILES $f"
+              fi
+            done
+          fi
+
+          echo "🧪 Test configuration: suites=$TEST_SUITES exclude=$EXCLUDE_SUITES"
+          if [ -n "$TEST_FILES" ]; then
+            echo "📋 Running specific files:$TEST_FILES"
+          else
+            echo "📋 Running all tests"
+          fi
+
           # Run tests and capture output (don't exit on failure)
-          npm run test:e2e 2>&1 | tee test-output.log || true
+          npm run test:e2e -- $TEST_FILES 2>&1 | tee test-output.log || true
 
           # Parse test results from summary line (e.g., "8 failed", "11 passed", "4 skipped")
           FAILED=$(grep -oP '\d+(?= failed)' test-output.log | tail -1 || echo "0")
