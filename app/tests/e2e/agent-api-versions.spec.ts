@@ -53,7 +53,7 @@ test.describe('Agent API Version Management', () => {
         await page.goto('/settings');
         await page.waitForLoadState('domcontentloaded');
 
-        const developerTab = page.getByRole('button', { name: 'Developer' });
+        const developerTab = page.getByRole('link', { name: 'Developer' });
         await expect(developerTab).toBeVisible({ timeout: 30000 });
         await developerTab.click();
 

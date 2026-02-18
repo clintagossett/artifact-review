@@ -67,7 +67,7 @@ test.describe('Agent API Integration', () => {
 
         // Switch to Developer tab
         // Use exact text match or look for the button within the sidebar
-        const developerTab = page.getByRole('button', { name: 'Developer' });
+        const developerTab = page.getByRole('link', { name: 'Developer' });
         await expect(developerTab).toBeVisible({ timeout: 30000 });
         await developerTab.click();
 

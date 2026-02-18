@@ -10,8 +10,9 @@
 #   - Or Novu running directly: cd services/novu && ./start.sh
 #
 # Usage:
-#   ./scripts/setup-novu-org.sh           # Uses defaults (mark agent)
-#   ./scripts/setup-novu-org.sh --check   # Only check if setup exists
+#   ./scripts/setup-novu-org.sh             # Full setup (org + email webhook)
+#   ./scripts/setup-novu-org.sh --check     # Check org AND email webhook status
+#   ./scripts/setup-novu-org.sh --fix-email # Add email webhook to existing setup
 #
 # Standard Credentials (do not change - used by all agents):
 #   Email:        admin@mark.loc
@@ -231,6 +232,51 @@ get_api_keys() {
     return 0
 }
 
+# Setup email webhook integration (calls setup-novu-email-webhook.sh)
+setup_email_webhook() {
+    local WEBHOOK_SCRIPT="$SCRIPT_DIR/setup-novu-email-webhook.sh"
+
+    if [ ! -x "$WEBHOOK_SCRIPT" ]; then
+        log_warn "setup-novu-email-webhook.sh not found or not executable"
+        return 1
+    fi
+
+    # Check if already configured
+    if "$WEBHOOK_SCRIPT" --check 2>&1 | grep -q "Email Webhook is configured"; then
+        log_info "Email webhook already configured"
+        return 0
+    fi
+
+    log_info "Configuring email webhook integration..."
+    if "$WEBHOOK_SCRIPT" 2>&1; then
+        log_info "Email webhook configured successfully"
+        return 0
+    else
+        log_warn "Email webhook setup failed (emails may not work)"
+        log_info "Retry with: ./scripts/setup-novu-email-webhook.sh"
+        return 1
+    fi
+}
+
+# Check email webhook status (for --check mode)
+check_email_webhook() {
+    local WEBHOOK_SCRIPT="$SCRIPT_DIR/setup-novu-email-webhook.sh"
+
+    if [ ! -x "$WEBHOOK_SCRIPT" ]; then
+        log_warn "Email webhook: setup-novu-email-webhook.sh not found"
+        return 1
+    fi
+
+    if "$WEBHOOK_SCRIPT" --check 2>&1 | grep -q "Email Webhook is configured"; then
+        log_info "Email webhook integration: configured"
+        return 0
+    else
+        log_warn "Email webhook integration: NOT configured"
+        log_info "Fix with: ./scripts/setup-novu-org.sh --fix-email"
+        return 1
+    fi
+}
+
 # Update .env.local file
 update_env_file() {
     if [ ! -f "$ENV_FILE" ]; then
@@ -334,11 +380,22 @@ main() {
         if try_login && check_org_exists; then
             log_info "Novu organization is already set up"
             get_api_keys
+            echo ""
+            check_email_webhook
             exit 0
         else
             log_warn "Novu organization is NOT set up"
             exit 1
         fi
+    fi
+
+    # Fix email webhook for existing setup
+    if [ "$1" = "--fix-email" ]; then
+        if ! check_novu_available; then
+            exit 1
+        fi
+        setup_email_webhook
+        exit $?
     fi
 
     # Full setup
@@ -370,6 +427,9 @@ main() {
 
     # Update .env.convex.local (backend vars for Convex)
     update_convex_env_file
+
+    # Setup email webhook integration (Novu → Convex → React Email → Resend)
+    setup_email_webhook
 
     log_info "Setup complete!"
 }

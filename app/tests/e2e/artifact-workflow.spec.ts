@@ -87,7 +87,7 @@ test.describe('End-to-End Artifact Workflow', () => {
         console.log('Artifact title visible in header.');
 
         // Wait for Comments sidebar as a signal of viewer loading
-        await expect(page.getByText(/Comments \(/)).toBeVisible({ timeout: 30000 });
+        await expect(page.getByText(/Annotations \(/)).toBeVisible({ timeout: 30000 });
 
         // 3. Verify File Tree (Multi-artifact feature)
         console.log('Verifying multi-artifact file tree...');
@@ -107,8 +107,8 @@ test.describe('End-to-End Artifact Workflow', () => {
         console.log('Artifact viewer content loaded successfully.');
 
         // Verify Comments sidebar is present
-        await expect(page.getByRole('button', { name: /Comments \(/ })).toBeVisible();
-        console.log('Comments sidebar available.');
+        await expect(page.getByRole('button', { name: /Annotations \(/ })).toBeVisible();
+        console.log('Annotations sidebar available.');
         console.log('Workflow complete: Login, ZIP upload, and viewer all functional.');
     });
 

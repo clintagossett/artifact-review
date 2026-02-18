@@ -105,10 +105,16 @@ This script will:
 - Create user and organization with standard credentials
 - Retrieve API keys
 - Update `app/.env.local` automatically
+- Configure email webhook integration (Novu → Convex → Resend)
 
-To check if already configured:
+To check if already configured (including email webhook):
 ```bash
 ./scripts/setup-novu-org.sh --check
+```
+
+To add email webhook to an existing setup (existing agents):
+```bash
+./scripts/setup-novu-org.sh --fix-email
 ```
 
 **Option B: Manual Setup**
@@ -154,10 +160,12 @@ NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=def456...
 
 ### 4. Configure Email Webhook Integration
 
-**IMPORTANT:** This step is required for email notifications to work. Novu sends emails via webhook to Convex, not directly to Resend.
+**NOTE:** This step is now handled automatically by `setup-novu-org.sh` (step 1). If you ran `setup-novu-org.sh` after this was added, the email webhook is already configured.
 
-**Setup:**
+**For existing agents missing the email webhook:**
 ```bash
+./scripts/setup-novu-org.sh --fix-email
+# Or directly:
 ./scripts/setup-novu-email-webhook.sh
 ```
 
@@ -165,6 +173,8 @@ This configures Novu to POST email payloads to `https://{AGENT_NAME}.convex.site
 
 **Check status:**
 ```bash
+./scripts/setup-novu-org.sh --check
+# Or directly:
 ./scripts/setup-novu-email-webhook.sh --check
 ```
 
@@ -174,7 +184,7 @@ This configures Novu to POST email payloads to `https://{AGENT_NAME}.convex.site
 - Sync to Convex: `./scripts/setup-convex-env.sh --sync`
 
 **If emails aren't arriving:**
-1. Verify webhook exists: `./scripts/setup-novu-email-webhook.sh --check`
+1. Verify webhook exists: `./scripts/setup-novu-org.sh --check`
 2. Delete and recreate: `./scripts/setup-novu-email-webhook.sh --delete && ./scripts/setup-novu-email-webhook.sh`
 
 ### 5. Workflow Sync (Automatic)

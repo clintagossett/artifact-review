@@ -70,7 +70,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30000 });
 
         // Click Billing tab
-        await page.getByRole('button', { name: 'Billing' }).click();
+        await page.getByRole('link', { name: 'Billing' }).click();
 
         // Wait for BillingSection to load
         await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 30000 });
@@ -195,20 +195,17 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         // Wait for scroll to complete and elements to stabilize
         await page.waitForLoadState('domcontentloaded');
 
-        const saveInfoCheckbox = page.locator('input[name="enableStripePass"]');
-        if (await saveInfoCheckbox.isVisible({ timeout: 3000 }).catch(() => false)) {
-            const isChecked = await saveInfoCheckbox.isChecked();
-            if (isChecked) {
-                await saveInfoCheckbox.click({ force: true });
-                console.log('✓ Unchecked "Save my information"');
-            }
+        // Stripe's "Save my information for faster checkout" checkbox enables Link,
+        // which requires a phone number. Uncheck it to avoid the phone field.
+        // Click the label text (not the input) to trigger Stripe's click handler.
+        const saveLabel = page.getByText('Save my information for faster checkout');
+        if (await saveLabel.isVisible({ timeout: 5000 }).catch(() => false)) {
+            await saveLabel.click();
+            // Wait for Stripe to process and hide the phone field
+            await page.waitForTimeout(2000);
+            console.log('✓ Clicked "Save my information" label to uncheck');
         } else {
-            // Try clicking the label text instead
-            const saveLabel = page.getByText('Save my information');
-            if (await saveLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
-                await saveLabel.click();
-                console.log('✓ Toggled save info via label');
-            }
+            console.log('Save info label not found - skipping');
         }
 
         // ──────────────────────────────────────────────────────────
@@ -231,7 +228,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         // Wait for redirect back to /settings with success parameter
         // This may take time for Stripe to process and webhook to fire
         // In CI, Stripe processing can be slower
-        await page.waitForURL(/\/settings\?success=true/, { timeout: 120000 });
+        await page.waitForURL(/\/settings\/billing\?success=true/, { timeout: 120000 });
         console.log('✓ Redirected back with success=true');
 
         // ──────────────────────────────────────────────────────────
@@ -244,7 +241,7 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 30000 });
 
         // Click the Billing tab (settings page may default to a different tab)
-        await page.getByRole('button', { name: 'Billing' }).click();
+        await page.getByRole('link', { name: 'Billing' }).click();
 
         // Wait for BillingSection to load
         await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 30000 });
