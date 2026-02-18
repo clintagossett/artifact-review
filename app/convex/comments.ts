@@ -2,7 +2,8 @@
  * Comment Operations
  *
  * Public API for comment CRUD operations.
- * All functions enforce permission checks via requireCommentPermission helper.
+ * Mutations are thin wrappers: authenticate → permission check → delegate to shared internal.
+ * Queries remain inline (read-only, no duplication concern).
  */
 
 import { query, mutation } from "./_generated/server";
@@ -11,10 +12,7 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import {
   requireCommentPermission,
-  canEditComment,
-  canDeleteComment,
 } from "./lib/commentPermissions";
-import { Id } from "./_generated/dataModel";
 
 /**
  * Get all active comments for an artifact version.
@@ -99,9 +97,7 @@ export const getByVersion = query({
 /**
  * Create a new comment on a version.
  *
- * Requires owner or reviewer permission.
- * Content is validated and trimmed before storage.
- * Task 00021 - Subtask 01: Only allow comments on the latest version
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const create = mutation({
   args: {
@@ -111,89 +107,31 @@ export const create = mutation({
   },
   returns: v.id("comments"),
   handler: async (ctx, args) => {
-    // Verify permission
+    // UI-specific: session auth + reviewer access check
     await requireCommentPermission(ctx, args.versionId);
 
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get the version being commented on
-    const version = await ctx.db.get(args.versionId);
-    if (!version) throw new Error("Version not found");
+    // Delegate to shared internal (validation, DB write, notification)
+    const commentId: string = await ctx.runMutation(
+      internal.commentsInternal.createCommentInternal,
+      {
+        versionId: args.versionId,
+        content: args.content,
+        target: args.target,
+        userId,
+      }
+    );
 
-    // Check if this version is the latest (Task 00021 - Subtask 01)
-    const latestVersion = await ctx.db
-      .query("artifactVersions")
-      .withIndex("by_artifactId_active", (q) =>
-        q.eq("artifactId", version.artifactId).eq("isDeleted", false)
-      )
-      .order("desc")
-      .first();
-
-    if (!latestVersion || version._id !== latestVersion._id) {
-      throw new Error("Comments are only allowed on the latest version");
-    }
-
-    // Validate content
-    const trimmedContent = args.content.trim();
-    if (trimmedContent.length === 0) {
-      throw new Error("Comment content cannot be empty");
-    }
-    if (trimmedContent.length > 10000) {
-      throw new Error("Comment content exceeds maximum length (10000 characters)");
-    }
-
-    const now = Date.now();
-
-    // Create comment
-    const commentId = await ctx.db.insert("comments", {
-      versionId: args.versionId,
-      createdBy: userId,
-      content: trimmedContent,
-      target: args.target,
-      isEdited: false,
-      isDeleted: false,
-      createdAt: now,
-    });
-
-    // NOTIFICATION LOGIC
-    // We want to notify the Artifact Owner when a new comment is posted.
-    // (Future: Notify other commenters via "follow" logic)
-    const artifact = await ctx.db.get(version.artifactId);
-    if (!artifact) {
-      console.error("Artifact not found for notification");
-      return commentId;
-    }
-
-    // Don't notify if the author is commenting on their own artifact
-    if (artifact.createdBy !== userId) {
-      const author = await ctx.db.get(userId);
-      const siteUrl = process.env.CONVEX_SITE_URL || "";
-
-      // Construct the artifact URL using ID 
-      const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
-
-      await ctx.scheduler.runAfter(0, internal.novu.triggerCommentNotification, {
-        subscriberId: artifact.createdBy, // Notify the owner
-        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
-        artifactUrl,
-        authorName: author?.name || "Someone",
-        authorAvatarUrl: author?.image,
-        commentPreview: trimmedContent.length > 50
-          ? `${trimmedContent.slice(0, 50)}...`
-          : trimmedContent,
-      });
-    }
-
-    return commentId;
+    return commentId as any;
   },
 });
 
 /**
  * Update a comment's content (author only).
  *
- * Sets isEdited flag and editedAt timestamp.
- * Returns null if content is unchanged (no-op).
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const updateContent = mutation({
   args: {
@@ -205,40 +143,17 @@ export const updateContent = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get comment
+    // UI-specific: verify user has access to the version
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
     if (comment.isDeleted) throw new Error("Comment has been deleted");
-
-    // Verify user has permission to view this version
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can edit this comment (must be creator)
-    if (!canEditComment(comment.createdBy, userId)) {
-      throw new Error("Only the comment author can edit");
-    }
-
-    // Validate content
-    const trimmedContent = args.content.trim();
-    if (trimmedContent.length === 0) {
-      throw new Error("Comment content cannot be empty");
-    }
-    if (trimmedContent.length > 10000) {
-      throw new Error("Comment content exceeds maximum length (10000 characters)");
-    }
-
-    // Skip update if content is unchanged
-    if (trimmedContent === comment.content) {
-      return null;
-    }
-
-    const now = Date.now();
-
-    // Update comment
-    await ctx.db.patch(args.commentId, {
-      content: trimmedContent,
-      isEdited: true,
-      editedAt: now,
+    // Delegate to shared internal (author check, validation, DB write)
+    await ctx.runMutation(internal.commentsInternal.editCommentInternal, {
+      commentId: args.commentId,
+      content: args.content,
+      userId,
     });
 
     return null;
@@ -248,8 +163,7 @@ export const updateContent = mutation({
 /**
  * Toggle the resolved status of a comment.
  *
- * Tracks who changed the status and when.
- * Requires owner or reviewer permission.
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const toggleResolved = mutation({
   args: {
@@ -260,22 +174,16 @@ export const toggleResolved = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get comment
+    // UI-specific: verify user has access to the version
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
     if (comment.isDeleted) throw new Error("Comment has been deleted");
-
-    // Verify permission on the version
     await requireCommentPermission(ctx, comment.versionId);
 
-    const now = Date.now();
-
-    // Toggle resolved status and track who/when
-    const isResolved = !!comment.resolvedUpdatedAt;
-
-    await ctx.db.patch(args.commentId, {
-      resolvedUpdatedAt: isResolved ? undefined : now,
-      resolvedUpdatedBy: isResolved ? undefined : userId,
+    // Delegate to shared internal (toggle, no explicit resolved arg)
+    await ctx.runMutation(internal.commentsInternal.toggleResolvedInternal, {
+      commentId: args.commentId,
+      userId,
     });
 
     return null;
@@ -285,9 +193,7 @@ export const toggleResolved = mutation({
 /**
  * Soft delete a comment and cascade to all replies.
  *
- * Author can delete own comment.
- * Artifact owner can delete any comment (moderation).
- * All replies are also soft deleted with same deletedBy/deletedAt.
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const softDelete = mutation({
   args: {
@@ -298,44 +204,17 @@ export const softDelete = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get comment
+    // UI-specific: DEFENSE-IN-DEPTH access check
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
     if (comment.isDeleted) throw new Error("Comment already deleted");
-
-    // DEFENSE-IN-DEPTH: Verify user has access to this artifact first
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can delete (author or artifact owner)
-    const canDelete = await canDeleteComment(ctx, comment, userId);
-    if (!canDelete) {
-      throw new Error("Only the comment author or artifact owner can delete");
-    }
-
-    const now = Date.now();
-
-    // Soft delete comment with audit trail
-    await ctx.db.patch(args.commentId, {
-      isDeleted: true,
-      deletedBy: userId,
-      deletedAt: now,
+    // Delegate to shared internal (permission check, cascade delete)
+    await ctx.runMutation(internal.commentsInternal.deleteCommentInternal, {
+      commentId: args.commentId,
+      userId,
     });
-
-    // Cascade soft delete to all replies
-    const replies = await ctx.db
-      .query("commentReplies")
-      .withIndex("by_commentId", (q) => q.eq("commentId", args.commentId))
-      .collect();
-
-    for (const reply of replies) {
-      if (!reply.isDeleted) {
-        await ctx.db.patch(reply._id, {
-          isDeleted: true,
-          deletedBy: userId,
-          deletedAt: now,
-        });
-      }
-    }
 
     return null;
   },
@@ -454,8 +333,7 @@ export const getByVersionPublic = query({
 /**
  * Create a comment via public share link (authenticated users only).
  *
- * Validates the share token has view_readwrite access mode.
- * User must be authenticated to create comments.
+ * Thin wrapper: auth → share token validation → delegate to shared internal.
  */
 export const createViaPublicShare = mutation({
   args: {
@@ -499,66 +377,17 @@ export const createViaPublicShare = mutation({
       throw new Error("Version does not belong to shared artifact");
     }
 
-    // Check if this version is the latest
-    const latestVersion = await ctx.db
-      .query("artifactVersions")
-      .withIndex("by_artifactId_active", (q) =>
-        q.eq("artifactId", version.artifactId).eq("isDeleted", false)
-      )
-      .order("desc")
-      .first();
+    // Delegate to shared internal (latest-version check, validation, DB write, notification)
+    const commentId: string = await ctx.runMutation(
+      internal.commentsInternal.createCommentInternal,
+      {
+        versionId: args.versionId,
+        content: args.content,
+        target: args.target,
+        userId,
+      }
+    );
 
-    if (!latestVersion || version._id !== latestVersion._id) {
-      throw new Error("Comments are only allowed on the latest version");
-    }
-
-    // Validate content
-    const trimmedContent = args.content.trim();
-    if (trimmedContent.length === 0) {
-      throw new Error("Comment content cannot be empty");
-    }
-    if (trimmedContent.length > 10000) {
-      throw new Error("Comment content exceeds maximum length (10000 characters)");
-    }
-
-    const now = Date.now();
-
-    // Create comment
-    const commentId = await ctx.db.insert("comments", {
-      versionId: args.versionId,
-      createdBy: userId,
-      content: trimmedContent,
-      target: args.target,
-      isEdited: false,
-      isDeleted: false,
-      createdAt: now,
-    });
-
-    // NOTIFICATION LOGIC
-    const artifact = await ctx.db.get(version.artifactId);
-    if (!artifact) {
-      console.error("Artifact not found for notification");
-      return commentId;
-    }
-
-    // Don't notify if the author is commenting on their own artifact
-    if (artifact.createdBy !== userId) {
-      const author = await ctx.db.get(userId);
-      const siteUrl = process.env.CONVEX_SITE_URL || "";
-      const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
-
-      await ctx.scheduler.runAfter(0, internal.novu.triggerCommentNotification, {
-        subscriberId: artifact.createdBy,
-        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
-        artifactUrl,
-        authorName: author?.name || "Someone",
-        authorAvatarUrl: author?.image,
-        commentPreview: trimmedContent.length > 50
-          ? `${trimmedContent.slice(0, 50)}...`
-          : trimmedContent,
-      });
-    }
-
-    return commentId;
+    return commentId as any;
   },
 });

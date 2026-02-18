@@ -671,7 +671,7 @@ http.route({
         versionId = version._id;
       }
 
-      const commentId = await ctx.runMutation(internal.agentApi.createComment, {
+      const commentId = await ctx.runMutation(internal.commentsInternal.createCommentInternal, {
         versionId,
         content,
         target,
@@ -806,12 +806,17 @@ http.route({
         }
 
         try {
-          const result = await ctx.runMutation(internal.agentApi.createShareLink, {
+          const shareId = await ctx.runMutation(internal.sharesInternal.createShareLinkInternal, {
             artifactId: artifact._id,
             userId: identity.userId,
-            enabled: body.enabled,
             capabilities: body.capabilities,
           });
+
+          // Build response in the same shape the Agent API expects
+          const createdShare = await ctx.runQuery(internal.agentApi.getShareLink, {
+            artifactId: artifact._id,
+          });
+          const result = createdShare ?? { shareUrl: "", enabled: true, capabilities: body.capabilities ?? { readComments: false, writeComments: false } };
 
           return new Response(JSON.stringify(result), {
             status: 201,
@@ -836,10 +841,11 @@ http.route({
         }
 
         try {
-          const accessId = await ctx.runMutation(internal.agentApi.grantAccess, {
+          const accessId = await ctx.runMutation(internal.accessInternal.grantAccessInternal, {
             artifactId: artifact._id,
             userId: identity.userId,
             email: body.email,
+            skipEmail: true,
           });
 
           return new Response(JSON.stringify({ id: accessId, status: "created" }), {
@@ -882,7 +888,7 @@ http.route({
     if (!body.content) return errorResponse("Missing content", 400);
 
     try {
-      const replyId = await ctx.runMutation(internal.agentApi.createReply, {
+      const replyId = await ctx.runMutation(internal.commentsInternal.createReplyInternal, {
         commentId,
         content: body.content,
         agentId: identity.agentId,
@@ -929,7 +935,7 @@ http.route({
 
     try {
       if (body.content !== undefined) {
-        await ctx.runMutation(internal.agentApi.editComment, {
+        await ctx.runMutation(internal.commentsInternal.editCommentInternal, {
           commentId,
           content: body.content,
           userId: identity.userId,
@@ -938,7 +944,7 @@ http.route({
 
       if (body.resolved !== undefined) {
         if (typeof body.resolved !== "boolean") return errorResponse("Invalid 'resolved' boolean", 400);
-        await ctx.runMutation(internal.agentApi.updateCommentStatus, {
+        await ctx.runMutation(internal.commentsInternal.toggleResolvedInternal, {
           commentId,
           resolved: body.resolved,
           userId: identity.userId,
@@ -973,7 +979,7 @@ http.route({
     const { identity } = auth;
 
     try {
-      await ctx.runMutation(internal.agentApi.deleteComment, {
+      await ctx.runMutation(internal.commentsInternal.deleteCommentInternal, {
         commentId,
         userId: identity.userId,
       });
@@ -1010,7 +1016,7 @@ http.route({
     if (!body.content) return errorResponse("Missing content", 400);
 
     try {
-      await ctx.runMutation(internal.agentApi.editReply, {
+      await ctx.runMutation(internal.commentsInternal.editReplyInternal, {
         replyId,
         content: body.content,
         userId: identity.userId,
@@ -1043,7 +1049,7 @@ http.route({
     const { identity } = auth;
 
     try {
-      await ctx.runMutation(internal.agentApi.deleteReply, {
+      await ctx.runMutation(internal.commentsInternal.deleteReplyInternal, {
         replyId,
         userId: identity.userId,
       });
@@ -1160,18 +1166,36 @@ http.route({
       const { artifact } = ownerCheck;
 
       try {
-        const result = await ctx.runMutation(internal.agentApi.updateShareLink, {
+        // Find the existing share to get its ID
+        const existingShare = await ctx.runQuery(internal.agentApi.getShareLink, {
           artifactId: artifact._id,
+        });
+
+        if (!existingShare) {
+          return errorResponse("No share link exists", 404);
+        }
+
+        // Look up the share record to get its ID
+        const shareRecord = await ctx.runQuery(internal.agentApi.getShareRecordByArtifact, {
+          artifactId: artifact._id,
+        });
+        if (!shareRecord) {
+          return errorResponse("No share link exists", 404);
+        }
+
+        await ctx.runMutation(internal.sharesInternal.updateShareLinkInternal, {
+          shareId: shareRecord._id,
           userId: identity.userId,
           enabled: body.enabled,
           capabilities: body.capabilities,
         });
 
-        if (!result) {
-          return errorResponse("No share link exists", 404);
-        }
+        // Re-fetch to return updated state
+        const updatedShare = await ctx.runQuery(internal.agentApi.getShareLink, {
+          artifactId: artifact._id,
+        });
 
-        return new Response(JSON.stringify(result), {
+        return new Response(JSON.stringify(updatedShare), {
           status: 200,
           headers: { "Content-Type": "application/json" }
         });
@@ -1235,14 +1259,17 @@ http.route({
     // Route: /api/v1/artifacts/:shareToken/sharelink
     if (parts.length === 6 && parts[5] === "sharelink") {
       try {
-        const deleted = await ctx.runMutation(internal.agentApi.deleteShareLink, {
+        const shareRecord = await ctx.runQuery(internal.agentApi.getShareRecordByArtifact, {
           artifactId: artifact._id,
-          userId: identity.userId,
         });
-
-        if (!deleted) {
+        if (!shareRecord) {
           return errorResponse("No share link exists", 404);
         }
+
+        await ctx.runMutation(internal.sharesInternal.deleteShareLinkInternal, {
+          shareId: shareRecord._id,
+          userId: identity.userId,
+        });
 
         return new Response(JSON.stringify({ status: "deleted" }), {
           status: 200,
@@ -1258,13 +1285,13 @@ http.route({
       const accessId = parts[6] as any;
 
       try {
-        const revoked = await ctx.runMutation(internal.agentApi.revokeAccess, {
-          accessId,
-          userId: identity.userId,
-        });
-
-        if (!revoked) {
-          return errorResponse("Access record not found", 404);
+        try {
+          await ctx.runMutation(internal.accessInternal.revokeAccessInternal, {
+            accessId,
+            userId: identity.userId,
+          });
+        } catch (e: any) {
+          return errorResponse(e.message || "Access record not found", 404);
         }
 
         return new Response(JSON.stringify({ status: "deleted" }), {
