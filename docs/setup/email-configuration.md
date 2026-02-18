@@ -203,6 +203,21 @@ Email Webhook → Convex HTTP endpoint → React Email render → Resend → Mai
 - Local dev emails go through Mailpit consistently
 - Novu still handles digest batching and user preferences
 
+### Digest Interval
+
+The digest batching window is controlled by `NOVU_DIGEST_INTERVAL`. This determines how long Novu waits to batch notifications before sending a single digest email.
+
+> **CRITICAL:** This variable is read by the **Novu bridge (Next.js/Vercel)**, NOT by Convex. Set it in `app/.env.nextjs.local` (local) or as a **Vercel env var** (hosted). Do NOT set it in `.env.convex.local` — it will have no effect there.
+
+| Environment | Value | Where to Set |
+|-------------|-------|-------------|
+| Local dev | `30s` | `app/.env.nextjs.local` |
+| Dev | `30s` | Vercel project `artifact-review-dev` |
+| Staging | `2m` | Vercel project `artifact-review-staging` |
+| Production | `20m` | Vercel project `artifact-review` |
+
+See [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md#-novu_digest_interval) for full details and the post-change sync procedure.
+
 ### Email Webhook Setup
 
 Novu uses the **Email Webhook** provider instead of direct Resend integration:

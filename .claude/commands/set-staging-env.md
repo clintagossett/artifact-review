@@ -126,7 +126,7 @@ NEXT_PUBLIC_CONVEX_HTTP_URL=https://adventurous-mosquito-571.convex.site
 SITE_URL=https://artifactreview-early.xyz
 NOVU_SECRET_KEY=...
 NOVU_API_URL=https://api.novu.co
-NOVU_DIGEST_INTERVAL=30s
+NOVU_DIGEST_INTERVAL=2m   # ⚠️ Vercel ONLY - NOT in Convex (read by Novu bridge in Next.js)
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=...
 NEXT_PUBLIC_NOVU_API_URL=https://api.novu.co
 NEXT_PUBLIC_NOVU_SOCKET_URL=wss://socket.novu.co
@@ -153,13 +153,16 @@ STRIPE_PRICE_ID_PRO_ANNUAL=...
 ## Examples
 
 ### Set Novu digest interval for staging:
+**NOTE:** `NOVU_DIGEST_INTERVAL` is a **Vercel-only** variable. It is read by the Novu bridge (Next.js API route), NOT by Convex. Do not set it in Convex.
 ```bash
 VERCEL_TOKEN=$(grep VERCEL_TOKEN ../artifact-review-dev/.env.dev.local | cut -d= -f2)
-curl -s -X POST \
+# Target must include "production" because staging deploys to Vercel's production environment
+curl -s -X PATCH \
   -H "Authorization: Bearer $VERCEL_TOKEN" \
   -H "Content-Type: application/json" \
-  "https://api.vercel.com/v10/projects/prj_GDXlzDtEcclLAgP1RoY0Agnjvtr5/env?teamId=team_dD61vKrjrHtvbXe8o2ZmgjUS" \
-  -d '{"key":"NOVU_DIGEST_INTERVAL","value":"30s","type":"plain","target":["preview"]}'
+  "https://api.vercel.com/v9/projects/prj_GDXlzDtEcclLAgP1RoY0Agnjvtr5/env/<ENV_ID>" \
+  -d '{"value":"2m","target":["production","preview"]}'
+# After changing: redeploy Vercel AND re-sync Novu workflow (see ENVIRONMENT_VARIABLES.md)
 ```
 
 ### Set Stripe webhook secret in Convex:
