@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MessageSquare } from "lucide-react";
 
 interface LandingFooterProps {
@@ -8,7 +9,7 @@ export function LandingFooter({ className = "" }: LandingFooterProps) {
   return (
     <footer className={`bg-gray-900 text-gray-400 py-16 ${className}`}>
       <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-        <div className="grid md:grid-cols-4 gap-12 mb-12">
+        <div className="grid md:grid-cols-3 gap-12 mb-12">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -27,85 +28,51 @@ export function LandingFooter({ className = "" }: LandingFooterProps) {
             <p className="font-semibold text-white mb-4">Product</p>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition">
+                <a href="/#features" className="hover:text-white transition">
                   Features
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <a href="/#pricing" className="hover:text-white transition">
                   Pricing
                 </a>
               </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Security
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Changelog
-                </a>
-              </li>
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* Legal */}
           <div>
-            <p className="font-semibold text-white mb-4">Resources</p>
+            <p className="font-semibold text-white mb-4">Legal</p>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition">
-                  Documentation
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Status
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <p className="font-semibold text-white mb-4">Company</p>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  About
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Contact
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/privacy" className="hover:text-white transition">
                   Privacy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/terms" className="hover:text-white transition">
                   Terms
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/acceptable-use"
+                  className="hover:text-white transition"
+                >
+                  Acceptable Use
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className="hover:text-white transition">
+                  Cookies
+                </Link>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm">© 2025 Artifact Review. All rights reserved.</p>
+          <p className="text-sm">&copy; 2026 Artifact Review. All rights reserved.</p>
           <p className="text-sm">Built with love for AI-native teams</p>
         </div>
       </div>
