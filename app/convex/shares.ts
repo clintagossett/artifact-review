@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -17,13 +18,7 @@ const capabilitiesValidator = v.object({
 /**
  * Create a public share link for an artifact.
  *
- * ## Behavior
- * - Owner only (artifact.createdBy must match authenticated user)
- * - Returns existing share if one already exists (idempotent)
- * - Creates new share with UUID token if none exists
- * - Defaults to enabled=true, capabilities={readComments: false, writeComments: false}
- *
- * @returns The share link ID
+ * Thin wrapper: auth → delegate to shared internal.
  */
 export const create = mutation({
   args: {
@@ -32,66 +27,29 @@ export const create = mutation({
   },
   returns: v.id("artifactShares"),
   handler: async (ctx, args) => {
-    // Verify authentication
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Authentication required");
     }
 
-    // Verify artifact exists and user is owner
-    const artifact = await ctx.db.get(args.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
+    // Delegate to shared internal (ownership check, idempotent create)
+    const shareId: string = await ctx.runMutation(
+      internal.sharesInternal.createShareLinkInternal,
+      {
+        artifactId: args.artifactId,
+        userId,
+        capabilities: args.capabilities,
+      }
+    );
 
-    if (artifact.createdBy !== userId) {
-      throw new Error("Only the artifact owner can create share links");
-    }
-
-    // Check for existing share (one per artifact)
-    const existingShare = await ctx.db
-      .query("artifactShares")
-      .withIndex("by_artifactId", (q) => q.eq("artifactId", args.artifactId))
-      .first();
-
-    if (existingShare) {
-      // Return existing share (idempotent)
-      return existingShare._id;
-    }
-
-    // Generate UUID token
-    const token = crypto.randomUUID();
-    const now = Date.now();
-
-    // Default capabilities: view only (no comments)
-    const defaultCapabilities = {
-      readComments: false,
-      writeComments: false,
-    };
-
-    // Create new share
-    const shareId = await ctx.db.insert("artifactShares", {
-      token,
-      artifactId: args.artifactId,
-      capabilities: args.capabilities ?? defaultCapabilities,
-      enabled: true,
-      createdBy: userId,
-      createdAt: now,
-    });
-
-    return shareId;
+    return shareId as any;
   },
 });
 
 /**
  * Toggle the enabled state of a share link.
  *
- * ## Behavior
- * - Owner only
- * - Toggles between enabled=true and enabled=false
- * - When disabled, resolveToken returns null (link appears unavailable)
- *
- * @returns The new enabled state
+ * Thin wrapper: auth → read current state → delegate to shared internal.
  */
 export const toggleEnabled = mutation({
   args: {
@@ -99,34 +57,24 @@ export const toggleEnabled = mutation({
   },
   returns: v.boolean(),
   handler: async (ctx, args) => {
-    // Verify authentication
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Authentication required");
     }
 
-    // Get share record
+    // Read current state to determine toggle target
     const share = await ctx.db.get(args.shareId);
     if (!share) {
       throw new Error("Share link not found");
     }
 
-    // Verify artifact exists and user is owner
-    const artifact = await ctx.db.get(share.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
-
-    if (artifact.createdBy !== userId) {
-      throw new Error("Only the artifact owner can toggle share links");
-    }
-
-    // Toggle enabled state
     const newEnabled = !share.enabled;
-    await ctx.db.patch(args.shareId, {
+
+    // Delegate to shared internal (ownership check, update)
+    await ctx.runMutation(internal.sharesInternal.updateShareLinkInternal, {
+      shareId: args.shareId,
+      userId,
       enabled: newEnabled,
-      updatedBy: userId,
-      updatedAt: Date.now(),
     });
 
     return newEnabled;
@@ -136,9 +84,7 @@ export const toggleEnabled = mutation({
 /**
  * Update the capabilities of a share link.
  *
- * ## Behavior
- * - Owner only
- * - Sets individual capability flags
+ * Thin wrapper: auth → delegate to shared internal.
  */
 export const updateCapabilities = mutation({
   args: {
@@ -147,33 +93,16 @@ export const updateCapabilities = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Verify authentication
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Authentication required");
     }
 
-    // Get share record
-    const share = await ctx.db.get(args.shareId);
-    if (!share) {
-      throw new Error("Share link not found");
-    }
-
-    // Verify artifact exists and user is owner
-    const artifact = await ctx.db.get(share.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
-
-    if (artifact.createdBy !== userId) {
-      throw new Error("Only the artifact owner can update share links");
-    }
-
-    // Update capabilities
-    await ctx.db.patch(args.shareId, {
+    // Delegate to shared internal (ownership check, update)
+    await ctx.runMutation(internal.sharesInternal.updateShareLinkInternal, {
+      shareId: args.shareId,
+      userId,
       capabilities: args.capabilities,
-      updatedBy: userId,
-      updatedAt: Date.now(),
     });
 
     return null;

@@ -206,14 +206,19 @@ describe("agentApi - sharelink", () => {
       const userId = await createTestUser(t, "owner@test.com");
       const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
 
-      const result = await t.mutation(internal.agentApi.createShareLink, {
+      const shareId = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
       });
 
-      expect(result.enabled).toBe(true);
-      expect(result.capabilities.readComments).toBe(true);
-      expect(result.shareUrl).toContain("/share/");
+      expect(shareId).toBeDefined();
+
+      // Verify created share
+      const share = await t.run(async (ctx) => await ctx.db.get(shareId)) as any;
+      expect(share.enabled).toBe(true);
+      // Default capabilities when none specified
+      expect(share.capabilities.readComments).toBe(false);
+      expect(share.capabilities.writeComments).toBe(false);
     });
 
     it("should create share link with custom capabilities", async () => {
@@ -221,40 +226,38 @@ describe("agentApi - sharelink", () => {
       const userId = await createTestUser(t, "owner@test.com");
       const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
 
-      const result = await t.mutation(internal.agentApi.createShareLink, {
+      const shareId = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
-        enabled: true,
         capabilities: { readComments: true, writeComments: true },
       });
 
-      expect(result.capabilities.readComments).toBe(true);
-      expect(result.capabilities.writeComments).toBe(true);
+      const share = await t.run(async (ctx) => await ctx.db.get(shareId)) as any;
+      expect(share.capabilities.readComments).toBe(true);
+      expect(share.capabilities.writeComments).toBe(true);
     });
 
-    it("should update existing share link if called again", async () => {
+    it("should be idempotent - return existing share if called again", async () => {
       const t = convexTest(schema);
       const userId = await createTestUser(t, "owner@test.com");
       const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
 
       // Create initial
-      const result1 = await t.mutation(internal.agentApi.createShareLink, {
+      const shareId1 = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
         capabilities: { readComments: false, writeComments: false },
       });
 
-      // Update with new capabilities
-      const result2 = await t.mutation(internal.agentApi.createShareLink, {
+      // Call again - should return same ID (idempotent)
+      const shareId2 = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
         capabilities: { readComments: true, writeComments: true },
       });
 
-      // Should have same URL but updated capabilities
-      expect(result2.shareUrl).toBe(result1.shareUrl);
-      expect(result2.capabilities.readComments).toBe(true);
-      expect(result2.capabilities.writeComments).toBe(true);
+      // Should return same share ID
+      expect(shareId2).toBe(shareId1);
     });
   });
 
@@ -265,34 +268,35 @@ describe("agentApi - sharelink", () => {
       const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
 
       // Create share link first
-      await t.mutation(internal.agentApi.createShareLink, {
+      const shareId = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
       });
 
       // Disable it
-      const result = await t.mutation(internal.agentApi.updateShareLink, {
-        artifactId,
+      await t.mutation(internal.sharesInternal.updateShareLinkInternal, {
+        shareId,
         userId,
         enabled: false,
       });
 
-      expect(result).not.toBeNull();
-      expect(result!.enabled).toBe(false);
+      // Verify updated
+      const share = await t.run(async (ctx) => await ctx.db.get(shareId)) as any;
+      expect(share.enabled).toBe(false);
     });
 
-    it("should return null if no share link exists", async () => {
+    it("should throw if no share link exists", async () => {
       const t = convexTest(schema);
       const userId = await createTestUser(t, "owner@test.com");
-      const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
+      await createTestArtifact(t, userId, "Test Artifact");
 
-      const result = await t.mutation(internal.agentApi.updateShareLink, {
-        artifactId,
-        userId,
-        enabled: false,
-      });
-
-      expect(result).toBeNull();
+      await expect(
+        t.mutation(internal.sharesInternal.updateShareLinkInternal, {
+          shareId: "invalid-id" as any,
+          userId,
+          enabled: false,
+        })
+      ).rejects.toThrow();
     });
   });
 
@@ -303,35 +307,33 @@ describe("agentApi - sharelink", () => {
       const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
 
       // Create share link
-      await t.mutation(internal.agentApi.createShareLink, {
+      const shareId = await t.mutation(internal.sharesInternal.createShareLinkInternal, {
         artifactId,
         userId,
       });
 
       // Delete it
-      const deleted = await t.mutation(internal.agentApi.deleteShareLink, {
-        artifactId,
+      await t.mutation(internal.sharesInternal.deleteShareLinkInternal, {
+        shareId,
         userId,
       });
-
-      expect(deleted).toBe(true);
 
       // Verify it's disabled
-      const shareLink = await t.query(internal.agentApi.getShareLink, { artifactId });
-      expect(shareLink!.enabled).toBe(false);
+      const share = await t.run(async (ctx) => await ctx.db.get(shareId)) as any;
+      expect(share.enabled).toBe(false);
     });
 
-    it("should return false if no share link exists", async () => {
+    it("should throw if no share link exists", async () => {
       const t = convexTest(schema);
       const userId = await createTestUser(t, "owner@test.com");
-      const { artifactId } = await createTestArtifact(t, userId, "Test Artifact");
+      await createTestArtifact(t, userId, "Test Artifact");
 
-      const deleted = await t.mutation(internal.agentApi.deleteShareLink, {
-        artifactId,
-        userId,
-      });
-
-      expect(deleted).toBe(false);
+      await expect(
+        t.mutation(internal.sharesInternal.deleteShareLinkInternal, {
+          shareId: "invalid-id" as any,
+          userId,
+        })
+      ).rejects.toThrow();
     });
   });
 });
@@ -359,10 +361,11 @@ describe("agentApi - access", () => {
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
       // Grant access to reviewer
-      await t.mutation(internal.agentApi.grantAccess, {
+      await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
       const access = await t.query(internal.agentApi.listAccess, { artifactId });
@@ -379,10 +382,11 @@ describe("agentApi - access", () => {
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
       // Grant access to non-existent user
-      await t.mutation(internal.agentApi.grantAccess, {
+      await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "pending@test.com",
+        skipEmail: true,
       });
 
       const access = await t.query(internal.agentApi.listAccess, { artifactId });
@@ -400,10 +404,11 @@ describe("agentApi - access", () => {
       const reviewerId = await createTestUser(t, "reviewer@test.com");
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
-      const accessId = await t.mutation(internal.agentApi.grantAccess, {
+      const accessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
       expect(accessId).toBeDefined();
@@ -418,10 +423,11 @@ describe("agentApi - access", () => {
       const ownerId = await createTestUser(t, "owner@test.com");
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
-      const accessId = await t.mutation(internal.agentApi.grantAccess, {
+      const accessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "newuser@test.com",
+        skipEmail: true,
       });
 
       expect(accessId).toBeDefined();
@@ -431,26 +437,28 @@ describe("agentApi - access", () => {
       expect(access?.userInviteId).toBeDefined();
     });
 
-    it("should be idempotent for same user", async () => {
+    it("should throw for duplicate access (same user)", async () => {
       const t = convexTest(schema);
       const ownerId = await createTestUser(t, "owner@test.com");
       await createTestUser(t, "reviewer@test.com");
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
-      const accessId1 = await t.mutation(internal.agentApi.grantAccess, {
+      await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
-      const accessId2 = await t.mutation(internal.agentApi.grantAccess, {
-        artifactId,
-        userId: ownerId,
-        email: "reviewer@test.com",
-      });
-
-      // Should return same ID
-      expect(accessId1).toBe(accessId2);
+      // Second grant should throw (user already has access)
+      await expect(
+        t.mutation(internal.accessInternal.grantAccessInternal, {
+          artifactId,
+          userId: ownerId,
+          email: "reviewer@test.com",
+          skipEmail: true,
+        })
+      ).rejects.toThrow("already has access");
     });
 
     it("should un-delete previously revoked access", async () => {
@@ -460,23 +468,25 @@ describe("agentApi - access", () => {
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
       // Grant
-      const accessId = await t.mutation(internal.agentApi.grantAccess, {
+      const accessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
       // Revoke
-      await t.mutation(internal.agentApi.revokeAccess, {
+      await t.mutation(internal.accessInternal.revokeAccessInternal, {
         accessId,
         userId: ownerId,
       });
 
       // Re-grant
-      const newAccessId = await t.mutation(internal.agentApi.grantAccess, {
+      const newAccessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
       expect(newAccessId).toBe(accessId);
@@ -493,48 +503,48 @@ describe("agentApi - access", () => {
       await createTestUser(t, "reviewer@test.com");
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
-      const accessId = await t.mutation(internal.agentApi.grantAccess, {
+      const accessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
-      const revoked = await t.mutation(internal.agentApi.revokeAccess, {
+      await t.mutation(internal.accessInternal.revokeAccessInternal, {
         accessId,
         userId: ownerId,
       });
-
-      expect(revoked).toBe(true);
 
       const access = await t.run(async (ctx) => await ctx.db.get(accessId)) as Doc<"artifactAccess"> | null;
       expect(access?.isDeleted).toBe(true);
     });
 
-    it("should return false for already-deleted access", async () => {
+    it("should throw for already-deleted access", async () => {
       const t = convexTest(schema);
       const ownerId = await createTestUser(t, "owner@test.com");
       await createTestUser(t, "reviewer@test.com");
       const { artifactId } = await createTestArtifact(t, ownerId, "Test Artifact");
 
       // Grant and immediately revoke
-      const accessId = await t.mutation(internal.agentApi.grantAccess, {
+      const accessId = await t.mutation(internal.accessInternal.grantAccessInternal, {
         artifactId,
         userId: ownerId,
         email: "reviewer@test.com",
+        skipEmail: true,
       });
 
-      await t.mutation(internal.agentApi.revokeAccess, {
+      await t.mutation(internal.accessInternal.revokeAccessInternal, {
         accessId,
         userId: ownerId,
       });
 
-      // Try to revoke again - should return false
-      const revoked = await t.mutation(internal.agentApi.revokeAccess, {
-        accessId,
-        userId: ownerId,
-      });
-
-      expect(revoked).toBe(false);
+      // Try to revoke again - should throw
+      await expect(
+        t.mutation(internal.accessInternal.revokeAccessInternal, {
+          accessId,
+          userId: ownerId,
+        })
+      ).rejects.toThrow("already deleted");
     });
   });
 });

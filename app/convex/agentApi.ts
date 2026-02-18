@@ -1,8 +1,30 @@
+/**
+ * Agent API - Internal Queries and Version Management
+ *
+ * This file contains Agent-API-specific query functions and version management
+ * internals. All comment, reply, access, and share mutations have been extracted
+ * to shared internal files:
+ * - commentsInternal.ts (comments + replies)
+ * - accessInternal.ts (grant/revoke access)
+ * - sharesInternal.ts (share link management)
+ *
+ * Remaining in this file:
+ * - getLatestVersion, getComments - query helpers for HTTP handlers
+ * - listArtifacts, getStats, listAccess - agent-specific aggregate queries
+ * - getShareLink, getShareRecordByArtifact - share link queries
+ * - listVersionsInternal - version listing
+ * - softDeleteVersionInternal, updateVersionNameInternal, restoreVersionInternal - version mutations
+ */
+
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { MAX_VERSION_NAME_LENGTH } from "./lib/fileTypes";
+
+// ============================================================================
+// QUERY HELPERS (used by HTTP handlers)
+// ============================================================================
 
 /**
  * Get the latest version for an artifact.
@@ -28,6 +50,7 @@ export const getLatestVersion = internalQuery({
 /**
  * Get active comments for a version (Internal).
  * Returns nested replies and W3C compatible target.
+ * Agent-API-specific response shape (different from UI query).
  */
 export const getComments = internalQuery({
     args: {
@@ -127,236 +150,8 @@ export const getComments = internalQuery({
     },
 });
 
-/**
- * create a new comment (Agent).
- */
-export const createComment = internalMutation({
-    args: {
-        versionId: v.id("artifactVersions"),
-        content: v.string(),
-        target: v.any(), // Validated by HTTP handler
-        agentId: v.optional(v.id("agents")),
-        userId: v.id("users"), // The user associated with the API key
-    },
-    handler: async (ctx, args) => {
-        const now = Date.now();
-
-        // Look up agent name if agentId provided (for notification)
-        let agentName: string | undefined;
-        if (args.agentId) {
-            const agent = await ctx.db.get(args.agentId);
-            agentName = agent?.name;
-        }
-
-        const commentId = await ctx.db.insert("comments", {
-            versionId: args.versionId,
-            createdBy: args.userId,
-            agentId: args.agentId,
-            content: args.content,
-            target: args.target,
-            isEdited: false,
-            isDeleted: false,
-            createdAt: now,
-        });
-
-        // Trigger Notification (simplified logic for Agent)
-        const version = await ctx.db.get(args.versionId);
-        if (version) {
-            const artifact = await ctx.db.get(version.artifactId);
-            if (artifact && artifact.createdBy !== args.userId) {
-                const siteUrl = process.env.CONVEX_SITE_URL || "";
-                const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
-
-                await ctx.scheduler.runAfter(0, internal.novu.triggerCommentNotification, {
-                    subscriberId: artifact.createdBy,
-                    artifactDisplayTitle: `${artifact.name} (v${version.number})`,
-                    artifactUrl,
-                    authorName: agentName || "AI Agent",
-                    authorAvatarUrl: undefined, // Agents don't have avatars yet
-                    commentPreview: args.content.slice(0, 50)
-                });
-            }
-        }
-
-        return commentId;
-    }
-});
-
-/**
- * Create a reply (Agent).
- */
-export const createReply = internalMutation({
-    args: {
-        commentId: v.id("comments"),
-        content: v.string(),
-        agentId: v.optional(v.id("agents")),
-        userId: v.id("users"),
-    },
-    handler: async (ctx, args) => {
-        const comment = await ctx.db.get(args.commentId);
-        if (!comment || comment.isDeleted) throw new Error("Comment not found");
-
-        const now = Date.now();
-        const replyId = await ctx.db.insert("commentReplies", {
-            commentId: args.commentId,
-            createdBy: args.userId,
-            agentId: args.agentId,
-            content: args.content,
-            isEdited: false,
-            isDeleted: false,
-            createdAt: now,
-        });
-
-        // Notifications would go here (omitted for brevity, similar to commentReplies.ts)
-
-        return replyId;
-    }
-});
-
-/**
- * Update status (Agent).
- */
-export const updateCommentStatus = internalMutation({
-    args: {
-        commentId: v.id("comments"),
-        resolved: v.boolean(),
-        userId: v.id("users"), // Actor
-    },
-    handler: async (ctx, args) => {
-        const comment = await ctx.db.get(args.commentId);
-        if (!comment || comment.isDeleted) throw new Error("Comment not found");
-
-        const isCurrentlyResolved = !!comment.resolvedUpdatedAt;
-        if (isCurrentlyResolved === args.resolved) return; // No change
-
-        const now = Date.now();
-        await ctx.db.patch(args.commentId, {
-            resolvedUpdatedAt: args.resolved ? now : undefined,
-            resolvedUpdatedBy: args.userId,
-        });
-    }
-});
-
-/**
- * Edit comment content (Agent).
- */
-export const editComment = internalMutation({
-    args: {
-        commentId: v.id("comments"),
-        content: v.string(),
-        userId: v.id("users"),
-    },
-    handler: async (ctx, args) => {
-        const comment = await ctx.db.get(args.commentId);
-        if (!comment || comment.isDeleted) throw new Error("Comment not found");
-
-        if (comment.createdBy !== args.userId) {
-            throw new Error("Unauthorized: Can only edit own comments");
-        }
-
-        const now = Date.now();
-        await ctx.db.patch(args.commentId, {
-            content: args.content,
-            isEdited: true,
-            editedAt: now,
-        });
-    }
-});
-
-/**
- * Delete comment (Agent).
- */
-export const deleteComment = internalMutation({
-    args: {
-        commentId: v.id("comments"),
-        userId: v.id("users"),
-    },
-    handler: async (ctx, args) => {
-        const comment = await ctx.db.get(args.commentId);
-        if (!comment || comment.isDeleted) throw new Error("Comment not found");
-
-        if (comment.createdBy !== args.userId) {
-            throw new Error("Unauthorized: Can only delete own comments");
-        }
-
-        const now = Date.now();
-        await ctx.db.patch(args.commentId, {
-            isDeleted: true,
-            deletedAt: now,
-            deletedBy: args.userId,
-        });
-
-        // Cascade to replies
-        const replies = await ctx.db
-            .query("commentReplies")
-            .withIndex("by_commentId_active", (q) =>
-                q.eq("commentId", args.commentId).eq("isDeleted", false)
-            )
-            .collect();
-
-        for (const reply of replies) {
-            await ctx.db.patch(reply._id, {
-                isDeleted: true,
-                deletedAt: now,
-                deletedBy: args.userId,
-            });
-        }
-    }
-});
-
-/**
- * Edit reply (Agent).
- */
-export const editReply = internalMutation({
-    args: {
-        replyId: v.id("commentReplies"),
-        content: v.string(),
-        userId: v.id("users"),
-    },
-    handler: async (ctx, args) => {
-        const reply = await ctx.db.get(args.replyId);
-        if (!reply || reply.isDeleted) throw new Error("Reply not found");
-
-        if (reply.createdBy !== args.userId) {
-            throw new Error("Unauthorized: Can only edit own replies");
-        }
-
-        const now = Date.now();
-        await ctx.db.patch(args.replyId, {
-            content: args.content,
-            isEdited: true,
-            editedAt: now,
-        });
-    }
-});
-
-/**
- * Delete reply (Agent).
- */
-export const deleteReply = internalMutation({
-    args: {
-        replyId: v.id("commentReplies"),
-        userId: v.id("users"),
-    },
-    handler: async (ctx, args) => {
-        const reply = await ctx.db.get(args.replyId);
-        if (!reply || reply.isDeleted) throw new Error("Reply not found");
-
-        if (reply.createdBy !== args.userId) {
-            throw new Error("Unauthorized: Can only delete own replies");
-        }
-
-        const now = Date.now();
-        await ctx.db.patch(args.replyId, {
-            isDeleted: true,
-            deletedAt: now,
-            deletedBy: args.userId,
-        });
-    }
-});
-
 // ============================================================================
-// SHARING & ACCESS MANAGEMENT (Agent API)
+// AGENT-SPECIFIC AGGREGATE QUERIES
 // ============================================================================
 
 /**
@@ -489,96 +284,16 @@ export const getShareLink = internalQuery({
 });
 
 /**
- * Create or update share link (Agent).
+ * Get the share record ID for an artifact (used by HTTP handlers to bridge
+ * artifact-based lookups to shareId-based shared internals).
  */
-export const createShareLink = internalMutation({
+export const getShareRecordByArtifact = internalQuery({
     args: {
         artifactId: v.id("artifacts"),
-        userId: v.id("users"),
-        enabled: v.optional(v.boolean()),
-        capabilities: v.optional(v.object({
-            readComments: v.boolean(),
-            writeComments: v.boolean(),
-        })),
-    },
-    returns: v.object({
-        shareUrl: v.string(),
-        enabled: v.boolean(),
-        capabilities: v.object({
-            readComments: v.boolean(),
-            writeComments: v.boolean(),
-        }),
-    }),
-    handler: async (ctx, args) => {
-        const now = Date.now();
-        const siteUrl = process.env.SITE_URL || "https://artifact.review";
-
-        // Check for existing share
-        const existingShare = await ctx.db
-            .query("artifactShares")
-            .withIndex("by_artifactId", (q) => q.eq("artifactId", args.artifactId))
-            .first();
-
-        const defaultCapabilities = { readComments: true, writeComments: false };
-        const capabilities = args.capabilities ?? defaultCapabilities;
-        const enabled = args.enabled ?? true;
-
-        if (existingShare) {
-            // Update existing share
-            await ctx.db.patch(existingShare._id, {
-                enabled,
-                capabilities,
-                updatedBy: args.userId,
-                updatedAt: now,
-            });
-
-            return {
-                shareUrl: `${siteUrl}/share/${existingShare.token}`,
-                enabled,
-                capabilities,
-            };
-        }
-
-        // Create new share
-        const token = crypto.randomUUID();
-        await ctx.db.insert("artifactShares", {
-            token,
-            artifactId: args.artifactId,
-            capabilities,
-            enabled,
-            createdBy: args.userId,
-            createdAt: now,
-        });
-
-        return {
-            shareUrl: `${siteUrl}/share/${token}`,
-            enabled,
-            capabilities,
-        };
-    },
-});
-
-/**
- * Update share link settings (Agent).
- */
-export const updateShareLink = internalMutation({
-    args: {
-        artifactId: v.id("artifacts"),
-        userId: v.id("users"),
-        enabled: v.optional(v.boolean()),
-        capabilities: v.optional(v.object({
-            readComments: v.boolean(),
-            writeComments: v.boolean(),
-        })),
     },
     returns: v.union(
         v.object({
-            shareUrl: v.string(),
-            enabled: v.boolean(),
-            capabilities: v.object({
-                readComments: v.boolean(),
-                writeComments: v.boolean(),
-            }),
+            _id: v.id("artifactShares"),
         }),
         v.null()
     ),
@@ -589,56 +304,7 @@ export const updateShareLink = internalMutation({
             .first();
 
         if (!share) return null;
-
-        const now = Date.now();
-        const siteUrl = process.env.SITE_URL || "https://artifact.review";
-
-        const updates: any = {
-            updatedBy: args.userId,
-            updatedAt: now,
-        };
-
-        if (args.enabled !== undefined) {
-            updates.enabled = args.enabled;
-        }
-        if (args.capabilities !== undefined) {
-            updates.capabilities = args.capabilities;
-        }
-
-        await ctx.db.patch(share._id, updates);
-
-        return {
-            shareUrl: `${siteUrl}/share/${share.token}`,
-            enabled: args.enabled ?? share.enabled,
-            capabilities: args.capabilities ?? share.capabilities,
-        };
-    },
-});
-
-/**
- * Delete (disable) share link (Agent).
- */
-export const deleteShareLink = internalMutation({
-    args: {
-        artifactId: v.id("artifacts"),
-        userId: v.id("users"),
-    },
-    returns: v.boolean(),
-    handler: async (ctx, args) => {
-        const share = await ctx.db
-            .query("artifactShares")
-            .withIndex("by_artifactId", (q) => q.eq("artifactId", args.artifactId))
-            .first();
-
-        if (!share) return false;
-
-        await ctx.db.patch(share._id, {
-            enabled: false,
-            updatedBy: args.userId,
-            updatedAt: Date.now(),
-        });
-
-        return true;
+        return { _id: share._id };
     },
 });
 
@@ -697,134 +363,6 @@ export const listAccess = internalQuery({
         );
 
         return results;
-    },
-});
-
-/**
- * Grant access to an artifact (Agent).
- */
-export const grantAccess = internalMutation({
-    args: {
-        artifactId: v.id("artifacts"),
-        userId: v.id("users"),
-        email: v.string(),
-    },
-    returns: v.id("artifactAccess"),
-    handler: async (ctx, args) => {
-        const normalizedEmail = args.email.toLowerCase().trim();
-        const now = Date.now();
-
-        // Check if user with this email exists
-        const existingUser = await ctx.db
-            .query("users")
-            .withIndex("email", (q) => q.eq("email", normalizedEmail))
-            .first();
-
-        // Check for existing access
-        if (existingUser) {
-            const existingAccess = await ctx.db
-                .query("artifactAccess")
-                .withIndex("by_artifactId_userId", (q) =>
-                    q.eq("artifactId", args.artifactId).eq("userId", existingUser._id)
-                )
-                .first();
-
-            if (existingAccess) {
-                if (existingAccess.isDeleted) {
-                    // Un-delete
-                    await ctx.db.patch(existingAccess._id, {
-                        isDeleted: false,
-                        deletedAt: undefined,
-                        lastSentAt: now,
-                        sendCount: existingAccess.sendCount + 1,
-                    });
-                }
-                return existingAccess._id;
-            }
-
-            // Create new access for existing user
-            return await ctx.db.insert("artifactAccess", {
-                artifactId: args.artifactId,
-                userId: existingUser._id,
-                createdBy: args.userId,
-                createdAt: now,
-                lastSentAt: now,
-                sendCount: 1,
-                isDeleted: false,
-            });
-        }
-
-        // Check for existing invite from this owner
-        let userInvite = await ctx.db
-            .query("userInvites")
-            .withIndex("by_email_createdBy", (q) =>
-                q.eq("email", normalizedEmail).eq("createdBy", args.userId)
-            )
-            .first();
-
-        if (!userInvite) {
-            // Create new invite
-            const inviteId = await ctx.db.insert("userInvites", {
-                email: normalizedEmail,
-                createdBy: args.userId,
-                createdAt: now,
-                isDeleted: false,
-            });
-            userInvite = await ctx.db.get(inviteId);
-        }
-
-        // Check for existing access with this invite
-        const existingInviteAccess = await ctx.db
-            .query("artifactAccess")
-            .withIndex("by_artifactId_userInviteId", (q) =>
-                q.eq("artifactId", args.artifactId).eq("userInviteId", userInvite!._id)
-            )
-            .first();
-
-        if (existingInviteAccess) {
-            if (existingInviteAccess.isDeleted) {
-                await ctx.db.patch(existingInviteAccess._id, {
-                    isDeleted: false,
-                    deletedAt: undefined,
-                    lastSentAt: now,
-                    sendCount: existingInviteAccess.sendCount + 1,
-                });
-            }
-            return existingInviteAccess._id;
-        }
-
-        // Create new access for invite
-        return await ctx.db.insert("artifactAccess", {
-            artifactId: args.artifactId,
-            userInviteId: userInvite!._id,
-            createdBy: args.userId,
-            createdAt: now,
-            lastSentAt: now,
-            sendCount: 1,
-            isDeleted: false,
-        });
-    },
-});
-
-/**
- * Revoke access (Agent).
- */
-export const revokeAccess = internalMutation({
-    args: {
-        accessId: v.id("artifactAccess"),
-        userId: v.id("users"),
-    },
-    returns: v.boolean(),
-    handler: async (ctx, args) => {
-        const access = await ctx.db.get(args.accessId);
-        if (!access || access.isDeleted) return false;
-
-        await ctx.db.patch(args.accessId, {
-            isDeleted: true,
-            deletedAt: Date.now(),
-        });
-
-        return true;
     },
 });
 
@@ -941,7 +479,7 @@ export const getStats = internalQuery({
 });
 
 // ============================================================================
-// VERSION MANAGEMENT (Agent API)
+// VERSION MANAGEMENT
 // ============================================================================
 
 /**

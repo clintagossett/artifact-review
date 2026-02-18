@@ -2,7 +2,8 @@
  * Comment Reply Operations
  *
  * Public API for reply CRUD operations.
- * All functions inherit permission from parent comment's version.
+ * Mutations are thin wrappers: authenticate → permission check → delegate to shared internal.
+ * Queries remain inline (read-only, no duplication concern).
  */
 
 import { query, mutation } from "./_generated/server";
@@ -11,8 +12,6 @@ import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import {
   requireCommentPermission,
-  canEditReply,
-  canDeleteReply,
 } from "./lib/commentPermissions";
 
 /**
@@ -98,8 +97,7 @@ export const getReplies = query({
 /**
  * Create a new reply to a comment.
  *
- * Requires owner or reviewer permission (inherits from parent comment).
- * Content is validated and trimmed before storage.
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const createReply = mutation({
   args: {
@@ -111,99 +109,30 @@ export const createReply = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get parent comment
+    // UI-specific: verify parent comment and permission
     const comment = await ctx.db.get(args.commentId);
     if (!comment) throw new Error("Comment not found");
     if (comment.isDeleted) throw new Error("Cannot reply to deleted comment");
-
-    // Verify permission on the version
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Validate content
-    const trimmedContent = args.content.trim();
-    if (trimmedContent.length === 0) {
-      throw new Error("Reply content cannot be empty");
-    }
-    if (trimmedContent.length > 5000) {
-      throw new Error("Reply content exceeds maximum length (5000 characters)");
-    }
-
-    const now = Date.now();
-
-    // Create reply
-    const replyId = await ctx.db.insert("commentReplies", {
-      commentId: args.commentId,
-      createdBy: userId,
-      content: trimmedContent,
-      isEdited: false,
-      isDeleted: false,
-      createdAt: now,
-    });
-
-    // NOTIFICATION LOGIC
-    // Notify: 1) Original comment author, 2) Other thread participants
-    const version = await ctx.db.get(comment.versionId);
-    if (!version) {
-      console.error("Version not found for reply notification");
-      return replyId;
-    }
-
-    const artifact = await ctx.db.get(version.artifactId);
-    if (!artifact) {
-      console.error("Artifact not found for reply notification");
-      return replyId;
-    }
-
-    const author = await ctx.db.get(userId);
-    const siteUrl = process.env.CONVEX_SITE_URL || "";
-    const artifactUrl = `${siteUrl}/artifacts/${artifact.shareToken}/v${version.number}`;
-
-    // Collect all unique participants to notify (excluding self)
-    const participantsToNotify = new Set<string>();
-
-    // 1. Add original comment author (if not self)
-    if (comment.createdBy !== userId) {
-      participantsToNotify.add(comment.createdBy);
-    }
-
-    // 2. Add all previous repliers in this thread (if not self)
-    const existingReplies = await ctx.db
-      .query("commentReplies")
-      .withIndex("by_commentId_active", (q) =>
-        q.eq("commentId", args.commentId).eq("isDeleted", false)
-      )
-      .collect();
-
-    for (const reply of existingReplies) {
-      if (reply.createdBy !== userId && reply._id !== replyId) {
-        participantsToNotify.add(reply.createdBy);
+    // Delegate to shared internal (validation, DB write, notification)
+    const replyId: string = await ctx.runMutation(
+      internal.commentsInternal.createReplyInternal,
+      {
+        commentId: args.commentId,
+        content: args.content,
+        userId,
       }
-    }
+    );
 
-    // Send notification to each participant
-    for (const participantId of participantsToNotify) {
-      await ctx.scheduler.runAfter(0, internal.novu.triggerReplyNotification, {
-        subscriberId: participantId,
-        artifactDisplayTitle: `${artifact.name} (v${version.number})`,
-        artifactUrl,
-        authorName: author?.name || "Someone",
-        authorAvatarUrl: author?.image,
-        commentPreview: trimmedContent.length > 50
-          ? `${trimmedContent.slice(0, 50)}...`
-          : trimmedContent,
-        isCommentAuthor: participantId === comment.createdBy,
-      });
-    }
-
-    return replyId;
+    return replyId as any;
   },
 });
 
 /**
  * Update a reply's content (author only).
  *
- * Sets isEdited flag and editedAt timestamp.
- * Returns null if content is unchanged (no-op).
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const updateReply = mutation({
   args: {
@@ -215,46 +144,22 @@ export const updateReply = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get reply
+    // UI-specific: verify access to the version
     const reply = await ctx.db.get(args.replyId);
     if (!reply) throw new Error("Reply not found");
     if (reply.isDeleted) throw new Error("Reply has been deleted");
 
-    // Get parent comment to verify permission
     const comment = await ctx.db.get(reply.commentId);
     if (!comment || comment.isDeleted) {
       throw new Error("Parent comment not found or deleted");
     }
-
-    // Verify permission on the version
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can edit this reply (must be creator)
-    if (!canEditReply(reply.createdBy, userId)) {
-      throw new Error("Only the reply author can edit");
-    }
-
-    // Validate content
-    const trimmedContent = args.content.trim();
-    if (trimmedContent.length === 0) {
-      throw new Error("Reply content cannot be empty");
-    }
-    if (trimmedContent.length > 5000) {
-      throw new Error("Reply content exceeds maximum length (5000 characters)");
-    }
-
-    // Skip update if content is unchanged
-    if (trimmedContent === reply.content) {
-      return null;
-    }
-
-    const now = Date.now();
-
-    // Update reply
-    await ctx.db.patch(args.replyId, {
-      content: trimmedContent,
-      isEdited: true,
-      editedAt: now,
+    // Delegate to shared internal (author check, validation, DB write)
+    await ctx.runMutation(internal.commentsInternal.editReplyInternal, {
+      replyId: args.replyId,
+      content: args.content,
+      userId,
     });
 
     return null;
@@ -264,8 +169,7 @@ export const updateReply = mutation({
 /**
  * Soft delete a reply.
  *
- * Author can delete own reply.
- * Artifact owner can delete any reply (moderation).
+ * Thin wrapper: auth → permission check → delegate to shared internal.
  */
 export const softDeleteReply = mutation({
   args: {
@@ -276,31 +180,19 @@ export const softDeleteReply = mutation({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Authentication required");
 
-    // Get reply
+    // UI-specific: DEFENSE-IN-DEPTH access check
     const reply = await ctx.db.get(args.replyId);
     if (!reply) throw new Error("Reply not found");
     if (reply.isDeleted) throw new Error("Reply already deleted");
 
-    // Get parent comment
     const comment = await ctx.db.get(reply.commentId);
     if (!comment) throw new Error("Parent comment not found");
-
-    // DEFENSE-IN-DEPTH: Verify user has access to this artifact first
     await requireCommentPermission(ctx, comment.versionId);
 
-    // Check if user can delete (creator or artifact owner)
-    const canDelete = await canDeleteReply(ctx, comment.versionId, reply.createdBy, userId);
-    if (!canDelete) {
-      throw new Error("Only the reply author or artifact owner can delete");
-    }
-
-    const now = Date.now();
-
-    // Soft delete reply with audit trail
-    await ctx.db.patch(args.replyId, {
-      isDeleted: true,
-      deletedBy: userId,
-      deletedAt: now,
+    // Delegate to shared internal (permission check, soft delete)
+    await ctx.runMutation(internal.commentsInternal.deleteReplyInternal, {
+      replyId: args.replyId,
+      userId,
     });
 
     return null;

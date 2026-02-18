@@ -218,7 +218,10 @@ paths:
 
     post:
       summary: Create a new annotation comment
-      description: Post a comment on the artifact, optionally targeting specific text.
+      description: |
+        Post a comment on the artifact, optionally targeting specific text.
+        Comments are only allowed on the latest version. Content is trimmed and
+        validated (max 10,000 characters). The artifact owner is notified.
       operationId: createArtifactComment
       parameters:
         - in: path
@@ -245,6 +248,8 @@ paths:
               properties:
                 content:
                   type: string
+                  maxLength: 10000
+                  description: Comment text. Trimmed; cannot be empty. Max 10,000 characters.
                 target:
                   type: object
                   description: W3C Annotation Target
@@ -279,6 +284,8 @@ paths:
                     type: string
                   status:
                     type: string
+        '400':
+          description: Invalid request (empty content, exceeds 10,000 chars, or not latest version)
 
   /api/v1/artifacts/{shareToken}/sharelink:
     get:
@@ -319,7 +326,10 @@ paths:
 
     post:
       summary: Create share link
-      description: Create a public share link for an artifact.
+      description: |
+        Create a public share link for an artifact. Idempotent: if a share link
+        already exists, returns the existing one. Default capabilities are view-only
+        (readComments: false, writeComments: false).
       operationId: createShareLink
       parameters:
         - in: path
@@ -333,15 +343,12 @@ paths:
             schema:
               type: object
               properties:
-                enabled:
-                  type: boolean
-                  default: true
                 capabilities:
                   type: object
                   properties:
                     readComments:
                       type: boolean
-                      default: true
+                      default: false
                     writeComments:
                       type: boolean
                       default: false
@@ -472,7 +479,10 @@ paths:
 
     post:
       summary: Grant access
-      description: Invite a user to review an artifact.
+      description: |
+        Invite a user to review an artifact. Email is validated and normalized
+        to lowercase. If the user already has access, returns 409. If access was
+        previously revoked, it is automatically restored.
       operationId: grantAccess
       parameters:
         - in: path
@@ -492,6 +502,7 @@ paths:
                 email:
                   type: string
                   format: email
+                  description: Email address of the reviewer. Validated and normalized to lowercase.
                 role:
                   type: string
                   enum: [can-comment]
@@ -508,10 +519,14 @@ paths:
                     type: string
                   status:
                     type: string
+        '400':
+          description: Invalid email address
         '401':
           description: Unauthorized
         '403':
           description: Forbidden
+        '409':
+          description: User already has access to this artifact
 
   /api/v1/artifacts/{shareToken}/access/{accessId}:
     delete:
@@ -788,7 +803,9 @@ paths:
   /api/v1/comments/{commentId}/replies:
     post:
       summary: Reply to a comment
-      description: Add a reply to an existing comment thread.
+      description: |
+        Add a reply to an existing comment thread. Content is trimmed and
+        validated (max 5,000 characters). All thread participants are notified.
       operationId: createCommentReply
       parameters:
         - in: path
@@ -807,6 +824,8 @@ paths:
               properties:
                 content:
                   type: string
+                  maxLength: 5000
+                  description: Reply text. Trimmed; cannot be empty. Max 5,000 characters.
       responses:
         '201':
           description: Reply created
@@ -817,13 +836,18 @@ paths:
                 properties:
                   id:
                     type: string
+        '400':
+          description: Invalid request (empty content or exceeds 5,000 chars)
         '404':
-          description: Parent comment not found
+          description: Parent comment not found or deleted
 
   /api/v1/comments/{commentId}:
     patch:
       summary: Update comment
-      description: Update comment content or status (resolved/unresolved).
+      description: |
+        Update comment content or status (resolved/unresolved). Content edits are
+        author-only and validated (max 10,000 characters). Resolution can be set
+        explicitly (true/false). No-op if content is unchanged or already in target state.
       operationId: updateComment
       parameters:
         - in: path
@@ -840,21 +864,26 @@ paths:
               properties:
                 content:
                   type: string
-                  description: New text content for the comment.
+                  maxLength: 10000
+                  description: New text content for the comment. Trimmed; cannot be empty. Max 10,000 characters.
                 resolved:
                   type: boolean
                   description: Set to true to resolve, false to unresolve.
       responses:
         '200':
           description: Updated successfully
+        '400':
+          description: Invalid request (empty content or exceeds 10,000 chars)
         '403':
-          description: Unauthorized (Not your comment)
+          description: Unauthorized (Not your comment for content edits)
         '404':
-          description: Comment not found
+          description: Comment not found or deleted
 
     delete:
       summary: Delete comment
-      description: Soft delete a comment and its replies.
+      description: |
+        Soft delete a comment and cascade to all its replies.
+        The comment author or the artifact owner can delete.
       operationId: deleteComment
       parameters:
         - in: path
@@ -864,16 +893,18 @@ paths:
           required: true
       responses:
         '200':
-          description: Deleted successfully
+          description: Deleted successfully (comment and replies)
         '403':
-          description: Unauthorized
+          description: Unauthorized (not comment author or artifact owner)
         '404':
-          description: Comment not found
+          description: Comment not found or already deleted
 
   /api/v1/replies/{replyId}:
     patch:
       summary: Update reply
-      description: Update reply content.
+      description: |
+        Update reply content. Author-only edit with content validation
+        (max 5,000 characters). No-op if content is unchanged.
       operationId: updateReply
       parameters:
         - in: path
@@ -892,17 +923,22 @@ paths:
               properties:
                 content:
                   type: string
+                  maxLength: 5000
+                  description: New reply text. Trimmed; cannot be empty. Max 5,000 characters.
       responses:
         '200':
           description: Updated successfully
+        '400':
+          description: Invalid request (empty content or exceeds 5,000 chars)
         '403':
-          description: Unauthorized
+          description: Unauthorized (Not your reply)
         '404':
-          description: Reply not found
+          description: Reply not found or deleted
 
     delete:
       summary: Delete reply
-      description: Soft delete a reply.
+      description: |
+        Soft delete a reply. The reply author or the artifact owner can delete.
       operationId: deleteReply
       parameters:
         - in: path
@@ -914,7 +950,7 @@ paths:
         '200':
           description: Deleted successfully
         '403':
-          description: Unauthorized
+          description: Unauthorized (not reply author or artifact owner)
         '404':
-          description: Reply not found
+          description: Reply not found or already deleted
 `;

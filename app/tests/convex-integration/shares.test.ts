@@ -227,7 +227,7 @@ describe("shares.toggleEnabled", () => {
 
     await expect(
       asOther.mutation(api.shares.toggleEnabled, { shareId })
-    ).rejects.toThrow("Only the artifact owner can toggle share links");
+    ).rejects.toThrow("Only the artifact owner can update share links");
   });
 });
 

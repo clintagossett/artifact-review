@@ -1,11 +1,14 @@
 ---
 title: Agent API Strategy
-status: Accepted
+status: Superseded (Two-Tier → Open Spec)
 date: 2026-01-21
+updated: 2026-02-17
 deciders: Clinta Gossett, Antigravity
 ---
 
 # 16. Agent API Strategy
+
+> **Superseded (2026-02-17):** The two-tiered OpenAPI discovery model (Section 1) has been replaced with a single public spec. The full OpenAPI specification at `/api/v1/openapi.yaml` is now publicly accessible without authentication. Hiding the spec provided no real security benefit — authentication enforcement on the endpoints themselves is what matters. The previous Tier 1 bootstrap spec (`app/public/openapi.yaml`) has been removed. A public discovery endpoint at `GET /api/v1` now provides auth instructions and endpoint summary. All other decisions (version targeting, W3C annotations, CRUD) remain in effect.
 
 ## Context
 
@@ -19,16 +22,13 @@ We are building an "Agent-First" collaboration platform where AI Agents need to 
 
 We have adopted the following strategies for the Agent API:
 
-### 1. Two-Tiered OpenAPI Discovery
-We use a two-tiered specifiction approach to handle discovery and security:
-*   **Tier 1: Public Discovery (`/openapi.yaml`)**:
-    *   **Access**: Public, Unauthenticated.
-    *   **Purpose**: Bootstrapping. It tells the Agent *only* how to authenticate (via `X-API-Key` header) and where the production servers are.
-    *   **Content**: Minimal. Contains Auth schemes and server URLs.
-*   **Tier 2: Protected Capability Spec (`/api/v1/openapi.yaml`)**:
-    *   **Access**: Protected (Requires valid API Key).
-    *   **Purpose**: Full capability discovery.
-    *   **Content**: The complete API definition including Artifact creation, Comment CRUD, Reply operations, and types. This allows us to expose rich functionality only to trusted agents.
+### 1. Open API Specification
+The full OpenAPI spec is publicly accessible at `/api/v1/openapi.yaml` — no authentication required. A discovery endpoint at `GET /api/v1` provides a lightweight JSON summary with auth instructions for agents that prefer a quick bootstrap.
+
+**Rationale for replacing the two-tier model:**
+*   Hiding the spec created a catch-22: agents couldn't learn the auth scheme without the spec, but needed auth to get it.
+*   The spec describes request/response shapes — it doesn't grant access. Security comes from auth enforcement on endpoints, not from obscuring the API surface.
+*   Public specs are industry standard (Stripe, GitHub, Twilio).
 
 ### 2. Explicit Version Targeting
 Agents often work with historical context or need to reference a specific iteration of a document.
@@ -51,15 +51,16 @@ Agents must manage their own lifecycle of feedback.
 ## Consequences
 
 *   **Positive**:
-    *   Secure discovery: We don't leak API surface area to unauthenticated scrapers.
+    *   Zero-friction discovery: Agents can read the full spec and start using the API immediately.
     *   Robustness: Version pinning prevents agents from hallucinating feedback on the wrong file version.
     *   Standard Compliance: Using W3C standards makes our API compatible with other annotation tools/agents in the future.
+    *   Industry standard: Matches how Stripe, GitHub, and other API-first platforms operate.
 *   **Negative**:
-    *   Complexity: Agents must perform a two-step handshake (Read Public Spec -> Auth -> Read Protected Spec) to know full capabilities.
     *   Maintenance: We must ensure the `OPENAPI_SPEC` string in the backend (`app/convex/lib/openapi.ts`) is kept in sync with implementation.
 
 ## Implementation Details
 
-*   **Public Spec**: Hosted at `app/public/openapi.yaml`.
-*   **Protected Spec**: Served via `http.ts` from `app/convex/lib/openapi.ts`.
+*   **Full Spec**: Served publicly via `http.ts` from `app/convex/lib/openapi.ts` at `/api/v1/openapi.yaml`.
+*   **Discovery Endpoint**: `GET /api/v1` returns a lightweight JSON summary with auth instructions.
+*   **Health Endpoint**: `GET /api/v1/health` for monitoring.
 *   **Backwards Compatibility**: The API uses `/api/v1/` prefixing.

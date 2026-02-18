@@ -22,29 +22,14 @@ function normalizeEmail(email: string): string {
   return email.toLowerCase().trim();
 }
 
-/**
- * Validate email format
- */
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
 // ============================================================================
 // PUBLIC MUTATIONS
 // ============================================================================
 
 /**
- * Grant access to an artifact for a reviewer (invite)
+ * Grant access to an artifact for a reviewer (invite).
  *
- * ## Behavior
- * - Normalizes email to lowercase
- * - Checks if email belongs to existing user
- *   - If YES: Creates artifactAccess with userId, no userInvites
- *   - If NO: Creates/reuses userInvites, creates artifactAccess with userInviteId
- * - Reuses existing userInvites for same (email, createdBy) pair
- * - Un-deletes existing artifactAccess if re-inviting after revocation
- * - Triggers email send via sendEmailInternal action
+ * Thin wrapper: auth → delegate to shared internal.
  */
 export const grant = mutation({
   args: {
@@ -53,182 +38,29 @@ export const grant = mutation({
   },
   returns: v.id("artifactAccess"),
   handler: async (ctx, args) => {
-    // Verify authentication
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Authentication required");
     }
 
-    // Verify artifact exists and user is owner
-    const artifact = await ctx.db.get(args.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
-
-    if (artifact.createdBy !== userId) {
-      throw new Error("Only the artifact owner can grant access");
-    }
-
-    // Validate and normalize email
-    const normalizedEmail = normalizeEmail(args.email);
-    if (!isValidEmail(normalizedEmail)) {
-      throw new Error("Invalid email address");
-    }
-
-    const now = Date.now();
-
-    // Check if email belongs to existing user
-    const existingUser = await ctx.db
-      .query("users")
-      .withIndex("email", (q) => q.eq("email", normalizedEmail))
-      .first();
-
-    let targetUserId: Id<"users"> | undefined = undefined;
-    let targetUserInviteId: Id<"userInvites"> | undefined = undefined;
-
-    if (existingUser) {
-      // Path A: Existing user - no userInvites needed
-      targetUserId = existingUser._id;
-
-      // Check for existing artifactAccess (including deleted)
-      const existingAccess = await ctx.db
-        .query("artifactAccess")
-        .withIndex("by_artifactId_userId", (q) =>
-          q.eq("artifactId", args.artifactId).eq("userId", targetUserId)
-        )
-        .unique();
-
-      if (existingAccess) {
-        if (existingAccess.isDeleted) {
-          // Un-delete and update send tracking
-          await ctx.db.patch(existingAccess._id, {
-            isDeleted: false,
-            deletedAt: undefined,
-            lastSentAt: now,
-            sendCount: existingAccess.sendCount + 1,
-          });
-
-          // Trigger email
-          if (process.env.SKIP_EMAILS !== "true") {
-            await ctx.scheduler.runAfter(
-              0,
-              internal.access.sendEmailInternal,
-              {
-                accessId: existingAccess._id,
-              }
-            );
-          }
-
-          return existingAccess._id;
-        } else {
-          throw new Error("This user already has access to this artifact");
-        }
-      }
-
-      // Create new artifactAccess for existing user
-      const accessId = await ctx.db.insert("artifactAccess", {
+    // Delegate to shared internal (ownership check, validation, DB write, email)
+    const accessId: string = await ctx.runMutation(
+      internal.accessInternal.grantAccessInternal,
+      {
         artifactId: args.artifactId,
-        userId: targetUserId,
-        createdBy: userId,
-        lastSentAt: now,
-        sendCount: 1,
-        isDeleted: false,
-        createdAt: now,
-      });
-
-      // Trigger email
-      if (process.env.SKIP_EMAILS !== "true") {
-        await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
-          accessId,
-        });
+        email: args.email,
+        userId,
       }
+    );
 
-      return accessId;
-    } else {
-      // Path B: New user - create/reuse userInvites
-      // Check for existing userInvites (one per email + createdBy)
-      const existingInvite = await ctx.db
-        .query("userInvites")
-        .withIndex("by_email_createdBy", (q) =>
-          q.eq("email", normalizedEmail).eq("createdBy", userId)
-        )
-        .first();
-
-      if (existingInvite) {
-        targetUserInviteId = existingInvite._id;
-      } else {
-        // Create new userInvites
-        targetUserInviteId = await ctx.db.insert("userInvites", {
-          email: normalizedEmail,
-          createdBy: userId,
-          isDeleted: false,
-          createdAt: now,
-        });
-      }
-
-      // Check for existing artifactAccess with this userInviteId
-      const existingAccess = await ctx.db
-        .query("artifactAccess")
-        .withIndex("by_artifactId_userInviteId", (q) =>
-          q.eq("artifactId", args.artifactId).eq("userInviteId", targetUserInviteId)
-        )
-        .unique();
-
-      if (existingAccess) {
-        if (existingAccess.isDeleted) {
-          // Un-delete and update send tracking
-          await ctx.db.patch(existingAccess._id, {
-            isDeleted: false,
-            deletedAt: undefined,
-            lastSentAt: now,
-            sendCount: existingAccess.sendCount + 1,
-          });
-
-          // Trigger email
-          if (process.env.SKIP_EMAILS !== "true") {
-            await ctx.scheduler.runAfter(
-              0,
-              internal.access.sendEmailInternal,
-              {
-                accessId: existingAccess._id,
-              }
-            );
-          }
-
-          return existingAccess._id;
-        } else {
-          throw new Error("This email has already been invited to this artifact");
-        }
-      }
-
-      // Create new artifactAccess for pending user
-      const accessId = await ctx.db.insert("artifactAccess", {
-        artifactId: args.artifactId,
-        userInviteId: targetUserInviteId,
-        createdBy: userId,
-        lastSentAt: now,
-        sendCount: 1,
-        isDeleted: false,
-        createdAt: now,
-      });
-
-      // Trigger email
-      if (process.env.SKIP_EMAILS !== "true") {
-        await ctx.scheduler.runAfter(0, internal.access.sendEmailInternal, {
-          accessId,
-        });
-      }
-
-      return accessId;
-    }
+    return accessId as any;
   },
 });
 
 /**
- * Revoke access (soft delete)
- * - Owner only
- * - Sets isDeleted flag and deletedAt timestamp
- * - Does NOT delete userInvites record
+ * Revoke access (soft delete).
+ *
+ * Thin wrapper: auth → delegate to shared internal.
  */
 export const revoke = mutation({
   args: {
@@ -236,32 +68,15 @@ export const revoke = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Verify authentication
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Authentication required");
     }
 
-    // Get access record
-    const access = await ctx.db.get(args.accessId);
-    if (!access) {
-      throw new Error("Access record not found");
-    }
-
-    // Verify artifact exists and user is owner
-    const artifact = await ctx.db.get(access.artifactId);
-    if (!artifact) {
-      throw new Error("Artifact not found");
-    }
-
-    if (artifact.createdBy !== userId) {
-      throw new Error("Only the artifact owner can revoke access");
-    }
-
-    // Soft delete
-    await ctx.db.patch(args.accessId, {
-      isDeleted: true,
-      deletedAt: Date.now(),
+    // Delegate to shared internal (ownership check, soft delete)
+    await ctx.runMutation(internal.accessInternal.revokeAccessInternal, {
+      accessId: args.accessId,
+      userId,
     });
 
     return null;
