@@ -247,12 +247,36 @@ test.describe('Stripe Pro Monthly Subscription', () => {
         await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 30000 });
         console.log('✓ Billing section loaded');
 
-        // Wait for the success message to appear (shows when ?success=true is in URL)
-        await expect(page.getByText("You're all set!")).toBeVisible({ timeout: 30000 });
+        // Wait for "You're all set!" which requires both:
+        // 1. ?success=true in URL (immediate from Stripe redirect)
+        // 2. isPro=true (requires Stripe webhook delivery + Convex processing)
+        // Webhook delivery can take 5-30s, so poll with page refreshes
+        const maxWaitMs = 90000;
+        const pollIntervalMs = 5000;
+        const startTime = Date.now();
+        let found = false;
+
+        while (Date.now() - startTime < maxWaitMs) {
+            const visible = await page.getByText("You're all set!").isVisible().catch(() => false);
+            if (visible) {
+                found = true;
+                break;
+            }
+            console.log(`Waiting for webhook processing... (${Math.round((Date.now() - startTime) / 1000)}s elapsed)`);
+            await page.waitForTimeout(pollIntervalMs);
+            // Refresh to pick up subscription changes from webhook
+            await page.goto('/settings/billing?success=true');
+            await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+            await expect(page.getByText('Subscription & Billing')).toBeVisible({ timeout: 10000 });
+        }
+
+        if (!found) {
+            throw new Error(`Timed out after ${maxWaitMs / 1000}s waiting for "You're all set!" - webhook may not have been delivered`);
+        }
         console.log('✓ Success message displayed');
 
         // Verify upgrade was successful - should show PRO badge
-        await expect(page.locator('text=PRO').first()).toBeVisible({ timeout: 30000 });
+        await expect(page.locator('text=PRO').first()).toBeVisible({ timeout: 10000 });
         console.log('✓ PRO badge visible - subscription active');
 
         console.log('═══════════════════════════════════════════════════');
