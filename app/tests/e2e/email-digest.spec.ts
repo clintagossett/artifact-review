@@ -271,18 +271,21 @@ test.describe("Email Digest System", () => {
   test.setTimeout(180000);
 
   // Email digest tests are slow (~90s each waiting for digest window + Resend indexing).
-  // Skip in CI to avoid blocking other tests. Run locally with Mailpit for fast feedback.
+  // Require either MAILPIT_API_URL (local) or RESEND_FULL_ACCESS_API_KEY (hosted).
+  // In CI, skip unless RUN_DIGEST_TESTS=true is explicitly set.
   test.beforeEach(async () => {
     const isCI = !!process.env.CI;
     const hasMailpit = !!process.env.MAILPIT_API_URL;
+    const hasResend = !!process.env.RESEND_FULL_ACCESS_API_KEY;
+    const forceRun = process.env.RUN_DIGEST_TESTS === "true";
 
-    if (isCI) {
-      console.log("Skipping email digest tests in CI - run locally with Mailpit");
+    if (isCI && !forceRun) {
+      console.log("Skipping email digest tests in CI (set RUN_DIGEST_TESTS=true to enable)");
       test.skip();
     }
 
-    if (!hasMailpit) {
-      console.log("Skipping email digest tests: MAILPIT_API_URL required for reliable testing");
+    if (!hasMailpit && !hasResend) {
+      console.log("Skipping email digest tests: MAILPIT_API_URL or RESEND_FULL_ACCESS_API_KEY required");
       test.skip();
     }
   });
