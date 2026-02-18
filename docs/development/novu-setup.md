@@ -60,20 +60,24 @@ After updating `.env.convex.local`, sync to Convex:
 ./scripts/setup-convex-env.sh --sync
 ```
 
-### Optional Variables
+### Digest Interval (Next.js / Vercel — NOT Convex)
+
+> **IMPORTANT:** `NOVU_DIGEST_INTERVAL` is read by the Novu bridge, which runs inside the **Next.js process** (`/api/novu`). It must be set as a **Next.js environment variable** (in `.env.nextjs.local` for local dev, or as a **Vercel env var** for hosted environments). Setting it in Convex (`.env.convex.local`) has **no effect** on digest timing.
 
 ```bash
-# Digest interval: how long Novu batches notifications before sending email
+# In app/.env.nextjs.local (local dev) or Vercel dashboard (hosted)
 # Format: <number><unit> where unit is s (seconds), m (minutes), or h (hours)
 #
-# Examples:
-#   30s  - 30 seconds (recommended for local dev)
-#   2m   - 2 minutes (recommended for staging)
-#   20m  - 20 minutes (recommended for production)
+# Recommended values:
+#   30s  - local dev (fast testing)
+#   2m   - staging (verify batching works)
+#   20m  - production (real user experience)
 #
-# Default: 10m (10 minutes)
+# Default (if unset): 10m
 NOVU_DIGEST_INTERVAL=30s
 ```
+
+**After changing on hosted environments:** You must redeploy the Vercel project AND re-sync the Novu workflow. See [docs/ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md#-novu_digest_interval) for the sync command.
 
 ## Local Development Setup
 

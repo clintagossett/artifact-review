@@ -217,12 +217,31 @@ These variables must be set in your local `.env.local` file and in your Frontend
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | **Stripe Key**. Publicly accessible key (starts with `pk_test_`) for the Stripe Elements / Checkout client. | `src/components/settings/BillingSection.tsx` |
 
 ### 🔔 Notifications (Novu)
-These are set in **Vercel** (or `.env.local` for local dev).
+
+Novu variables are split across **two runtimes**. Getting this wrong causes silent failures (e.g., digest emails using a 10-minute window instead of 30 seconds).
+
+#### Novu Variables: Where Each One Lives
+
+| Variable | Runtime | Set In (Local) | Set In (Hosted) | Why |
+|----------|---------|-----------------|------------------|-----|
+| `NOVU_SECRET_KEY` | **Both** | `.env.nextjs.local` + `.env.convex.local` | Vercel + Convex | Bridge auth (Next.js) + trigger API (Convex) |
+| `NOVU_API_URL` | **Convex** | `.env.convex.local` | Convex env var | Convex triggers notifications via this URL |
+| `NOVU_DIGEST_INTERVAL` | **Next.js (Vercel)** | `.env.nextjs.local` | **Vercel env var** | Read by Novu bridge at workflow execution time |
+| `NOVU_EMAIL_WEBHOOK_SECRET` | **Convex** | `.env.convex.local` | Convex env var | Webhook HMAC verification in Convex HTTP handler |
+| `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Frontend notification center SDK |
+| `NEXT_PUBLIC_NOVU_API_URL` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Browser-side Novu API for self-hosted |
+| `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Browser-side WebSocket for real-time notifications |
+
+> **Common mistake:** Setting `NOVU_DIGEST_INTERVAL` in Convex (`.env.convex.local`) instead of Vercel. The digest interval is read by `getDigestInterval()` in the Novu bridge (`src/app/api/novu/workflows/comment-workflow.ts`), which runs in the **Next.js process on Vercel** — NOT in Convex. Setting it in Convex has no effect on digest timing.
+
+#### Detailed Variable Reference
+
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
-| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. | `/api/novu/route.ts`, `convex/novu.ts` |
-| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `https://api.novu.loc`. Leave unset for Novu Cloud. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
-| `NOVU_EMAIL_WEBHOOK_SECRET` | **Secret Key**. HMAC secret for verifying Novu Email Webhook payloads. Generate with `openssl rand -hex 32`. Must match the secret configured in Novu's Email Webhook integration. Set in `.env.convex.local` and sync to Convex. | `convex/http.ts`, `convex/novuEmailWebhook.ts` |
+| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. Must be set in **both** Vercel (for bridge) and Convex (for triggers). | `/api/novu/route.ts`, `convex/novu.ts` |
+| `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `https://api.novu.loc`. Leave unset for Novu Cloud. Set in **Convex**. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
+| `NOVU_DIGEST_INTERVAL` | **Configuration**. How long Novu batches notifications before sending email. **Must be set in Vercel**, not Convex. See [Digest Interval](#novu-digest-interval) below. | `src/app/api/novu/workflows/comment-workflow.ts` |
+| `NOVU_EMAIL_WEBHOOK_SECRET` | **Secret Key**. HMAC secret for verifying Novu Email Webhook payloads. Generate with `openssl rand -hex 32`. Set in **Convex** (`.env.convex.local` + sync). | `convex/http.ts`, `convex/novuEmailWebhook.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
 | `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `https://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
 | `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Configuration**. Novu WebSocket URL (browser-side). For local dev: `wss://ws.novu.loc`. Required for self-hosted Novu real-time notifications. | `src/components/NotificationCenter.tsx` |
@@ -246,7 +265,29 @@ To use the shared instance:
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
 | `MAILPIT_API_URL` | **Configuration**. Mailpit API endpoint for local email testing. Set for local dev only (e.g., `https://{agent}.mailpit.loc/api/v1`). Leave unset for hosted environments. | `tests/utils/resend.ts` |
-| `NOVU_DIGEST_INTERVAL` | **Configuration**. How long Novu batches notifications before sending email.<br/><br/>**Format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours).<br/><br/>**Examples:**<br/>- `30s` - 30 seconds (local dev)<br/>- `2m` - 2 minutes (staging)<br/>- `20m` - 20 minutes (production)<br/><br/>**Default:** `10m` | `src/app/api/novu/workflows/comment-workflow.ts` |
+
+### ⏱️ NOVU_DIGEST_INTERVAL
+
+**Runtime:** Next.js (Vercel) — NOT Convex
+
+**Format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours).
+
+| Environment | Value | Set Where |
+|-------------|-------|-----------|
+| Local dev | `30s` | `app/.env.nextjs.local` |
+| Dev (hosted) | `30s` | Vercel env var (project: `artifact-review-dev`) |
+| Staging | `2m` | Vercel env var (project: `artifact-review-staging`) |
+| Production | `20m` | Vercel env var (project: `artifact-review`) |
+
+**Default (if unset):** `10m`
+
+**How it works:** The Novu bridge runs as a Next.js API route (`/api/novu`). When Novu Cloud executes the `new-comment` workflow and reaches the digest step, it calls the bridge, which reads `process.env.NOVU_DIGEST_INTERVAL` via `getDigestInterval()` in `comment-workflow.ts` and returns the interval to Novu.
+
+**After changing the value in Vercel:**
+1. Redeploy the Vercel project (env var changes require a new deployment)
+2. Sync the workflow to Novu Cloud: `curl -X POST https://api.novu.co/v1/bridge/sync -H "Authorization: ApiKey $NOVU_SECRET_KEY" -H "Content-Type: application/json" -d '{"bridgeUrl": "https://<site-url>/api/novu"}'`
+
+**Code:** `src/app/api/novu/workflows/comment-workflow.ts` → `getDigestInterval()`
 
 ### ℹ️ Optional
 | Variable Name | Description | Default |
