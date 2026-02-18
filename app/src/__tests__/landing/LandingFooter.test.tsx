@@ -35,47 +35,31 @@ describe("LandingFooter", () => {
         expect(screen.getByText("Product")).toBeInTheDocument();
       });
 
-      it("should display product links", () => {
+      it("should display product links with correct hrefs", () => {
         render(<LandingFooter />);
 
-        expect(screen.getByRole("link", { name: /^features$/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /^pricing$/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /security/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /changelog/i })).toBeInTheDocument();
+        const featuresLink = screen.getByRole("link", { name: /^features$/i });
+        expect(featuresLink).toHaveAttribute("href", "/#features");
+
+        const pricingLink = screen.getByRole("link", { name: /^pricing$/i });
+        expect(pricingLink).toHaveAttribute("href", "/#pricing");
       });
     });
 
-    describe("Resources Section", () => {
-      it("should display Resources section heading", () => {
+    describe("Legal Section", () => {
+      it("should display Legal section heading", () => {
         render(<LandingFooter />);
 
-        expect(screen.getByText("Resources")).toBeInTheDocument();
+        expect(screen.getByText("Legal")).toBeInTheDocument();
       });
 
-      it("should display resource links", () => {
+      it("should display legal links with correct hrefs", () => {
         render(<LandingFooter />);
 
-        expect(screen.getByRole("link", { name: /documentation/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /blog/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /help center/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /status/i })).toBeInTheDocument();
-      });
-    });
-
-    describe("Company Section", () => {
-      it("should display Company section heading", () => {
-        render(<LandingFooter />);
-
-        expect(screen.getByText("Company")).toBeInTheDocument();
-      });
-
-      it("should display company links", () => {
-        render(<LandingFooter />);
-
-        expect(screen.getByRole("link", { name: /about/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /contact/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /privacy/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /terms/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /^privacy$/i })).toHaveAttribute("href", "/privacy");
+        expect(screen.getByRole("link", { name: /^terms$/i })).toHaveAttribute("href", "/terms");
+        expect(screen.getByRole("link", { name: /acceptable use/i })).toHaveAttribute("href", "/acceptable-use");
+        expect(screen.getByRole("link", { name: /^cookies$/i })).toHaveAttribute("href", "/cookies");
       });
     });
   });
@@ -84,7 +68,7 @@ describe("LandingFooter", () => {
     it("should display copyright text", () => {
       render(<LandingFooter />);
 
-      expect(screen.getByText(/© 2025 artifact review/i)).toBeInTheDocument();
+      expect(screen.getByText(/© 2026 artifact review/i)).toBeInTheDocument();
     });
 
     it("should display built with message", () => {
@@ -160,11 +144,13 @@ describe("LandingFooter", () => {
       expect(featuresLink).toHaveClass("hover:text-white");
     });
 
-    it("should use placeholder hrefs for links", () => {
-      render(<LandingFooter />);
+    it("should not have any dead placeholder links", () => {
+      const { container } = render(<LandingFooter />);
 
-      const featuresLink = screen.getByRole("link", { name: /^features$/i });
-      expect(featuresLink).toHaveAttribute("href", "#");
+      const allLinks = container.querySelectorAll("a");
+      allLinks.forEach((link) => {
+        expect(link.getAttribute("href")).not.toBe("#");
+      });
     });
   });
 });
