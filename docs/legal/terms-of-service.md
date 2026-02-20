@@ -4,9 +4,16 @@
 
 From everyone at Artifact Review, thank you for using our products! We build them to help you do your best work.
 
-When we say "Company", "we", "our", or "us" in this document, we are referring to **Artifact Review**.
+When we say "Company", "we", "our", or "us" in this document, we are referring to **Product for People, LLC**, doing business as **Artifact Review**.
 
 When we say "Services", we mean our websites and any product created and maintained by Artifact Review.
+
+**Company Information:**
+
+Product for People, LLC (d/b/a Artifact Review)
+732 S 6th St, Ste N
+Las Vegas, NV 89101, USA
+Email: [legal@artifactreview.com](mailto:legal@artifactreview.com)
 
 When we say "You" or "your", we are referring to the people or organizations that own an account with one or more of our Services.
 

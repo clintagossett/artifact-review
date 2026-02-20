@@ -24,9 +24,10 @@ Send your DMCA takedown notice to:
 **Email:** [dmca@artifactreview.com](mailto:dmca@artifactreview.com)
 
 **Mail:**
-Artifact Review
+Product for People, LLC (d/b/a Artifact Review)
 Attn: DMCA Agent
-[Address to be provided upon DMCA agent registration]
+732 S 6th St, Ste N
+Las Vegas, NV 89101, USA
 
 **Please note:** Under Section 512(f) of the DMCA, any person who knowingly materially misrepresents that material or activity is infringing may be subject to liability for damages, including costs and attorneys' fees incurred by us or our users.
 
@@ -87,7 +88,11 @@ We handle all DMCA notices and counter-notifications in good faith. We encourage
 
 ## DMCA Agent Registration
 
-We will register a designated DMCA agent with the U.S. Copyright Office as required by law. Our agent's contact information will be updated here and on the Copyright Office's directory when registration is complete.
+Our designated DMCA agent is registered with the U.S. Copyright Office as required by law (Registration Number: DMCA-1070101).
+
+**Designated Agent:** Clint Gossett, Product for People, LLC
+**Address:** 732 S 6th St, Ste N, Las Vegas, NV 89101, USA
+**Email:** [dmca@artifactreview.com](mailto:dmca@artifactreview.com)
 
 ---
 

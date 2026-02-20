@@ -1,0 +1,116 @@
+{
+  "domain": "productforpeople.com",
+  "alias_domain": "artifactreview.com",
+  "admin_email": "clint@productforpeople.com",
+  "agent_email": "artifactreview.agent@gmail.com",
+  "notes": "Groups are created on the primary domain (productforpeople.com). The alias domain (artifactreview.com) automatically mirrors all group addresses. abuse@ is a Google-reserved address and cannot be modified via API — settings must be changed manually in Google Admin Console. Subject prefix CANNOT be set via API — must be set manually in Admin Console under Email options > Subject prefix.",
+  "groups": [
+    {
+      "email": "legal@productforpeople.com",
+      "name": "Legal",
+      "description": "Legal inquiries for Artifact Review",
+      "subject_prefix_manual": "[legal]",
+      "referenced_in": "Terms of Service (legal@artifactreview.com)",
+      "members": [
+        {"email": "clint@productforpeople.com", "role": "OWNER"},
+        {"email": "artifactreview.agent@gmail.com", "role": "MEMBER"}
+      ],
+      "settings": {
+        "whoCanPostMessage": "ANYONE_CAN_POST",
+        "whoCanJoin": "INVITED_CAN_JOIN",
+        "whoCanViewGroup": "ALL_MEMBERS_CAN_VIEW",
+        "allowExternalMembers": "false",
+        "enableCollaborativeInbox": "true",
+        "membersCanPostAsTheGroup": "true",
+        "isArchived": "false",
+        "messageModerationLevel": "MODERATE_NONE",
+        "spamModerationLevel": "ALLOW"
+      }
+    },
+    {
+      "email": "privacy@productforpeople.com",
+      "name": "Privacy",
+      "description": "Privacy inquiries and data rights requests for Artifact Review",
+      "subject_prefix_manual": "[privacy]",
+      "referenced_in": "Privacy Policy, CCPA Notice (privacy@artifactreview.com)",
+      "members": [
+        {"email": "clint@productforpeople.com", "role": "OWNER"},
+        {"email": "artifactreview.agent@gmail.com", "role": "MEMBER"}
+      ],
+      "settings": {
+        "whoCanPostMessage": "ANYONE_CAN_POST",
+        "whoCanJoin": "INVITED_CAN_JOIN",
+        "whoCanViewGroup": "ALL_MEMBERS_CAN_VIEW",
+        "allowExternalMembers": "false",
+        "enableCollaborativeInbox": "true",
+        "membersCanPostAsTheGroup": "true",
+        "isArchived": "false",
+        "messageModerationLevel": "MODERATE_NONE",
+        "spamModerationLevel": "ALLOW"
+      }
+    },
+    {
+      "email": "dmca@productforpeople.com",
+      "name": "DMCA",
+      "description": "DMCA takedown notices and counter-notifications for Artifact Review",
+      "subject_prefix_manual": "[dmca]",
+      "referenced_in": "DMCA Policy (dmca@artifactreview.com)",
+      "members": [
+        {"email": "clint@productforpeople.com", "role": "OWNER"},
+        {"email": "artifactreview.agent@gmail.com", "role": "MEMBER"}
+      ],
+      "settings": {
+        "whoCanPostMessage": "ANYONE_CAN_POST",
+        "whoCanJoin": "INVITED_CAN_JOIN",
+        "whoCanViewGroup": "ALL_MEMBERS_CAN_VIEW",
+        "allowExternalMembers": "false",
+        "enableCollaborativeInbox": "true",
+        "membersCanPostAsTheGroup": "true",
+        "isArchived": "false",
+        "messageModerationLevel": "MODERATE_NONE",
+        "spamModerationLevel": "ALLOW"
+      }
+    },
+    {
+      "email": "support@productforpeople.com",
+      "name": "Support",
+      "description": "Customer support for Artifact Review",
+      "subject_prefix_manual": "[support]",
+      "referenced_in": "Terms of Service (support@artifactreview.com)",
+      "members": [
+        {"email": "clint@productforpeople.com", "role": "OWNER"},
+        {"email": "artifactreview.agent@gmail.com", "role": "MEMBER"}
+      ],
+      "settings": {
+        "whoCanPostMessage": "ANYONE_CAN_POST",
+        "whoCanJoin": "INVITED_CAN_JOIN",
+        "whoCanViewGroup": "ALL_MEMBERS_CAN_VIEW",
+        "allowExternalMembers": "false",
+        "enableCollaborativeInbox": "true",
+        "membersCanPostAsTheGroup": "true",
+        "isArchived": "false",
+        "messageModerationLevel": "MODERATE_NONE",
+        "spamModerationLevel": "ALLOW"
+      }
+    },
+    {
+      "email": "abuse@productforpeople.com",
+      "name": "Abuse",
+      "description": "Abuse reports for Artifact Review",
+      "subject_prefix_manual": "[abuse]",
+      "referenced_in": "Acceptable Use Policy (abuse@artifactreview.com)",
+      "reserved": true,
+      "reserved_note": "Google reserves abuse@ — all settings and subject prefix must be changed manually in Admin Console",
+      "members": [
+        {"email": "clint@productforpeople.com", "role": "OWNER"},
+        {"email": "artifactreview.agent@gmail.com", "role": "MEMBER"}
+      ],
+      "settings": {
+        "whoCanPostMessage": "ANYONE_CAN_POST",
+        "enableCollaborativeInbox": "true",
+        "membersCanPostAsTheGroup": "true",
+        "spamModerationLevel": "ALLOW"
+      }
+    }
+  ]
+}
