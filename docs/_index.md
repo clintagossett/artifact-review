@@ -10,6 +10,7 @@ Project documentation for **Artifact Review**.
 |---------|-------------|
 | [api/](./api/_index.md) | **Agent API documentation for integrations** |
 | [development/](./development/_index.md) | **TDD workflow, testing, and logging guides** |
+| [business/](./business/_index.md) | **Business entity, compliance inboxes, DMCA registration** |
 | [setup/](./setup/) | Account setup, environment configuration, agent access |
 | [market-intelligence/](./market-intelligence/_index.md) | Market analysis, competitive landscape, TAM/SAM/SOM |
 | [marketing/](./marketing/_index.md) | Positioning, messaging, UVP, and go-to-market strategy |
