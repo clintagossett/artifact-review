@@ -99,6 +99,30 @@ g.get_settings("legal@productforpeople.com")
 g.add_member("legal@productforpeople.com", "newuser@example.com", role="MEMBER")
 ```
 
+## Agent Email Inbox
+
+The agent email `artifactreview.agent@gmail.com` is a member of all Google Groups and receives copies of every inbound message. This is how AI agents can read and respond to legal, support, and compliance emails.
+
+**Credentials:** Stored in Vaultwarden under `agent-email-imap` (IMAP app password).
+
+**Accessing the inbox (IMAP via offlineimap):**
+
+```bash
+# Sync inbox (downloads new messages to ~/.mail/)
+offlineimap -o
+
+# Read recent messages
+ls ~/.mail/INBOX/new/              # Unread messages
+ls ~/.mail/INBOX/cur/              # Read messages
+grep "^Subject:" ~/.mail/INBOX/new/*   # List subjects of unread mail
+```
+
+**offlineimap configuration:** `~/.offlineimaprc` configures the IMAP connection. The password is retrieved at runtime from Vaultwarden via `~/.offlineimap-helper.py` (never stored in plaintext).
+
+**Replying as the group address:** Groups have `membersCanPostAsTheGroup` enabled, so the agent can send replies using the group email (e.g., `legal@artifactreview.com`) as the From address via the Groups API or SMTP.
+
+**Gmail web access:** [https://mail.google.com](https://mail.google.com) — sign in as `artifactreview.agent@gmail.com`. The app password in Vaultwarden is for IMAP only; the Gmail web UI uses the account's regular password (also in Vaultwarden under `agent-email-imap`, username field).
+
 ## Known Limitations
 
 - `abuse@` is a Google-reserved address. Its settings **cannot** be changed via API — must be configured manually in Google Admin Console.
