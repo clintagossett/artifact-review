@@ -9,7 +9,7 @@ export function LandingFooter({ className = "" }: LandingFooterProps) {
   return (
     <footer className={`bg-gray-900 text-gray-400 py-16 ${className}`}>
       <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-        <div className="grid md:grid-cols-3 gap-12 mb-12">
+        <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -66,6 +66,29 @@ export function LandingFooter({ className = "" }: LandingFooterProps) {
                 <Link href="/cookies" className="hover:text-white transition">
                   Cookies
                 </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <p className="font-semibold text-white mb-4">Contact</p>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <a
+                  href="mailto:support@artifactreview.com"
+                  className="hover:text-white transition"
+                >
+                  Support
+                </a>
+              </li>
+              <li>
+                <a
+                  href="mailto:legal@artifactreview.com"
+                  className="hover:text-white transition"
+                >
+                  Legal Inquiries
+                </a>
               </li>
             </ul>
           </div>
