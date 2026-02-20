@@ -62,6 +62,21 @@ describe("LandingFooter", () => {
         expect(screen.getByRole("link", { name: /^cookies$/i })).toHaveAttribute("href", "/cookies");
       });
     });
+
+    describe("Contact Section", () => {
+      it("should display Contact section heading", () => {
+        render(<LandingFooter />);
+
+        expect(screen.getByText("Contact")).toBeInTheDocument();
+      });
+
+      it("should display contact links with correct mailto hrefs", () => {
+        render(<LandingFooter />);
+
+        expect(screen.getByRole("link", { name: /^support$/i })).toHaveAttribute("href", "mailto:support@artifactreview.com");
+        expect(screen.getByRole("link", { name: /legal inquiries/i })).toHaveAttribute("href", "mailto:legal@artifactreview.com");
+      });
+    });
   });
 
   describe("Footer Bottom", () => {
