@@ -75,8 +75,7 @@ NEXT_PUBLIC_CONVEX_HTTP_URL=https://james.convex.site.loc
 RESEND_FULL_ACCESS_API_KEY=re_dummy_key_for_localhost
 MAILPIT_API_URL=https://james.mailpit.loc/api/v1
 
-# Novu notifications
-NOVU_SECRET_KEY=...
+# Novu notifications (browser SDK only)
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=...
 ```
 
@@ -224,23 +223,23 @@ Novu variables are split across **two runtimes**. Getting this wrong causes sile
 
 | Variable | Runtime | Set In (Local) | Set In (Hosted) | Why |
 |----------|---------|-----------------|------------------|-----|
-| `NOVU_SECRET_KEY` | **Both** | `.env.nextjs.local` + `.env.convex.local` | Vercel + Convex | Bridge auth (Next.js) + trigger API (Convex) |
+| `NOVU_SECRET_KEY` | **Convex** | `.env.convex.local` | Convex env var | Bridge auth (Convex HTTP action) + trigger API (Convex) |
 | `NOVU_API_URL` | **Convex** | `.env.convex.local` | Convex env var | Convex triggers notifications via this URL |
-| `NOVU_DIGEST_INTERVAL` | **Next.js (Vercel)** | `.env.nextjs.local` | **Vercel env var** | Read by Novu bridge at workflow execution time |
+| `NOVU_DIGEST_INTERVAL` | **Convex** | `.env.convex.local` | Convex env var | Read by Novu bridge at workflow execution time |
 | `NOVU_EMAIL_WEBHOOK_SECRET` | **Convex** | `.env.convex.local` | Convex env var | Webhook HMAC verification in Convex HTTP handler |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Frontend notification center SDK |
 | `NEXT_PUBLIC_NOVU_API_URL` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Browser-side Novu API for self-hosted |
 | `NEXT_PUBLIC_NOVU_SOCKET_URL` | **Next.js (browser)** | `.env.nextjs.local` | Vercel env var | Browser-side WebSocket for real-time notifications |
 
-> **Common mistake:** Setting `NOVU_DIGEST_INTERVAL` in Convex (`.env.convex.local`) instead of Vercel. The digest interval is read by `getDigestInterval()` in the Novu bridge (`src/app/api/novu/workflows/comment-workflow.ts`), which runs in the **Next.js process on Vercel** — NOT in Convex. Setting it in Convex has no effect on digest timing.
+> **Note:** `NOVU_DIGEST_INTERVAL` is read by the Novu bridge, which now runs as a Convex HTTP action (`/novu-bridge`). Set it in `.env.convex.local` and sync to Convex.
 
 #### Detailed Variable Reference
 
 | Variable Name | Description | Used In Files |
 | :--- | :--- | :--- |
-| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. Must be set in **both** Vercel (for bridge) and Convex (for triggers). | `/api/novu/route.ts`, `convex/novu.ts` |
+| `NOVU_SECRET_KEY` | **Secret Key**. Private API key from Novu dashboard. Set in **Convex** (used by bridge and trigger API). | `convex/novuBridge.ts`, `convex/novu.ts` |
 | `NOVU_API_URL` | **Configuration**. Novu API endpoint URL (server-side). For local dev with shared orchestrator: `https://api.novu.loc`. Leave unset for Novu Cloud. Set in **Convex**. | `convex/novu.ts`, `tests/e2e/smoke-integrations.spec.ts` |
-| `NOVU_DIGEST_INTERVAL` | **Configuration**. How long Novu batches notifications before sending email. **Must be set in Vercel**, not Convex. See [Digest Interval](#novu-digest-interval) below. | `src/app/api/novu/workflows/comment-workflow.ts` |
+| `NOVU_DIGEST_INTERVAL` | **Configuration**. How long Novu batches notifications before sending email. Set in **Convex** (`.env.convex.local` + sync). See [Digest Interval](#novu-digest-interval) below. | `convex/novuBridge.ts` |
 | `NOVU_EMAIL_WEBHOOK_SECRET` | **Secret Key**. HMAC secret for verifying Novu Email Webhook payloads. Generate with `openssl rand -hex 32`. Set in **Convex** (`.env.convex.local` + sync). | `convex/http.ts`, `convex/novuEmailWebhook.ts` |
 | `NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER` | **Configuration**. Public App ID for the frontend SDK. | `src/components/NotificationCenter.tsx` |
 | `NEXT_PUBLIC_NOVU_API_URL` | **Configuration**. Novu API endpoint URL (browser-side). For local dev: `https://api.novu.loc`. Required for self-hosted Novu. | `src/components/NotificationCenter.tsx` |
@@ -268,26 +267,24 @@ To use the shared instance:
 
 ### ⏱️ NOVU_DIGEST_INTERVAL
 
-**Runtime:** Next.js (Vercel) — NOT Convex
+**Runtime:** Convex
 
 **Format:** `<number><unit>` where unit is `s` (seconds), `m` (minutes), or `h` (hours).
 
 | Environment | Value | Set Where |
 |-------------|-------|-----------|
-| Local dev | `30s` | `app/.env.nextjs.local` |
-| Dev (hosted) | `30s` | Vercel env var (project: `artifact-review-dev`) |
-| Staging | `2m` | Vercel env var (project: `artifact-review-staging`) |
-| Production | `20m` | Vercel env var (project: `artifact-review`) |
+| Local dev | `30s` | `app/.env.convex.local` (sync to Convex) |
+| Dev (hosted) | `30s` | Convex env var (deployment: `beaming-oriole-310`) |
+| Staging | `2m` | Convex env var (deployment: `adventurous-mosquito-571`) |
+| Production | `20m` | Convex env var (deployment: `gallant-wolverine-81`) |
 
 **Default (if unset):** `10m`
 
-**How it works:** The Novu bridge runs as a Next.js API route (`/api/novu`). When Novu Cloud executes the `new-comment` workflow and reaches the digest step, it calls the bridge, which reads `process.env.NOVU_DIGEST_INTERVAL` via `getDigestInterval()` in `comment-workflow.ts` and returns the interval to Novu.
+**How it works:** The Novu bridge runs as a Convex HTTP action at `/novu-bridge`. When Novu executes the `new-comment` workflow and reaches the digest step, it calls the bridge, which reads the `NOVU_DIGEST_INTERVAL` environment variable via `getDigestInterval()` in `convex/novuBridge.ts` and returns the interval to Novu.
 
-**After changing the value in Vercel:**
-1. Redeploy the Vercel project (env var changes require a new deployment)
-2. Sync the workflow to Novu Cloud: `curl -X POST https://api.novu.co/v1/bridge/sync -H "Authorization: ApiKey $NOVU_SECRET_KEY" -H "Content-Type: application/json" -d '{"bridgeUrl": "https://<site-url>/api/novu"}'`
+**After changing:** Takes effect on the next bridge request (no redeploy needed). For local dev, run `./scripts/setup-convex-env.sh --sync` after editing `.env.convex.local`. For hosted environments, set directly with `npx convex env set NOVU_DIGEST_INTERVAL "2m" --prod`.
 
-**Code:** `src/app/api/novu/workflows/comment-workflow.ts` → `getDigestInterval()`
+**Code:** `convex/novuBridge.ts` → `getDigestInterval()`
 
 ### ℹ️ Optional
 | Variable Name | Description | Default |

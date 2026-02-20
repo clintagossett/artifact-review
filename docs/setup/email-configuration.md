@@ -207,16 +207,16 @@ Email Webhook → Convex HTTP endpoint → React Email render → Resend → Mai
 
 The digest batching window is controlled by `NOVU_DIGEST_INTERVAL`. This determines how long Novu waits to batch notifications before sending a single digest email.
 
-> **CRITICAL:** This variable is read by the **Novu bridge (Next.js/Vercel)**, NOT by Convex. Set it in `app/.env.nextjs.local` (local) or as a **Vercel env var** (hosted). Do NOT set it in `.env.convex.local` — it will have no effect there.
+This variable is read by the **Novu bridge (Convex HTTP action at `/novu-bridge`)**. Set it in `.env.convex.local` (local dev) or directly in Convex (hosted environments).
 
 | Environment | Value | Where to Set |
 |-------------|-------|-------------|
-| Local dev | `30s` | `app/.env.nextjs.local` |
-| Dev | `30s` | Vercel project `artifact-review-dev` |
-| Staging | `2m` | Vercel project `artifact-review-staging` |
-| Production | `20m` | Vercel project `artifact-review` |
+| Local dev | `30s` | `app/.env.convex.local` (then `./scripts/setup-convex-env.sh --sync`) |
+| Dev | `30s` | Convex env var (deployment: `beaming-oriole-310`) |
+| Staging | `2m` | Convex env var (deployment: `adventurous-mosquito-571`) |
+| Production | `20m` | Convex env var (deployment: `gallant-wolverine-81`) |
 
-See [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md#-novu_digest_interval) for full details and the post-change sync procedure.
+See [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md#-novu_digest_interval) for full details.
 
 ### Email Webhook Setup
 
@@ -257,7 +257,7 @@ This separation ensures:
 - `app/convex/lib/emailRenderer.ts` - Convex email renderer
 - `app/convex/novuEmailWebhook.ts` - Novu webhook handler
 - `app/convex/novu.ts` - Novu notification triggers
-- `app/src/app/api/novu/workflows/comment-workflow.ts` - Notification workflow
+- `app/convex/novuBridge.ts` - Novu bridge + notification workflow
 - `scripts/setup-novu-email-webhook.sh` - Webhook integration setup
 - `app/tests/utils/resend.ts` - Test email retrieval utility
 - [Novu Setup Guide](../development/novu-setup.md) - Complete Novu configuration guide
