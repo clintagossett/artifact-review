@@ -6,7 +6,7 @@ The privacy of your data — and it is your data, not ours! — is a big deal to
 
 This policy applies to all products and services built and maintained by **Artifact Review** (together, the "Services").
 
-When we say "Company", "we", "our", or "us" in this document, we are referring to **Artifact Review**.
+When we say "Company", "we", "our", or "us" in this document, we are referring to **Product for People, LLC**, doing business as **Artifact Review**.
 
 If you are a California resident, please see our [California Resident Notice at Collection](ccpa-notice.md), which includes additional disclosures as required by California law.
 
