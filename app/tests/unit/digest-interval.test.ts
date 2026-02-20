@@ -19,6 +19,8 @@ describe("getDigestInterval", () => {
   beforeEach(() => {
     vi.resetModules();
     process.env = { ...originalEnv };
+    // NovuRequestHandler requires NOVU_SECRET_KEY at module load time
+    process.env.NOVU_SECRET_KEY = "test-secret-key";
   });
 
   afterEach(() => {
@@ -34,7 +36,7 @@ describe("getDigestInterval", () => {
 
     // Dynamic import to pick up new env value
     const module = await import(
-      "../../src/app/api/novu/workflows/comment-workflow"
+      "../../convex/novuBridge"
     );
     return module.getDigestInterval();
   }

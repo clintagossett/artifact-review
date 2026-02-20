@@ -315,6 +315,54 @@ http.route({
   }),
 });
 
+// ============================================================================
+// NOVU BRIDGE - Workflow discovery and execution (moved from Next.js /api/novu)
+// Novu Cloud calls these endpoints to discover workflows and execute steps.
+// The httpAction (V8) serializes the request and delegates to an internalAction
+// (Node.js) that runs NovuRequestHandler for @novu/framework + React Email.
+// See: tasks/00144-move-novu-bridge-to-convex
+// ============================================================================
+
+const novuBridgeHandler = httpAction(async (ctx, req) => {
+  const body = req.method === "GET" || req.method === "OPTIONS"
+    ? null
+    : await req.text();
+  const headerEntries: string[][] = [];
+  req.headers.forEach((value, key) => {
+    headerEntries.push([key, value]);
+  });
+
+  const result = await ctx.runAction(internal.novuBridge.handleNovuRequest, {
+    method: req.method,
+    url: req.url,
+    headers: headerEntries,
+    body,
+  });
+
+  return new Response(result.body, {
+    status: result.status,
+    headers: result.headers as Record<string, string>,
+  });
+});
+
+http.route({
+  path: "/novu-bridge",
+  method: "GET",
+  handler: novuBridgeHandler,
+});
+
+http.route({
+  path: "/novu-bridge",
+  method: "POST",
+  handler: novuBridgeHandler,
+});
+
+http.route({
+  path: "/novu-bridge",
+  method: "OPTIONS",
+  handler: novuBridgeHandler,
+});
+
 http.route({
   path: "/send-auth-email",
   method: "POST",

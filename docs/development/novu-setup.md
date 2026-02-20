@@ -6,17 +6,17 @@ This guide covers setting up and testing Novu notifications for comment notifica
 
 The notification system uses:
 - **Shared Novu Instance** - Self-hosted notification orchestration (https://novu.loc)
-- **Novu Bridge** - Next.js API route for workflow discovery/execution
+- **Novu Bridge** - Convex HTTP action for workflow discovery/execution (`/novu-bridge`)
 - **Novu Notification Center** - React component for in-app notifications
 
 ## Architecture
 
 ```
-User comments → Convex trigger → Novu (local) → Bridge → Workflow → In-App (real-time)
-                                                                  ↓
-                                                            Digest (batching)
-                                                                  ↓
-                                              Email Webhook → Convex HTTP → Resend → Mailpit
+User comments → Convex trigger → Novu (local) → Convex HTTP (/novu-bridge) → Workflow → In-App (real-time)
+                                                                                       ↓
+                                                                                 Digest (batching)
+                                                                                       ↓
+                                                               Email Webhook → Convex HTTP → Resend → Mailpit
 ```
 
 **Email Flow:** Instead of Novu sending emails directly via Resend, Novu POSTs to our Convex webhook. Convex renders React Email templates and sends via Resend (which goes to Mailpit in local dev).
@@ -33,13 +33,9 @@ The shared Novu instance must be running. See the infrastructure setup guide:
 ### Frontend Variables (`.env.local` or `.env.nextjs.local`)
 
 ```bash
-# Novu API endpoint (shared local instance)
-NOVU_API_URL=https://api.novu.loc
+# Novu browser SDK (shared local instance)
 NEXT_PUBLIC_NOVU_API_URL=https://api.novu.loc
 NEXT_PUBLIC_NOVU_SOCKET_URL=wss://ws.novu.loc
-
-# Novu Secret Key (auto-populated by setup-novu-org.sh)
-NOVU_SECRET_KEY=your-agent-secret-key
 
 # Novu Application ID (auto-populated by setup-novu-org.sh)
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=your-agent-app-id
@@ -60,20 +56,24 @@ After updating `.env.convex.local`, sync to Convex:
 ./scripts/setup-convex-env.sh --sync
 ```
 
-### Optional Variables
+### Digest Interval (Convex)
+
+`NOVU_DIGEST_INTERVAL` is read by the Novu bridge, which runs as a **Convex HTTP action** (`/novu-bridge`). Set it in `.env.convex.local` (local dev) or directly in Convex (hosted environments).
 
 ```bash
-# Digest interval: how long Novu batches notifications before sending email
+# In app/.env.convex.local (then sync with ./scripts/setup-convex-env.sh --sync)
 # Format: <number><unit> where unit is s (seconds), m (minutes), or h (hours)
 #
-# Examples:
-#   30s  - 30 seconds (recommended for local dev)
-#   2m   - 2 minutes (recommended for staging)
-#   20m  - 20 minutes (recommended for production)
+# Recommended values:
+#   30s  - local dev (fast testing)
+#   2m   - staging (verify batching works)
+#   20m  - production (real user experience)
 #
-# Default: 10m (10 minutes)
+# Default (if unset): 10m
 NOVU_DIGEST_INTERVAL=30s
 ```
+
+**After changing:** Takes effect on the next bridge request (no redeploy needed). For local dev, run `./scripts/setup-convex-env.sh --sync`. For hosted environments, set with `npx convex env set NOVU_DIGEST_INTERVAL "2m" --prod`.
 
 ## Local Development Setup
 
@@ -210,29 +210,29 @@ If automatic sync fails, you can sync manually:
 **Option A: CLI**
 ```bash
 npx novu@latest sync \
-  --bridge-url https://mark.loc/api/novu \
-  --secret-key $(grep NOVU_SECRET_KEY app/.env.nextjs.local | cut -d= -f2) \
+  --bridge-url https://mark.convex.site.loc/novu-bridge \
+  --secret-key $(grep NOVU_SECRET_KEY app/.env.convex.local | cut -d= -f2) \
   --api-url https://api.novu.loc
 ```
 
 **Option B: API (curl)**
 ```bash
 curl -X POST https://api.novu.loc/v1/bridge/sync \
-  -H "Authorization: ApiKey $(grep NOVU_SECRET_KEY app/.env.nextjs.local | cut -d= -f2)" \
+  -H "Authorization: ApiKey $(grep NOVU_SECRET_KEY app/.env.convex.local | cut -d= -f2)" \
   -H "Content-Type: application/json" \
-  -d '{"bridgeUrl": "https://mark.loc/api/novu"}'
+  -d '{"bridgeUrl": "https://mark.convex.site.loc/novu-bridge"}'
 ```
 
 **Option C: Web UI**
 1. Go to https://novu.loc → **Integrations** → **Local Studio**
-2. Enter bridge URL: `https://mark.loc/api/novu`
+2. Enter bridge URL: `https://mark.convex.site.loc/novu-bridge`
 3. Click **Sync**
 
 #### Verify Sync
 
 ```bash
 curl -s https://api.novu.loc/v1/workflows \
-  -H "Authorization: ApiKey $(grep NOVU_SECRET_KEY app/.env.nextjs.local | cut -d= -f2)" \
+  -H "Authorization: ApiKey $(grep NOVU_SECRET_KEY app/.env.convex.local | cut -d= -f2)" \
   | jq '.data[].name'
 ```
 
@@ -242,7 +242,7 @@ Expected output: `"new-comment"`
 
 ### Workflow: `new-comment`
 
-Located at: `app/src/app/api/novu/workflows/comment-workflow.ts`
+Located at: `app/convex/novuBridge.ts`
 
 #### Payload Schema
 
@@ -322,12 +322,12 @@ The NotificationCenter component includes test selectors:
 
 ### Bridge Not Syncing
 
-1. Ensure `NOVU_SECRET_KEY` in `.env.nextjs.local` matches your Novu org
-2. Check that the Next.js dev server is running (`tmux attach -t mark-nextjs`)
-3. Verify the bridge URL uses your agent domain: `https://mark.loc/api/novu` (NOT localhost)
+1. Ensure `NOVU_SECRET_KEY` in `.env.convex.local` matches your Novu org (and is synced to Convex)
+2. Check that the Convex dev server is running (`tmux attach -t mark-convex-dev`)
+3. Verify the bridge URL uses your agent's Convex site domain: `https://mark.convex.site.loc/novu-bridge` (NOT localhost)
 4. Test the bridge endpoint directly:
    ```bash
-   curl -s https://mark.loc/api/novu | jq .
+   curl -s https://mark.convex.site.loc/novu-bridge | jq .
    ```
 
 ### Wrong Novu Credentials
@@ -376,7 +376,7 @@ The NotificationCenter component includes test selectors:
 
 **Test bridge:**
 ```bash
-curl -s https://{AGENT_NAME}.loc/api/novu | jq .
+curl -s https://{AGENT_NAME}.convex.site.loc/novu-bridge | jq .
 # Should return: {"status":"ok","sdkVersion":"...","discovered":{"workflows":1,"steps":3}}
 ```
 
@@ -390,18 +390,16 @@ curl -s https://{AGENT_NAME}.loc/api/novu | jq .
 
 | File | Purpose |
 |------|---------|
-| `app/src/app/api/novu/route.ts` | Bridge endpoint (GET, POST, OPTIONS) |
-| `app/src/app/api/novu/workflows/comment-workflow.ts` | Workflow definition |
-| `app/src/lib/emailRenderer.ts` | Next.js email renderer (for bridge) |
+| `app/convex/novuBridge.ts` | Bridge endpoint + workflow definition (Convex HTTP action) |
 | `app/src/components/NotificationCenter.tsx` | React notification bell |
 | `app/convex/novu.ts` | Backend trigger functions |
 | `app/convex/novuEmailWebhook.ts` | Email webhook handler |
-| `app/convex/http.ts` | HTTP routes (includes `/novu-email-webhook`) |
+| `app/convex/http.ts` | HTTP routes (includes `/novu-bridge` and `/novu-email-webhook`) |
 | `app/convex/emails/*.tsx` | React Email templates |
-| `app/convex/lib/emailRenderer.ts` | Convex email renderer |
+| `app/convex/lib/emailRenderer.ts` | Email renderer |
 | `scripts/setup-novu-email-webhook.sh` | Email Webhook integration setup |
-| `app/.env.convex.local.example` | Backend env vars (includes NOVU_EMAIL_WEBHOOK_SECRET) |
-| `app/.env.nextjs.local.example` | Frontend env vars |
+| `app/.env.convex.local.example` | Backend env vars (includes NOVU_EMAIL_WEBHOOK_SECRET, NOVU_DIGEST_INTERVAL) |
+| `app/.env.nextjs.local.example` | Frontend env vars (NEXT_PUBLIC_NOVU_* browser SDK vars) |
 
 ## Related Documentation
 

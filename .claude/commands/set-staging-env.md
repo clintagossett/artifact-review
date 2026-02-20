@@ -84,7 +84,7 @@ git commit --allow-empty -m "chore: Trigger redeploy for env var change" && git 
 | Variable Prefix/Type | Target | Reason |
 |---------------------|--------|--------|
 | `NEXT_PUBLIC_*` | Vercel | Client-side, bundled at build |
-| `NOVU_*` (server) | Vercel | Next.js API routes |
+| `NOVU_*` (server) | Convex | Convex HTTP action (bridge + triggers) |
 | `SITE_URL` | Vercel | Build-time config |
 | `STRIPE_*` | Convex | Backend payment processing |
 | `RESEND_*` | Convex | Backend email sending |
@@ -124,9 +124,6 @@ CONVEX_DEPLOY_KEY=prod:adventurous-mosquito-571|...
 NEXT_PUBLIC_CONVEX_URL=https://adventurous-mosquito-571.convex.cloud
 NEXT_PUBLIC_CONVEX_HTTP_URL=https://adventurous-mosquito-571.convex.site
 SITE_URL=https://artifactreview-early.xyz
-NOVU_SECRET_KEY=...
-NOVU_API_URL=https://api.novu.co
-NOVU_DIGEST_INTERVAL=30s
 NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=...
 NEXT_PUBLIC_NOVU_API_URL=https://api.novu.co
 NEXT_PUBLIC_NOVU_SOCKET_URL=wss://socket.novu.co
@@ -143,6 +140,7 @@ EMAIL_FROM_AUTH=auth@artifactreview-early.xyz
 EMAIL_FROM_NOTIFICATIONS=notify@artifactreview-early.xyz
 NOVU_SECRET_KEY=...
 NOVU_API_URL=https://api.novu.co
+NOVU_DIGEST_INTERVAL=2m
 NOVU_EMAIL_WEBHOOK_SECRET=...
 STRIPE_SECRET_KEY=...
 STRIPE_WEBHOOK_SECRET=...
@@ -153,13 +151,10 @@ STRIPE_PRICE_ID_PRO_ANNUAL=...
 ## Examples
 
 ### Set Novu digest interval for staging:
+`NOVU_DIGEST_INTERVAL` is a **Convex** variable. It is read by the Novu bridge (Convex HTTP action), not Vercel.
 ```bash
-VERCEL_TOKEN=$(grep VERCEL_TOKEN ../artifact-review-dev/.env.dev.local | cut -d= -f2)
-curl -s -X POST \
-  -H "Authorization: Bearer $VERCEL_TOKEN" \
-  -H "Content-Type: application/json" \
-  "https://api.vercel.com/v10/projects/prj_GDXlzDtEcclLAgP1RoY0Agnjvtr5/env?teamId=team_dD61vKrjrHtvbXe8o2ZmgjUS" \
-  -d '{"key":"NOVU_DIGEST_INTERVAL","value":"30s","type":"plain","target":["preview"]}'
+cd app && npx convex env set NOVU_DIGEST_INTERVAL "2m" --prod
+# Takes effect on next bridge request (no redeploy needed)
 ```
 
 ### Set Stripe webhook secret in Convex:

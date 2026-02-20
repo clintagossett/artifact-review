@@ -573,15 +573,15 @@ sync_novu_workflows() {
         return 0
     fi
 
-    local bridge_url="https://${AGENT_NAME}.loc/api/novu"
+    local bridge_url="https://${AGENT_NAME}.convex.site.loc/novu-bridge"
     local novu_api_url="https://api.novu.loc"
 
-    # Wait for Next.js bridge endpoint to be ready
+    # Wait for Convex bridge endpoint to be ready
     echo "  Waiting for bridge endpoint..."
     local max_attempts=15
     local attempt=1
     while [ $attempt -le $max_attempts ]; do
-        # Check if bridge endpoint responds (any HTTP response means Next.js is up)
+        # Check if bridge endpoint responds (any HTTP response means Convex is up)
         if curl -sk --max-time 2 "$bridge_url" >/dev/null 2>&1; then
             echo "  ✅ Bridge endpoint ready"
             break
@@ -593,7 +593,7 @@ sync_novu_workflows() {
 
     if [ $attempt -gt $max_attempts ]; then
         echo "  ⚠️  Bridge endpoint not responding after ${max_attempts} attempts"
-        echo "     Check: tmux attach -t $NEXTJS_SESSION"
+        echo "     Check: tmux attach -t $CONVEX_SESSION"
         echo "     Manual sync: npx novu@latest sync --bridge-url $bridge_url --secret-key \$NOVU_SECRET_KEY --api-url $novu_api_url"
         return 0
     fi
